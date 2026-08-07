@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/providers/settings_providers.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/auth_feature.dart';
 import 'features/home/home_screen.dart';
 
 /// Root of the African Teller application.
@@ -29,7 +30,10 @@ class AfricanTellerApp extends ConsumerWidget {
         Locale('en'),
         Locale('fr'),
       ],
-      home: const HomeScreen(),
+      // Auth-aware home: shows login if unauthenticated, otherwise home screen.
+      home: const AuthWrapper(
+        child: HomeScreen(),
+      ),
     );
   }
 }

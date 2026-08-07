@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/settings_providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/profile_screen.dart';
+import '../../auth/widgets/role_badge.dart';
 
-/// Branded landing header: wordmark, tagline, and theme toggle.
+/// Branded landing header: wordmark, tagline, theme toggle, and profile.
 class LandingHeader extends ConsumerWidget {
   const LandingHeader({super.key});
 
@@ -13,6 +16,8 @@ class LandingHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final authState = ref.watch(authProvider);
+    final user = authState.valueOrNull?.user;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 12, 24),
@@ -29,59 +34,81 @@ class LandingHeader extends ConsumerWidget {
           bottom: Radius.circular(28),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.parchment.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.ochre.withValues(alpha: 0.7),
-                width: 1.2,
-              ),
-            ),
-            child: Text(
-              '🪘',
-              style: TextStyle(
-                fontSize: 22,
-                color: AppColors.ochre,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'AFRICAN TELLER',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.parchment,
-                    letterSpacing: 1.4,
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.parchment.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.ochre.withValues(alpha: 0.7),
+                    width: 1.2,
                   ),
                 ),
-                Text(
-                  AppConstants.appTagline,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.ochreTint,
+                child: Text(
+                  '🪘',
+                  style: TextStyle(
+                    fontSize: 22,
+                    color: AppColors.ochre,
                   ),
                 ),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: 'Toggle theme',
-            onPressed: () => ref
-                .read(settingsProvider.notifier)
-                .toggleDarkMode(
-                  systemBrightness: MediaQuery.of(context).platformBrightness,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AFRICAN TELLER',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.parchment,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    Text(
+                      AppConstants.appTagline,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.ochreTint,
+                      ),
+                    ),
+                  ],
                 ),
-            icon: const Icon(Icons.dark_mode_outlined),
-            color: AppColors.parchment,
+              ),
+              IconButton(
+                tooltip: 'Toggle theme',
+                onPressed: () => ref
+                    .read(settingsProvider.notifier)
+                    .toggleDarkMode(
+                      systemBrightness: MediaQuery.of(context).platformBrightness,
+                    ),
+                icon: const Icon(Icons.dark_mode_outlined),
+                color: AppColors.parchment,
+              ),
+              if (user != null)
+                IconButton(
+                  tooltip: 'Profile',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.account_circle_outlined),
+                  color: AppColors.parchment,
+                ),
+            ],
           ),
+          if (user != null) ...[
+            const SizedBox(height: 12),
+            RoleBadge(role: user.role),
+          ],
         ],
       ),
     );

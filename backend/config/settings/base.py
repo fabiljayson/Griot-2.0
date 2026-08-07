@@ -51,6 +51,7 @@ LOCAL_APPS = [
     'stories',
     'qr_codes',
     'gamification',
+    'media_app',
     'api',
 ]
 
@@ -68,6 +69,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+
+# Custom user model with Visitor/Contributor/InstitutionManager/Admin roles
+# (Phase 2.1).
+AUTH_USER_MODEL = 'users.User'
 
 TEMPLATES = [
     {
@@ -108,8 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # ---------------------------------------------------------------------------
-# Django REST Framework baseline
-# Task 2.1 will extend this with SimpleJWT auth + strict auth throttling.
+# Django REST Framework
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
@@ -123,6 +127,17 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    # Strict throttling (Phase 2.1): auth endpoints limited to 5 requests
+    # per minute per IP; general API traffic throttled as well.
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '120/min',   # general anonymous API traffic
+        'user': '600/min',   # authenticated API traffic
+        'auth': '5/min',     # auth endpoints (login, register, refresh)
+    },
 }
 
 SIMPLE_JWT = {
