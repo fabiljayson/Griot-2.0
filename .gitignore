@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# Griot 2.0 monorepo .gitignore
+# ---------------------------------------------------------------------------
+
+# --- Python / Django ------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.sqlite3
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+.env
+.venv/
+venv/
+env/
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Flutter / Dart -------------------------------------------------------
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+*.g.dart
+
+# --- Node (PWA / web tooling) ---------------------------------------------
+node_modules/
+.pnpm-store/
+
+# --- Misc -----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
+/tmp/

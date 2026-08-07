@@ -1,0 +1,13 @@
+from django.urls import path
+
+from .views import health_check
+
+urlpatterns = [
+    # Baseline liveness probe.
+    path('health/', health_check, name='health'),
+
+    # Phase 2: auth endpoints will be mounted at /api/auth/...
+    # Phase 3: story endpoints will be mounted at /api/stories/...
+    # Phase 5: artifact / QR endpoints will be mounted at /api/artifacts/...
+    # Phase 6: quiz / gamification endpoints will be mounted at /api/gamification/...
+]

@@ -1,0 +1,19 @@
+# --- Core web framework -------------------------------------------------
+Django==5.2.4
+python-dotenv==1.1.0                       # Load backend/.env in settings
+
+# --- REST API (Phase 1) -------------------------------------------------
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.5.0          # JWT auth (Phase 2)
+django-cors-headers==4.7.0                    # CORS for Flutter web/PWA
+
+# --- Media & images (Phase 1/3) ------------------------------------------
+Pillow==11.2.1                                # ImageField support
+blurhash-python==1.2.2                        # BlurHash on image upload
+
+# --- AI & notifications (Phase 4) -----------------------------------------
+firebase-admin==6.7.0                         # FCM push notifications
+requests==2.32.4                              # Outbound calls (Luma AI, etc.)
+
+# --- Observability (Phase 10) ---------------------------------------------
+sentry-sdk==2.28.0
