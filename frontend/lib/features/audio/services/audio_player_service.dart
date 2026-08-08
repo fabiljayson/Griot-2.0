@@ -19,16 +19,14 @@ class AudioPlayerService {
   static final AudioPlayerService instance = AudioPlayerService._();
 
   final AudioPlayer _player = AudioPlayer();
-  
+
   // State
-  AudioModel? _currentAudio;
-  SleepTimer _sleepTimer = SleepTimer.off;
   Timer? _sleepTimerTimer;
-  
+
   // Stream controllers
   final _stateController = StreamController<AudioPlayerState>.broadcast();
   Stream<AudioPlayerState> get stateStream => _stateController.stream;
-  
+
   AudioPlayerState _state = const AudioPlayerState();
   AudioPlayerState get currentState => _state;
 
@@ -75,6 +73,8 @@ class AudioPlayerService {
     Duration? duration,
     double? playbackSpeed,
     SleepTimer? sleepTimer,
+    bool? isRepeatEnabled,
+    double? volume,
     bool? isBuffering,
     String? errorMessage,
     bool clearAudio = false,
@@ -87,6 +87,8 @@ class AudioPlayerService {
       duration: duration,
       playbackSpeed: playbackSpeed,
       sleepTimer: sleepTimer,
+      isRepeatEnabled: isRepeatEnabled,
+      volume: volume,
       isBuffering: isBuffering,
       errorMessage: errorMessage,
       clearAudio: clearAudio,
@@ -96,8 +98,22 @@ class AudioPlayerService {
   }
 
   void _handlePlaybackComplete() {
-    _updateState(isPlaying: false, position: _state.duration);
-    // Could auto-play next track or stop
+    if (_state.isRepeatEnabled) {
+      // Repeat mode: replay the current track from the start.
+      _replay();
+    } else {
+      _updateState(isPlaying: false, position: _state.duration);
+    }
+  }
+
+  Future<void> _replay() async {
+    try {
+      await _player.seek(Duration.zero);
+      await _player.play();
+      _updateState(isPlaying: true, position: Duration.zero);
+    } catch (e) {
+      _updateState(errorMessage: 'Failed to repeat playback: $e');
+    }
   }
 
   // --- Playback Controls ---
@@ -105,7 +121,6 @@ class AudioPlayerService {
   /// Load and play an audio track.
   Future<void> play(AudioModel audio) async {
     try {
-      _currentAudio = audio;
       _updateState(currentAudio: audio, isBuffering: true);
 
       // Set playback speed
@@ -123,10 +138,7 @@ class AudioPlayerService {
       await _player.play();
       _updateState(isBuffering: false);
     } catch (e) {
-      _updateState(
-        errorMessage: 'Failed to play audio: $e',
-        clearAudio: true,
-      );
+      _updateState(errorMessage: 'Failed to play audio: $e', clearAudio: true);
     }
   }
 
@@ -164,11 +176,7 @@ class AudioPlayerService {
     try {
       await _player.stop();
       _cancelSleepTimer();
-      _updateState(
-        isPlaying: false,
-        position: Duration.zero,
-        clearAudio: true,
-      );
+      _updateState(isPlaying: false, position: Duration.zero, clearAudio: true);
     } catch (e) {
       _updateState(errorMessage: 'Failed to stop: $e');
     }
@@ -193,16 +201,24 @@ class AudioPlayerService {
   }
 
   /// Skip forward by [duration] (default 10 seconds).
-  Future<void> skipForward([Duration duration = const Duration(seconds: 10)]) async {
+  Future<void> skipForward([
+    Duration duration = const Duration(seconds: 10),
+  ]) async {
     final newPosition = _state.position + duration;
-    final clampedPosition = newPosition > _state.duration ? _state.duration : newPosition;
+    final clampedPosition = newPosition > _state.duration
+        ? _state.duration
+        : newPosition;
     await seek(clampedPosition);
   }
 
   /// Skip backward by [duration] (default 10 seconds).
-  Future<void> skipBackward([Duration duration = const Duration(seconds: 10)]) async {
+  Future<void> skipBackward([
+    Duration duration = const Duration(seconds: 10),
+  ]) async {
     final newPosition = _state.position - duration;
-    final clampedPosition = newPosition < Duration.zero ? Duration.zero : newPosition;
+    final clampedPosition = newPosition < Duration.zero
+        ? Duration.zero
+        : newPosition;
     await seek(clampedPosition);
   }
 
@@ -221,9 +237,18 @@ class AudioPlayerService {
   /// Cycle through playback speeds.
   Future<void> cyclePlaybackSpeed() async {
     final speeds = PlaybackSpeed.values;
-    final currentIndex = speeds.indexWhere((s) => s.value == _state.playbackSpeed);
+    final currentIndex = speeds.indexWhere(
+      (s) => s.value == _state.playbackSpeed,
+    );
     final nextIndex = (currentIndex + 1) % speeds.length;
     await setPlaybackSpeed(speeds[nextIndex].value);
+  }
+
+  // --- Repeat ---
+
+  /// Toggle repeat (replays the current track when it completes).
+  void toggleRepeat() {
+    _updateState(isRepeatEnabled: !_state.isRepeatEnabled);
   }
 
   // --- Sleep Timer ---
@@ -252,6 +277,7 @@ class AudioPlayerService {
   Future<void> setVolume(double volume) async {
     try {
       await _player.setVolume(volume);
+      _updateState(volume: volume);
     } catch (e) {
       _updateState(errorMessage: 'Failed to set volume: $e');
     }
@@ -262,8 +288,10 @@ class AudioPlayerService {
     try {
       if (_player.volume > 0) {
         await _player.setVolume(0);
+        _updateState(volume: 0);
       } else {
         await _player.setVolume(1);
+        _updateState(volume: 1);
       }
     } catch (e) {
       _updateState(errorMessage: 'Failed to toggle mute: $e');

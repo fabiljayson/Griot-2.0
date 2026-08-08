@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Story, StoryCategory, StoryBookmark, StoryLike, StoryFlag
+from .models import ReadingProgress, Story, StoryCategory, StoryBookmark, StoryLike, StoryFlag
 
 User = get_user_model()
 
@@ -231,4 +231,185 @@ class StoryInteractionsTests(APITestCase):
         url = reverse('stories:story-bookmarks')
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(len(resp.data), 1)
+
+    def test_recently_read(self):
+        ReadingProgress.objects.create(
+            user=self.user,
+            story=self.story,
+            progress_percent=45,
+        )
+        url = reverse('stories:story-recently-read')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]['progress_percent'], 45)
+
+    def test_continue_reading(self):
+        ReadingProgress.objects.create(
+            user=self.user,
+            story=self.story,
+            progress_percent=30,
+            completed=False,
+        )
+        url = reverse('stories:story-continue-reading')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+
+    def test_continue_reading_excludes_completed(self):
+        ReadingProgress.objects.create(
+            user=self.user,
+            story=self.story,
+            progress_percent=100,
+            completed=True,
+        )
+        url = reverse('stories:story-continue-reading')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 0)
+
+    def test_share_story(self):
+        url = reverse('stories:story-share', kwargs={'slug': 'test-story'})
+        resp = self.client.post(url, {'platform': 'twitter'})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn('share_url', resp.data)
+        self.assertIn('share_text', resp.data)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.share_count, 1)
+
+    def test_trending_stories(self):
+        url = reverse('stories:story-trending')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_popular_stories(self):
+        url = reverse('stories:story-popular')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_discover_stories(self):
+        url = reverse('stories:story-discover')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+
+class ModerationTests(APITestCase):
+    """Admin moderation queue & moderation actions."""
+
+    def setUp(self):
+        self.visitor = User.objects.create_user(
+            'visitor1', email='visitor1@test.com', password='pass123', role='visitor'
+        )
+        self.manager = User.objects.create_user(
+            'manager1', email='manager1@test.com', password='pass123',
+            role='institution_manager',
+        )
+        self.admin = User.objects.create_user(
+            'admin1', email='admin1@test.com', password='pass123', role='admin'
+        )
+        self.author = User.objects.create_user(
+            'author1', email='author1@test.com', password='pass123',
+            role='contributor',
+        )
+        self.reporter = User.objects.create_user(
+            'reporter1', email='reporter1@test.com', password='pass123'
+        )
+        self.story = Story.objects.create(
+            title='The Flagged Tale',
+            content='Content that was flagged for review.',
+            author=self.author,
+            status=Story.Status.PUBLISHED,
+        )
+        self.flag = StoryFlag.objects.create(
+            user=self.reporter,
+            story=self.story,
+            reason='cultural_inaccuracy',
+            details='Misrepresents traditional customs.',
+        )
+
+    def test_moderation_queue_requires_admin_or_manager(self):
+        url = reverse('stories:story-moderation-queue')
+
+        # Anonymous denied
+        resp = self.client.get(url)
+        self.assertIn(resp.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+
+        # Visitor denied
+        self.client.force_authenticate(self.visitor)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Manager allowed
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_moderation_queue_lists_flagged_stories(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse('stories:story-moderation-queue')
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+        entry = resp.data[0]
+        self.assertEqual(entry['title'], 'The Flagged Tale')
+        self.assertEqual(entry['slug'], self.story.slug)
+        self.assertEqual(entry['status'], 'published')
+        self.assertEqual(entry['author_username'], 'author1')
+        self.assertEqual(len(entry['flags']), 1)
+        flag = entry['flags'][0]
+        self.assertEqual(flag['reason'], 'cultural_inaccuracy')
+        self.assertEqual(flag['reason_display'], 'Cultural Inaccuracy')
+        self.assertEqual(flag['reporter'], 'reporter1')
+
+    def test_moderation_queue_excludes_resolved_flags(self):
+        self.flag.resolved = True
+        self.flag.save()
+
+        self.client.force_authenticate(self.admin)
+        url = reverse('stories:story-moderation-queue')
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 0)
+
+    def test_moderate_remove_archives_and_resolves_flags(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse('stories:story-moderate', kwargs={'slug': self.story.slug})
+        resp = self.client.post(url, {
+            'action': 'remove',
+            'notes': 'Removed for cultural inaccuracy.',
+        })
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'archived')
+        self.assertEqual(resp.data['resolved_flags'], 1)
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.ARCHIVED)
+        self.flag.refresh_from_db()
+        self.assertTrue(self.flag.resolved)
+        self.assertEqual(self.flag.resolution_notes, 'Removed for cultural inaccuracy.')
+
+    def test_moderate_dismiss_keeps_story_published(self):
+        self.client.force_authenticate(self.manager)
+        url = reverse('stories:story-moderate', kwargs={'slug': self.story.slug})
+        resp = self.client.post(url, {'action': 'dismiss'})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'published')
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PUBLISHED)
+        self.flag.refresh_from_db()
+        self.assertTrue(self.flag.resolved)
+
+    def test_moderate_rejects_invalid_action(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse('stories:story-moderate', kwargs={'slug': self.story.slug})
+        resp = self.client.post(url, {'action': 'ban'})
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.flag.refresh_from_db()
+        self.assertFalse(self.flag.resolved)

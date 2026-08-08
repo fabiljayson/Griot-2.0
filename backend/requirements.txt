@@ -11,6 +11,10 @@ django-cors-headers==4.7.0                    # CORS for Flutter web/PWA
 Pillow==11.2.1                                # ImageField support
 blurhash-python==1.2.2                        # BlurHash on image upload
 
+# --- QR codes & artifacts (Phase 5) ---------------------------------------
+qrcode[pil]==8.0                              # QR code generation
+segno==1.6.1                                  # High-quality QR SVG output
+
 # --- AI & notifications (Phase 4) -----------------------------------------
 firebase-admin==6.7.0                         # FCM push notifications
 requests==2.32.4                              # Outbound calls (Luma AI, etc.)

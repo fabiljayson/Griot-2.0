@@ -53,12 +53,16 @@ class AudioPlayerNotifier extends StateNotifier<AudioPlayerState> {
   }
 
   /// Skip forward.
-  Future<void> skipForward([Duration duration = const Duration(seconds: 10)]) async {
+  Future<void> skipForward([
+    Duration duration = const Duration(seconds: 10),
+  ]) async {
     await _service.skipForward(duration);
   }
 
   /// Skip backward.
-  Future<void> skipBackward([Duration duration = const Duration(seconds: 10)]) async {
+  Future<void> skipBackward([
+    Duration duration = const Duration(seconds: 10),
+  ]) async {
     await _service.skipBackward(duration);
   }
 
@@ -77,6 +81,11 @@ class AudioPlayerNotifier extends StateNotifier<AudioPlayerState> {
     _service.setSleepTimer(timer);
   }
 
+  /// Toggle repeat.
+  void toggleRepeat() {
+    _service.toggleRepeat();
+  }
+
   /// Set volume.
   Future<void> setVolume(double volume) async {
     await _service.setVolume(volume);
@@ -91,8 +100,8 @@ class AudioPlayerNotifier extends StateNotifier<AudioPlayerState> {
 /// Audio player provider.
 final audioPlayerProvider =
     StateNotifierProvider<AudioPlayerNotifier, AudioPlayerState>((ref) {
-  return AudioPlayerNotifier();
-});
+      return AudioPlayerNotifier();
+    });
 
 /// Current audio provider (convenience).
 final currentAudioProvider = Provider<AudioModel?>((ref) {

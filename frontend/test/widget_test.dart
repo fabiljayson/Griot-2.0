@@ -4,10 +4,44 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:african_teller/app.dart';
 import 'package:african_teller/core/theme/app_colors.dart';
+import 'package:african_teller/features/auth/models/user_model.dart';
+import 'package:african_teller/features/auth/providers/auth_provider.dart';
+import 'package:african_teller/features/auth/repositories/auth_repository.dart';
+
+/// Auth repository stub that bypasses secure storage.
+///
+/// Widget tests have no platform channels, so the real repository would
+/// throw while reading tokens. This stub reports an authenticated session
+/// so the test can reach the home screen through the real auth flow.
+class _FakeAuthRepository extends AuthRepository {
+  @override
+  Future<bool> get isAuthenticated async => true;
+
+  @override
+  Future<UserModel> getMe() async =>
+      const UserModel(id: 1, username: 'tester', role: UserRole.visitor);
+
+  @override
+  Future<TokenPair> refreshTokens() async =>
+      const TokenPair(accessToken: 'test-access', refreshToken: 'test-refresh');
+
+  @override
+  Future<void> logout() async {}
+}
 
 void main() {
   testWidgets('App shell renders the landing screen', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: AfricanTellerApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+        ],
+        child: const AfricanTellerApp(),
+      ),
+    );
+
+    // Let the (mocked) auth check resolve so the home screen renders.
+    await tester.pumpAndSettle();
 
     // Landing branding is visible.
     expect(find.text('AFRICAN TELLER'), findsOneWidget);

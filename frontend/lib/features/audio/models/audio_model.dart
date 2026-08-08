@@ -37,16 +37,16 @@ class AudioModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'story_id': storyId,
-        'story_title': storyTitle,
-        'url': url,
-        'duration': duration,
-        'narrator': narrator,
-        'language': language,
-        'playback_speed': playbackSpeed,
-        'created_at': createdAt,
-      };
+    'id': id,
+    'story_id': storyId,
+    'story_title': storyTitle,
+    'url': url,
+    'duration': duration,
+    'narrator': narrator,
+    'language': language,
+    'playback_speed': playbackSpeed,
+    'created_at': createdAt,
+  };
 
   /// Formatted duration (e.g., "5:30").
   String get formattedDuration {
@@ -118,6 +118,8 @@ class AudioPlayerState {
     this.duration = Duration.zero,
     this.playbackSpeed = 1.0,
     this.sleepTimer = SleepTimer.off,
+    this.isRepeatEnabled = false,
+    this.volume = 1.0,
     this.isBuffering = false,
     this.errorMessage,
   });
@@ -128,6 +130,8 @@ class AudioPlayerState {
   final Duration duration;
   final double playbackSpeed;
   final SleepTimer sleepTimer;
+  final bool isRepeatEnabled;
+  final double volume;
   final bool isBuffering;
   final String? errorMessage;
 
@@ -171,6 +175,8 @@ class AudioPlayerState {
     Duration? duration,
     double? playbackSpeed,
     SleepTimer? sleepTimer,
+    bool? isRepeatEnabled,
+    double? volume,
     bool? isBuffering,
     String? errorMessage,
     bool clearAudio = false,
@@ -183,6 +189,8 @@ class AudioPlayerState {
       duration: duration ?? this.duration,
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
       sleepTimer: sleepTimer ?? this.sleepTimer,
+      isRepeatEnabled: isRepeatEnabled ?? this.isRepeatEnabled,
+      volume: volume ?? this.volume,
       isBuffering: isBuffering ?? this.isBuffering,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );

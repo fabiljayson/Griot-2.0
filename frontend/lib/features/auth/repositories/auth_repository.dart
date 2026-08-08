@@ -10,11 +10,9 @@ import '../models/user_model.dart';
 /// provides methods for login, registration, token refresh, and profile
 /// management.
 class AuthRepository {
-  AuthRepository({
-    ApiClient? apiClient,
-    FlutterSecureStorage? secureStorage,
-  })  : _api = apiClient ?? ApiClient.instance,
-        _storage = secureStorage ?? const FlutterSecureStorage();
+  AuthRepository({ApiClient? apiClient, FlutterSecureStorage? secureStorage})
+    : _api = apiClient ?? ApiClient.instance,
+      _storage = secureStorage ?? const FlutterSecureStorage();
 
   final ApiClient _api;
   final FlutterSecureStorage _storage;
@@ -60,10 +58,7 @@ class AuthRepository {
   }) async {
     final response = await _api.dio.post(
       '/api/auth/token/',
-      data: {
-        'username': username,
-        'password': password,
-      },
+      data: {'username': username, 'password': password},
     );
 
     final tokens = TokenPair.fromJson(response.data as Map<String, dynamic>);
@@ -88,8 +83,8 @@ class AuthRepository {
         'username': username,
         'email': email,
         'password': password,
-        if (firstName != null) 'first_name': firstName,
-        if (lastName != null) 'last_name': lastName,
+        'first_name': ?firstName,
+        'last_name': ?lastName,
         'role': role.value,
       },
     );
@@ -124,16 +119,10 @@ class AuthRepository {
   }
 
   /// Update the current user's profile.
-  Future<UserModel> updateProfile({
-    String? firstName,
-    String? lastName,
-  }) async {
+  Future<UserModel> updateProfile({String? firstName, String? lastName}) async {
     final response = await _api.dio.patch(
       '/api/users/me/',
-      data: {
-        if (firstName != null) 'first_name': firstName,
-        if (lastName != null) 'last_name': lastName,
-      },
+      data: {'first_name': ?firstName, 'last_name': ?lastName},
     );
     return UserModel.fromJson(response.data as Map<String, dynamic>);
   }

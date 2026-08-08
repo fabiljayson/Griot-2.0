@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 
+app_name = 'media'
+
 router = DefaultRouter()
 router.register(r'videos', views.VideoGenerationViewSet, basename='video-generation')
 router.register(r'audio', views.AudioNarrationViewSet, basename='audio-narration')

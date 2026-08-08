@@ -154,6 +154,7 @@ class Story(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     like_count = models.PositiveIntegerField(default=0)
     bookmark_count = models.PositiveIntegerField(default=0)
+    share_count = models.PositiveIntegerField(default=0)
 
     # --- Timestamps ---
     created_at = models.DateTimeField(auto_now_add=True)
@@ -315,4 +316,47 @@ class ReadingProgress(models.Model):
 
     @property
     def is_complete(self):
-        return self.progress_percent >= 100 or self.completed
+        return self.progress_percent >= 100 or self.completed
+
+
+class StoryShare(models.Model):
+    """Track story shares for analytics."""
+
+    PLATFORM_CHOICES = [
+        ('twitter', 'Twitter'),
+        ('facebook', 'Facebook'),
+        ('whatsapp', 'WhatsApp'),
+        ('telegram', 'Telegram'),
+        ('link', 'Copy Link'),
+        ('other', 'Other'),
+    ]
+
+    story = models.ForeignKey(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='shares',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='story_shares',
+    )
+    platform = models.CharField(
+        max_length=20,
+        choices=PLATFORM_CHOICES,
+        default='other',
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['story', '-created_at']),
+            models.Index(fields=['platform']),
+        ]
+
+    def __str__(self):
+        return f'Share: {self.story.title} via {self.platform}'

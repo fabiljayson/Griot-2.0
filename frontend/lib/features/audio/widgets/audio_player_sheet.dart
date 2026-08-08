@@ -59,7 +59,9 @@ class _MiniPlayer extends ConsumerWidget {
             LinearProgressIndicator(
               value: audioState.progress,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.terracotta),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.terracotta,
+              ),
               minHeight: 2,
             ),
             Expanded(
@@ -121,24 +123,30 @@ class _MiniPlayer extends ConsumerWidget {
                     // Skip backward
                     IconButton(
                       icon: const Icon(Icons.replay_10, size: 24),
-                      onPressed: () => ref.read(audioPlayerProvider.notifier).skipBackward(),
+                      onPressed: () =>
+                          ref.read(audioPlayerProvider.notifier).skipBackward(),
                       tooltip: 'Rewind 10s',
                     ),
 
                     // Play/Pause
                     IconButton(
                       icon: Icon(
-                        audioState.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                        audioState.isPlaying
+                            ? Icons.pause_circle_filled
+                            : Icons.play_circle_filled,
                         size: 40,
                         color: AppColors.terracotta,
                       ),
-                      onPressed: () => ref.read(audioPlayerProvider.notifier).togglePlayPause(),
+                      onPressed: () => ref
+                          .read(audioPlayerProvider.notifier)
+                          .togglePlayPause(),
                     ),
 
                     // Skip forward
                     IconButton(
                       icon: const Icon(Icons.forward_10, size: 24),
-                      onPressed: () => ref.read(audioPlayerProvider.notifier).skipForward(),
+                      onPressed: () =>
+                          ref.read(audioPlayerProvider.notifier).skipForward(),
                       tooltip: 'Forward 10s',
                     ),
                   ],
@@ -191,7 +199,9 @@ class _FullPlayerSheet extends ConsumerWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -245,16 +255,23 @@ class _FullPlayerSheet extends ConsumerWidget {
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: AppColors.terracotta,
-                          inactiveTrackColor: theme.colorScheme.surfaceContainerHighest,
+                          inactiveTrackColor:
+                              theme.colorScheme.surfaceContainerHighest,
                           thumbColor: AppColors.terracotta,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 6,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 14,
+                          ),
                           trackHeight: 4,
                         ),
                         child: Slider(
                           value: audioState.progress,
                           onChanged: (value) {
-                            ref.read(audioPlayerProvider.notifier).seekToPercent(value);
+                            ref
+                                .read(audioPlayerProvider.notifier)
+                                .seekToPercent(value);
                           },
                         ),
                       ),
@@ -282,18 +299,12 @@ class _FullPlayerSheet extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Shuffle (placeholder)
-                      IconButton(
-                        icon: const Icon(Icons.shuffle, size: 24),
-                        onPressed: () {},
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 16),
-
                       // Skip backward
                       IconButton(
                         icon: const Icon(Icons.replay_10, size: 32),
-                        onPressed: () => ref.read(audioPlayerProvider.notifier).skipBackward(),
+                        onPressed: () => ref
+                            .read(audioPlayerProvider.notifier)
+                            .skipBackward(),
                       ),
                       const SizedBox(width: 16),
 
@@ -306,7 +317,9 @@ class _FullPlayerSheet extends ConsumerWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.terracotta.withValues(alpha: 0.3),
+                              color: AppColors.terracotta.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -314,11 +327,15 @@ class _FullPlayerSheet extends ConsumerWidget {
                         ),
                         child: IconButton(
                           icon: Icon(
-                            audioState.isPlaying ? Icons.pause : Icons.play_arrow,
+                            audioState.isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
                             size: 40,
                             color: Colors.white,
                           ),
-                          onPressed: () => ref.read(audioPlayerProvider.notifier).togglePlayPause(),
+                          onPressed: () => ref
+                              .read(audioPlayerProvider.notifier)
+                              .togglePlayPause(),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -326,15 +343,22 @@ class _FullPlayerSheet extends ConsumerWidget {
                       // Skip forward
                       IconButton(
                         icon: const Icon(Icons.forward_10, size: 32),
-                        onPressed: () => ref.read(audioPlayerProvider.notifier).skipForward(),
+                        onPressed: () => ref
+                            .read(audioPlayerProvider.notifier)
+                            .skipForward(),
                       ),
                       const SizedBox(width: 16),
 
-                      // Repeat (placeholder)
+                      // Repeat
                       IconButton(
                         icon: const Icon(Icons.repeat, size: 24),
-                        onPressed: () {},
-                        color: theme.colorScheme.onSurfaceVariant,
+                        onPressed: () => ref
+                            .read(audioPlayerProvider.notifier)
+                            .toggleRepeat(),
+                        color: audioState.isRepeatEnabled
+                            ? AppColors.terracotta
+                            : theme.colorScheme.onSurfaceVariant,
+                        tooltip: 'Repeat',
                       ),
                     ],
                   ),
@@ -394,11 +418,14 @@ class _FullPlayerSheet extends ConsumerWidget {
               ...PlaybackSpeed.values.map((speed) {
                 return ListTile(
                   title: Text(speed.label),
-                  trailing: ref.read(audioPlayerProvider).playbackSpeed == speed.value
+                  trailing:
+                      ref.read(audioPlayerProvider).playbackSpeed == speed.value
                       ? const Icon(Icons.check, color: AppColors.terracotta)
                       : null,
                   onTap: () {
-                    ref.read(audioPlayerProvider.notifier).setPlaybackSpeed(speed.value);
+                    ref
+                        .read(audioPlayerProvider.notifier)
+                        .setPlaybackSpeed(speed.value);
                     Navigator.pop(context);
                   },
                 );
@@ -445,9 +472,66 @@ class _FullPlayerSheet extends ConsumerWidget {
   }
 
   void _showVolumePicker(BuildContext context, WidgetRef ref) {
-    // Volume picker would be implemented here
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Volume control coming soon')),
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Volume',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final volume = ref.watch(audioPlayerProvider).volume;
+                    return Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            volume == 0 ? Icons.volume_off : Icons.volume_up,
+                            color: AppColors.terracotta,
+                          ),
+                          tooltip: volume == 0 ? 'Unmute' : 'Mute',
+                          onPressed: () => ref
+                              .read(audioPlayerProvider.notifier)
+                              .toggleMute(),
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: volume,
+                            activeColor: AppColors.terracotta,
+                            inactiveColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            onChanged: (value) => ref
+                                .read(audioPlayerProvider.notifier)
+                                .setVolume(value),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 48,
+                          child: Text(
+                            '${(volume * 100).round()}%',
+                            textAlign: TextAlign.right,
+                            style: theme.textTheme.labelMedium,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

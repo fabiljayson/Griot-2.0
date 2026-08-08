@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../admin/admin_feature.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 
@@ -47,9 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = authState.valueOrNull?.user;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -98,10 +97,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    user.displayName,
-                    style: theme.textTheme.headlineSmall,
-                  ),
+                  Text(user.displayName, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -115,7 +111,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(user.role.emoji, style: const TextStyle(fontSize: 14)),
+                        Text(
+                          user.role.emoji,
+                          style: const TextStyle(fontSize: 14),
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           user.role.modeName,
@@ -149,9 +148,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _lastNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Last Name',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Last Name'),
                     ),
                   ),
                 ],
@@ -161,7 +158,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () async {
-                    await ref.read(authProvider.notifier).updateProfile(
+                    await ref
+                        .read(authProvider.notifier)
+                        .updateProfile(
                           firstName: _firstNameController.text.trim(),
                           lastName: _lastNameController.text.trim(),
                         );
@@ -207,10 +206,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _RoleSwitcher(user: user),
             const SizedBox(height: 32),
 
+            // --- Admin dashboard (admins & institution managers) ---
+            if (user.role == UserRole.admin ||
+                user.role == UserRole.institutionManager) ...[
+              _SectionTitle(title: 'Administration'),
+              const SizedBox(height: 12),
+              _ActionTile(
+                icon: Icons.insights_outlined,
+                label: 'Admin Dashboard',
+                color: AppColors.savannahGreen,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AdminDashboardScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
+            ],
+
             // --- Danger zone ---
             _SectionTitle(title: 'Danger Zone'),
             const SizedBox(height: 12),
-            _DangerButton(
+            _ActionTile(
               icon: Icons.logout,
               label: 'Sign Out',
               onTap: () async {
@@ -226,7 +245,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               },
             ),
             const SizedBox(height: 8),
-            _DangerButton(
+            _ActionTile(
               icon: Icons.delete_forever,
               label: 'Delete Account & Data',
               color: AppColors.error,
@@ -293,9 +312,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () async {
               if (confirmController.text == user.username) {
                 confirmController.dispose();
@@ -357,8 +374,8 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }
@@ -393,10 +410,7 @@ class _InfoTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall,
-                ),
+                Text(label, style: theme.textTheme.bodySmall),
                 Text(
                   value,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -427,19 +441,14 @@ class _RoleSwitcher extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.terracottaTint.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.terracotta.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                currentRole.emoji,
-                style: const TextStyle(fontSize: 28),
-              ),
+              Text(currentRole.emoji, style: const TextStyle(fontSize: 28)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -487,8 +496,8 @@ class _RoleSwitcher extends StatelessWidget {
   }
 }
 
-class _DangerButton extends StatelessWidget {
-  const _DangerButton({
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -515,9 +524,7 @@ class _DangerButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: effectiveColor.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: effectiveColor.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [

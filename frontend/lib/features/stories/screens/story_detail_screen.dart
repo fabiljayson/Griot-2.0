@@ -17,10 +17,7 @@ import '../widgets/story_actions.dart';
 /// - Cultural context and moral lesson
 /// - Related stories (Phase 7)
 class StoryDetailScreen extends ConsumerStatefulWidget {
-  const StoryDetailScreen({
-    super.key,
-    required this.slug,
-  });
+  const StoryDetailScreen({super.key, required this.slug});
 
   final String slug;
 
@@ -52,9 +49,10 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
 
   void _onScroll() {
     if (_scrollController.position.hasContentDimensions) {
-      final progress = (_scrollController.offset /
-              _scrollController.position.maxScrollExtent)
-          .clamp(0.0, 1.0);
+      final progress =
+          (_scrollController.offset /
+                  _scrollController.position.maxScrollExtent)
+              .clamp(0.0, 1.0);
 
       if (progress != _scrollProgress) {
         setState(() => _scrollProgress = progress);
@@ -66,7 +64,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
   }
 
   void _updateReadingProgress(int percent) {
-    ref.read(storyDetailProvider.notifier).updateProgress(
+    ref
+        .read(storyDetailProvider.notifier)
+        .updateProgress(
           percent: percent,
           lastPosition: _scrollController.offset.round(),
         );
@@ -81,17 +81,15 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
       body: storyState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : storyState.errorMessage != null
-              ? _ErrorWidget(
-                  message: storyState.errorMessage!,
-                  onRetry: () {
-                    ref
-                        .read(storyDetailProvider.notifier)
-                        .loadStory(widget.slug);
-                  },
-                )
-              : storyState.story == null
-                  ? const SizedBox.shrink()
-                  : _buildStoryContent(storyState.story!, theme),
+          ? _ErrorWidget(
+              message: storyState.errorMessage!,
+              onRetry: () {
+                ref.read(storyDetailProvider.notifier).loadStory(widget.slug);
+              },
+            )
+          : storyState.story == null
+          ? const SizedBox.shrink()
+          : _buildStoryContent(storyState.story!, theme),
     );
   }
 
@@ -176,9 +174,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                   data: story.content,
                   selectable: true,
                   styleSheet: MarkdownStyleSheet(
-                    p: theme.textTheme.bodyLarge?.copyWith(
-                      height: 1.8,
-                    ),
+                    p: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
                     h1: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -194,7 +190,8 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                     ),
                     code: TextStyle(
                       fontFamily: 'monospace',
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                     ),
                   ),
                 ),
@@ -211,8 +208,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                     children: story.tagList.map((tag) {
                       return Chip(
                         label: Text(tag),
-                        backgroundColor:
-                            AppColors.terracotta.withValues(alpha: 0.1),
+                        backgroundColor: AppColors.terracotta.withValues(
+                          alpha: 0.1,
+                        ),
                         labelStyle: TextStyle(color: AppColors.terracotta),
                       );
                     }).toList(),
@@ -298,9 +296,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
       ),
       child: Center(
         child: Text(
-          story.categories.isNotEmpty
-              ? story.categories.first.icon
-              : '📖',
+          story.categories.isNotEmpty ? story.categories.first.icon : '📖',
           style: const TextStyle(fontSize: 64),
         ),
       ),
@@ -382,19 +378,16 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.terracotta,
-          ),
+        fontWeight: FontWeight.w600,
+        color: AppColors.terracotta,
+      ),
     );
   }
 }
 
 /// Error widget.
 class _ErrorWidget extends StatelessWidget {
-  const _ErrorWidget({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorWidget({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -407,21 +400,14 @@ class _ErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               'Failed to load story',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
+            Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: onRetry,

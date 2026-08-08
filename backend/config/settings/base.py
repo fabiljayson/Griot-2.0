@@ -66,6 +66,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Phase 10 observability: one structured JSON log line per request.
+    'api.middleware.RequestLogMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -154,6 +156,45 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
+# ---------------------------------------------------------------------------
+# Logging (Phase 10 observability)
+# ---------------------------------------------------------------------------
+# All loggers emit structured single-line JSON to stdout/stderr so they can
+# be aggregated and searched without additional parsing.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            '()': 'api.logging.JsonFormatter',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        # WARNING at root keeps third-party library noise out of the JSON
+        # stream; app loggers (django, api.request) set their own levels.
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'api.request': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Static files (CSS, JavaScript, Images)

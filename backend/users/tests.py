@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -7,13 +8,29 @@ from .models import UserRole
 
 User = get_user_model()
 
+
+class CacheIsolatedTestCase(APITestCase):
+    """APITestCase that starts each test method with a clean cache.
+
+    DRF throttle counters live in the process-wide default cache, which Django
+    never clears between tests. Without this, the strict 5/min auth budget is
+    shared by every auth request in the whole suite — test classes run in
+    alphabetical order, so whichever runs first exhausts the budget and
+    throttles the rest (and LocMemCache culling past 300 keys can randomly
+    evict the throttle key mid-test).
+    """
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
 REGISTER_URL = reverse('users:register')
 TOKEN_URL = reverse('users:token_obtain_pair')
 REFRESH_URL = reverse('users:token_refresh')
 ME_URL = reverse('me')
 
 
-class RegisterTests(APITestCase):
+class RegisterTests(CacheIsolatedTestCase):
     def test_register_default_role_is_visitor(self):
         resp = self.client.post(REGISTER_URL, {
             'username': 'explorer',
@@ -62,7 +79,7 @@ class RegisterTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class TokenTests(APITestCase):
+class TokenTests(CacheIsolatedTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             'griot', email='griot@example.com', password='hunter2secure'
@@ -103,7 +120,7 @@ class TokenTests(APITestCase):
         self.assertIn('refresh', resp.data)
 
 
-class MeTests(APITestCase):
+class MeTests(CacheIsolatedTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             'curator', email='curator@example.com', password='hunter2secure'
@@ -144,21 +161,28 @@ class MeTests(APITestCase):
         self.assertFalse(User.objects.filter(username='curator').exists())
 
 
-class AuthThrottleTests(APITestCase):
+class AuthThrottleTests(CacheIsolatedTestCase):
     """Strict auth throttling: 5 requests/minute (Task 2.1).
 
-    These tests verify throttling behavior. They are skipped when throttling
-    is disabled in test settings (DJANGO_SETTINGS_MODULE=config.settings.test).
+    These tests verify throttling behavior. They run only when the 'auth'
+    throttle rate is actually strict (5/min, the dev/prod default) and are
+    skipped under config.settings.test, which raises the rates to 10000/min
+    so ordinary unit tests never hit rate limits.
     """
 
-    def _is_throttling_enabled(self):
-        from django.conf import settings
+    def _auth_throttle_is_strict(self):
         from rest_framework.settings import api_settings
-        return bool(api_settings.DEFAULT_THROTTLE_RATES)
+        rates = api_settings.DEFAULT_THROTTLE_RATES or {}
+        auth_rate = rates.get('auth', '')
+        try:
+            num = int(auth_rate.split('/')[0])
+        except (ValueError, IndexError):
+            return False
+        return 0 < num <= 5
 
     def test_auth_endpoint_throttled_after_5_requests(self):
-        if not self._is_throttling_enabled():
-            self.skipTest('Throttling disabled in test settings')
+        if not self._auth_throttle_is_strict():
+            self.skipTest('Auth throttling not strict in these settings')
         
         User.objects.create_user('throttle', password='hunter2secure')
         for _ in range(5):
@@ -176,8 +200,8 @@ class AuthThrottleTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_register_endpoint_throttled(self):
-        if not self._is_throttling_enabled():
-            self.skipTest('Throttling disabled in test settings')
+        if not self._auth_throttle_is_strict():
+            self.skipTest('Auth throttling not strict in these settings')
         
         for i in range(5):
             self.client.post(REGISTER_URL, {

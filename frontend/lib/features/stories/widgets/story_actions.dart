@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../sharing/widgets/share_button.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 
@@ -257,10 +258,13 @@ class StoryActionsMenu extends ConsumerWidget {
   }
 
   void _shareStory(BuildContext context) {
-    // TODO: Implement share functionality (Phase 8)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share functionality coming soon!'),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ShareSheet(
+        title: story.title,
+        slug: story.slug,
+        summary: story.summary,
       ),
     );
   }

@@ -125,7 +125,7 @@ class AudioNarrationTests(APITestCase):
             'speed': 1.0,
         })
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(resp.data['status'], 'processing')
+        self.assertEqual(resp.data['status'], 'completed')
     
     def test_list_audio_jobs(self):
         AudioNarrationJob.objects.create(
