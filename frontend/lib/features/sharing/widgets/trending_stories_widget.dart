@@ -5,9 +5,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../stories/models/story_model.dart';
 import '../../stories/screens/story_detail_screen.dart';
 
-/// Horizontal scrollable widget showing trending stories.
+/// Horizontal carousel of trending story cards for the home screen.
 ///
-/// Displayed on the home screen to help users discover popular content.
+/// The section header lives in the parent screen — this widget renders only
+/// the card strip so it can be reused beneath any heading. Colors come from
+/// the active [ColorScheme], so the strip adapts to light & dark themes.
 class TrendingStoriesWidget extends StatelessWidget {
   const TrendingStoriesWidget({super.key, required this.stories});
 
@@ -19,44 +21,21 @@ class TrendingStoriesWidget extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.trending_up,
-                color: AppColors.terracotta,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Trending Now',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: stories.length,
-            itemBuilder: (context, index) {
-              final story = stories[index];
-              return _buildTrendingCard(context, story, index + 1);
-            },
-          ),
-        ),
-      ],
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      itemCount: stories.length,
+      itemBuilder: (context, index) {
+        final story = stories[index];
+        return _buildTrendingCard(context, story, index + 1);
+      },
     );
   }
 
   Widget _buildTrendingCard(BuildContext context, StoryModel story, int rank) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -66,14 +45,15 @@ class TrendingStoriesWidget extends StatelessWidget {
         );
       },
       child: Container(
-        width: 260,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 250,
+        margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.outline),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -82,7 +62,7 @@ class TrendingStoriesWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover image with rank badge
+            // Cover image with rank badge.
             Stack(
               children: [
                 ClipRRect(
@@ -92,39 +72,39 @@ class TrendingStoriesWidget extends StatelessWidget {
                   child: story.coverImage != null
                       ? CachedNetworkImage(
                           imageUrl: story.coverImage!,
-                          height: 100,
+                          height: 96,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorWidget: (_, _, _) => _buildPlaceholder(),
+                          errorWidget: (_, _, _) =>
+                              _buildPlaceholder(context),
                         )
-                      : _buildPlaceholder(),
+                      : _buildPlaceholder(context),
                 ),
-                // Rank badge
+                // Rank badge.
                 Positioned(
                   top: 8,
                   left: 8,
                   child: Container(
-                    width: 32,
-                    height: 32,
+                    width: 30,
+                    height: 30,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: rank <= 3
                           ? AppColors.ochre
-                          : AppColors.charcoalMuted,
+                          : scheme.onSurfaceVariant,
                       shape: BoxShape.circle,
                     ),
-                    child: Center(
-                      child: Text(
-                        '$rank',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
+                    child: Text(
+                      '$rank',
+                      style: TextStyle(
+                        color: rank <= 3 ? AppColors.deepEarth : scheme.surface,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ),
-                // Trending indicator
+                // Trending indicator.
                 Positioned(
                   top: 8,
                   right: 8,
@@ -134,18 +114,22 @@ class TrendingStoriesWidget extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.terracotta,
+                      color: scheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.trending_up, color: Colors.white, size: 12),
-                        SizedBox(width: 4),
+                        Icon(
+                          Icons.trending_up,
+                          color: scheme.onPrimary,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
                           'Trending',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: scheme.onPrimary,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -157,7 +141,7 @@ class TrendingStoriesWidget extends StatelessWidget {
               ],
             ),
 
-            // Content
+            // Content.
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -166,44 +150,46 @@ class TrendingStoriesWidget extends StatelessWidget {
                   children: [
                     Text(
                       story.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                      style: theme.textTheme.titleSmall,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.remove_red_eye_outlined,
-                          size: 14,
-                          color: AppColors.charcoalMuted,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          story.formattedViewCount,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.charcoalMuted,
+                    // FittedBox keeps the meta row from overflowing on
+                    // narrow cards / larger font scales.
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.remove_red_eye_outlined,
+                            size: 14,
+                            color: scheme.onSurfaceVariant,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.favorite_outline,
-                          size: 14,
-                          color: AppColors.charcoalMuted,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          story.formattedLikeCount,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.charcoalMuted,
+                          const SizedBox(width: 4),
+                          Text(
+                            story.formattedViewCount,
+                            style: theme.textTheme.bodySmall,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.favorite_outline,
+                            size: 14,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            story.formattedLikeCount,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            story.readTimeDisplay,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -215,13 +201,14 @@ class TrendingStoriesWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      height: 100,
+      height: 96,
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.terracottaTint, AppColors.ochreTint],
+          colors: [scheme.primaryContainer, scheme.secondaryContainer],
         ),
       ),
       child: const Center(child: Text('📖', style: TextStyle(fontSize: 32))),

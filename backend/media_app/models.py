@@ -118,9 +118,25 @@ class AudioNarrationJob(models.Model):
         'stories.Story',
         on_delete=models.CASCADE,
         related_name='audio_narrations',
+        null=True,
+        blank=True,
+        help_text='Story being narrated (story-based narrations).',
     )
-    
+    artifact = models.ForeignKey(
+        'qr_codes.Artifact',
+        on_delete=models.CASCADE,
+        related_name='audio_narrations',
+        null=True,
+        blank=True,
+        help_text='Artifact whose story is narrated (audio guide).',
+    )
+
     # --- TTS details ---
+    narration_text = models.TextField(
+        blank=True,
+        default='',
+        help_text='Snapshot of the text that was converted to speech.',
+    )
     voice_id = models.CharField(
         max_length=100,
         blank=True,
@@ -145,10 +161,15 @@ class AudioNarrationJob(models.Model):
     )
     
     # --- Output ---
+    audio_file = models.FileField(
+        upload_to='audio/narrations/',
+        blank=True,
+        help_text='Generated audio file (MP3).',
+    )
     audio_url = models.URLField(
         blank=True,
         default='',
-        help_text='URL to the generated audio.',
+        help_text='Legacy URL to the generated audio (kept for compatibility).',
     )
     duration = models.PositiveIntegerField(
         default=0,
@@ -178,7 +199,13 @@ class AudioNarrationJob(models.Model):
         ]
     
     def __str__(self):
-        return f'Audio Job {self.id}: {self.story.title} ({self.status})'
+        if self.story_id:
+            title = self.story.title
+        elif self.artifact_id:
+            title = self.artifact.title
+        else:
+            title = 'Narration'
+        return f'Audio Job {self.id}: {title} ({self.status})'
     
     @property
     def is_ready(self):

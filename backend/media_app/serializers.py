@@ -61,10 +61,13 @@ class VideoGenerationCreateSerializer(serializers.Serializer):
 
 class AudioNarrationJobSerializer(serializers.ModelSerializer):
     """Serializer for audio narration jobs."""
-    
-    story_title = serializers.CharField(source='story.title', read_only=True)
+
+    story_title = serializers.SerializerMethodField()
+    artifact_id = serializers.IntegerField(source='artifact.id', read_only=True, default=None)
+    artifact_title = serializers.SerializerMethodField()
     user_username = serializers.CharField(source='user.username', read_only=True)
-    
+    audio_url = serializers.SerializerMethodField()
+
     class Meta:
         model = AudioNarrationJob
         fields = [
@@ -73,6 +76,9 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
             'user_username',
             'story',
             'story_title',
+            'artifact_id',
+            'artifact_title',
+            'narration_text',
             'voice_id',
             'language',
             'speed',
@@ -88,6 +94,13 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'user',
+            'story',
+            'artifact_id',
+            'artifact_title',
+            'narration_text',
+            'voice_id',
+            'language',
+            'speed',
             'status',
             'audio_url',
             'duration',
@@ -98,14 +111,45 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
             'completed_at',
         ]
 
+    def get_story_title(self, obj):
+        """Title used for playback: the story, or the artifact for audio guides."""
+        if obj.story_id:
+            return obj.story.title
+        if obj.artifact_id:
+            return obj.artifact.title
+        return ''
+
+    def get_artifact_title(self, obj):
+        if obj.artifact_id:
+            return obj.artifact.title
+        return ''
+
+    def get_audio_url(self, obj):
+        """Serve the stored audio file as an absolute URL when available."""
+        if obj.audio_file:
+            request = self.context.get('request')
+            url = obj.audio_file.url
+            if request is not None:
+                return request.build_absolute_uri(url)
+            return url
+        return obj.audio_url
+
 
 class AudioNarrationCreateSerializer(serializers.Serializer):
     """Serializer for creating audio narration jobs."""
-    
-    story_id = serializers.IntegerField()
+
+    story_id = serializers.IntegerField(required=False)
+    artifact_id = serializers.IntegerField(required=False)
     voice_id = serializers.CharField(max_length=100, required=False)
     language = serializers.CharField(max_length=10, default='en')
     speed = serializers.FloatField(min_value=0.5, max_value=2.0, default=1.0)
+
+    def validate(self, attrs):
+        if not attrs.get('story_id') and not attrs.get('artifact_id'):
+            raise serializers.ValidationError(
+                'Either story_id or artifact_id is required.'
+            )
+        return attrs
 
 
 class VoiceSerializer(serializers.Serializer):

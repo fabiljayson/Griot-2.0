@@ -44,22 +44,35 @@ void main() {
     await tester.pumpAndSettle();
 
     // Landing branding is visible.
-    expect(find.text('AFRICAN TELLER'), findsOneWidget);
+    expect(find.text('GRIOT 2.0'), findsOneWidget);
 
-    // Design tokens match the Ancient Manuscript palette.
-    expect(AppColors.terracotta.toARGB32(), 0xFFC85A32);
-    expect(AppColors.ochre.toARGB32(), 0xFFD99B26);
-    expect(AppColors.savannahGreen.toARGB32(), 0xFF2D5A27);
-    expect(AppColors.parchment.toARGB32(), 0xFFF4EFE6);
-    expect(AppColors.charcoal.toARGB32(), 0xFF222222);
+    // Design tokens match the Griot 2.0 savannah palette.
+    expect(AppColors.terracotta.toARGB32(), 0xFFC84C09);
+    expect(AppColors.ochre.toARGB32(), 0xFFD99B22);
+    expect(AppColors.savannahGreen.toARGB32(), 0xFF5B7040);
+    expect(AppColors.parchment.toARGB32(), 0xFFF9F5F0);
+    expect(AppColors.charcoal.toARGB32(), 0xFF2C241B);
 
-    // Region cards from the landing grid render (first is visible above
-    // the fold, the last requires scrolling in the test viewport).
+    // Region cards from the landing grid render (below the fold in the
+    // 800x600 test viewport, so scroll the outer list to reveal them).
+    // The outer vertical scrollable is the first Scrollable inside the
+    // keyed home CustomScrollView (the carousels are nested beneath it).
+    final verticalScroll = find
+        .descendant(
+          of: find.byKey(const ValueKey('homeScroll')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('Bamoun'),
+      200,
+      scrollable: verticalScroll,
+    );
     expect(find.text('Bamoun'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Grassfields'),
       200,
-      scrollable: find.byType(Scrollable),
+      scrollable: verticalScroll,
     );
     expect(find.text('Grassfields'), findsOneWidget);
   });

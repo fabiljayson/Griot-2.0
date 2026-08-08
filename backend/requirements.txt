@@ -19,5 +19,8 @@ segno==1.6.1                                  # High-quality QR SVG output
 firebase-admin==6.7.0                         # FCM push notifications
 requests==2.32.4                              # Outbound calls (Luma AI, etc.)
 
+# --- Text-to-Speech (Phase 4) ---------------------------------------------
+gTTS==2.5.1                                   # Google Text-to-Speech
+
 # --- Observability (Phase 10) ---------------------------------------------
 sentry-sdk==2.28.0

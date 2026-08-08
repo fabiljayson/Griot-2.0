@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/audio_model.dart';
+import '../models/narration_job_model.dart';
+import '../services/audio_api_service.dart';
 import '../services/audio_player_service.dart';
 
 /// Audio player state notifier.
@@ -112,3 +114,88 @@ final currentAudioProvider = Provider<AudioModel?>((ref) {
 final isPlayingProvider = Provider<bool>((ref) {
   return ref.watch(audioPlayerProvider).isPlaying;
 });
+
+// ---------------------------------------------------------------------------
+// Narration generation (gTTS)
+// ---------------------------------------------------------------------------
+
+/// State for TTS narration requests.
+class AudioNarrationState {
+  const AudioNarrationState({
+    this.isGenerating = false,
+    this.lastJob,
+    this.errorMessage,
+  });
+
+  final bool isGenerating;
+  final NarrationJobModel? lastJob;
+  final String? errorMessage;
+
+  AudioNarrationState copyWith({
+    bool? isGenerating,
+    NarrationJobModel? lastJob,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return AudioNarrationState(
+      isGenerating: isGenerating ?? this.isGenerating,
+      lastJob: lastJob ?? this.lastJob,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+/// Notifier for generating TTS narration and playing it.
+class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
+  AudioNarrationNotifier({required this.onReady})
+    : _apiService = AudioApiService.instance,
+      super(const AudioNarrationState());
+
+  final AudioApiService _apiService;
+
+  /// Called with the generated job when narration completes successfully.
+  final Future<void> Function(NarrationJobModel job) onReady;
+
+  /// Generate narration for a story or artifact and auto-play the audio.
+  Future<NarrationJobModel?> generateNarration({
+    int? storyId,
+    int? artifactId,
+    String language = 'en',
+  }) async {
+    state = state.copyWith(isGenerating: true, clearError: true);
+    try {
+      final job = await _apiService.generateNarration(
+        storyId: storyId,
+        artifactId: artifactId,
+        language: language,
+      );
+      state = state.copyWith(isGenerating: false, lastJob: job);
+
+      if (job.isCompleted && job.audioUrl.isNotEmpty) {
+        await onReady(job);
+      }
+      return job;
+    } catch (e) {
+      state = state.copyWith(
+        isGenerating: false,
+        errorMessage: 'Failed to generate narration: $e',
+      );
+      return null;
+    }
+  }
+
+  /// Clear the last generation error.
+  void clearError() {
+    state = state.copyWith(clearError: true);
+  }
+}
+
+/// Narration generation provider. Plays completed narrations automatically.
+final audioNarrationProvider =
+    StateNotifierProvider<AudioNarrationNotifier, AudioNarrationState>((ref) {
+      return AudioNarrationNotifier(
+        onReady: (job) async {
+          await ref.read(audioPlayerProvider.notifier).play(job.toAudioModel());
+        },
+      );
+    });

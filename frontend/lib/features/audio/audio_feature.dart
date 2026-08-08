@@ -9,8 +9,10 @@ library;
 
 // Models
 export 'models/audio_model.dart';
+export 'models/narration_job_model.dart';
 
 // Services
+export 'services/audio_api_service.dart';
 export 'services/audio_player_service.dart';
 
 // Providers

@@ -40,6 +40,10 @@ build/
 node_modules/
 .pnpm-store/
 
+# --- Secrets ---------------------------------------------------------------
+# Never commit API keys, tokens, or credentials.
+API keys.*
+
 # --- Misc -----------------------------------------------------------------
 .DS_Store
 Thumbs.db
