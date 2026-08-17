@@ -34,6 +34,16 @@ DATABASES = {
     }
 }
 
+# Speed up the suite: the MD5 hasher is only used for test fixtures, never
+# in production (base.py keeps the full Argon2/PBKDF2 chain).
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
+
+# Collect outbound email in memory so tests can assert on it without a real
+# SMTP server.
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
 # This is a settings module, not a test module — keep unittest discovery from
 # loading it as one (the `test*.py` name pattern would otherwise match).
 __test__ = False

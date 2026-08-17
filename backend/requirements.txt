@@ -1,6 +1,14 @@
 # --- Core web framework -------------------------------------------------
 Django==5.2.4
 python-dotenv==1.1.0                       # Load backend/.env in settings
+dj-database-url==3.1.2                     # Parse DATABASE_URL (prod Postgres)
+
+# --- Database (prod Postgres) ---------------------------------------------
+psycopg[binary]==3.3.4                        # PostgreSQL driver for prod
+
+# --- Production WSGI server -------------------------------------------------
+# Unix-only: skipped on Windows dev machines via the platform marker.
+gunicorn==26.0.0; sys_platform != 'win32'      # WSGI server (Procfile/render)
 
 # --- REST API (Phase 1) -------------------------------------------------
 djangorestframework==3.16.0

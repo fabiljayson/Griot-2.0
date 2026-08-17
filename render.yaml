@@ -1,0 +1,42 @@
+# Render Blueprint — deploys the Griot 2.0 Django backend as-is.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# To deploy: push this repo, then in Render choose "Blueprint" and point it at
+# this file. You'll be prompted for DJANGO_SECRET_KEY (sync: false). Everything
+# else is wired up below; ALLOWED_HOSTS/CORS fall back to Render's own
+# RENDER_EXTERNAL_HOSTNAME automatically (see backend/config/settings/prod.py).
+services:
+  - type: web
+    name: griot-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/health/
+    autoDeployTrigger: commit
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      # Optional overrides — omit to fall back to RENDER_EXTERNAL_HOSTNAME:
+      # - key: DJANGO_ALLOWED_HOSTS
+      #   value: api.example.com,www.example.com
+      # - key: DJANGO_CORS_ORIGINS
+      #   value: https://app.example.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: griot-db
+          property: connectionString
+      - key: SENTRY_DSN
+        sync: false
+
+databases:
+  - name: griot-db
+    plan: free
+    postgresMajorVersion: "16"

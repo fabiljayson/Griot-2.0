@@ -48,6 +48,7 @@ Health probes: `GET http://127.0.0.1:8000/api/health/` (liveness), `/api/health/
 | Module                  | Purpose                                  |
 | ----------------------- | ---------------------------------------- |
 | `config.settings.dev`   | Local dev, DEBUG on, CORS wide open      |
+| `config.settings.test`  | Test runner: high throttle limits, in-memory DB, fast hashing |
 | `config.settings.prod`  | Production, DEBUG off, Sentry enabled    |
 
 The default settings module is `config.settings.dev` (see `manage.py`).
@@ -60,7 +61,53 @@ Required for production (`config.settings.prod`):
 - `DJANGO_SECRET_KEY`
 - `DJANGO_ALLOWED_HOSTS`
 - `DJANGO_CORS_ORIGINS` (comma-separated allowed web origins)
+- `DATABASE_URL` (optional — Postgres URL; falls back to SQLite if unset)
 - `SENTRY_DSN` (optional — enables error monitoring)
+
+Run tests with `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test`
+(in-memory DB, no rate limits). Note: `wsgi.py`/`asgi.py` default to
+`config.settings.dev` when `DJANGO_SETTINGS_MODULE` is unset — always set it
+explicitly in deployment.
+
+## Deployment
+
+The repo ships gunicorn (`gunicorn==26.0.0`, Unix-only via a platform marker),
+a root-level `Procfile` (Heroku-style), and a root-level `render.yaml`
+(Render Blueprint) so the backend deploys as-is.
+
+### Render (recommended)
+
+1. Push the repo to GitHub/GitLab.
+2. In Render: **New → Blueprint** and select the repo.
+3. Enter a `DJANGO_SECRET_KEY` when prompted (`sync: false`).
+4. Deploy. The Blueprint provisions a Postgres database (`griot-db`),
+   runs `collectstatic` on build and `migrate` pre-deploy, and serves
+   gunicorn at `https://<app>.onrender.com` with health checks on
+   `/api/health/`.
+
+`ALLOWED_HOSTS`/CORS automatically fall back to Render's
+`RENDER_EXTERNAL_HOSTNAME`; override with `DJANGO_ALLOWED_HOSTS` /
+`DJANGO_CORS_ORIGINS` env vars for a custom domain. Add the custom domain
+under **Settings → Custom Domains**.
+
+### Heroku-style platforms
+
+Push the repo and run with the root `Procfile`:
+
+```
+web: cd backend && DJANGO_SETTINGS_MODULE=config.settings.prod gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT
+```
+
+Set config vars: `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`,
+`DJANGO_CORS_ORIGINS`, and `DATABASE_URL` (Postgres add-on).
+
+### Notes
+
+- `prod.py` fails fast if `DJANGO_SECRET_KEY` is missing or is the dev
+default, and requires `DJANGO_ALLOWED_HOSTS` (or `RENDER_EXTERNAL_HOSTNAME`).
+- Media uploads go to `MEDIA_ROOT` on the instance disk — ephemeral. For
+  persistent uploads, point `MEDIA_ROOT`/storage at an external object store
+  (S3, etc.) before serving real traffic.
 
 ## Observability (Phase 10)
 
