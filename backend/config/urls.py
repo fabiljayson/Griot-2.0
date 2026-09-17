@@ -22,6 +22,10 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    # Server-rendered web interface (mirrors the Flutter mobile app).
+    path('', include('web.urls')),
+    # Artifacts with auto-generated QR codes.
+    path('artifacts/', include('artifacts.urls')),
 ]
 
 # Serve uploaded media in development.

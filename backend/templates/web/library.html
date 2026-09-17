@@ -1,0 +1,144 @@
+{% extends 'web/base.html' %}
+{% load web_extras %}
+{% comment %}
+Library — mirrors mobile LibraryScreen: personal reading hub with
+continue-reading progress cards, recently-read list, bookmarks and
+my-stories (contributors) sections. All glyphs are Font Awesome icons.
+{% endcomment %}
+
+{% block title %}Library — Griot AI{% endblock %}
+
+{% block content %}
+<header class="mb-8">
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">Your Library</h1>
+  <p class="mt-1 text-sm text-secondary-text">Everything you've read, saved, and created.</p>
+</header>
+
+{# ── Continue reading — mirrors mobile ContinueReadingWidget ── #}
+<section class="mb-10">
+  <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
+    {% icon 'book-open' 'text-lg text-terracotta' %} Continue Reading
+  </h2>
+  {% if continue_reading %}
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for progress in continue_reading %}
+    <a href="{% url 'web:story-detail' progress.story.slug %}"
+       class="group relative overflow-hidden rounded-2xl border border-brand-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-warm-brown dark:bg-deep-earth">
+      <div class="flex items-start gap-3">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-terracotta/10">
+          {% if progress.story.categories.first %}{% emoji_icon progress.story.categories.first.icon 'text-xl text-terracotta' %}{% else %}{% icon 'book-open' 'text-xl text-terracotta' %}{% endif %}
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3 class="truncate font-semibold group-hover:text-terracotta">{{ progress.story.title }}</h3>
+          <p class="text-xs text-secondary-text">{{ progress.story.author.username }} • {{ progress.story.estimated_read_time }} min</p>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-3">
+        <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-terracotta/10">
+          <div class="h-full rounded-full bg-terracotta" style="width: {{ progress.progress_percent }}%"></div>
+        </div>
+        <span class="text-xs font-bold text-terracotta">{{ progress.progress_percent }}%</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-brand-border p-8 text-center dark:border-warm-brown">
+    {% icon 'book-open' 'text-3xl text-terracotta/50' %}
+    <p class="mt-3 text-sm text-secondary-text">Nothing in progress — start a story and it will appear here.</p>
+    <a href="{% url 'web:stories' %}" class="mt-4 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">Browse stories</a>
+  </div>
+  {% endif %}
+</section>
+
+{# ── Bookmarks — mirrors mobile bookmarks tab ── #}
+<section class="mb-10">
+  <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
+    {% icon 'bookmark' 'text-lg text-ochre' %} Bookmarked
+  </h2>
+  {% if bookmarks %}
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    {% for bookmark in bookmarks %}
+    {% include 'web/partials/story_card.html' with story=bookmark.story %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-brand-border p-8 text-center dark:border-warm-brown">
+    {% icon 'bookmark-regular' 'text-3xl text-ochre/50' %}
+    <p class="mt-3 text-sm text-secondary-text">No saved stories yet. Tap the bookmark icon on any story.</p>
+  </div>
+  {% endif %}
+</section>
+
+{# ── Recently read — mirrors mobile recently-read list ── #}
+{% if recently_read %}
+<section class="mb-10">
+  <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
+    {% icon 'clock' 'text-lg text-savannah' %} Recently Read
+  </h2>
+  <div class="overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
+    <ul class="divide-y divide-brand-border dark:divide-warm-brown">
+      {% for progress in recently_read %}
+      <li>
+        <a href="{% url 'web:story-detail' progress.story.slug %}" class="group flex items-center gap-4 px-4 py-3.5 transition hover:bg-terracotta-tint/20">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-savannah/10">
+            {% if progress.story.categories.first %}{% emoji_icon progress.story.categories.first.icon 'text-sm text-savannah' %}{% else %}{% icon 'book-open' 'text-sm text-savannah' %}{% endif %}
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold group-hover:text-terracotta">{{ progress.story.title }}</p>
+            <p class="text-xs text-secondary-text">
+              {% if progress.completed %}Completed{% else %}{{ progress.progress_percent }}% read{% endif %} • {{ progress.updated_at|date:'M j' }}
+            </p>
+          </div>
+          {% icon 'chevron-right' 'text-xs text-secondary-text' %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{# ── My stories — mirrors mobile My Stories (contributor+) ── #}
+{% if is_contributor_plus and my_stories is not None %}
+<section class="mb-4">
+  <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
+    {% icon 'feather' 'text-lg text-terracotta' %} My Stories
+  </h2>
+  {% if my_stories %}
+  <div class="overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
+    <ul class="divide-y divide-brand-border dark:divide-warm-brown">
+      {% for story in my_stories %}
+      <li class="flex items-center gap-4 px-4 py-3.5">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-terracotta/10">
+          {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-sm text-terracotta' %}{% else %}{% icon 'book-open' 'text-sm text-terracotta' %}{% endif %}
+        </span>
+        <div class="min-w-0 flex-1">
+          <a href="{% url 'web:story-detail' story.slug %}" class="block truncate text-sm font-semibold hover:text-terracotta">{{ story.title }}</a>
+          <p class="text-xs text-secondary-text">{{ story.estimated_read_time }} min • {{ story.view_count }} views</p>
+        </div>
+        {% if story.status == 'draft' or story.status == 'pending' or user.role == 'admin' or user.role == 'institution_manager' %}
+        <a href="{% url 'web:story-edit' story.slug %}" class="rounded-lg p-2 text-secondary-text transition hover:bg-terracotta-tint/40 hover:text-terracotta" title="Edit story" aria-label="Edit {{ story.title }}">
+          {% icon 'edit' 'text-sm' %}
+        </a>
+        {% endif %}
+        <span class="rounded-full px-2.5 py-1 text-[11px] font-bold
+                     {% if story.status == 'published' %}bg-savannah-tint text-savannah{% elif story.status == 'pending' %}bg-ochre-tint text-ochre{% elif story.status == 'draft' %}bg-brand-border/50 text-secondary-text{% elif story.status == 'rejected' %}bg-brand-error/10 text-brand-error{% else %}bg-secondary-text/10 text-secondary-text{% endif %}">
+          {{ story.get_status_display }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-brand-border p-8 text-center dark:border-warm-brown">
+    {% icon 'feather' 'text-3xl text-terracotta/50' %}
+    <p class="mt-3 text-sm text-secondary-text">You haven't submitted any stories yet.</p>
+    <a href="{% url 'web:story-new' %}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">
+      {% icon 'feather' 'text-xs' %} Write your first story
+    </a>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

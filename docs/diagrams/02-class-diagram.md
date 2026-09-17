@@ -34,8 +34,6 @@ classDiagram
         ADMIN = 'admin'
     }
 
-    User --> UserRole : has
-
     %% ─── Stories ──────────────────────────────────────────
     class Story {
         +int id
@@ -46,6 +44,7 @@ classDiagram
         +String language: Language
         +String region
         +String tags
+        +List co_authors
         +ImageField cover_image
         +String cover_image_blurhash
         +String audio_url
@@ -123,6 +122,15 @@ classDiagram
         +String resolution_notes
     }
 
+    class FlagReason {
+        <<enumeration>>
+        CULTURAL_INACCURACY = 'cultural_inaccuracy'
+        INAPPROPRIATE_CONTENT = 'inappropriate_content'
+        COPYRIGHT_VIOLATION = 'copyright_violation'
+        WRONG_CATEGORY = 'wrong_category'
+        OTHER = 'other'
+    }
+
     class StoryShare {
         +int id
         +Story story
@@ -146,7 +154,9 @@ classDiagram
 
     Story --> StoryStatus : has
     Story --> StoryLanguage : has
+    StoryFlag --> FlagReason : has
     User "1" --> "*" Story : authors
+    Story "*" --> "*" User : co_authors
     User "1" --> "*" StoryBookmark : creates
     Story "1" --> "*" StoryBookmark : has
     User "1" --> "*" StoryLike : creates
@@ -248,6 +258,13 @@ classDiagram
         +int order
     }
 
+    class QuestionDifficulty {
+        <<enumeration>>
+        EASY = 'easy'
+        MEDIUM = 'medium'
+        HARD = 'hard'
+    }
+
     class QuizAttempt {
         +int id
         +User user
@@ -265,6 +282,13 @@ classDiagram
         +calculate_score() int
     }
 
+    class QuizAttemptStatus {
+        <<enumeration>>
+        IN_PROGRESS = 'in_progress'
+        COMPLETED = 'completed'
+        TIMED_OUT = 'timed_out'
+    }
+
     class Badge {
         +int id
         +String name
@@ -280,6 +304,15 @@ classDiagram
         +bool is_active
         +bool is_secret
         +DateTime created_at
+    }
+
+    class BadgeCategory {
+        <<enumeration>>
+        READING = 'reading'
+        QUIZ = 'quiz'
+        SOCIAL = 'social'
+        EXPLORATION = 'exploration'
+        SPECIAL = 'special'
     }
 
     class UserBadge {
@@ -321,10 +354,23 @@ classDiagram
         +int quizzes_passed
         +int level_achieved
         +String pdf_url
+        +save() void
+    }
+
+    class CertificateType {
+        <<enumeration>>
+        READING = 'reading'
+        QUIZ = 'quiz'
+        EXPLORER = 'explorer'
+        CONTRIBUTOR = 'contributor'
     }
 
     Quiz "1" --> "1" Story : tied_to
     Quiz "1" --> "*" QuizQuestion : contains
+    QuizQuestion --> QuestionDifficulty : has
+    QuizAttempt --> QuizAttemptStatus : has
+    Badge --> BadgeCategory : has
+    Certificate --> CertificateType : has
     User "1" --> "*" QuizAttempt : attempts
     Quiz "1" --> "*" QuizAttempt : has
     User "1" --> "*" UserBadge : earns
@@ -390,6 +436,17 @@ classDiagram
     Artifact "1" --> "*" AudioNarrationJob : has
     VideoGenerationJob --> JobStatus : has
     AudioNarrationJob --> JobStatus : has
+
+    %% ─── Web UI (web app) ─────────────────────────────────
+    class WebUserSettings {
+        +int id
+        +User user
+        +String language: en or fr
+        +String theme: light, dark or system
+        +DateTime updated_at
+    }
+
+    User "1" --> "1" WebUserSettings : has
 ```
 
 ## Frontend Classes (Flutter/Dart)
@@ -456,6 +513,26 @@ classDiagram
         +Future clearTokens() void
     }
 
+    class LoginScreen {
+        +build() Widget
+    }
+
+    class RegisterScreen {
+        +build() Widget
+    }
+
+    class ProfileScreen {
+        +TextEditingController _firstNameController
+        +TextEditingController _lastNameController
+        +bool _isEditing
+        +build() Widget
+    }
+
+    class RoleBadge {
+        +UserRole role
+        +build() Widget
+    }
+
     class AuthProvider {
         +AsyncValue authState
         +login() Future
@@ -481,6 +558,8 @@ classDiagram
     AuthProvider --> AuthRepository : uses
     AuthWrapper --> AuthProvider : watches
     AuthInterceptor --> AuthRepository : uses
+    ProfileScreen --> AuthProvider : watches
+    ProfileScreen --> RoleBadge : displays
 
     %% ─── Stories ──────────────────────────────────────────
     class StoryModel {
@@ -508,6 +587,32 @@ classDiagram
         -_loadFromCache() Future
     }
 
+    class StoriesScreen {
+        +TextEditingController _searchController
+        +build() Widget
+    }
+
+    class StoryDetailScreen {
+        +build() Widget
+    }
+
+    class StoryFormScreen {
+        +TextEditingController _titleController
+        +TextEditingController _contentController
+        +TextEditingController _summaryController
+        +TextEditingController _tagsController
+        +TextEditingController _regionController
+        +TextEditingController _culturalContextController
+        +TextEditingController _moralLessonController
+        +TextEditingController _sourceController
+        +build() Widget
+    }
+
+    class StoryCard {
+        +StoryModel story
+        +build() Widget
+    }
+
     class StoryRepository {
         +fetchStories() Future
         +searchStories() Future
@@ -517,6 +622,10 @@ classDiagram
 
     StoryListNotifier --> StoryRepository : uses
     StoryRepository --> ApiClient : HTTP calls
+    StoriesScreen --> StoryListNotifier : watches
+    StoryDetailScreen --> StoryRepository : reads
+    StoryFormScreen --> StoryRepository : saves
+    StoryCard --> StoryModel : displays
 
     %% ─── Gamification ─────────────────────────────────────
     class GamificationScreen {
@@ -536,4 +645,82 @@ classDiagram
 
     GamificationScreen --> QuizPlayerWidget : contains
     GamificationScreen --> BadgeCard : displays
+```
+
+## Web UI Classes (Django `web` app)
+
+The server-rendered web interface reuses the backend models above; these are
+its web-only classes.
+
+```mermaid
+classDiagram
+    title Griot 2.0 — Web UI Classes (web app)
+
+    class WebUserSettings {
+        +User user
+        +String language
+        +String theme
+    }
+
+    class web_views {
+        <<module>>
+        +home_view(request)
+        +stories_view(request)
+        +story_detail_view(request, slug)
+        +story_form_view(request, slug)
+        +library_view(request)
+        +artifact_list_view(request)
+        +artifact_detail_view(request, slug)
+        +gamification_view(request)
+        +quizzes_view(request)
+        +quiz_play_view(request, quiz_id)
+        +profile_view(request)
+        +admin_dashboard_view(request)
+        +WebLoginView
+        +WebLogoutView
+    }
+
+    class web_actions {
+        <<module>>
+        +story_like(request, slug)
+        +story_bookmark(request, slug)
+        +story_flag(request, slug)
+        +story_share(request, slug)
+        +story_progress(request, slug)
+        +story_save(request, slug)
+        +story_delete(request, slug)
+        +story_generate_audio(request, slug)
+        +story_generate_video(request, slug)
+        +artifact_generate_audio(request, slug)
+        +quiz_start(request, quiz_id)
+        +quiz_answer(request, quiz_id, question_id)
+        +quiz_finish(request, quiz_id)
+        +profile_update(request)
+        +profile_delete(request)
+        +register(request)
+    }
+
+    class StoryTemplates {
+        <<files>>
+        base.html
+        home.html
+        stories.html
+        story_detail.html
+        story_form.html
+        library.html
+        artifacts.html
+        artifact_detail.html
+        gamification.html
+        quizzes.html
+        quiz_play.html
+        profile.html
+        admin_dashboard.html
+    }
+
+    web_actions --> web_views : redirects to
+    web_views --> StoryTemplates : renders
+    web_views --> WebUserSettings : reads per-user prefs
+    web_actions --> Story : same models as the API
+    web_actions --> AudioNarrationJob : generates via TTS
+    web_actions --> VideoGenerationJob : generates via Luma AI
 ```

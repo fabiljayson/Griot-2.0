@@ -1,0 +1,150 @@
+{% extends 'web/base.html' %}
+{% load static %}
+{% load web_extras %}
+{% comment %}
+Artifact detail — mirrors mobile ArtifactDetailScreen: hero image, metadata
+grid (culture, region, date, materials, dimensions, museum location),
+QR deep link info and related stories.
+{% endcomment %}
+
+{% block title %}{{ artifact.title }} — Griot AI{% endblock %}
+
+{% block content %}
+<article>
+  {# ── Hero ── #}
+  <header class="relative -mx-4 -mt-6 overflow-hidden sm:-mx-6 lg:-mx-8 lg:rounded-b-3xl">
+    <div class="aspect-[21/9] max-h-80 w-full bg-gradient-to-br from-ochre-tint to-terracotta-tint dark:from-warm-brown dark:to-deep-earth">
+      {% if artifact.image %}
+      <img src="{{ artifact.image.url }}" alt="{{ artifact.title }}" class="h-full w-full object-cover">
+      {% else %}
+      <div class="flex h-full w-full items-center justify-center">
+        {% artifact_category_icon artifact.category 'text-7xl text-terracotta/40' %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+    <div class="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+      <div class="mx-auto max-w-3xl">
+        <span class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-terracotta dark:bg-mud-charcoal/90 dark:text-ochre-dark">
+          {% artifact_category_icon artifact.category 'text-[10px]' %} {{ artifact.get_category_display }}
+        </span>
+        <h1 class="font-display text-2xl font-bold text-white drop-shadow sm:text-4xl">{{ artifact.title }}</h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-3xl">
+    {# ── Metadata grid — mirrors mobile metadata section ── #}
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {% if artifact.culture %}
+      <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'users' 'text-[10px]' %} Culture</p>
+        <p class="mt-1 text-sm font-bold">{{ artifact.culture }}</p>
+      </div>
+      {% endif %}
+      {% if artifact.region %}
+      <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'location' 'text-[10px]' %} Region</p>
+        <p class="mt-1 text-sm font-bold">{{ artifact.region }}</p>
+      </div>
+      {% endif %}
+      {% if artifact.estimated_date %}
+      <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'calendar' 'text-[10px]' %} Estimated Date</p>
+        <p class="mt-1 text-sm font-bold">{{ artifact.estimated_date }}</p>
+      </div>
+      {% endif %}
+      {% if artifact.materials %}
+      <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'layer-group' 'text-[10px]' %} Materials</p>
+        <p class="mt-1 text-sm font-bold">{{ artifact.materials }}</p>
+      </div>
+      {% endif %}
+      {% if artifact.dimensions %}
+      <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'gauge' 'text-[10px]' %} Dimensions</p>
+        <p class="mt-1 text-sm font-bold">{{ artifact.dimensions }}</p>
+      </div>
+      {% endif %}
+      {% if artifact.museum_name %}
+      <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'landmark' 'text-[10px]' %} Location</p>
+        <p class="mt-1 text-sm font-bold">
+          {{ artifact.museum_name }}{% if artifact.floor %} • {{ artifact.floor }}{% endif %}{% if artifact.display_case %} • {{ artifact.display_case }}{% endif %}
+        </p>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ── Description ── #}
+    <div class="story-content mt-8">
+      {{ artifact.description|markdown }}
+    </div>
+
+    {# ── Audio guide — mirrors the mobile artifact narration player (§6) ── #}
+    {% if narration %}
+    <section class="mt-8 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
+      <div class="flex flex-wrap items-center gap-4">
+        <button type="button" id="audio-toggle" data-audio-src="{{ narration.url }}"
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark"
+                aria-label="Play audio guide">
+          <span id="audio-icon" class="fa-solid fa-play" aria-hidden="true"></span>
+        </button>
+        <div class="min-w-0 flex-1">
+          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-ochre' %} Audio guide</h2>
+          <p class="text-xs text-secondary-text">Listen to the story of this artifact{% if narration.duration %} • {{ narration.duration }}s{% endif %}</p>
+        </div>
+      </div>
+      <audio id="story-audio" preload="none" class="mt-3 w-full"></audio>
+    </section>
+
+    {# ── Audio guide generation — mirrors POST /api/media/audio/ for artifacts ── #}
+    {% elif can_generate_audio %}
+    <section class="mt-8 rounded-2xl border border-dashed border-ochre/40 bg-ochre-tint/20 p-5 dark:bg-ochre/5">
+      <div class="flex flex-wrap items-center gap-4">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ochre/15 text-ochre">
+          {% icon 'microphone' 'text-lg' %}
+        </span>
+        <div class="min-w-0 flex-1">
+          <h2 class="font-display text-base font-bold">No audio guide yet</h2>
+          <p class="text-xs text-secondary-text">Generate a narrated guide so visitors can listen to this artifact's story.</p>
+        </div>
+        <form method="post" action="{% url 'web:artifact-generate-audio' artifact.slug %}">
+          {% csrf_token %}
+          <button class="rounded-xl bg-ochre px-5 py-2.5 text-sm font-bold text-deep-earth transition hover:opacity-90">
+            {% icon 'microphone' 'text-xs' %} Generate audio guide
+          </button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── QR deep link — mirrors mobile "scan to view" hint ── #}
+    <div class="mt-8 flex items-center gap-4 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
+      <span class="fa-solid fa-qrcode text-4xl text-terracotta" aria-hidden="true"></span>
+      <div>
+        <h2 class="font-display text-base font-bold">Found this in a museum?</h2>
+        <p class="text-sm text-secondary-text">Scan the QR code beside the artifact to open this page instantly.</p>
+      </div>
+    </div>
+
+    {# ── Related stories — mirrors mobile related stories cards ── #}
+    {% if related_stories %}
+    <section class="mt-10 mb-4">
+      <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
+        {% icon 'book-open' 'text-lg text-terracotta' %} Related Stories
+      </h2>
+      <div class="grid gap-5 sm:grid-cols-3">
+        {% for story in related_stories %}
+        {% include 'web/partials/story_card.html' with story=story %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</article>
+{% endblock %}
+
+{% block extra_js %}
+{% if narration %}<script src="{% static 'web/js/audio.js' %}" defer></script>{% endif %}
+{% endblock %}

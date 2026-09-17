@@ -114,7 +114,8 @@ flutter run --dart-define=NGROK_URL=https://xxxx-xx-xx-xx-xx.ngrok-free.app
 - **Framework:** Django REST Framework
 - **Auth:** JWT (access + refresh tokens)
 - **Database:** SQLite (dev) / PostgreSQL (prod)
-- **API:** RESTful with OpenAPI documentation
+- **Web UI:** Server-rendered Django templates mirroring this app (session auth, same models)
+- **Docs:** See `../ARCHITECTURE.md` and `../FUNCTIONALITY_OUTLINE.md`
 
 ## Offline-First Architecture
 
@@ -133,7 +134,8 @@ Tables:
 ### Authentication
 - JWT access + refresh tokens (30 min access, 7 day refresh)
 - 4-tier RBAC: Visitor → Contributor → Institution Manager → Admin
-- Social login support (Google, Apple)
+- Email + username registration; role assigned at sign-up (visitor/contributor)
+- Offline registration queue syncs when back online
 - Onboarding screen on first launch
 
 ### Stories

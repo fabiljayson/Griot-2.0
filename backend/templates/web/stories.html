@@ -1,0 +1,127 @@
+{% extends 'web/base.html' %}
+{% load web_extras %}
+{% comment %}
+Stories discovery — mirrors mobile StoriesScreen: sticky search bar with
+filter toggle, collapsible filter chips (language / category / sort),
+masonry-style responsive grid, empty & error states.
+{% endcomment %}
+
+{% block title %}Stories — Griot AI{% endblock %}
+
+{% block content %}
+{# ── Search bar — mirrors mobile _SearchBar ── #}
+<div class="sticky top-0 z-30 -mx-4 -mt-6 mb-6 border-b border-brand-border bg-sand/95 px-4 py-3 backdrop-blur dark:border-warm-brown dark:bg-mud-charcoal/95 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+  <form method="get" class="flex items-center gap-2" id="story-search-form">
+    <div class="relative flex-1">
+      <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-secondary-text">{% icon 'search' 'text-sm' %}</span>
+      <input type="search" name="search" value="{{ search }}"
+             placeholder="Search stories…"
+             class="w-full rounded-xl border border-transparent bg-white py-2.5 pl-11 pr-10 text-sm shadow-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 dark:bg-deep-earth">
+      {% if search %}
+      <button type="button" id="clear-search" title="Clear search" aria-label="Clear search"
+              class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-secondary-text hover:bg-terracotta-tint/50">
+        {% icon 'close' 'text-xs' %}
+      </button>
+      {% endif %}
+    </div>
+    <button type="button" id="filter-toggle" title="Filters" aria-label="Toggle filters" aria-expanded="false"
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white shadow-sm transition hover:border-brand-border dark:bg-deep-earth {% if selected_language or selected_category or selected_region %}text-terracotta{% else %}text-secondary-text{% endif %}">
+      {% icon 'filter' 'text-sm' %}
+    </button>
+  </form>
+
+  {# ── Filters panel — mirrors mobile _FilterChips ── #}
+  <div id="filters-panel" class="mt-3 space-y-3 {% if not selected_language and not selected_category and not selected_region %}hidden{% endif %}">
+    <div>
+      <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-secondary-text">Language</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}sort={{ selected_sort }}"
+           class="rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if not selected_language %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">All</a>
+        {% for code, label in languages %}
+        <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}language={{ code }}&sort={{ selected_sort }}"
+           class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if selected_language == code %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+          {{ label }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-secondary-text">Category</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_language %}language={{ selected_language }}&{% endif %}sort={{ selected_sort }}"
+           class="rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if not selected_category %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">All</a>
+        {% for category in categories %}
+        <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_language %}language={{ selected_language }}&{% endif %}category={{ category.slug }}&sort={{ selected_sort }}"
+           class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if selected_category == category.slug %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+          {% emoji_icon category.icon 'text-xs' %} {{ category.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <p class="text-xs font-semibold uppercase tracking-wide text-secondary-text">Sort by</p>
+      {% for value, label in sort_options.items %}
+      <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_language %}language={{ selected_language }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort={{ value }}"
+         class="rounded-full px-3 py-1.5 text-xs font-medium transition {% if selected_sort == value %}bg-deep-earth text-sand dark:bg-sand dark:text-deep-earth{% else %}text-secondary-text hover:bg-terracotta-tint/40{% endif %}">{{ label }}</a>
+      {% endfor %}
+      {% if selected_language or selected_category or selected_region or search %}
+      <a href="{% url 'web:stories' %}" class="ml-auto flex items-center gap-1.5 text-xs font-semibold text-terracotta hover:underline">
+        {% icon 'close' 'text-[10px]' %} Clear all
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Results header ── #}
+<div class="mb-5 flex items-baseline justify-between">
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">
+    {% if search %}Results for "{{ search }}"{% else %}Discover Stories{% endif %}
+  </h1>
+  <span class="text-sm text-secondary-text">{{ stories|length }} {{ stories|length|yesno:'story,stories' }}</span>
+</div>
+
+{# ── Story grid — responsive masonry-like layout ── #}
+{% if stories %}
+<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  {% for story in stories %}
+  {% include 'web/partials/story_card.html' with story=story %}
+  {% endfor %}
+</div>
+{% else %}
+{# Empty state — mirrors mobile _EmptyWidget #}
+<div class="py-24 text-center">
+  <span class="fa-solid fa-book-open text-6xl text-ochre" aria-hidden="true"></span>
+  <p class="mx-auto mt-5 max-w-sm text-lg text-secondary-text">
+    {% if search %}No stories found for "{{ search }}"{% else %}No stories yet. Be the first to share!{% endif %}
+  </p>
+  {% if search %}
+  <a href="{% url 'web:stories' %}" class="mt-5 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">Browse all stories</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filter panel toggle — mirrors the mobile filter icon button.
+  (function () {
+    var toggle = document.getElementById('filter-toggle');
+    var panel = document.getElementById('filters-panel');
+    if (!toggle || !panel) return;
+    toggle.addEventListener('click', function () {
+      panel.classList.toggle('hidden');
+      toggle.setAttribute('aria-expanded', String(!panel.classList.contains('hidden')));
+    });
+    var clearBtn = document.getElementById('clear-search');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        var input = document.querySelector('#story-search-form input[name="search"]');
+        if (input) { input.value = ''; input.form.submit(); }
+      });
+    }
+  })();
+</script>
+{% endblock %}

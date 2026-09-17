@@ -1,0 +1,90 @@
+{% extends 'web/base.html' %}
+{% load web_extras %}
+
+{% comment %}
+Auth base — mirrors the mobile BrandScaffold:
+  wide (lg+): dark brand panel left (logo, name, tagline, proverb, metrics) + form right
+  compact:    brand header on top, form below
+{% endcomment %}
+
+{% block content %}
+<div class="mx-auto -my-6 max-w-6xl lg:my-0">
+  <div class="grid min-h-[calc(100vh-2rem)] lg:grid-cols-9 lg:min-h-screen">
+    {# ── Brand panel (wide screens) — mirrors BrandPanel ── #}
+    <div class="relative hidden overflow-hidden bg-gradient-to-br from-mud-charcoal via-deep-earth to-warm-brown lg:col-span-5 lg:flex lg:flex-col lg:items-center lg:justify-center lg:px-12">
+      <!-- Decorative brand pattern -->
+      <svg class="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07]" aria-hidden="true">
+        <defs>
+          <pattern id="brand-weave" width="56" height="56" patternUnits="userSpaceOnUse">
+            <path d="M0 28 Q14 14 28 28 T56 28" fill="none" stroke="#E8B854" stroke-width="1.2"/>
+            <circle cx="28" cy="28" r="3" fill="none" stroke="#C84C09" stroke-width="1.2"/>
+            <path d="M28 0 L28 10 M28 46 L28 56" stroke="#D99B22" stroke-width="1.2"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#brand-weave)"/>
+      </svg>
+      <!-- Warm glow — mirrors the RadialGradient in BrandPanel -->
+      <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 60% 50% at 35% 45%, rgba(200,76,9,.14), transparent 70%);"></div>
+
+      <div class="relative z-10 flex flex-col items-center text-center">
+        <span class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-warm-brown to-mud-charcoal ring-2 ring-ochre-dark/60 shadow-xl shadow-terracotta/30">
+          <span class="fa-solid fa-drum text-3xl text-ochre-dark" aria-hidden="true"></span>
+        </span>
+
+        <p class="mt-8 font-display text-4xl font-bold text-sand">
+          Griot <span class="text-ochre-dark">AI</span>
+        </p>
+        <p class="mt-2 text-sm font-medium tracking-[0.22em] text-ochre-tint/70">DIGITAL HERITAGE PLATFORM</p>
+
+        {# Proverb card — mirrors _buildProverbCard #}
+        <div class="mt-10 max-w-sm rounded-2xl border border-terracotta/20 bg-terracotta/10 p-6">
+          <span class="fa-solid fa-book-open text-2xl text-ochre-dark" aria-hidden="true"></span>
+          <p class="mt-3 font-display text-[15px] italic leading-relaxed text-sand/90">
+            "Until the lion learns to write, every story will glorify the hunter."
+          </p>
+          <p class="mt-2 text-xs font-medium text-ochre-dark/60">— African Proverb</p>
+        </div>
+
+        {# Metrics row — mirrors BrandMetricsRow #}
+        <div class="mt-10 flex items-center divide-x divide-terracotta/30">
+          <div class="px-6 text-center">
+            <span class="fa-solid fa-book text-lg text-ochre-dark/70" aria-hidden="true"></span>
+            <p class="mt-2 font-display text-xl font-bold text-sand">340+</p>
+            <p class="text-[11px] tracking-wide text-ochre-tint/60">Stories</p>
+          </div>
+          <div class="px-6 text-center">
+            <span class="fa-solid fa-landmark text-lg text-ochre-dark/70" aria-hidden="true"></span>
+            <p class="mt-2 font-display text-xl font-bold text-sand">28</p>
+            <p class="text-[11px] tracking-wide text-ochre-tint/60">Museums</p>
+          </div>
+          <div class="px-6 text-center">
+            <span class="fa-solid fa-hands text-lg text-ochre-dark/70" aria-hidden="true"></span>
+            <p class="mt-2 font-display text-xl font-bold text-sand">Free</p>
+            <p class="text-[11px] tracking-wide text-ochre-tint/60">Always</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Form panel — mirrors the mobile form side ── #}
+    <div class="flex items-center justify-center bg-white px-5 py-10 dark:bg-deep-earth sm:px-10 lg:col-span-4">
+      <div class="w-full max-w-md">
+        {# Compact brand header for narrow screens — mirrors BrandHeader #}
+        <div class="mb-8 lg:hidden">
+          <div class="flex items-center gap-3">
+            <span class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-warm-brown to-mud-charcoal ring-2 ring-ochre-dark/50">
+              <span class="fa-solid fa-drum text-xl text-ochre-dark" aria-hidden="true"></span>
+            </span>
+            <div>
+              <p class="font-display text-2xl font-bold">Griot <span class="text-terracotta">AI</span></p>
+              <p class="text-xs tracking-[0.18em] text-secondary-text">DIGITAL HERITAGE PLATFORM</p>
+            </div>
+          </div>
+        </div>
+
+        {% block auth_content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

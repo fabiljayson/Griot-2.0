@@ -15,12 +15,16 @@ traditions, museum artifact QR codes, AI-generated video, gamified learning).
 ```
 backend/
 ├── config/            # Django project package
-│   └── settings/      # Split settings: base.py / dev.py / prod.py
+│   └── settings/      # Split settings: base.py / dev.py / prod.py / test.py
 ├── users/             # Custom user model & roles (Phase 2)
 ├── stories/           # Story repository & reader engine (Phase 3)
 ├── qr_codes/          # Artifact QR engine (Phase 5)
 ├── gamification/      # Quizzes, badges & certificates (Phase 6)
-├── api/               # Top-level API routing & health endpoint
+├── media_app/         # Luma AI video & TTS narration jobs (Phase 4)
+├── api/               # Top-level API routing, health, analytics, seeding
+├── web/               # Server-rendered web UI (session auth, mirrors mobile)
+├── templates/web/     # Django templates for the web UI
+├── static/web/        # Web UI assets (vanilla JS: app/story/audio/video)
 ├── requirements.txt
 └── manage.py
 ```
@@ -109,6 +113,16 @@ default, and requires `DJANGO_ALLOWED_HOSTS` (or `RENDER_EXTERNAL_HOSTNAME`).
   persistent uploads, point `MEDIA_ROOT`/storage at an external object store
   (S3, etc.) before serving real traffic.
 
+## Web interface (`web` app)
+
+Alongside the JSON API, the backend serves a **server-rendered web UI** at the
+root (`/`) that mirrors the Flutter app screens 1:1 — home, stories,
+reader, library, artifacts, rewards, quiz player, admin dashboard — plus
+screens the API implies (story create/edit form, profile). It uses Django
+sessions instead of JWT and calls the same models, so both platforms always
+display identical data. Role gating matches the API permissions
+(`IsContributorOrAbove`, `IsAdminOrManager`). Tests: `python manage.py test web`.
+
 ## Observability (Phase 10)
 
 ### Health probes
@@ -146,6 +160,7 @@ Set `SENTRY_DSN` in production to enable Sentry with the Django integration
 | `python manage.py seed_stories` | Story categories & cultural stories                |
 | `python manage.py seed_gamification` | Badges & quizzes for published stories         |
 | `python manage.py seed_qr_codes` | Museum artifacts for the QR engine                |
+| `python manage.py seed_narrations` | Pre-generated TTS narration audio for stories/artifacts |
 
 Each command is idempotent (`get_or_create`). `--clear` resets the seeded data
 before re-seeding: `seed_qr_codes --clear` only removes the artifacts it owns

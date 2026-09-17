@@ -1,0 +1,367 @@
+{% extends 'web/base.html' %}
+{% load static %}
+{% load web_extras %}
+{% comment %}
+Story detail — mirrors mobile StoryDetailScreen: hero image, category/region
+chips, author row, markdown reader, cultural context & moral lesson cards,
+sticky action bar (like / bookmark / share / flag) and quiz entry point.
+Reading progress posts back to the same model the mobile app syncs.
+{% endcomment %}
+
+{% block title %}{{ story.title }} — Griot AI{% endblock %}
+
+{% block content %}
+<article data-story-slug="{{ story.slug }}">
+  {# ── Hero — mirrors mobile SliverAppBar with cover image ── #}
+  <header class="relative -mx-4 -mt-6 overflow-hidden dark:bg-warm-brown sm:-mx-6 lg:-mx-8 lg:rounded-b-3xl">
+    <div class="aspect-[21/9] max-h-80 w-full bg-gradient-to-br from-terracotta-tint via-ochre-tint to-savannah-tint dark:from-warm-brown dark:to-deep-earth">
+      {% if story.cover_image %}
+      <img src="{{ story.cover_image.url }}" alt="{{ story.title }}" class="h-full w-full object-cover">
+      {% else %}
+      <div class="flex h-full w-full items-center justify-center">
+        {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-6xl text-terracotta/50' %}{% else %}{% icon 'book-open' 'text-6xl text-terracotta/50' %}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+
+    <div class="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+      <div class="mx-auto max-w-3xl">
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+          {% for category in story.categories.all %}
+          <span class="flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-terracotta dark:bg-mud-charcoal/90 dark:text-ochre-dark">
+            {% emoji_icon category.icon 'text-[10px]' %} {{ category.name }}
+          </span>
+          {% endfor %}
+          {% if story.region %}
+          <span class="flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+            {% icon 'location' 'text-[10px]' %} {{ story.region }}
+          </span>
+          {% endif %}
+          <span class="flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+            {% icon 'language' 'text-[10px]' %} {{ story.get_language_display }}
+          </span>
+        </div>
+        <h1 class="font-display text-2xl font-bold text-white drop-shadow sm:text-4xl">{{ story.title }}</h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-3xl">
+    {# ── Author & meta row — mirrors mobile author header ── #}
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-4 border-b border-brand-border pb-5 dark:border-warm-brown">
+      <div class="flex items-center gap-3">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-terracotta/10 font-bold text-terracotta">{{ story.author.username|first|upper }}</span>
+        <div>
+          <p class="text-sm font-bold">{{ story.author.get_full_name|default:story.author.username }}</p>
+          <p class="flex items-center gap-2 text-xs text-secondary-text">
+            <span class="flex items-center gap-1">{% icon 'clock' 'text-[10px]' %} {{ story.estimated_read_time }} min read</span>
+            <span>•</span>
+            <span class="flex items-center gap-1">{% icon 'eye' 'text-[10px]' %} {{ story.view_count }}</span>
+            {% if story.source %}<span>•</span><span>via {{ story.source }}</span>{% endif %}
+          </p>
+        </div>
+      </div>
+      {% if story.published_at %}
+      <p class="flex items-center gap-1.5 text-xs text-secondary-text">
+        {% icon 'calendar' 'text-xs' %} {{ story.published_at|date:'M j, Y' }}
+      </p>
+      {% endif %}
+    </div>
+
+    {# ── Resume banner — mirrors mobile reading-progress resume ── #}
+    {% if progress_percent > 0 and progress_percent < 100 and user.is_authenticated %}
+    <div class="mt-5 flex items-center gap-3 rounded-xl border border-ochre/40 bg-ochre-tint/60 px-4 py-3 dark:bg-ochre/10">
+      {% icon 'book-open' 'text-ochre' %}
+      <p class="flex-1 text-sm">You're {{ progress_percent }}% through this story.</p>
+      <div class="h-1.5 w-24 overflow-hidden rounded-full bg-ochre/20">
+        <div class="h-full rounded-full bg-ochre" style="width: {{ progress_percent }}%"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Summary ── #}
+    {% if story.summary %}
+    <p class="mt-6 border-l-4 border-terracotta pl-4 font-display text-lg italic leading-relaxed text-secondary-text dark:text-sand/80">
+      {{ story.summary }}
+    </p>
+    {% endif %}
+
+    {# ── Reader — markdown rendered server-side (same content the app shows) ── #}
+    <div class="story-content mt-6 text-[15px] sm:text-base">
+      {{ story.content|markdown }}
+    </div>
+
+    {# ── Audio narration — mirrors mobile AudioPlayerSheet (§6) ── #}
+    {% if narration %}
+    <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
+      <div class="flex flex-wrap items-center gap-4">
+        <button type="button" id="audio-toggle" data-audio-src="{{ narration.url }}"
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark"
+                aria-label="Play narration">
+          <span id="audio-icon" class="fa-solid fa-play" aria-hidden="true"></span>
+        </button>
+        <div class="min-w-0 flex-1">
+          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-ochre' %} Listen to this story</h2>
+          <p class="text-xs text-secondary-text">AI narration{% if narration.duration %} • {{ narration.duration }}s{% endif %}</p>
+        </div>
+      </div>
+      <audio id="story-audio" preload="none" class="mt-3 w-full"></audio>
+    </section>
+    {% elif can_generate_media %}
+    <section class="mt-10 rounded-2xl border border-dashed border-ochre/40 bg-ochre-tint/20 p-5 dark:bg-ochre/5">
+      <div class="flex flex-wrap items-center gap-4">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ochre/15 text-ochre">
+          {% icon 'microphone' 'text-lg' %}
+        </span>
+        <div class="min-w-0 flex-1">
+          <h2 class="font-display text-base font-bold">No narration yet</h2>
+          <p class="text-xs text-secondary-text">Generate an AI voice-over so visitors can listen to this tale.</p>
+        </div>
+        <form method="post" action="{% url 'web:story-generate-audio' story.slug %}">
+          {% csrf_token %}
+          <button class="rounded-xl bg-ochre px-5 py-2.5 text-sm font-bold text-deep-earth transition hover:opacity-90">
+            {% icon 'microphone' 'text-xs' %} Generate narration
+          </button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── AI video — mirrors mobile VideoGenerationSheet + VideoPlayerWidget (§7) ── #}
+    {% if video_job and video_job.is_ready %}
+    <section class="mt-10 overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
+      <video controls preload="metadata" class="aspect-video w-full bg-black" {% if video_job.thumbnail_url %}poster="{{ video_job.thumbnail_url }}"{% endif %}>
+        <source src="{{ video_job.video_url }}" type="video/mp4">
+        Your browser does not support video playback.
+      </video>
+      <div class="flex items-center justify-between p-4">
+        <p class="flex items-center gap-2 text-sm font-semibold">{% icon 'video' 'text-terracotta' %} AI-generated video</p>
+        {% if video_job.duration %}<span class="text-xs text-secondary-text">{{ video_job.duration }}s</span>{% endif %}
+      </div>
+    </section>
+    {% elif video_job and video_job.is_processing %}
+    <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth" data-video-poll="{{ story.slug }}">
+      <div class="flex items-center gap-4">
+        {% icon 'spinner' 'text-xl text-terracotta' %}
+        <div>
+          <h2 class="font-display text-base font-bold">Generating video…</h2>
+          <p class="text-xs text-secondary-text">Luma AI is bringing this tale to life — this page updates automatically.</p>
+        </div>
+      </div>
+    </section>
+    {% elif can_generate_media %}
+    <section class="mt-10 rounded-2xl border border-dashed border-terracotta/40 bg-terracotta-tint/20 p-5 dark:bg-terracotta/5">
+      <div class="flex flex-wrap items-center gap-4">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta/15 text-terracotta">
+          {% icon 'sparkles' 'text-lg' %}
+        </span>
+        <div class="min-w-0 flex-1">
+          <h2 class="font-display text-base font-bold">Make it move</h2>
+          <p class="text-xs text-secondary-text">Generate an AI video of this story with Luma Dream Machine.</p>
+        </div>
+        <button type="button" data-sheet-open="video-sheet"
+                class="rounded-xl bg-terracotta px-5 py-2.5 text-sm font-bold text-white transition hover:bg-terracotta-dark">
+          {% icon 'video' 'text-xs' %} Generate video
+        </button>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Cultural context & moral lesson — mirrors mobile info cards ── #}
+    {% if story.cultural_context %}
+    <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth sm:p-6">
+      <h2 class="flex items-center gap-2.5 font-display text-lg font-bold">
+        {% icon 'landmark' 'text-ochre' %} Cultural Context
+      </h2>
+      <p class="mt-3 leading-relaxed text-secondary-text dark:text-sand/75">{{ story.cultural_context|linebreaks }}</p>
+    </section>
+    {% endif %}
+
+    {% if story.moral_lesson %}
+    <section class="mt-5 rounded-2xl border border-savannah/30 bg-savannah-tint/50 p-5 dark:bg-savannah/10 sm:p-6">
+      <h2 class="flex items-center gap-2.5 font-display text-lg font-bold">
+        {% icon 'graduation' 'text-savannah' %} Moral Lesson
+      </h2>
+      <p class="mt-3 leading-relaxed text-secondary-text dark:text-sand/75">{{ story.moral_lesson|linebreaks }}</p>
+    </section>
+    {% endif %}
+
+    {% if story.tag_list %}
+    <div class="mt-6 flex flex-wrap gap-2">
+      {% for tag in story.tag_list %}
+      <span class="rounded-full bg-terracotta-tint/60 px-3 py-1 text-xs font-medium text-terracotta dark:bg-terracotta/15">#{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── Quiz entry — mirrors mobile quiz invitation card ── #}
+    {% if quiz and user.is_authenticated %}
+    <section class="mt-8 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-br from-terracotta to-terracotta-dark p-6 text-white">
+      <span class="fa-solid fa-graduation-cap text-3xl" aria-hidden="true"></span>
+      <div class="min-w-0 flex-1">
+        <h2 class="font-display text-lg font-bold">Test your knowledge</h2>
+        <p class="text-sm text-white/85">{{ quiz.question_count }} questions • earn {{ quiz.xp_reward }} XP if you pass</p>
+      </div>
+      <a href="{% url 'web:quiz-play' quiz.id %}" class="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-terracotta transition hover:bg-ochre-tint">
+        Take the quiz
+      </a>
+    </section>
+    {% endif %}
+
+    {# ── Related stories ── #}
+    {% if related_stories %}
+    <section class="mt-12">
+      <h2 class="mb-4 font-display text-xl font-bold">Related Stories</h2>
+      <div class="grid gap-5 sm:grid-cols-3">
+        {% for rel in related_stories %}
+        {% include 'web/partials/story_card.html' with story=rel %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</article>
+
+{# ── Sticky action bar — mirrors mobile bottomNavigationBar actions ── #}
+<div class="fixed inset-x-0 bottom-16 z-30 border-t border-brand-border bg-white/95 px-4 py-2.5 backdrop-blur dark:border-warm-brown dark:bg-deep-earth/95 lg:bottom-0 lg:pl-64">
+  <div class="mx-auto flex max-w-3xl items-center justify-around sm:justify-center sm:gap-10">
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'web:story-like' story.slug %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="flex flex-col items-center gap-0.5 text-xs font-medium transition {% if is_liked %}text-brand-error{% else %}text-secondary-text hover:text-brand-error{% endif %}">
+        {% if is_liked %}{% icon 'heart' 'text-lg' %}{% else %}{% icon 'heart-regular' 'text-lg' %}{% endif %}
+        <span>{{ story.like_count }}</span>
+      </button>
+    </form>
+    <form method="post" action="{% url 'web:story-bookmark' story.slug %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="flex flex-col items-center gap-0.5 text-xs font-medium transition {% if is_bookmarked %}text-ochre{% else %}text-secondary-text hover:text-ochre{% endif %}">
+        {% if is_bookmarked %}{% icon 'bookmark-solid' 'text-lg' %}{% else %}{% icon 'bookmark-regular' 'text-lg' %}{% endif %}
+        <span>Saved</span>
+      </button>
+    </form>
+    {% else %}
+    <a href="{% url 'web:login' %}?next={{ request.get_full_path|urlencode }}" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text hover:text-brand-error">
+      {% icon 'heart-regular' 'text-lg' %}<span>{{ story.like_count }}</span>
+    </a>
+    <a href="{% url 'web:login' %}?next={{ request.get_full_path|urlencode }}" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text hover:text-ochre">
+      {% icon 'bookmark-regular' 'text-lg' %}<span>Save</span>
+    </a>
+    {% endif %}
+
+    {# Share sheet — mirrors the mobile share bottom sheet #}
+    <button type="button" data-sheet-open="share-sheet" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta">
+      {% icon 'share' 'text-lg' %}<span>Share</span>
+    </button>
+
+    {# Flag sheet — mirrors the mobile flag dialog #}
+    <button type="button" data-sheet-open="flag-sheet" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-brand-error">
+      {% icon 'flag' 'text-lg' %}<span>Report</span>
+    </button>
+
+    {# Scroll-read progress auto-poster #}
+    <span class="hidden flex-col items-center gap-0.5 text-xs font-medium text-secondary-text sm:flex" title="Reading progress is saved automatically">
+      {% icon 'check-circle' 'text-lg' %}<span id="progress-label">{% if progress_percent %}{{ progress_percent }}%{% else %}0%{% endif %}</span>
+    </span>
+
+    {% if is_contributor_plus and user.is_authenticated and story.author_id == user.id or user.role == 'admin' or user.role == 'institution_manager' %}
+    <a href="{% url 'web:story-edit' story.slug %}" title="Edit story" aria-label="Edit story"
+       class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta">
+      {% icon 'edit' 'text-lg' %}<span>Edit</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Share bottom sheet ── #}
+<div id="share-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Share story">
+  <div class="sheet-backdrop absolute inset-0 bg-black/50" data-sheet-close></div>
+  <div class="sheet-panel absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-deep-earth sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl">
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="font-display text-lg font-bold">Share this story</h3>
+      <button type="button" data-sheet-close class="rounded-full p-2 text-secondary-text hover:bg-terracotta-tint/40">{% icon 'close' 'text-sm' %}</button>
+    </div>
+    <div class="grid grid-cols-4 gap-3">
+      {% for platform, label, fa in share_targets %}
+      <form method="post" action="{% url 'web:story-share' story.slug %}">
+        {% csrf_token %}
+        <input type="hidden" name="platform" value="{{ platform }}">
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="flex w-full flex-col items-center gap-2 rounded-2xl border border-brand-border p-3.5 text-xs font-semibold transition hover:border-terracotta hover:bg-terracotta-tint/30 dark:border-warm-brown">
+          <span class="fa-brands {{ fa }} text-2xl text-terracotta" aria-hidden="true"></span>
+          {{ label }}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# ── Flag bottom sheet ── #}
+<div id="flag-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Report story">
+  <div class="sheet-backdrop absolute inset-0 bg-black/50" data-sheet-close></div>
+  <div class="sheet-panel absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-deep-earth sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl">
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="font-display text-lg font-bold">Report this story</h3>
+      <button type="button" data-sheet-close class="rounded-full p-2 text-secondary-text hover:bg-terracotta-tint/40">{% icon 'close' 'text-sm' %}</button>
+    </div>
+    <form method="post" action="{% url 'web:story-flag' story.slug %}" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div>
+        <label for="flag-reason" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Reason</label>
+        <select id="flag-reason" name="reason" class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+          <option value="cultural_inaccuracy">Cultural inaccuracy</option>
+          <option value="inappropriate_content">Inappropriate content</option>
+          <option value="copyright_violation">Copyright violation</option>
+          <option value="wrong_category">Wrong category</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label for="flag-details" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Details</label>
+        <textarea id="flag-details" name="details" rows="3" placeholder="Tell us more…"
+                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal"></textarea>
+      </div>
+      <button type="submit" class="w-full rounded-xl bg-brand-error px-4 py-3 text-sm font-bold text-white transition hover:opacity-90">
+        Submit report
+      </button>
+    </form>
+  </div>
+</div>
+{# ── AI video generation sheet — mirrors mobile VideoGenerationSheet ── #}
+{% if can_generate_media %}
+<div id="video-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Generate AI video">
+  <div class="sheet-backdrop absolute inset-0 bg-black/50" data-sheet-close></div>
+  <div class="sheet-panel absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-deep-earth sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl">
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="font-display text-lg font-bold">Generate AI video</h3>
+      <button type="button" data-sheet-close class="rounded-full p-2 text-secondary-text hover:bg-terracotta-tint/40">{% icon 'close' 'text-sm' %}</button>
+    </div>
+    <form method="post" action="{% url 'web:story-generate-video' story.slug %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="video-prompt" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Scene prompt</label>
+        <textarea id="video-prompt" name="prompt" rows="4"
+                  placeholder="Describe the scenes: village square at dusk, talking drum circle, baobab silhouette…"
+                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal"></textarea>
+        <p class="mt-1.5 text-xs text-secondary-text">Leave empty to auto-generate a prompt from the story.</p>
+      </div>
+      <button type="submit" class="w-full rounded-xl bg-terracotta px-4 py-3 text-sm font-bold text-white transition hover:bg-terracotta-dark">
+        {% icon 'sparkles' 'text-xs' %} Start generation
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ share_targets_json|json_script:'share-targets' }}
+<script src="{% static 'web/js/story.js' %}" defer></script>
+{% if narration %}<script src="{% static 'web/js/audio.js' %}" defer></script>{% endif %}
+{% if can_generate_media %}<script src="{% static 'web/js/video.js' %}" defer></script>{% endif %}
+{% endblock %}

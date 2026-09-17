@@ -1,0 +1,43 @@
+{% extends 'web/auth/base_auth.html' %}
+
+{% block title %}Sign in — Griot AI{% endblock %}
+
+{% block auth_content %}
+<h1 class="font-display text-2xl font-bold sm:text-3xl">Welcome back</h1>
+<p class="mt-2 text-sm text-secondary-text">Sign in to continue your journey through living heritage.</p>
+
+{% if form.errors %}
+<div class="mt-4 rounded-xl border border-brand-error/30 bg-brand-error/10 px-4 py-3 text-sm text-brand-error">
+  Your username or password is incorrect. Please try again.
+</div>
+{% endif %}
+
+<form method="post" class="mt-6 space-y-4">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+
+  <div>
+    <label for="id_username" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Username</label>
+    <input id="id_username" name="username" type="text" required autofocus autocomplete="username"
+           class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
+           placeholder="your username">
+  </div>
+
+  <div>
+    <label for="id_password" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Password</label>
+    <input id="id_password" name="password" type="password" required autocomplete="current-password"
+           class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
+           placeholder="••••••••">
+  </div>
+
+  <button type="submit"
+          class="w-full rounded-xl bg-terracotta px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark active:scale-[.99]">
+    Sign in
+  </button>
+</form>
+
+<p class="mt-6 text-center text-sm text-secondary-text">
+  New to Griot AI?
+  <a href="{% url 'web:register' %}{% if next %}?next={{ next }}{% endif %}" class="font-semibold text-terracotta hover:underline">Create an account</a>
+</p>
+{% endblock %}

@@ -99,7 +99,7 @@ def get_story_stats():
     top_stories = list(
         Story.objects.filter(status=Story.Status.PUBLISHED)
         .order_by('-view_count')[:10]
-        .values('id', 'title', 'view_count', 'like_count', 'bookmark_count', 'share_count')
+        .values('id', 'slug', 'title', 'view_count', 'like_count', 'bookmark_count', 'share_count')
     )
 
     # Stories published over time (last 30 days)

@@ -151,6 +151,11 @@ packageDiagram
             class RequestLogMiddleware
             class SeedCommands
         }
+        package "web" {
+            class WebViews
+            class WebActions
+            class WebTemplates
+        }
     }
 
     package "External Services" {
@@ -200,4 +205,5 @@ packageDiagram
 | `qr_codes` | Artifact, QRCodeScan | QR Generator |
 | `gamification` | Quiz, Question, Attempt, Badge, UserProfile, Certificate | — |
 | `media_app` | VideoGenerationJob, AudioNarrationJob | Luma AI, TTS Provider |
+| `web` | WebUserSettings | — (server-rendered UI over the same models) |
 | `api` | — | Sentry |

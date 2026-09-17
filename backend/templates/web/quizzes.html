@@ -1,0 +1,62 @@
+{% extends 'web/base.html' %}
+{% load web_extras %}
+{% comment %}
+Quizzes hub — mirrors the mobile quiz entry points on GamificationScreen:
+list of published quizzes with question counts, XP rewards and the user's
+latest attempt result.
+{% endcomment %}
+
+{% block title %}Quizzes — Griot AI{% endblock %}
+
+{% block content %}
+<header class="mb-8">
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">Knowledge Quizzes</h1>
+  <p class="mt-1 text-sm text-secondary-text">Test what the stories taught you — pass to earn XP.</p>
+</header>
+
+{% if quizzes %}
+<div class="grid gap-4 sm:grid-cols-2">
+  {% for quiz in quizzes %}
+  <div class="flex flex-col rounded-2xl border border-brand-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-warm-brown dark:bg-deep-earth">
+    <div class="flex items-start gap-3">
+      <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-terracotta/10">
+        {% if quiz.story.categories.first %}{% emoji_icon quiz.story.categories.first.icon 'text-xl text-terracotta' %}{% else %}{% icon 'graduation' 'text-xl text-terracotta' %}{% endif %}
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="font-display text-base font-bold leading-snug">{{ quiz.title|default:quiz.story.title }}</h2>
+        <p class="mt-0.5 text-xs text-secondary-text">
+          {{ quiz.question_count }} questions • pass at {{ quiz.passing_score }}% • earn {{ quiz.xp_reward }} XP
+        </p>
+      </div>
+    </div>
+
+    {% if latest_results|dict_item:quiz.id %}
+    {# Latest attempt pill #}
+    {% with attempt=latest_results|dict_item:quiz.id %}
+    <p class="mt-3 flex items-center gap-2 text-xs font-semibold {% if attempt.passed %}text-savannah{% else %}text-ochre{% endif %}">
+      {% if attempt.passed %}{% icon 'check-circle' 'text-xs' %}Passed with {{ attempt.score }}%{% else %}{% icon 'refresh' 'text-xs' %}Last try: {{ attempt.score }}%{% endif %}
+    </p>
+    {% endwith %}
+    {% endif %}
+
+    <div class="mt-4 flex flex-1 items-end gap-3">
+      <a href="{% url 'web:quiz-play' quiz.id %}"
+         class="flex-1 rounded-xl bg-terracotta px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-terracotta-dark">
+        {% if latest_results|dict_item:quiz.id %}Retake quiz{% else %}Take quiz{% endif %}
+      </a>
+      <a href="{% url 'web:story-detail' quiz.story.slug %}"
+         class="rounded-xl border border-brand-border px-4 py-2.5 text-sm font-semibold transition hover:bg-terracotta-tint/30 dark:border-warm-brown">
+        Read story
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="rounded-2xl border border-dashed border-brand-border p-10 text-center dark:border-warm-brown">
+  {% icon 'graduation' 'text-4xl text-terracotta/50' %}
+  <p class="mt-3 text-sm text-secondary-text">No quizzes published yet — read a story and check back soon.</p>
+  <a href="{% url 'web:stories' %}" class="mt-4 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">Browse stories</a>
+</div>
+{% endif %}
+{% endblock %}

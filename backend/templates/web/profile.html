@@ -1,0 +1,135 @@
+{% extends 'web/base.html' %}
+{% load web_extras %}
+{% comment %}
+Profile — mirrors mobile ProfileScreen: avatar + role badge, editable name &
+email, gamification snapshot, sign out and delete-account (privacy parity
+with DELETE /api/users/me/). Institution field appears for managers.
+{% endcomment %}
+
+{% block title %}Profile — Griot AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <header class="mb-8">
+    <h1 class="font-display text-2xl font-bold sm:text-3xl">Profile</h1>
+    <p class="mt-1 text-sm text-secondary-text">Your account, role and heritage journey.</p>
+  </header>
+
+  {# ── Profile header — mirrors mobile avatar + role badge ── #}
+  <section class="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-terracotta to-terracotta-dark p-6 text-center text-white shadow-lg sm:p-8">
+    <span class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/15 font-display text-3xl font-bold ring-4 ring-white/25">
+      {{ user.username|first|upper }}
+    </span>
+    <h2 class="mt-4 font-display text-xl font-bold">
+      {{ user.get_full_name|default:user.username }}
+    </h2>
+    <p class="text-sm text-white/80">@{{ user.username }}</p>
+    {# Role badge — mirrors mobile RoleBadge widget #}
+    <span class="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold ring-1 ring-white/30">
+      {% role_icon user.role %} {{ user.get_role_display }}
+    </span>
+    {% if user.institution %}
+    <p class="mt-2 flex items-center justify-center gap-1.5 text-xs text-white/85">
+      {% icon 'building-columns' 'text-xs' %} {{ user.institution }}
+    </p>
+    {% endif %}
+    {% if gamification_profile %}
+    <p class="mt-4 flex items-center justify-center gap-4 text-xs font-semibold text-white/90">
+      <span class="flex items-center gap-1">{% icon 'bolt' 'text-xs' %} {{ gamification_profile.total_xp }} XP</span>
+      <span class="flex items-center gap-1">{% icon 'layer-group' 'text-xs' %} Level {{ gamification_profile.level }}</span>
+      <span class="flex items-center gap-1">{% icon 'flame' 'text-xs' %} {{ gamification_profile.current_streak }} day streak</span>
+    </p>
+    {% endif %}
+  </section>
+
+  {# ── Edit form — mirrors mobile edit mode (name fields) ── #}
+  <section class="mb-8 rounded-2xl border border-brand-border bg-white p-5 shadow-sm dark:border-warm-brown dark:bg-deep-earth sm:p-6">
+    <h3 class="mb-4 flex items-center gap-2.5 font-display text-lg font-bold">
+      {% icon 'user-pen' 'text-ochre' %} Account details
+    </h3>
+    <form method="post" action="{% url 'web:profile-update' %}" class="space-y-4">
+      {% csrf_token %}
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="id_first_name" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">First name</label>
+          <input type="text" id="id_first_name" name="first_name" value="{{ user.first_name }}" maxlength="150"
+                 class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+        </div>
+        <div>
+          <label for="id_last_name" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Last name</label>
+          <input type="text" id="id_last_name" name="last_name" value="{{ user.last_name }}" maxlength="150"
+                 class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+        </div>
+      </div>
+      <div>
+        <label for="id_email" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Email</label>
+        <input type="email" id="id_email" name="email" value="{{ user.email }}"
+               class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+      </div>
+      {% if user.role == 'institution_manager' %}
+      <div>
+        <label for="id_institution" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Institution</label>
+        <input type="text" id="id_institution" name="institution" value="{{ user.institution }}" maxlength="120"
+               placeholder="Museum or archive name"
+               class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+      </div>
+      {% endif %}
+      <button class="w-full rounded-xl bg-terracotta px-6 py-3 text-sm font-bold text-white transition hover:bg-terracotta-dark sm:w-auto">
+        {% icon 'check-circle' 'text-xs' %} Save changes
+      </button>
+    </form>
+    <p class="mt-3 text-xs text-secondary-text">Roles are granted by administrators and cannot be changed here.</p>
+  </section>
+
+  {# ── Quick links — web counterparts of the mobile profile entries ── #}
+  <section class="mb-8 overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
+    <ul class="divide-y divide-brand-border dark:divide-warm-brown">
+      <li>
+        <a href="{% url 'web:library' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
+          {% icon 'bookmark' 'text-terracotta' %} My library
+          {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
+        </a>
+      </li>
+      {% if is_contributor_plus %}
+      <li>
+        <a href="{% url 'web:story-new' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
+          {% icon 'feather' 'text-terracotta' %} Write a story
+          {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
+        </a>
+      </li>
+      {% endif %}
+      <li>
+        <a href="{% url 'web:gamification' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
+          {% icon 'trophy' 'text-terracotta' %} Rewards & badges
+          {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
+        </a>
+      </li>
+      {% if is_moderator %}
+      <li>
+        <a href="{% url 'web:admin-dashboard' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
+          {% icon 'chart' 'text-terracotta' %} Admin dashboard
+          {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </section>
+
+  {# ── Session & data — mirrors mobile logout / delete account ── #}
+  <section class="mb-4 space-y-3">
+    <form method="post" action="{% url 'web:logout' %}">
+      {% csrf_token %}
+      <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-brand-border px-4 py-3 text-sm font-semibold text-secondary-text transition hover:bg-terracotta-tint/30 dark:border-warm-brown">
+        {% icon 'sign-out' 'text-xs' %} Sign out
+      </button>
+    </form>
+    <form method="post" action="{% url 'web:profile-delete' %}">
+      {% csrf_token %}
+      <button type="submit" data-confirm="Permanently delete your account and all associated data? This cannot be undone."
+              class="flex w-full items-center justify-center gap-2 rounded-xl border border-brand-error/40 px-4 py-3 text-sm font-semibold text-brand-error transition hover:bg-brand-error/10">
+        {% icon 'trash' 'text-xs' %} Delete account
+      </button>
+    </form>
+  </section>
+</div>
+{% endblock %}

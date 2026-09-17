@@ -1,0 +1,75 @@
+{% extends 'web/base.html' %}
+{% load web_extras %}
+{% comment %}
+Artifacts catalog — mirrors the mobile QR-scanner feature's catalog:
+category chips, artifact cards with image, culture/region metadata.
+{% endcomment %}
+
+{% block title %}Museum Artifacts — Griot AI{% endblock %}
+
+{% block content %}
+<header class="mb-6">
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">Museum Artifacts</h1>
+  <p class="mt-1 text-sm text-secondary-text">
+    Cultural objects from Cameroon's museums — scan their QR codes on site or explore here.
+  </p>
+</header>
+
+{# ── Category chips ── #}
+<div class="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+  <a href="{% url 'web:artifacts' %}"
+     class="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition
+            {% if not selected_category %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+    {% icon 'layer-group' 'text-xs' %} All
+  </a>
+  {% for code, label in categories %}
+  <a href="?category={{ code }}"
+     class="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition
+            {% if selected_category == code %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+    {% artifact_category_icon code %} {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+{# ── Artifact grid ── #}
+{% if artifacts %}
+<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  {% for artifact in artifacts %}
+  <a href="{% url 'web:artifact-detail' artifact.slug %}"
+     class="group flex flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-warm-brown dark:bg-deep-earth">
+    <div class="aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-ochre-tint to-terracotta-tint dark:from-warm-brown dark:to-deep-earth">
+      {% if artifact.image %}
+      <img src="{{ artifact.image.url }}" alt="{{ artifact.title }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]">
+      {% else %}
+      <div class="flex h-full w-full items-center justify-center text-terracotta/50">
+        {% artifact_category_icon artifact.category 'text-5xl' %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="flex flex-1 flex-col p-4">
+      <h3 class="font-display text-base font-bold leading-snug group-hover:text-terracotta">{{ artifact.title }}</h3>
+      {% if artifact.description %}
+      <p class="mt-1.5 line-clamp-2 text-sm text-secondary-text dark:text-sand/70">{{ artifact.description|striptags|truncatewords:16 }}</p>
+      {% endif %}
+      <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 text-xs text-secondary-text dark:text-sand/60">
+        {% if artifact.culture %}
+        <span class="flex items-center gap-1">{% icon 'users' 'text-[10px]' %} {{ artifact.culture }}</span>
+        {% endif %}
+        {% if artifact.estimated_date %}
+        <span class="flex items-center gap-1">{% icon 'calendar' 'text-[10px]' %} {{ artifact.estimated_date }}</span>
+        {% endif %}
+        {% if artifact.museum_name %}
+        <span class="flex items-center gap-1">{% icon 'landmark' 'text-[10px]' %} {{ artifact.museum_name }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="py-24 text-center">
+  <span class="fa-solid fa-landmark text-6xl text-ochre" aria-hidden="true"></span>
+  <p class="mx-auto mt-5 max-w-sm text-lg text-secondary-text">No artifacts published yet.</p>
+</div>
+{% endif %}
+{% endblock %}

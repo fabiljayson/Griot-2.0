@@ -37,7 +37,7 @@
 
 ### Packages Mapped (Package)
 - Frontend: core (constants, database, network, offline, providers, theme) + features (auth, home, stories, library, qr_scanner, audio, video, gamification, sharing, admin)
-- Backend: users, stories, qr_codes, gamification, media_app, api
+- Backend: users, stories, qr_codes, gamification, media_app, api, web (server-rendered UI)
 
 ### Flows Sequenced (Sequence)
 1. Authentication (Login → Token Refresh)

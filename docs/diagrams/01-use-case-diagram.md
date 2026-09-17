@@ -22,6 +22,8 @@ useCaseDiagram
         usecase "Register Account" as UC_REG
         usecase "Login" as UC_LOGIN
         usecase "View Profile" as UC_PROFILE
+        usecase "Edit Profile" as UC_EDIT_PROFILE
+        usecase "Set Language & Theme" as UC_PREFS
         usecase "Delete Account" as UC_DEL_ACC
     }
 
@@ -59,6 +61,7 @@ useCaseDiagram
     package "Audio" {
         usecase "Listen to TTS" as UC_TTS
         usecase "Generate Audio Narration" as UC_GEN_TTS
+        usecase "Generate Artifact Audio Guide" as UC_GEN_GUIDE
         usecase "Play Offline Audio" as UC_OFFLINE_AUDIO
     }
 
@@ -69,6 +72,7 @@ useCaseDiagram
     }
 
     package "Gamification" {
+        usecase "Browse Quizzes" as UC_QUIZZES
         usecase "Take Quiz" as UC_QUIZ
         usecase "View Badges" as UC_BADGES
         usecase "View Leaderboard" as UC_LEADER
@@ -111,6 +115,8 @@ useCaseDiagram
     Visitor --> UC_REG
     Visitor --> UC_LOGIN
     Visitor --> UC_PROFILE
+    Visitor --> UC_EDIT_PROFILE
+    Visitor --> UC_PREFS
     Visitor --> UC_BOOKMARK
     Visitor --> UC_LIKE
     Visitor --> UC_FLAG
@@ -119,6 +125,7 @@ useCaseDiagram
     Visitor --> UC_CONTINUE
     Visitor --> UC_VIEW_BM
     Visitor --> UC_RECENT
+    Visitor --> UC_QUIZZES
     Visitor --> UC_QUIZ
     Visitor --> UC_BADGES
     Visitor --> UC_LEADER
@@ -129,6 +136,7 @@ useCaseDiagram
     Visitor --> UC_SAVE_OFFLINE
     Visitor --> UC_READ_OFFLINE
     Visitor --> UC_OFFLINE_AUDIO
+    Visitor --> UC_GEN_GUIDE
     Visitor --> UC_DEL_ACC
 
     Contributor --|> Visitor
@@ -154,7 +162,7 @@ useCaseDiagram
 
 | Use Case | Actor(s) | Description |
 |---|---|---|
-| Register Account | Guest | Create a new account with username/email/password |
+| Register Account | Guest | Create a new account (username/email/password) with role choice: visitor or contributor |
 | Login | Guest | Authenticate and receive JWT tokens |
 | Browse Stories | Guest, Visitor, Contributor, Manager, Admin | List and view published stories |
 | Search Stories | All | Full-text search across stories with filters |
@@ -171,7 +179,11 @@ useCaseDiagram
 | Create Artifact | Manager, Admin | Add new artifact to catalog |
 | Generate QR Code | Manager, Admin | Create QR code for an artifact |
 | Listen to TTS | All | Play audio narration of a story |
-| Generate Audio Narration | Contributor+ | Request TTS generation |
+| Generate Audio Narration | Contributor+ | Request TTS generation for a story |
+| Generate Artifact Audio Guide | Authenticated (published artifact); Manager/Admin (unpublished) | Generate the museum audio guide via TTS |
+| Edit Profile | Authenticated | Update name, email and institution (roles are admin-granted) |
+| Set Language & Theme | Authenticated | Persist UI language (EN/FR) and theme preference |
+| Browse Quizzes | Authenticated | List published quizzes with latest results |
 | Generate AI Video | Contributor+ | Request Luma AI video generation |
 | Take Quiz | Authenticated | Complete a story quiz |
 | View Badges | All | Browse earned/available badges |

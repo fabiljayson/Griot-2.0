@@ -1,0 +1,92 @@
+{% extends 'web/auth/base_auth.html' %}
+{% load web_extras %}
+
+{% block title %}Create account — Griot AI{% endblock %}
+
+{% block auth_content %}
+<h1 class="font-display text-2xl font-bold sm:text-3xl">Create your account</h1>
+<p class="mt-2 text-sm text-secondary-text">Join the platform keeping Cameroon's oral traditions alive.</p>
+
+{% if errors %}
+<div class="mt-4 space-y-1 rounded-xl border border-brand-error/30 bg-brand-error/10 px-4 py-3 text-sm text-brand-error">
+  {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<form method="post" class="mt-6 space-y-4">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.GET.next }}">
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="id_username" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Username *</label>
+      <input id="id_username" name="username" type="text" required maxlength="150"
+             value="{{ form_data.username|default:'' }}"
+             class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20">
+    </div>
+    <div>
+      <label for="id_email" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Email</label>
+      <input id="id_email" name="email" type="email"
+             value="{{ form_data.email|default:'' }}"
+             class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20">
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="id_first_name" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">First name</label>
+      <input id="id_first_name" name="first_name" type="text" value="{{ form_data.first_name|default:'' }}"
+             class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20">
+    </div>
+    <div>
+      <label for="id_last_name" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Last name</label>
+      <input id="id_last_name" name="last_name" type="text" value="{{ form_data.last_name|default:'' }}"
+             class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20">
+    </div>
+  </div>
+
+  <div>
+    <label for="id_password" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Password *</label>
+    <input id="id_password" name="password" type="password" required minlength="8" autocomplete="new-password"
+           class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20">
+    <p class="mt-1 text-xs text-secondary-text">At least 8 characters.</p>
+  </div>
+
+  <div>
+    <label for="id_password2" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Confirm password *</label>
+    <input id="id_password2" name="password2" type="password" required minlength="8" autocomplete="new-password"
+           class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20">
+  </div>
+
+  {# Role selection — mirrors the mobile register screen (visitor/contributor only) #}
+  <fieldset>
+    <legend class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">I want to…</legend>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-brand-border p-3.5 transition has-[:checked]:border-terracotta has-[:checked]:bg-terracotta-tint/40">
+        <input type="radio" name="role" value="visitor" checked class="mt-1 accent-terracotta">
+        <span>
+          <span class="flex items-center gap-1.5 text-sm font-semibold">{% icon 'magnifier' 'text-xs' %} Explore</span>
+          <span class="block text-xs text-secondary-text">Read, listen & earn badges (Visitor)</span>
+        </span>
+      </label>
+      <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-brand-border p-3.5 transition has-[:checked]:border-terracotta has-[:checked]:bg-terracotta-tint/40">
+        <input type="radio" name="role" value="contributor" class="mt-1 accent-terracotta">
+        <span>
+          <span class="flex items-center gap-1.5 text-sm font-semibold">{% icon 'feather' 'text-xs' %} Share stories</span>
+          <span class="block text-xs text-secondary-text">Submit tales & generate media (Contributor)</span>
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <button type="submit"
+          class="w-full rounded-xl bg-terracotta px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark active:scale-[.99]">
+    Create account
+  </button>
+</form>
+
+<p class="mt-6 text-center text-sm text-secondary-text">
+  Already have an account?
+  <a href="{% url 'web:login' %}" class="font-semibold text-terracotta hover:underline">Sign in</a>
+</p>
+{% endblock %}
