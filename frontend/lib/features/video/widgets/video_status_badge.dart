@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../models/video_model.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Compact badge showing video generation status.
 ///
@@ -20,10 +21,10 @@ class VideoStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, icon) = switch (status) {
-      VideoStatus.pending => (AppColors.ochre, Icons.schedule),
-      VideoStatus.processing => (AppColors.terracotta, Icons.autorenew),
-      VideoStatus.completed => (AppColors.savannahGreen, Icons.check_circle),
-      VideoStatus.failed => (AppColors.error, Icons.error_outline),
+      VideoStatus.pending => (AppColors.ochre, AppIcons.schedule),
+      VideoStatus.processing => (AppColors.terracotta, AppIcons.autorenew),
+      VideoStatus.completed => (AppColors.savannahGreen, AppIcons.check_circle),
+      VideoStatus.failed => (AppColors.error, AppIcons.error_outline),
     };
 
     if (compact) {
@@ -33,7 +34,7 @@ class VideoStatusBadge extends StatelessWidget {
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 16, color: color),
+        child: FaIcon(icon, size: 16, color: color),
       );
     }
 
@@ -54,7 +55,7 @@ class VideoStatusBadge extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2, color: color),
             )
           else
-            Icon(icon, size: 14, color: color),
+            FaIcon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Text(
             status.label,

@@ -9,6 +9,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_actions.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Story detail screen with interactive markdown reader.
 ///
@@ -173,7 +174,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.location_on, size: 16, color: AppColors.ochre),
+                        const FaIcon(AppIcons.location_on, size: 16, color: AppColors.ochre),
                         const SizedBox(width: 4),
                         Text(
                           story.region,
@@ -318,13 +319,13 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                         color: AppColors.terracotta,
                       ),
                     )
-                  : const Icon(Icons.headphones),
+                  : const FaIcon(AppIcons.headphones),
               tooltip: isNarrating ? 'Generating narration…' : 'Listen',
             ),
             const SizedBox(width: 12),
             // Like button
             _ActionButton(
-              icon: story.isLiked ? Icons.favorite : Icons.favorite_border,
+              icon: story.isLiked ? AppIcons.favorite : AppIcons.favorite_border,
               label: story.formattedLikeCount,
               color: story.isLiked ? AppColors.error : null,
               onTap: isAuthenticated
@@ -334,7 +335,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
             const SizedBox(width: 16),
             // Bookmark button
             _ActionButton(
-              icon: story.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              icon: story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
               label: story.formattedBookmarkCount,
               color: story.isBookmarked ? AppColors.ochre : null,
               onTap: isAuthenticated
@@ -344,7 +345,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
             const SizedBox(width: 16),
             // Share button
             _ActionButton(
-              icon: Icons.share_outlined,
+              icon: AppIcons.share_outlined,
               label: 'Share',
               onTap: () {
                 // Share functionality
@@ -357,7 +358,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                 onPressed: () {
                   // Navigate to quiz
                 },
-                icon: const Icon(Icons.quiz, size: 18),
+                icon: const FaIcon(AppIcons.quiz, size: 18),
                 label: const Text('Take Quiz'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.terracotta,
@@ -367,7 +368,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
             else
               OutlinedButton.icon(
                 onPressed: () => _showLoginPrompt(context),
-                icon: const Icon(Icons.lock_outline, size: 18),
+                icon: const FaIcon(AppIcons.lock_outline, size: 18),
                 label: const Text('Quiz'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.terracotta,
@@ -527,7 +528,7 @@ class _ActionButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final Color? color;
   final VoidCallback onTap;
@@ -540,7 +541,7 @@ class _ActionButton extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color ?? theme.colorScheme.onSurface, size: 24),
+          FaIcon(icon, color: color ?? theme.colorScheme.onSurface, size: 24),
           const SizedBox(height: 4),
           Text(
             label,
@@ -566,7 +567,7 @@ class _ErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            const FaIcon(AppIcons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               'Failed to load story',
@@ -577,7 +578,7 @@ class _ErrorWidget extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const FaIcon(AppIcons.refresh),
               label: const Text('Try Again'),
             ),
           ],

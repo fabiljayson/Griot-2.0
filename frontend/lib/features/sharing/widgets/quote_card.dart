@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Beautiful quote card widget for sharing story excerpts.
 ///
@@ -110,7 +111,7 @@ class QuoteCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.lightbulb_outline, size: 18, color: accentColor),
+                    FaIcon(AppIcons.lightbulb_outline, size: 18, color: accentColor),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -142,7 +143,7 @@ class QuoteCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
-                    'AFRICAN TELLER',
+                    'GRIOT AI',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -153,7 +154,7 @@ class QuoteCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'africanteller.org',
+                  'griot-ai.org',
                   style: TextStyle(
                     fontSize: 11,
                     color: textColor.withValues(alpha: 0.5),
@@ -265,7 +266,7 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
+                  icon: const FaIcon(AppIcons.close),
                 ),
               ],
             ),
@@ -332,7 +333,7 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
               height: 56,
               child: ElevatedButton.icon(
                 onPressed: () => _shareCard(),
-                icon: const Icon(Icons.share),
+                icon: const FaIcon(AppIcons.share),
                 label: const Text(
                   'Share Quote Card',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -361,18 +362,18 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
       final buffer = byteData.buffer.asUint8List();
       // Create temp file for sharing
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/african_teller_quote.png');
+      final file = File('${tempDir.path}/griot_ai_quote.png');
       await file.writeAsBytes(buffer);
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'image/png')],
-          text: '${widget.quote}\n\n— ${widget.attribution}\n\n#AfricanTeller',
+          text: '${widget.quote}\n\n— ${widget.attribution}\n\n#GriotAI',
         ),
       );
     } else {
       // Fallback to text share
       final shareText =
-          '${widget.quote}\n\n— ${widget.attribution}\n\nDiscover more on African Teller: https://africanteller.org\n\n#AfricanTeller #Cameroon #CulturalHeritage';
+          '${widget.quote}\n\n— ${widget.attribution}\n\nDiscover more on Griot AI: https://griot-ai.org\n\n#GriotAI #Cameroon #CulturalHeritage';
       await SharePlus.instance.share(ShareParams(text: shareText));
     }
 

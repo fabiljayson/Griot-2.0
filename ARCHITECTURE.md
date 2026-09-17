@@ -364,8 +364,11 @@ repositories/services, screens, widgets) following a consistent convention.
 ## 7. Constraints
 
 ### 7.1 Platforms
-- **Frontend:** Flutter → **iOS**, **Android**, and **Web (PWA)**. Mobile uses
-  `sqflite` for local storage; the web client swaps to **IndexedDB**.
+- **Frontend:** Flutter → **iOS**, **Android**, and **Web (PWA)**. Local storage
+  uses `sqflite` on mobile and the `sqflite_common_ffi_web` factory on web
+  (SQLite/wasm over IndexedDB, installed in `main()`), so the entire offline
+  stack — story cache, search history, reading progress, request queue, and
+  offline user registrations — works on all three platforms.
 - **Backend:** Django REST Framework (Python), deployed via WSGI/ASGI.
 
 ### 7.2 Existing Design System

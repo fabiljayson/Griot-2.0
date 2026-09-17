@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Animated progress bar showing XP towards next level.
 ///
@@ -103,7 +104,7 @@ class _LevelProgressBarState extends State<LevelProgressBar>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star, color: Colors.white, size: 16),
+                    const FaIcon(AppIcons.star, color: Colors.white, size: 16),
                     const SizedBox(width: 4),
                     Text(
                       'Level ${widget.level}',

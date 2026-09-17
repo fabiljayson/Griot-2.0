@@ -1,0 +1,394 @@
+@startuml User Registration & Onboarding
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+skinparam swimlane {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+title User Registration & Onboarding
+
+start
+
+:User opens app;
+
+if (AuthWrapper\nchecks tokens?) then (No tokens)
+  :Show LoginScreen;
+  if (Has account?) then (Yes)
+    :Enter credentials;
+  else (No)
+    :Tap "Create account";
+    :Fill registration form\nusername, email, password;
+    if (Form valid?) then (No)
+      :Show validation errors;
+      stop
+    else (Yes)
+      :POST /api/auth/register/;
+      if (Registration\nsuccessful?) then (No)
+        :Show error message;
+        stop
+      else (Yes)
+        :Auto-login with credentials;
+      endif
+    endif
+  endif
+  :POST /api/auth/token/;
+  if (Login\nsuccessful?) then (No)
+    :Show error message;
+    stop
+  else (Yes)
+    :Store JWT tokens\naccess + refresh;
+  endif
+else (Valid tokens)
+endif
+
+:Show HomeScreen;
+
+:Display featured stories\n& navigation;
+
+if (User taps\n"Stories"?) then (Yes)
+  :Load stories from API;
+  :Display story list;
+else (No)
+endif
+
+if (User taps\n"QR Scanner"?) then (Yes)
+  :Open camera;
+  :Initialize scanner;
+else (No)
+endif
+
+stop
+
+@enduml
+
+---
+
+@startuml Story Creation & Moderation
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Story Creation & Moderation
+
+start
+
+:Contributor taps\n"Create Story";
+
+:Fill story form\ntitle, content, summary,\nlanguage, region, tags;
+
+:Upload cover image\n(optional);
+
+if (Form valid?) then (No)
+  :Show validation errors;
+  stop
+else (Yes)
+endif
+
+:POST /api/stories/;
+
+:Story created\n(status: draft);
+
+:Preview story;
+
+if (Submit for review?) then (No)
+  :Save as draft;
+  stop
+else (Yes)
+endif
+
+:PATCH /api/stories/{id}/\n(status: pending);
+
+:Story enters\nmoderation queue;
+
+fork
+  :Manager views\nmoderation queue;
+fork again
+  :Admin views\nmoderation queue;
+end fork
+
+if (Approve story?) then (Yes)
+  :PATCH /api/stories/{id}/\n(status: published);
+  :Story goes live;
+  :Notify author;
+else (No)
+  :Add reviewer notes;
+  :PATCH /api/stories/{id}/\n(status: rejected);
+  :Notify author\nwith feedback;
+endif
+
+stop
+
+@enduml
+
+---
+
+@startuml Quiz Taking & Gamification
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Quiz Taking & Gamification
+
+start
+
+:User opens\nGamification screen;
+
+:Load available quizzes;
+
+:Select a quiz;
+
+:POST /api/gamification/quizzes/{id}/start/;
+
+:Create QuizAttempt\n(status: in_progress);
+
+:Display first question;
+
+repeat
+
+  :User selects answer\n(A/B/C/D);
+
+  :POST submit_answer/;
+
+  :Record answer;
+
+  if (More questions?) then (Yes)
+    :Display next question;
+  else (No)
+  endif
+
+repeat while (Quiz in progress)
+
+:User taps "Finish Quiz";
+
+:POST /api/gamification/quizzes/{id}/finish/;
+
+:Calculate score;
+
+if (Score >= passing_score?) then (Yes)
+  :Mark as passed;
+  :Award XP to UserProfile;
+  :Check badge eligibility;
+
+  if (New badge earned?) then (Yes)
+    :Award badge;
+    :Notify user;
+  else (No)
+  endif
+
+else (No)
+  :Mark as failed;
+  :No XP awarded;
+endif
+
+:Display results\nscore, XP, badges;
+
+stop
+
+@enduml
+
+---
+
+@startuml Offline Sync Process
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Offline Sync Process
+
+start
+
+:Device goes offline;
+
+:ConnectivityService\ndetects offline;
+
+note right
+  All non-GET requests
+  are now queued
+end note
+
+:User performs actions\n(bookmark, like, etc.);
+
+:OfflineQueueInterceptor\nqueues request;
+
+:Store in offline_requests\n(method, path, body);
+
+:Return 202 Queued\nto user;
+
+:User continues\nusing app offline;
+
+:Connectivity restored;
+
+:ConnectivityService\ndetects online;
+
+:OfflineSyncManager\ntriggered;
+
+:Load pending requests\nfrom offline_requests;
+
+if (Pending requests?) then (No)
+  :No sync needed;
+  stop
+else (Yes)
+endif
+
+while (More pending requests?)
+
+  :Mark request\nas in_progress;
+
+  :Replay HTTP request\nto server;
+
+  if (Server responds\n2xx?) then (Yes)
+    :Mark as completed;
+  else (No)
+    :Increment retry_count;
+
+    if (Max retries\nreached?) then (Yes)
+      :Mark as failed;
+      :Log error;
+    else (No)
+      :Keep as pending\nfor next sync;
+    endif
+  endif
+
+endwhile
+
+:All requests processed;
+
+:Update UI\n(sync complete);
+
+:Clean up completed\nrequests;
+
+stop
+
+@enduml
+
+---
+
+@startuml QR Code Scan → Artifact Discovery
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title QR Code Scan → Artifact Discovery
+
+start
+
+:User opens\nQR Scanner;
+
+:Initialize camera;
+
+:Show scanner overlay;
+
+:User scans\nQR code;
+
+:Decode QR →\nartifact slug;
+
+:GET /api/artifacts/lookup/?slug={slug};
+
+if (Artifact found?) then (No)
+  :Show "Artifact not found";
+  stop
+else (Yes)
+endif
+
+:Record QRCodeScan\n(device, IP, GPS);
+
+:Display artifact details\ntitle, image, description;
+
+:Load related stories;
+
+if (Related stories?) then (Yes)
+  :Display related stories;
+
+  if (User taps\na story?) then (Yes)
+    :Navigate to\nStoryDetailScreen;
+  else (No)
+  endif
+else (No)
+  :Show "No related stories";
+endif
+
+stop
+
+@enduml
+
+---
+
+@startuml AI Video Generation Process
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title AI Video Generation Process
+
+start
+
+:User taps\n"Generate Video";
+
+:Display generation form;
+
+:User enters prompt;
+
+if (Prompt valid?) then (No)
+  :Show validation error;
+  stop
+else (Yes)
+endif
+
+:POST /api/media/videos/;
+
+:Create VideoGenerationJob\n(status: pending);
+
+:Call Luma AI API;
+
+if (Job submitted?) then (No)
+  :Show error;
+  :Update status to failed;
+  stop
+else (Yes)
+endif
+
+:Start polling\nVideoStatusPoller;
+
+repeat
+
+  :GET /api/media/status/video/{jobId}/;
+
+  if (Status = processing?) then (Yes)
+    :Update progress badge;
+    :Show progress percentage;
+    :Wait 10 seconds;
+  else (No)
+  endif
+
+repeat while (Job in progress)
+
+if (Status = completed?) then (Yes)
+  :Video URL available;
+  :Display video player;
+
+  :User taps play;
+  :Play video;
+
+else (No)
+  :Status = failed;
+  :Show error message;
+  :Allow retry;
+endif
+
+stop
+
+@enduml

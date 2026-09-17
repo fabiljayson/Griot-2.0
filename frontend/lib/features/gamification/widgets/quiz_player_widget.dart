@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/gamification_provider.dart';
 import '../services/gamification_api_service.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Interactive quiz player widget with instant feedback.
 ///
@@ -317,13 +318,13 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
               ),
             ),
             if (showFeedback && isCorrect)
-              const Icon(
-                Icons.check_circle,
+              const FaIcon(
+                AppIcons.check_circle,
                 color: AppColors.savannahGreen,
                 size: 24,
               )
             else if (showFeedback && isWrong)
-              const Icon(Icons.cancel, color: AppColors.error, size: 24),
+              const FaIcon(AppIcons.cancel, color: AppColors.error, size: 24),
           ],
         ),
       ),
@@ -348,8 +349,8 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
         children: [
           Row(
             children: [
-              Icon(
-                isCorrect ? Icons.check_circle : Icons.info_outline,
+              FaIcon(
+                isCorrect ? AppIcons.check_circle : AppIcons.info_outline,
                 color: isCorrect ? AppColors.savannahGreen : AppColors.error,
                 size: 20,
               ),

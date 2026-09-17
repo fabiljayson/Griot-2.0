@@ -1,0 +1,163 @@
+@startuml Griot 2.0 — Frontend Class Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  ArrowColor #1565C0
+}
+skinparam package {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+title Griot 2.0 — Frontend Class Diagram
+
+' ─── Core ─────────────────────────────────────────────
+package "Core" {
+  class ApiClient {
+    +Dio dio
+    -OfflineRequestRepository _offlineRepository
+    -ConnectivityService _connectivityService
+    +static ApiClient instance
+    +static ApiClient withAuth()
+    +queueOfflineRequest() Future
+  }
+
+  class AuthInterceptor {
+    -AuthRepository _authRepo
+    -bool _isRefreshing
+    +onRequest() void
+    +onError() void
+  }
+
+  class ConnectivityService {
+    -Connectivity _connectivity
+    -OfflineRequestRepository _offlineRepository
+    -StreamController _connectivityController
+    -bool _isOnline
+    +bool isOnline
+    +Stream connectivityStream
+    +initialize() void
+    +dispose() void
+  }
+
+  class OfflineSyncManager {
+    -OfflineRequestRepository _offlineRepository
+    -ApiClient _apiClient
+    -ConnectivityService _connectivityService
+    -bool _isSyncing
+    +initialize() void
+    +triggerSync() Future
+    +dispose() void
+  }
+
+  class OfflineQueueInterceptor {
+    -OfflineRequestRepository _offlineRepository
+    -ConnectivityService _connectivityService
+    +onRequest() void
+  }
+
+  ApiClient --> AuthInterceptor : uses
+  ApiClient --> OfflineQueueInterceptor : uses
+  ApiClient --> ConnectivityService : depends
+  OfflineSyncManager --> ConnectivityService : listens
+  OfflineSyncManager --> ApiClient : replays requests
+  OfflineSyncManager --> OfflineRequestRepository : reads queue
+}
+
+' ─── Auth ─────────────────────────────────────────────
+package "Auth" {
+  class AuthRepository {
+    +Future~String~ accessToken
+    +Future refreshTokens() void
+    +Future clearTokens() void
+  }
+
+  class AuthProvider {
+    +AsyncValue authState
+    +login() Future
+    +register() Future
+    +logout() void
+  }
+
+  class AuthWrapper {
+    +Widget child
+    +build() Widget
+  }
+
+  class UserModel {
+    +int id
+    +String username
+    +String email
+    +String firstName
+    +String lastName
+    +String role
+    +String institution
+  }
+
+  AuthProvider --> AuthRepository : uses
+  AuthWrapper --> AuthProvider : watches
+  AuthInterceptor --> AuthRepository : uses
+}
+
+' ─── Stories ──────────────────────────────────────────
+package "Stories" {
+  class StoryModel {
+    +int id
+    +String slug
+    +String title
+    +String summary
+    +String content
+    +UserModel author
+    +String language
+    +String region
+    +List categories
+    +String coverImage
+    +String audioUrl
+    +String videoUrl
+    +int estimatedReadTime
+    +bool isBookmarked
+  }
+
+  class StoryListNotifier {
+    +StoryListState state
+    +loadStories() Future
+    +refresh() Future
+    +loadMore() Future
+    -_loadFromCache() Future
+  }
+
+  class StoryRepository {
+    +fetchStories() Future
+    +searchStories() Future
+    +toggleBookmark() Future
+    +toggleLike() Future
+  }
+
+  StoryListNotifier --> StoryRepository : uses
+  StoryRepository --> ApiClient : HTTP calls
+}
+
+' ─── Gamification ─────────────────────────────────────
+package "Gamification" {
+  class GamificationScreen {
+    +build() Widget
+  }
+
+  class QuizPlayerWidget {
+    +Quiz quiz
+    +build() Widget
+  }
+
+  class BadgeCard {
+    +Badge badge
+    +bool earned
+    +build() Widget
+  }
+
+  GamificationScreen --> QuizPlayerWidget : contains
+  GamificationScreen --> BadgeCard : displays
+}
+
+@enduml

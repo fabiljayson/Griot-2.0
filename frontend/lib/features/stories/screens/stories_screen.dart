@@ -7,6 +7,7 @@ import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_card.dart';
 import 'story_detail_screen.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Discovery dashboard for browsing and discovering stories.
 ///
@@ -227,10 +228,10 @@ class _SearchBar extends StatelessWidget {
               controller: controller,
               decoration: InputDecoration(
                 hintText: 'Search stories...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const FaIcon(AppIcons.search),
                 suffixIcon: controller.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const FaIcon(AppIcons.clear),
                         onPressed: () {
                           controller.clear();
                           onSearch('');
@@ -256,8 +257,8 @@ class _SearchBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: Icon(
-              showFilters ? Icons.filter_list_off : Icons.filter_list,
+            icon: FaIcon(
+              showFilters ? AppIcons.filter_list_off : AppIcons.filter_list,
               color: showFilters ? AppColors.terracotta : null,
             ),
             onPressed: onFilterToggle,
@@ -419,7 +420,7 @@ class _FilterChips extends StatelessWidget {
               if (hasFilters)
                 TextButton.icon(
                   onPressed: onClearFilters,
-                  icon: const Icon(Icons.clear_all, size: 18),
+                  icon: const FaIcon(AppIcons.clear_all, size: 18),
                   label: const Text('Clear'),
                 ),
             ],
@@ -448,8 +449,8 @@ class _ErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
+            FaIcon(
+              AppIcons.error_outline,
               size: 64,
               color: AppColors.error,
             ),
@@ -467,7 +468,7 @@ class _ErrorWidget extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const FaIcon(AppIcons.refresh),
               label: const Text('Try Again'),
             ),
           ],
@@ -491,8 +492,8 @@ class _EmptyWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.auto_stories,
+            FaIcon(
+              AppIcons.auto_stories,
               size: 64,
               color: AppColors.ochre,
             ),

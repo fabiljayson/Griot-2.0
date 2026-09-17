@@ -1,0 +1,155 @@
+@startuml High-Level System Components
+!theme plain
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam package {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+title Griot 2.0 — High-Level System Components
+
+' ─── Flutter Client Application ───────────────────────
+package "Flutter Client Application" {
+
+  package "UI Layer" {
+    component "Screens\n(Login, Home, Stories,\nStoryDetail, Library,\nQR Scanner, Gamification,\nAdmin Dashboard)" as Screens
+    component "Reusable Widgets\n(StoryCard, BadgeCard,\nQuizPlayer, AudioPlayer,\nVideoPlayer, ShareButton)" as Widgets
+  }
+
+  package "State Management" {
+    component "Riverpod Providers\n(Auth, Story, Library,\nGamification, Admin,\nAudio, Video, QR)" as Riverpod
+  }
+
+  package "Feature Services" {
+    component "AuthService\n(Login, Register,\nToken Management)" as AuthSvc
+    component "StoryService\n(CRUD, Search,\nBookmarks, Likes)" as StorySvc
+    component "LibraryService\n(Continue Reading,\nRecently Read)" as LibrarySvc
+    component "GamificationService\n(Quizzes, Badges,\nLeaderboard)" as GamificationSvc
+    component "QRService\n(Scanner, Artifact Lookup)" as QRSvc
+    component "AudioService\n(TTS Playback,\nOffline Audio)" as AudioSvc
+    component "VideoService\n(Generation, Polling,\nPlayback)" as VideoSvc
+    component "SharingService\n(Social Share,\nQuote Cards)" as ShareSvc
+    component "AdminService\n(Analytics,\nModeration)" as AdminSvc
+  }
+
+  package "Core Infrastructure" {
+    component "ApiClient\n(Dio + Interceptors)" as APIClient
+    component "AuthInterceptor\n(Bearer Token,\nAuto-Refresh)" as AuthInterceptor
+    component "OfflineQueueInterceptor\n(Request Queuing)" as OfflineInterceptor
+    component "ConnectivityService\n(Online/Offline\nDetection)" as ConnectivitySvc
+    component "OfflineSyncManager\n(Background Sync)" as OfflineSync
+    component "AppDatabase\n(SQLite / IndexedDB)" as LocalDB
+    component "Cache Repositories\n(Story, ReadingProgress,\nSearchHistory, Offline)" as CacheRepos
+  }
+}
+
+' ─── Django REST Framework API ────────────────────────
+package "Django REST Framework API" {
+
+  package "Authentication" {
+    component "SimpleJWT\n(Token Obtain,\nRefresh, Blacklist)" as JWTAuth
+    component "Role-Based Permissions\n(IsContributorOrAbove,\nIsAdminOrManager)" as RolePerms
+    component "Rate Throttling\n(Auth: 5/min,\nAPI: 120/min)" as Throttling
+  }
+
+  package "Business Logic" {
+    component "User Management\n(Register, Profile,\nDelete Account)" as UserMgmt
+    component "Story Engine\n(CRUD, Search,\nCategories, Feeds)" as StoryEngine
+    component "Content Moderation\n(Flag, Review,\nResolve)" as ContentMod
+    component "QR Code Module\n(Artifacts, QR Gen,\nScan Tracking)" as QRModule
+    component "Gamification Engine\n(Quizzes, Badges,\nXP, Certificates)" as GameEngine
+    component "Media Engine\n(AI Video, TTS)" as MediaEngine
+    component "Analytics Engine\n(Dashboard, Metrics,\nEngagement)" as AnalyticsEngine
+  }
+
+  package "Infrastructure" {
+    component "Health Probes\n(Liveness, Readiness,\nMetrics)" as HealthCheck
+    component "Structured Logging\n(JSON Formatter,\nRequest Middleware)" as StructLog
+    component "Seed Commands\n(Users, Stories, QR,\nGamification)" as SeedCmds
+  }
+}
+
+' ─── External Services ────────────────────────────────
+package "External Services" {
+  cloud "🎬 Luma AI\nDream Machine\n(Video Generation)" as LumaAI
+  cloud "🔊 TTS Provider\n(Text-to-Speech)" as TTSProvider
+  cloud "🐛 Sentry\n(Error Monitoring)" as SentryMonitor
+}
+
+' ─── Data Layer ───────────────────────────────────────
+package "Data Layer" {
+  database "SQLite\n(Development)" as SQLite
+  database "PostgreSQL\n(Production)" as PostgreSQL
+  artifact "Media Storage\n(Files, Images)" as MediaStorage
+}
+
+' ─── Client Internal Connections ──────────────────────
+Screens --> Widgets
+Screens --> Riverpod
+Widgets --> Riverpod
+Riverpod --> AuthSvc
+Riverpod --> StorySvc
+Riverpod --> LibrarySvc
+Riverpod --> GamificationSvc
+Riverpod --> QRSvc
+Riverpod --> AudioSvc
+Riverpod --> VideoSvc
+Riverpod --> ShareSvc
+Riverpod --> AdminSvc
+
+AuthSvc --> APIClient
+StorySvc --> APIClient
+LibrarySvc --> APIClient
+GamificationSvc --> APIClient
+QRSvc --> APIClient
+AudioSvc --> APIClient
+VideoSvc --> APIClient
+ShareSvc --> APIClient
+AdminSvc --> APIClient
+
+APIClient --> AuthInterceptor
+APIClient --> OfflineInterceptor
+AuthInterceptor --> APIClient
+OfflineInterceptor --> ConnectivitySvc
+ConnectivitySvc --> OfflineSync
+OfflineSync --> APIClient
+APIClient --> LocalDB
+LocalDB --> CacheRepos
+
+' ─── Client to Server ─────────────────────────────────
+APIClient -right-> JWTAuth : HTTPS/JSON
+
+' ─── Server Internal Connections ──────────────────────
+JWTAuth --> RolePerms
+JWTAuth --> Throttling
+
+UserMgmt --> JWTAuth
+StoryEngine --> RolePerms
+ContentMod --> RolePerms
+QRModule --> RolePerms
+GameEngine --> RolePerms
+MediaEngine --> RolePerms
+AnalyticsEngine --> RolePerms
+
+StoryEngine --> SQLite
+QRModule --> SQLite
+GameEngine --> SQLite
+MediaEngine --> SQLite
+AnalyticsEngine --> SQLite
+
+StoryEngine --> MediaStorage
+QRModule --> MediaStorage
+
+' ─── External Services ────────────────────────────────
+MediaEngine --> LumaAI
+MediaEngine --> TTSProvider
+AnalyticsEngine --> SentryMonitor
+
+@enduml

@@ -13,10 +13,30 @@ DEBUG = True
 
 SECRET_KEY = 'django-insecure-dev-only-change-me'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.ngrok-free.app',
+    '.ngrok.io',
+    '*',
+]
 
-# CORS: allow the Flutter web/PWA dev server and mobile emulators.
+# CORS: allow the Flutter web/PWA dev server, mobile emulators, and ngrok.
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Allow custom headers (Crucial for bypassing Ngrok free tier warning)
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'ngrok-skip-browser-warning',
+]
 
 # Serve media files in development via Django.
 STATICFILES_DIRS = [BASE_DIR / 'static']

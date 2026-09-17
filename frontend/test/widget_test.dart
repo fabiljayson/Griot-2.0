@@ -2,11 +2,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:african_teller/app.dart';
-import 'package:african_teller/core/theme/app_colors.dart';
-import 'package:african_teller/features/auth/models/user_model.dart';
-import 'package:african_teller/features/auth/providers/auth_provider.dart';
-import 'package:african_teller/features/auth/repositories/auth_repository.dart';
+import 'package:griot_ai/app.dart';
+import 'package:griot_ai/core/theme/app_colors.dart';
+import 'package:griot_ai/features/auth/models/user_model.dart';
+import 'package:griot_ai/features/auth/providers/auth_provider.dart';
+import 'package:griot_ai/features/auth/repositories/auth_repository.dart';
 
 /// Auth repository stub that bypasses secure storage.
 ///
@@ -44,7 +44,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Landing branding is visible.
-    expect(find.text('GRIOT 2.0'), findsOneWidget);
+    expect(find.text('GRIOT AI'), findsOneWidget);
 
     // Design tokens match the Griot 2.0 savannah palette.
     expect(AppColors.terracotta.toARGB32(), 0xFFC84C09);

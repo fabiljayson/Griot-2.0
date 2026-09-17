@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../models/story_model.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Card widget for displaying a story in the discovery grid.
 ///
@@ -152,7 +153,7 @@ class StoryCard extends StatelessWidget {
                     children: [
                       // Views
                       _StatChip(
-                        icon: Icons.remove_red_eye_outlined,
+                        icon: AppIcons.remove_red_eye_outlined,
                         label: story.formattedViewCount,
                       ),
                       const SizedBox(width: 12),
@@ -162,8 +163,8 @@ class StoryCard extends StatelessWidget {
                         onTap: onLike,
                         child: _StatChip(
                           icon: story.isLiked
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                              ? AppIcons.favorite
+                              : AppIcons.favorite_border,
                           label: story.formattedLikeCount,
                           color: story.isLiked ? AppColors.error : null,
                         ),
@@ -255,8 +256,8 @@ class _CoverImage extends StatelessWidget {
               return Container(
                 color: AppColors.parchment,
                 child: Center(
-                  child: Icon(
-                    Icons.image_outlined,
+                  child: FaIcon(
+                    AppIcons.image_outlined,
                     size: 48,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -299,8 +300,8 @@ class _BookmarkButton extends StatelessWidget {
         onTap: onPressed,
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Icon(
-            isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+          child: FaIcon(
+            isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
             color: isBookmarked ? AppColors.ochre : Colors.white,
             size: 20,
           ),
@@ -318,7 +319,7 @@ class _StatChip extends StatelessWidget {
     this.color,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final Color? color;
 
@@ -329,7 +330,7 @@ class _StatChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
+        FaIcon(
           icon,
           size: 14,
           color: color ?? theme.colorScheme.onSurfaceVariant,

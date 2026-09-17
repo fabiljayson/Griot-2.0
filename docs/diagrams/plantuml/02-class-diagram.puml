@@ -1,0 +1,399 @@
+@startuml Griot 2.0 — Backend Class Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+  ArrowColor #A80036
+}
+skinparam package {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+title Griot 2.0 — Backend Class Diagram
+
+' ─── Users ────────────────────────────────────────────
+package "Users" {
+  enum UserRole {
+    VISITOR = 'visitor'
+    CONTRIBUTOR = 'contributor'
+    INSTITUTION_MANAGER = 'institution_manager'
+    ADMIN = 'admin'
+  }
+
+  class User {
+    +int id
+    +String username
+    +String email
+    +String password
+    +String first_name
+    +String last_name
+    +UserRole role
+    +String institution
+    +bool is_staff
+    +bool is_superuser
+    +DateTime date_joined
+    +is_visitor() bool
+    +is_contributor() bool
+    +is_institution_manager() bool
+    +is_admin_role() bool
+    +role_display() String
+  }
+}
+
+' ─── Stories ──────────────────────────────────────────
+package "Stories" {
+  enum StoryStatus {
+    DRAFT = 'draft'
+    PENDING = 'pending'
+    PUBLISHED = 'published'
+    REJECTED = 'rejected'
+    ARCHIVED = 'archived'
+  }
+
+  enum StoryLanguage {
+    ENGLISH = 'en'
+    FRENCH = 'fr'
+    FULA = 'ful'
+    DUALA = 'dua'
+    EWONDO = 'ewo'
+    BAMILEKE = 'bml'
+    OTHER = 'other'
+  }
+
+  class Story {
+    +int id
+    +String title
+    +String slug
+    +String content
+    +String summary
+    +StoryLanguage language
+    +String region
+    +String tags
+    +ImageField cover_image
+    +String cover_image_blurhash
+    +String audio_url
+    +String video_url
+    +String cultural_context
+    +String moral_lesson
+    +String source
+    +int estimated_read_time
+    +StoryStatus status
+    +String reviewer_notes
+    +int view_count
+    +int like_count
+    +int bookmark_count
+    +int share_count
+    +DateTime created_at
+    +DateTime updated_at
+    +DateTime published_at
+    +is_published() bool
+    +tag_list() List
+  }
+
+  class StoryCategory {
+    +int id
+    +String name
+    +String slug
+    +String description
+    +String icon
+    +String color
+    +DateTime created_at
+  }
+
+  class StoryBookmark {
+    +int id
+    +User user
+    +Story story
+    +DateTime created_at
+    +String note
+  }
+
+  class StoryLike {
+    +int id
+    +User user
+    +Story story
+    +DateTime created_at
+  }
+
+  class StoryFlag {
+    +int id
+    +User user
+    +Story story
+    +FlagReason reason
+    +String details
+    +DateTime created_at
+    +bool resolved
+    +String resolution_notes
+  }
+
+  class StoryShare {
+    +int id
+    +Story story
+    +User user
+    +String platform
+    +String ip_address
+    +DateTime created_at
+  }
+
+  class ReadingProgress {
+    +int id
+    +User user
+    +Story story
+    +int progress_percent
+    +int last_read_position
+    +bool completed
+    +DateTime created_at
+    +DateTime updated_at
+    +is_complete() bool
+  }
+}
+
+' ─── Relationships ────────────────────────────────────
+User "1" --> "*" Story : authors
+User "1" --> "*" StoryBookmark : creates
+Story "1" --> "*" StoryBookmark : has
+User "1" --> "*" StoryLike : creates
+Story "1" --> "*" StoryLike : has
+User "1" --> "*" StoryFlag : creates
+Story "1" --> "*" StoryFlag : has
+Story "1" --> "*" StoryShare : has
+User "1" --> "*" ReadingProgress : tracks
+Story "1" --> "*" ReadingProgress : has
+StoryCategory "1" --> "*" Story : categorizes
+
+' ─── QR Codes & Artifacts ─────────────────────────────
+package "QR Codes & Artifacts" {
+  enum ArtifactCategory {
+    SCULPTURE
+    TEXTILE
+    INSTRUMENT
+    JEWELRY
+    POTTERY
+    MASK
+    WEAPON
+    FABRIC
+    TOOL
+    OTHER
+  }
+
+  class Artifact {
+    +int id
+    +String title
+    +String slug
+    +String description
+    +ArtifactCategory category
+    +User created_by
+    +String culture
+    +String region
+    +String estimated_date
+    +String materials
+    +String dimensions
+    +ImageField image
+    +String image_blurhash
+    +List additional_images
+    +String qr_code_url
+    +String qr_code_svg
+    +String deep_link_path
+    +String museum_name
+    +String floor
+    +String display_case
+    +bool is_published
+    +DateTime created_at
+    +DateTime updated_at
+    +qr_deep_link() String
+  }
+
+  class QRCodeScan {
+    +int id
+    +Artifact artifact
+    +User user
+    +String device_type
+    +String ip_address
+    +String user_agent
+    +float latitude
+    +float longitude
+    +DateTime created_at
+  }
+}
+
+User "1" --> "*" Artifact : creates
+Artifact "1" --> "*" QRCodeScan : has
+User "1" --> "*" QRCodeScan : performs
+Artifact "*" --> "*" Story : related_stories
+
+' ─── Gamification ─────────────────────────────────────
+package "Gamification" {
+  class Quiz {
+    +int id
+    +Story story
+    +String title
+    +String description
+    +int passing_score
+    +int time_limit_minutes
+    +bool is_published
+    +DateTime created_at
+    +DateTime updated_at
+    +question_count() int
+    +xp_reward() int
+  }
+
+  class QuizQuestion {
+    +int id
+    +Quiz quiz
+    +String question_text
+    +String option_a
+    +String option_b
+    +String option_c
+    +String option_d
+    +String correct_answer
+    +String explanation
+    +QuizDifficulty difficulty
+    +int order
+  }
+
+  class QuizAttempt {
+    +int id
+    +User user
+    +Quiz quiz
+    +int score
+    +int correct_count
+    +int total_questions
+    +bool passed
+    +int xp_earned
+    +AttemptStatus status
+    +JSON answers
+    +DateTime started_at
+    +DateTime completed_at
+    +int time_taken_seconds
+    +calculate_score() int
+  }
+
+  class Badge {
+    +int id
+    +String name
+    +String slug
+    +String description
+    +String emoji
+    +BadgeCategory category
+    +int xp_required
+    +int stories_read_required
+    +int quizzes_passed_required
+    +String color
+    +String icon_url
+    +bool is_active
+    +bool is_secret
+    +DateTime created_at
+  }
+
+  class UserBadge {
+    +int id
+    +User user
+    +Badge badge
+    +DateTime earned_at
+  }
+
+  class UserProfile {
+    +int id
+    +User user
+    +int total_xp
+    +int level
+    +int stories_read
+    +int stories_completed
+    +int quizzes_passed
+    +int total_quiz_xp
+    +int current_streak
+    +int longest_streak
+    +Date last_active_date
+    +DateTime created_at
+    +DateTime updated_at
+    +xp_for_next_level() int
+    +xp_progress() float
+    +add_xp(amount) void
+    +update_streak() void
+  }
+
+  class Certificate {
+    +int id
+    +User user
+    +CertType certificate_type
+    +String title
+    +String description
+    +DateTime issued_at
+    +String certificate_number
+    +int stories_read
+    +int quizzes_passed
+    +int level_achieved
+    +String pdf_url
+  }
+}
+
+Quiz "1" --> "1" Story : tied_to
+Quiz "1" --> "*" QuizQuestion : contains
+User "1" --> "*" QuizAttempt : attempts
+Quiz "1" --> "*" QuizAttempt : has
+User "1" --> "*" UserBadge : earns
+Badge "1" --> "*" UserBadge : granted_as
+User "1" --> "1" UserProfile : has
+User "1" --> "*" Certificate : receives
+
+' ─── Media ────────────────────────────────────────────
+package "Media" {
+  enum JobStatus {
+    PENDING = 'pending'
+    PROCESSING = 'processing'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+  }
+
+  class VideoGenerationJob {
+    +int id
+    +User user
+    +Story story
+    +String luma_job_id
+    +String prompt
+    +String luma_request_id
+    +JobStatus status
+    +int progress_percent
+    +String video_url
+    +String thumbnail_url
+    +int duration
+    +String error_message
+    +DateTime created_at
+    +DateTime updated_at
+    +DateTime started_at
+    +DateTime completed_at
+    +is_ready() bool
+    +is_processing() bool
+  }
+
+  class AudioNarrationJob {
+    +int id
+    +User user
+    +Story story
+    +Artifact artifact
+    +String narration_text
+    +String voice_id
+    +String language
+    +float speed
+    +JobStatus status
+    +FileField audio_file
+    +String audio_url
+    +int duration
+    +int file_size
+    +String error_message
+    +DateTime created_at
+    +DateTime updated_at
+    +DateTime completed_at
+    +is_ready() bool
+  }
+}
+
+User "1" --> "*" VideoGenerationJob : creates
+Story "1" --> "*" VideoGenerationJob : has
+User "1" --> "*" AudioNarrationJob : creates
+Story "1" --> "*" AudioNarrationJob : has
+Artifact "1" --> "*" AudioNarrationJob : has
+
+@enduml

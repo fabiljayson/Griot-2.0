@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../models/video_model.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Inline video player widget for AI-generated story videos.
 ///
@@ -161,8 +162,8 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                       ],
                     ),
                     child: IconButton(
-                      icon: Icon(
-                        isPlaying ? Icons.pause : Icons.play_arrow,
+                      icon: FaIcon(
+                        isPlaying ? AppIcons.pause : AppIcons.play_arrow,
                         color: Colors.white,
                         size: 36,
                       ),
@@ -262,15 +263,15 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                       color: AppColors.terracotta,
                     ),
                   ),
-                  errorWidget: (_, _, _) => const Icon(
-                    Icons.movie_creation_outlined,
+                  errorWidget: (_, _, _) => const FaIcon(
+                    AppIcons.movie_creation_outlined,
                     color: Colors.white38,
                     size: 48,
                   ),
                 )
               else
-                const Icon(
-                  Icons.movie_creation_outlined,
+                const FaIcon(
+                  AppIcons.movie_creation_outlined,
                   color: Colors.white38,
                   size: 48,
                 ),
@@ -321,7 +322,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+              const FaIcon(AppIcons.error_outline, color: AppColors.error, size: 48),
               const SizedBox(height: 12),
               Text(
                 _errorMessage ?? 'Video unavailable',
@@ -337,7 +338,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                   });
                   _initializePlayer();
                 },
-                icon: const Icon(Icons.refresh, size: 18),
+                icon: const FaIcon(AppIcons.refresh, size: 18),
                 label: const Text('Retry'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.terracotta,

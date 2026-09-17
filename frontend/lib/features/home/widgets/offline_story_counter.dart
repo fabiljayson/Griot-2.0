@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Displays the current offline story cache count, proving the local
 /// SQLite layer (Task 1.3) is wired end-to-end.
@@ -40,8 +41,8 @@ class OfflineStoryCounter extends ConsumerWidget {
               color: AppColors.savannahGreen,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
-              Icons.download_done_rounded,
+            child: const FaIcon(
+              AppIcons.download_done_rounded,
               color: AppColors.parchment,
               size: 22,
             ),

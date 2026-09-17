@@ -1,0 +1,196 @@
+@startuml Griot 2.0 — Package Diagram
+!theme plain
+skinparam package {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam rectangle {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+title Griot 2.0 — Package Diagram
+
+' ─── Flutter Client ───────────────────────────────────
+package "Flutter Client" {
+  package "core" {
+    package "constants" {
+      [AppConstants]
+      [PreRegisteredAccounts]
+    }
+    package "database" {
+      [AppDatabase]
+      [StoryCacheRepository]
+      [OfflineRequestRepository]
+      [OfflineUserRepository]
+      [ReadingProgressRepository]
+      [SearchHistoryRepository]
+    }
+    package "network" {
+      [ApiClient]
+      [AuthInterceptor]
+      [ConnectivityService]
+      [OfflineSyncManager]
+      [HttpUtils]
+    }
+    package "offline" {
+      [OfflineProvider]
+      [OfflineErrorBuffer]
+    }
+    package "providers" {
+      [DatabaseProviders]
+      [SettingsProviders]
+    }
+    package "theme" {
+      [AppColors]
+      [AppTheme]
+      [AppTypography]
+    }
+  }
+
+  package "features" {
+    package "auth" {
+      [LoginScreen]
+      [RegisterScreen]
+      [ProfileScreen]
+      [AuthWrapper]
+      [AuthProvider]
+      [AuthRepository]
+    }
+    package "home" {
+      [HomeScreen]
+      [ConnectivityStatusWidget]
+      [OfflineStoryCounter]
+    }
+    package "stories" {
+      [StoriesScreen]
+      [StoryDetailScreen]
+      [StoryFormScreen]
+      [StoryCard]
+      [StoryActions]
+    }
+    package "library" {
+      [LibraryScreen]
+      [ContinueReadingWidget]
+      [LibraryApiService]
+    }
+    package "qr_scanner" {
+      [QRScannerWidget]
+      [ArtifactDetailScreen]
+      [QrApiService]
+    }
+    package "audio" {
+      [AudioPlayerSheet]
+      [AudioPlayerService]
+      [OfflineAudioService]
+    }
+    package "video" {
+      [VideoGenerationSheet]
+      [VideoPlayerWidget]
+      [VideoStatusPoller]
+      [VideoApiService]
+    }
+    package "gamification" {
+      [GamificationScreen]
+      [QuizPlayerWidget]
+      [BadgeCard]
+      [GamificationApiService]
+    }
+    package "sharing" {
+      [ShareButton]
+      [QuoteCard]
+      [TrendingStoriesWidget]
+      [SharingService]
+    }
+    package "admin" {
+      [AdminDashboardScreen]
+      [AdminApiService]
+      [GrowthChart]
+      [ModerationWidgets]
+      [StatCard]
+    }
+  }
+}
+
+' ─── Django REST API ──────────────────────────────────
+package "Django REST API" {
+  package "users" {
+    [User]
+    [UserRole]
+    [RegisterView]
+    [MeView]
+    [TokenObtainPairView]
+  }
+  package "stories" {
+    [Story]
+    [StoryCategory]
+    [StoryBookmark]
+    [StoryLike]
+    [StoryFlag]
+    [StoryShare]
+    [ReadingProgress]
+    [StoryViewSet]
+  }
+  package "qr_codes" {
+    [Artifact]
+    [QRCodeScan]
+    [QRGenerator]
+  }
+  package "gamification" {
+    [Quiz]
+    [QuizQuestion]
+    [QuizAttempt]
+    [Badge]
+    [UserBadge]
+    [UserProfile]
+    [Certificate]
+  }
+  package "media_app" {
+    [VideoGenerationJob]
+    [AudioNarrationJob]
+    [LumaAiService]
+    [TtsService]
+  }
+  package "api" {
+    [HealthViews]
+    [AnalyticsViews]
+    [JsonFormatter]
+    [RequestLogMiddleware]
+    [SeedCommands]
+  }
+}
+
+' ─── External Services ────────────────────────────────
+package "External Services" {
+  [LumaAiAPI]
+  [TTSProvider]
+  [Sentry]
+}
+
+' ─── Dependencies ─────────────────────────────────────
+' Frontend internal
+core ..> features : used by
+features.auth ..> core.network : HTTP
+features.stories ..> core.network : HTTP
+features.library ..> core.network : HTTP
+features.qr_scanner ..> core.network : HTTP
+features.audio ..> core.network : HTTP
+features.video ..> core.network : HTTP
+features.gamification ..> core.network : HTTP
+features.sharing ..> core.network : HTTP
+features.admin ..> core.network : HTTP
+core.network ..> core.database : offline queue
+
+' Client to Server
+core.network ..> "Django REST API" : HTTPS
+
+' External
+media_app ..> LumaAiAPI : REST
+media_app ..> TTSProvider : REST
+core.offline ..> Sentry : error reporting
+
+@enduml

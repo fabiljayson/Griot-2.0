@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../admin/admin_feature.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Profile/Account screen showing user info and settings.
 ///
@@ -56,7 +57,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Profile'),
         actions: [
           IconButton(
-            icon: Icon(_isEditing ? Icons.close : Icons.edit_outlined),
+            icon: FaIcon(_isEditing ? AppIcons.close : AppIcons.edit_outlined),
             onPressed: () {
               setState(() {
                 _isEditing = !_isEditing;
@@ -178,23 +179,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _SectionTitle(title: 'Account Information'),
             const SizedBox(height: 12),
             _InfoTile(
-              icon: Icons.person_outline,
+              icon: AppIcons.person_outline,
               label: 'Username',
               value: user.username,
             ),
             _InfoTile(
-              icon: Icons.email_outlined,
+              icon: AppIcons.email_outlined,
               label: 'Email',
               value: user.email,
             ),
             if (user.institution.isNotEmpty)
               _InfoTile(
-                icon: Icons.business_outlined,
+                icon: AppIcons.business_outlined,
                 label: 'Institution',
                 value: user.institution,
               ),
             _InfoTile(
-              icon: Icons.calendar_today,
+              icon: AppIcons.calendar_today,
               label: 'Member Since',
               value: _formatDate(user.dateJoined),
             ),
@@ -212,7 +213,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _SectionTitle(title: 'Administration'),
               const SizedBox(height: 12),
               _ActionTile(
-                icon: Icons.insights_outlined,
+                icon: AppIcons.insights_outlined,
                 label: 'Admin Dashboard',
                 color: AppColors.savannahGreen,
                 onTap: () {
@@ -230,7 +231,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _SectionTitle(title: 'Danger Zone'),
             const SizedBox(height: 12),
             _ActionTile(
-              icon: Icons.logout,
+              icon: AppIcons.logout,
               label: 'Sign Out',
               onTap: () async {
                 final confirmed = await _showConfirmDialog(
@@ -246,7 +247,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 8),
             _ActionTile(
-              icon: Icons.delete_forever,
+              icon: AppIcons.delete_forever,
               label: 'Delete Account & Data',
               color: AppColors.error,
               onTap: () => _showDeleteAccountDialog(context, user),
@@ -266,8 +267,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        icon: const Icon(
-          Icons.warning_amber_rounded,
+        icon: const FaIcon(
+          AppIcons.warning_amber_rounded,
           color: AppColors.error,
           size: 48,
         ),
@@ -387,7 +388,7 @@ class _InfoTile extends StatelessWidget {
     required this.value,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final String value;
 
@@ -404,7 +405,7 @@ class _InfoTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
+          FaIcon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -504,7 +505,7 @@ class _ActionTile extends StatelessWidget {
     this.color,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final VoidCallback onTap;
   final Color? color;
@@ -528,7 +529,7 @@ class _ActionTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: effectiveColor, size: 20),
+              FaIcon(icon, color: effectiveColor, size: 20),
               const SizedBox(width: 12),
               Text(
                 label,
@@ -538,8 +539,8 @@ class _ActionTile extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Icon(
-                Icons.chevron_right,
+              FaIcon(
+                AppIcons.chevron_right,
                 color: effectiveColor.withValues(alpha: 0.5),
               ),
             ],

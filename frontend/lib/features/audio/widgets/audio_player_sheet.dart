@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/audio_model.dart';
 import '../providers/audio_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Persistent sticky audio player sheet.
 ///
@@ -122,7 +123,7 @@ class _MiniPlayer extends ConsumerWidget {
 
                     // Skip backward
                     IconButton(
-                      icon: const Icon(Icons.replay_10, size: 24),
+                      icon: const FaIcon(AppIcons.replay_10, size: 24),
                       onPressed: () =>
                           ref.read(audioPlayerProvider.notifier).skipBackward(),
                       tooltip: 'Rewind 10s',
@@ -130,10 +131,10 @@ class _MiniPlayer extends ConsumerWidget {
 
                     // Play/Pause
                     IconButton(
-                      icon: Icon(
+                      icon: FaIcon(
                         audioState.isPlaying
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_filled,
+                            ? AppIcons.pause_circle_filled
+                            : AppIcons.play_circle_filled,
                         size: 40,
                         color: AppColors.terracotta,
                       ),
@@ -144,7 +145,7 @@ class _MiniPlayer extends ConsumerWidget {
 
                     // Skip forward
                     IconButton(
-                      icon: const Icon(Icons.forward_10, size: 24),
+                      icon: const FaIcon(AppIcons.forward_10, size: 24),
                       onPressed: () =>
                           ref.read(audioPlayerProvider.notifier).skipForward(),
                       tooltip: 'Forward 10s',
@@ -301,7 +302,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                     children: [
                       // Skip backward
                       IconButton(
-                        icon: const Icon(Icons.replay_10, size: 32),
+                        icon: const FaIcon(AppIcons.replay_10, size: 32),
                         onPressed: () => ref
                             .read(audioPlayerProvider.notifier)
                             .skipBackward(),
@@ -326,10 +327,10 @@ class _FullPlayerSheet extends ConsumerWidget {
                           ],
                         ),
                         child: IconButton(
-                          icon: Icon(
+                          icon: FaIcon(
                             audioState.isPlaying
-                                ? Icons.pause
-                                : Icons.play_arrow,
+                                ? AppIcons.pause
+                                : AppIcons.play_arrow,
                             size: 40,
                             color: Colors.white,
                           ),
@@ -342,7 +343,7 @@ class _FullPlayerSheet extends ConsumerWidget {
 
                       // Skip forward
                       IconButton(
-                        icon: const Icon(Icons.forward_10, size: 32),
+                        icon: const FaIcon(AppIcons.forward_10, size: 32),
                         onPressed: () => ref
                             .read(audioPlayerProvider.notifier)
                             .skipForward(),
@@ -351,7 +352,7 @@ class _FullPlayerSheet extends ConsumerWidget {
 
                       // Repeat
                       IconButton(
-                        icon: const Icon(Icons.repeat, size: 24),
+                        icon: const FaIcon(AppIcons.repeat, size: 24),
                         onPressed: () => ref
                             .read(audioPlayerProvider.notifier)
                             .toggleRepeat(),
@@ -370,21 +371,21 @@ class _FullPlayerSheet extends ConsumerWidget {
                     children: [
                       // Playback speed
                       _ControlButton(
-                        icon: Icons.speed,
+                        icon: AppIcons.speed,
                         label: '${audioState.playbackSpeed}x',
                         onTap: () => _showSpeedPicker(context, ref),
                       ),
 
                       // Sleep timer
                       _ControlButton(
-                        icon: Icons.bedtime_outlined,
+                        icon: AppIcons.bedtime_outlined,
                         label: audioState.sleepTimer.label,
                         onTap: () => _showSleepTimerPicker(context, ref),
                       ),
 
                       // Volume
                       _ControlButton(
-                        icon: Icons.volume_up,
+                        icon: AppIcons.volume_up,
                         label: 'Volume',
                         onTap: () => _showVolumePicker(context, ref),
                       ),
@@ -420,7 +421,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                   title: Text(speed.label),
                   trailing:
                       ref.read(audioPlayerProvider).playbackSpeed == speed.value
-                      ? const Icon(Icons.check, color: AppColors.terracotta)
+                      ? const FaIcon(AppIcons.check, color: AppColors.terracotta)
                       : null,
                   onTap: () {
                     ref
@@ -456,7 +457,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                 return ListTile(
                   title: Text(timer.label),
                   trailing: ref.read(audioPlayerProvider).sleepTimer == timer
-                      ? const Icon(Icons.check, color: AppColors.terracotta)
+                      ? const FaIcon(AppIcons.check, color: AppColors.terracotta)
                       : null,
                   onTap: () {
                     ref.read(audioPlayerProvider.notifier).setSleepTimer(timer);
@@ -495,8 +496,8 @@ class _FullPlayerSheet extends ConsumerWidget {
                     return Row(
                       children: [
                         IconButton(
-                          icon: Icon(
-                            volume == 0 ? Icons.volume_off : Icons.volume_up,
+                          icon: FaIcon(
+                            volume == 0 ? AppIcons.volume_off : AppIcons.volume_up,
                             color: AppColors.terracotta,
                           ),
                           tooltip: volume == 0 ? 'Unmute' : 'Mute',
@@ -544,7 +545,7 @@ class _ControlButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final VoidCallback onTap;
 
@@ -560,7 +561,7 @@ class _ControlButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+            FaIcon(icon, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(height: 4),
             Text(
               label,

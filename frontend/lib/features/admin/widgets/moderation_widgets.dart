@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../models/moderation_models.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// A single flag report: reason, reporter, date, and optional details.
 class FlagRow extends StatelessWidget {
@@ -19,7 +20,7 @@ class FlagRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.flag_outlined, size: 16, color: color),
+          FaIcon(AppIcons.flag_outlined, size: 16, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -98,7 +99,7 @@ class ModerationError extends StatelessWidget {
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
+          icon: const FaIcon(AppIcons.refresh),
           label: const Text('Retry'),
         ),
       ],

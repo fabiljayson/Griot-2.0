@@ -15,7 +15,7 @@ class SharingService {
     required String summary,
     String? imageUrl,
   }) async {
-    final shareUrl = 'https://africanteller.org/story/$slug';
+    final shareUrl = 'https://griot-ai.org/story/$slug';
     final shareText = _buildShareText(title, summary, shareUrl);
 
     await SharePlus.instance.share(
@@ -33,7 +33,7 @@ class SharingService {
     required String summary,
     required String platform,
   }) async {
-    final shareUrl = 'https://africanteller.org/story/$slug';
+    final shareUrl = 'https://griot-ai.org/story/$slug';
     final shareText = _buildShareText(title, summary, shareUrl);
 
     await SharePlus.instance.share(
@@ -46,7 +46,7 @@ class SharingService {
 
   /// Copy story link to clipboard.
   Future<void> copyLink({required String slug}) async {
-    final shareUrl = 'https://africanteller.org/story/$slug';
+    final shareUrl = 'https://griot-ai.org/story/$slug';
     await Clipboard.setData(ClipboardData(text: shareUrl));
   }
 
@@ -58,10 +58,10 @@ class SharingService {
       buffer.writeln(summary);
       buffer.writeln();
     }
-    buffer.writeln('Discover this story on African Teller:');
+    buffer.writeln('Discover this story on Griot AI:');
     buffer.writeln(url);
     buffer.writeln();
-    buffer.writeln('#AfricanTeller #Cameroon #CulturalHeritage');
+    buffer.writeln('#GriotAI #Cameroon #CulturalHeritage');
     return buffer.toString();
   }
 

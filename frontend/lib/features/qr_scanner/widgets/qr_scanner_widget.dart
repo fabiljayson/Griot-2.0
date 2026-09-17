@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/qr_provider.dart';
 import '../services/qr_api_service.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Full-screen QR code scanner with traditional African border motif overlay.
 ///
@@ -140,14 +141,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
         title: const Text('Scan QR Code'),
         actions: [
           IconButton(
-            icon: Icon(
-              _isFlashOn ? Icons.flash_on : Icons.flash_off,
+            icon: FaIcon(
+              _isFlashOn ? AppIcons.flash_on : AppIcons.flash_off,
               color: _isFlashOn ? AppColors.ochre : Colors.white,
             ),
             onPressed: _toggleFlash,
           ),
           IconButton(
-            icon: const Icon(Icons.keyboard),
+            icon: const FaIcon(AppIcons.keyboard),
             onPressed: _showManualInput,
             tooltip: 'Enter URL manually',
           ),

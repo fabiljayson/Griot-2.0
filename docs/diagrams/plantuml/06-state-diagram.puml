@@ -1,0 +1,218 @@
+@startuml Offline Request State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Offline Request Queue State Machine
+
+[*] --> Pending : Request queued\n(device offline)
+
+Pending --> InProgress : Connectivity restored,\nsync starts
+Pending --> Pending : Retry count < max\n(after failure)
+
+InProgress --> Completed : Server responds\n2xx success
+InProgress --> Failed : Server error\nor network failure
+
+Failed --> InProgress : Retry\n(retry_count < max)
+Failed --> Pending : Max retries reached,\nwait for next sync
+
+Completed --> [*]
+Pending --> [*] : Max retries exceeded\n(give up)
+
+note right of Pending : Stored in\noffline_requests table.\nMethod, path, body saved.
+note right of InProgress : Request being\nreplayed to server.
+note right of Completed : Successfully synced.\nReady for cleanup.
+note right of Failed : Error message stored.\nRetry with backoff.
+
+@enduml
+
+@startuml Story Lifecycle State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Story Lifecycle State Machine
+
+[*] --> Draft : Contributor creates story
+
+Draft --> Pending : Submit for review
+Draft --> Archived : Delete draft
+
+Pending --> Published : Admin/Manager approves
+Pending --> Rejected : Admin/Manager rejects
+Pending --> Archived : Admin archives
+
+Published --> Archived : Admin archives
+Published --> Rejected : Flagged & removed
+
+Rejected --> Draft : Author revises
+Rejected --> Archived : Admin archives
+
+Archived --> Draft : Restore (admin)
+
+note right of Draft : Story is being written.\nOnly visible to author.
+note right of Pending : Awaiting moderation.\nVisible to managers/admins.
+note right of Published : Live on platform.\nVisible to all users.
+note right of Rejected : Failed review.\nAuthor can revise.
+note right of Archived : Hidden from public.\nCan be restored.
+
+@enduml
+
+---
+
+@startuml Quiz Attempt State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Quiz Attempt State Machine
+
+[*] --> InProgress : User starts quiz
+
+InProgress --> Completed : User finishes\nor all questions answered
+InProgress --> TimedOut : Time limit exceeded
+InProgress --> Completed : Auto-submit on\nlast question
+
+Completed --> [*]
+TimedOut --> [*]
+
+note right of InProgress : Answers recorded.\nScore not yet calculated.\nXP not yet awarded.
+note right of Completed : Score calculated.\nXP awarded if passed.\nBadges checked.
+note right of TimedOut : Partial score.\nNo XP awarded.\nAttempt recorded.
+
+@enduml
+
+---
+
+@startuml Media Job State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title AI Video/Audio Job State Machine
+
+[*] --> Pending : Job submitted
+
+Pending --> Processing : External API starts\nprocessing
+Pending --> Failed : API error or\nvalidation failure
+
+Processing --> Completed : Generation\nfinished successfully
+Processing --> Failed : API error or\ntimeout
+
+Failed --> Pending : User retries
+
+Completed --> [*]
+
+note right of Pending : Job queued.\nWaiting for external\nAPI to pick up.
+note right of Processing : Luma AI / TTS\nactively generating.\nProgress updating.
+note right of Completed : Video URL / Audio URL\navailable for playback.
+note right of Failed : Error message stored.\nUser can retry.
+
+@enduml
+
+---
+
+@startuml Offline Request State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Offline Request Queue State Machine
+
+[*] --> Pending : Request queued\n(device offline)
+
+Pending --> InProgress : Connectivity restored,\nsync starts
+Pending --> Pending : Retry count < max\n(after failure)
+
+InProgress --> Completed : Server responds\n2xx success
+InProgress --> Failed : Server error\nor network failure
+
+Failed --> InProgress : Retry\n(retry_count < max)
+Failed --> Pending : Max retries reached,\nwait for next sync
+
+Completed --> [*]
+Pending --> [*] : Max retries exceeded\n(give up)
+
+note right of Pending : Stored in\noffline_requests table.\nMethod, path, body saved.
+note right of InProgress : Request being\nreplayed to server.
+note right of Completed : Successfully synced.\nReady for cleanup.
+note right of Failed : Error message stored.\nRetry with backoff.
+
+@enduml
+
+---
+
+@startuml User Authentication State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title User Authentication State Machine
+
+[*] --> Initial : App starts
+
+Initial --> Loading : Checking stored tokens
+Loading --> Authenticated : Valid tokens found
+Loading --> Unauthenticated : No tokens / invalid
+
+Unauthenticated --> Loading : User logs in\n(credentials submitted)
+Unauthenticated --> Loading : User registers
+
+Loading --> Authenticated : Login/Register success
+Loading --> Unauthenticated : Login/Register failure
+
+Authenticated --> Unauthenticated : Logout / token expired\n/ delete account
+
+Authenticated --> Loading : Token refresh needed\n(on 401 response)
+
+note right of Initial : App bootstrapping.\nChecking local storage.
+note right of Loading : Waiting for API\nresponse.
+note right of Authenticated : JWT tokens valid.\nFull feature access.
+note right of Unauthenticated : No valid tokens.\nOnly public content.
+
+@enduml
+
+---
+
+@startuml Content Moderation State Machine
+!theme plain
+skinparam state {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+
+title Content Flag & Moderation State Machine
+
+[*] --> NoFlags : Story published\n(no flags)
+
+NoFlags --> Flagged : User flags story\n(cultural inaccuracy,\ninappropriate, etc.)
+
+Flagged --> UnderReview : Manager/Admin\nviews queue
+
+UnderReview --> Resolved_Keep : Action = dismiss\n(story kept)
+UnderReview --> Resolved_Remove : Action = remove\n(story archived)
+
+Resolved_Keep --> NoFlags : Flags cleared\n(story remains)
+Resolved_Remove --> Archived : Story archived
+
+Archived --> [*]
+
+note right of NoFlags : All flags resolved.\nStory is clean.
+note right of Flagged : Unresolved flags\nin moderation queue.
+note right of UnderReview : Admin/Manager\nreviewing flags.
+note right of Resolved_Keep : Flags dismissed.\nStory stays published.
+note right of Resolved_Remove : Story archived.\nHidden from public.
+
+@enduml

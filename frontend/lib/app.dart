@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/offline/offline_provider.dart';
 import 'core/providers/settings_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_feature.dart';
@@ -14,25 +15,27 @@ class AfricanTellerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      // Follow the system light/dark preference (togglable in-app).
-      themeMode: ref.watch(settingsProvider),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('fr'),
-      ],
-      // Auth-aware home: shows login if unauthenticated, otherwise home screen.
-      home: const AuthWrapper(
-        child: HomeScreen(),
+    return OfflineProvider(
+      child: MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        // Follow the system light/dark preference (togglable in-app).
+        themeMode: ref.watch(settingsProvider),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('fr'),
+        ],
+        // Auth-aware home: shows login if unauthenticated, otherwise home screen.
+        home: const AuthWrapper(
+          child: HomeScreen(),
+        ),
       ),
     );
   }

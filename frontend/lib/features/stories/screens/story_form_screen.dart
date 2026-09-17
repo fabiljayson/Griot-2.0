@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Story submission form for contributors.
 ///
@@ -91,7 +92,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
         actions: [
           // Preview toggle
           IconButton(
-            icon: Icon(_isPreviewMode ? Icons.edit : Icons.preview),
+            icon: FaIcon(_isPreviewMode ? AppIcons.edit : AppIcons.preview),
             onPressed: () {
               setState(() => _isPreviewMode = !_isPreviewMode);
             },

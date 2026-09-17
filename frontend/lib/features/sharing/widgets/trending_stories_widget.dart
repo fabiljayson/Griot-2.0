@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../stories/models/story_model.dart';
 import '../../stories/screens/story_detail_screen.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Horizontal carousel of trending story cards for the home screen.
 ///
@@ -120,8 +121,8 @@ class TrendingStoriesWidget extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.trending_up,
+                        FaIcon(
+                          AppIcons.trending_up,
                           color: scheme.onPrimary,
                           size: 12,
                         ),
@@ -162,8 +163,8 @@ class TrendingStoriesWidget extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.remove_red_eye_outlined,
+                          FaIcon(
+                            AppIcons.remove_red_eye_outlined,
                             size: 14,
                             color: scheme.onSurfaceVariant,
                           ),
@@ -173,8 +174,8 @@ class TrendingStoriesWidget extends StatelessWidget {
                             style: theme.textTheme.bodySmall,
                           ),
                           const SizedBox(width: 12),
-                          Icon(
-                            Icons.favorite_outline,
+                          FaIcon(
+                            AppIcons.favorite_outline,
                             size: 14,
                             color: scheme.onSurfaceVariant,
                           ),

@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../stories/screens/story_detail_screen.dart';
 import '../providers/library_provider.dart';
 import '../services/library_api_service.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Main library screen with three tabs:
 ///   - Continue Reading (stories in progress)
@@ -55,9 +56,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
           unselectedLabelColor: AppColors.charcoalMuted,
           indicatorColor: AppColors.terracotta,
           tabs: const [
-            Tab(text: 'Continue', icon: Icon(Icons.play_circle_outline)),
-            Tab(text: 'Recent', icon: Icon(Icons.history)),
-            Tab(text: 'Saved', icon: Icon(Icons.bookmark_outline)),
+            Tab(text: 'Continue', icon: FaIcon(AppIcons.play_circle_outline)),
+            Tab(text: 'Recent', icon: FaIcon(AppIcons.history)),
+            Tab(text: 'Saved', icon: FaIcon(AppIcons.bookmark_outline)),
           ],
         ),
       ),
@@ -79,7 +80,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   Widget _buildContinueReading(List<LibraryStoryModel> stories) {
     if (stories.isEmpty) {
       return _buildEmptyState(
-        icon: Icons.auto_stories,
+        icon: AppIcons.auto_stories,
         title: 'Nothing in progress',
         subtitle: 'Start reading a story to see it here',
       );
@@ -98,7 +99,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   Widget _buildRecentlyRead(List<LibraryStoryModel> stories) {
     if (stories.isEmpty) {
       return _buildEmptyState(
-        icon: Icons.history,
+        icon: AppIcons.history,
         title: 'No reading history',
         subtitle: 'Stories you read will appear here',
       );
@@ -117,7 +118,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   Widget _buildBookmarks(List<LibraryStoryModel> stories) {
     if (stories.isEmpty) {
       return _buildEmptyState(
-        icon: Icons.bookmark_border,
+        icon: AppIcons.bookmark_border,
         title: 'No saved stories',
         subtitle: 'Bookmark stories to find them here',
       );
@@ -300,8 +301,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   Row(
                     children: [
                       if (story.region.isNotEmpty) ...[
-                        Icon(
-                          Icons.place_outlined,
+                        FaIcon(
+                          AppIcons.place_outlined,
                           size: 12,
                           color: AppColors.charcoalMuted,
                         ),
@@ -315,8 +316,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                         ),
                         const SizedBox(width: 8),
                       ],
-                      Icon(
-                        Icons.timer_outlined,
+                      FaIcon(
+                        AppIcons.timer_outlined,
                         size: 12,
                         color: AppColors.charcoalMuted,
                       ),
@@ -362,13 +363,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                 ),
               )
             else if (story.completed)
-              const Icon(
-                Icons.check_circle,
+              const FaIcon(
+                AppIcons.check_circle,
                 color: AppColors.savannahGreen,
                 size: 24,
               )
             else if (showBookmark)
-              Icon(Icons.bookmark, color: AppColors.ochre, size: 24),
+              FaIcon(AppIcons.bookmark, color: AppColors.ochre, size: 24),
           ],
         ),
       ),
@@ -376,7 +377,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   }
 
   Widget _buildEmptyState({
-    required IconData icon,
+    required FaIconData icon,
     required String title,
     required String subtitle,
   }) {
@@ -386,7 +387,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            FaIcon(
               icon,
               size: 64,
               color: AppColors.charcoalMuted.withValues(alpha: 0.3),

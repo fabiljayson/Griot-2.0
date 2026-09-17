@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../services/sharing_service.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Share button that opens a platform picker.
 class ShareButton extends StatelessWidget {
@@ -22,14 +23,14 @@ class ShareButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (compact) {
       return IconButton(
-        icon: const Icon(Icons.share_outlined, size: 20),
+        icon: const FaIcon(AppIcons.share_outlined, size: 20),
         onPressed: () => _showShareSheet(context),
         tooltip: 'Share',
       );
     }
 
     return IconButton(
-      icon: const Icon(Icons.share_outlined, color: Colors.white),
+      icon: const FaIcon(AppIcons.share_outlined, color: Colors.white),
       onPressed: () => _showShareSheet(context),
     );
   }
@@ -96,42 +97,42 @@ class ShareSheet extends StatelessWidget {
             children: [
               _buildPlatformButton(
                 context,
-                icon: Icons.language,
+                icon: AppIcons.language,
                 label: 'Copy Link',
                 color: AppColors.charcoalMuted,
                 onTap: () => _share(context, 'link'),
               ),
               _buildPlatformButton(
                 context,
-                icon: Icons.chat_bubble,
+                icon: AppIcons.chat_bubble,
                 label: 'WhatsApp',
                 color: const Color(0xFF25D366),
                 onTap: () => _share(context, 'whatsapp'),
               ),
               _buildPlatformButton(
                 context,
-                icon: Icons.send,
+                icon: AppIcons.send,
                 label: 'Telegram',
                 color: const Color(0xFF0088cc),
                 onTap: () => _share(context, 'telegram'),
               ),
               _buildPlatformButton(
                 context,
-                icon: Icons.facebook,
+                icon: AppIcons.facebook,
                 label: 'Facebook',
                 color: const Color(0xFF1877F2),
                 onTap: () => _share(context, 'facebook'),
               ),
               _buildPlatformButton(
                 context,
-                icon: Icons.alternate_email,
+                icon: AppIcons.alternate_email,
                 label: 'Twitter',
                 color: const Color(0xFF1DA1F2),
                 onTap: () => _share(context, 'twitter'),
               ),
               _buildPlatformButton(
                 context,
-                icon: Icons.more_horiz,
+                icon: AppIcons.more_horiz,
                 label: 'More',
                 color: AppColors.charcoalMuted,
                 onTap: () => _share(context, 'other'),
@@ -146,7 +147,7 @@ class ShareSheet extends StatelessWidget {
 
   Widget _buildPlatformButton(
     BuildContext context, {
-    required IconData icon,
+    required FaIconData icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
@@ -163,7 +164,7 @@ class ShareSheet extends StatelessWidget {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: FaIcon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 4),
           Text(

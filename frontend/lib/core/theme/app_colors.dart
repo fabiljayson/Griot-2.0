@@ -46,6 +46,30 @@ abstract final class AppColors {
   /// Border color.
   static const Color border = Color(0xFFE5D8C2);
 
+  // --- Brand gradients -----------------------------------------------------
+
+  /// Wide branding panel gradient (top-left → bottom-right, 3 stops).
+  static const LinearGradient brandGradientWide = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF1A1512), // mud charcoal
+      Color(0xFF2C241B), // deep earth
+      Color(0xFF3D2E1E), // warm brown
+    ],
+    stops: [0.0, 0.5, 1.0],
+  );
+
+  /// Compact branding header gradient (top → bottom, 2 stops).
+  static const LinearGradient brandGradientCompact = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFF1A1512), // mud charcoal
+      Color(0xFF2C241B), // deep earth
+    ],
+  );
+
   // --- Semantic ------------------------------------------------------------
   static const Color error = Color(0xFFD32F2F);
 

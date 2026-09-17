@@ -7,6 +7,7 @@ import '../services/gamification_api_service.dart';
 import '../widgets/badge_card.dart';
 import '../widgets/progress_bar.dart';
 import '../widgets/quiz_player_widget.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Main gamification hub showing profile, badges, quizzes, and leaderboard.
 class GamificationScreen extends ConsumerWidget {
@@ -221,8 +222,8 @@ class GamificationScreen extends ConsumerWidget {
                       ),
                     ),
                   )
-                : const Icon(
-                    Icons.arrow_forward_ios,
+                : const FaIcon(
+                    AppIcons.arrow_forward_ios,
                     size: 16,
                     color: AppColors.charcoalMuted,
                   ),

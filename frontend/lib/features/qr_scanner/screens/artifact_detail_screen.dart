@@ -8,6 +8,7 @@ import '../../audio/providers/audio_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../stories/models/story_model.dart';
 import '../services/qr_api_service.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Full-screen detail view for a museum artifact.
 ///
@@ -201,8 +202,8 @@ class ArtifactDetailScreen extends ConsumerWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.people_outline,
+              const FaIcon(
+                AppIcons.people_outline,
                 size: 16,
                 color: AppColors.charcoalMuted,
               ),
@@ -219,8 +220,8 @@ class ArtifactDetailScreen extends ConsumerWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.place_outlined,
+              const FaIcon(
+                AppIcons.place_outlined,
                 size: 16,
                 color: AppColors.charcoalMuted,
               ),
@@ -267,7 +268,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
               color: AppColors.terracotta,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.headphones, color: Colors.white, size: 22),
+            child: const FaIcon(AppIcons.headphones, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -314,7 +315,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
                 backgroundColor: AppColors.terracotta,
                 foregroundColor: Colors.white,
               ),
-              icon: const Icon(Icons.play_arrow_rounded),
+              icon: const FaIcon(AppIcons.play_arrow_rounded),
               tooltip: 'Play audio guide',
             ),
         ],
@@ -433,7 +434,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.museum, color: AppColors.ochre, size: 24),
+          const FaIcon(AppIcons.museum, color: AppColors.ochre, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -525,8 +526,8 @@ class ArtifactDetailScreen extends ConsumerWidget {
   Widget _buildScanStats(BuildContext context) {
     return Row(
       children: [
-        const Icon(
-          Icons.qr_code_scanner,
+        const FaIcon(
+          AppIcons.qr_code_scanner,
           size: 16,
           color: AppColors.charcoalMuted,
         ),
@@ -586,10 +587,10 @@ class _RelatedStoryCard extends StatelessWidget {
                   foregroundColor: AppColors.terracotta,
                 ),
                 iconSize: 18,
-                icon: Icon(
+                icon: FaIcon(
                   isAuthenticated
-                      ? Icons.play_arrow_rounded
-                      : Icons.lock_outline,
+                      ? AppIcons.play_arrow_rounded
+                      : AppIcons.lock_outline,
                 ),
                 tooltip: isAuthenticated
                     ? 'Listen to this story'

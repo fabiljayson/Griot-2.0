@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/offline_auth_repository.dart';
 
 /// State of the authentication system.
 enum AuthStatus {
@@ -16,6 +17,10 @@ enum AuthStatus {
 
   /// User is authenticated.
   authenticated,
+
+  /// Registration was saved locally while offline and is awaiting sync to
+  /// the server. The account is not usable until sync completes.
+  pendingSync,
 
   /// Loading state (login, register, etc.).
   loading,
@@ -118,7 +123,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   /// Register a new account.
-  Future<void> register({
+  ///
+  /// Online: registers, auto-logs-in, and returns [AuthStatus.authenticated].
+  /// Offline: the registration is saved locally (synced by the
+  /// OfflineSyncManager when connectivity returns) and the method returns
+  /// [AuthStatus.pendingSync] — the account can only be used once synced.
+  Future<AuthStatus> register({
     required String username,
     required String email,
     required String password,
@@ -147,17 +157,48 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         status: AuthStatus.authenticated,
         user: user,
       ));
+      return AuthStatus.authenticated;
     } on DioException catch (e) {
+      // Server unreachable — save the registration locally and let the
+      // OfflineSyncManager push it to the server when connectivity returns.
+      if (_isOfflineError(e)) {
+        // Server unreachable — save the registration locally and let the
+        // OfflineSyncManager push it to the server when connectivity returns.
+        try {
+          final offlineRepo = ref.read(offlineAuthProvider);
+          await offlineRepo.register(
+            username: username,
+            email: email,
+            password: password,
+            firstName: firstName ?? '',
+            lastName: lastName ?? '',
+            role: role.value,
+          );
+          state = const AsyncData(AuthState(
+            status: AuthStatus.pendingSync,
+          ));
+          return AuthStatus.pendingSync;
+        } catch (offlineError) {
+          state = AsyncData(AuthState(
+            status: AuthStatus.error,
+            errorMessage:
+                'Could not save your account for offline activation. Please try again.',
+          ));
+          return AuthStatus.error;
+        }
+      }
       final message = _extractErrorMessage(e);
       state = AsyncData(AuthState(
         status: AuthStatus.error,
         errorMessage: message,
       ));
+      return AuthStatus.error;
     } catch (e) {
       state = AsyncData(AuthState(
         status: AuthStatus.error,
         errorMessage: e.toString(),
       ));
+      return AuthStatus.error;
     }
   }
 
@@ -252,9 +293,16 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       return 'Connection timed out. Please check your network.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Unable to connect to the server.';
+      return 'You appear to be offline. Check your connection and try again.';
     }
     return 'An unexpected error occurred. Please try again.';
+  }
+
+  /// Whether [e] indicates the server could not be reached (offline).
+  bool _isOfflineError(DioException e) {
+    return e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout;
   }
 }
 

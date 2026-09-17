@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/network/connectivity_service.dart';
+import '../../core/providers/database_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../stories/models/story_model.dart';
@@ -10,7 +12,9 @@ import '../auth/providers/auth_provider.dart';
 import '../auth/screens/profile_screen.dart';
 import '../auth/widgets/role_badge.dart';
 import '../sharing/widgets/trending_stories_widget.dart';
+import 'widgets/connectivity_status_widget.dart';
 import 'widgets/offline_story_counter.dart';
+import '../../core/theme/app_icons.dart';
 
 /// Landing screen — the first impression of the Griot 2.0 app.
 ///
@@ -124,6 +128,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _buildLanguageToggle(context, theme, scheme),
                   const SizedBox(height: 16),
                   const OfflineStoryCounter(),
+                  const SizedBox(height: 16),
+                  ConnectivityStatusWidget(),
                   const SizedBox(height: 32),
 
                   // --- Hero Text ---
@@ -147,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // --- Trending Section ---
                   _SectionHeader(
                     title: _isEnglish ? 'Trending Now' : 'Tendances',
-                    icon: Icons.trending_up,
+                    icon: AppIcons.trending_up,
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -161,7 +167,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // --- Popular Section ---
                   _SectionHeader(
                     title: _isEnglish ? 'Popular Stories' : 'Histoires Populaires',
-                    icon: Icons.favorite,
+                    icon: AppIcons.favorite,
                   ),
                   const SizedBox(height: 12),
                   ...(_popularStories.map((story) => _StoryCard(
@@ -173,7 +179,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // --- Discover Regions ---
                   _SectionHeader(
                     title: _isEnglish ? 'Discover Regions' : 'Découvrir les Régions',
-                    icon: Icons.explore,
+                    icon: AppIcons.explore,
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -263,14 +269,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'GRIOT 2.0',
+                      'GRIOT AI',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: AppColors.surfaceLight,
                         letterSpacing: 1.4,
                       ),
                     ),
                     Text(
-                      'African Teller',
+                      'Digital Heritage Platform',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.ochre,
                       ),
@@ -286,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       systemBrightness:
                           MediaQuery.of(context).platformBrightness,
                     ),
-                icon: const Icon(Icons.dark_mode_outlined),
+                icon: const FaIcon(AppIcons.dark_mode_outlined),
                 color: AppColors.surfaceLight,
               ),
               if (user != null)
@@ -299,7 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.account_circle_outlined),
+                  icon: const FaIcon(AppIcons.account_circle_outlined),
                   color: AppColors.surfaceLight,
                 ),
             ],
@@ -360,14 +366,14 @@ class _SectionHeader extends StatelessWidget {
   });
 
   final String title;
-  final IconData icon;
+  final FaIconData icon;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, color: AppColors.terracotta, size: 20),
+        FaIcon(icon, color: AppColors.terracotta, size: 20),
         const SizedBox(width: 8),
         Text(title, style: theme.textTheme.titleLarge),
       ],
@@ -478,8 +484,8 @@ class _StoryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
+              FaIcon(
+                AppIcons.chevron_right,
                 color: scheme.onSurfaceVariant,
               ),
             ],

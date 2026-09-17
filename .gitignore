@@ -49,3 +49,5 @@ API keys.*
 Thumbs.db
 *.log
 /tmp/
+
+.vercel

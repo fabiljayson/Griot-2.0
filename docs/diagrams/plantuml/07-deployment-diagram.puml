@@ -1,0 +1,170 @@
+@startuml System Deployment Architecture
+!theme plain
+skinparam node {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam artifact {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+title Griot 2.0 — System Deployment Architecture
+
+' ─── Client Devices ───────────────────────────────────
+node "Client Devices" {
+  node "Mobile" {
+    artifact "📱 iOS Device\n(Flutter App)" as iOS
+    artifact "📱 Android Device\n(Flutter App)" as Android
+  }
+  node "Web" {
+    artifact "🌐 Web Browser\n(Flutter PWA)" as PWA
+  }
+}
+
+' ─── Flutter Client Layer ─────────────────────────────
+package "Flutter Client Layer" {
+  artifact "Flutter UI\n(MaterialApp)" as UI
+  artifact "Riverpod\nState Management" as Riverpod
+  artifact "Dio HTTP Client\n(+ interceptors)" as Dio
+  artifact "SQLite / IndexedDB\n(Local Cache)" as SQLite
+}
+
+' ─── Network Layer ────────────────────────────────────
+cloud "Network" {
+  artifact "HTTPS" as HTTPS
+  artifact "Ngrok Tunnel\n(dev testing)" as Ngrok
+}
+
+' ─── Backend Server ───────────────────────────────────
+node "Backend Server" {
+  package "Django Application" {
+    artifact "WSGI / ASGI\nServer" as WSGI
+    artifact "Django REST\nFramework" as DRF
+    artifact "SimpleJWT\nAuthentication" as JWT
+  }
+
+  package "Django Apps" {
+    artifact "users\n(Auth & Roles)" as UsersApp
+    artifact "stories\n(Content)" as StoriesApp
+    artifact "qr_codes\n(Artifacts)" as QRCodesApp
+    artifact "gamification\n(Quizzes & Badges)" as GamificationApp
+    artifact "media_app\n(Video & TTS)" as MediaApp
+    artifact "api\n(Health & Analytics)" as APIApp
+  }
+
+  database "SQLite\n(Development)" as SQLiteProd
+  database "PostgreSQL\n(Production)" as PostgreSQL
+
+  artifact "Media Files\n(Stories, Artifacts)" as MediaFiles
+}
+
+' ─── External Services ────────────────────────────────
+package "External Services" {
+  cloud "🎬 Luma AI\nDream Machine\n(Video Generation)" as LumaAI
+  cloud "🔊 TTS Provider\n(Audio Narration)" as TTSService
+  cloud "🐛 Sentry\n(Error Monitoring)" as Sentry
+}
+
+' ─── DevOps & Monitoring ──────────────────────────────
+package "DevOps & Monitoring" {
+  artifact "Ngrok\n(Tunneling)" as NgrokTunnel
+  artifact "Health Endpoints\n/api/health/*" as HealthCheck
+  artifact "Structured\nJSON Logging" as StructLog
+}
+
+' ─── Connections ──────────────────────────────────────
+iOS --> HTTPS
+Android --> HTTPS
+PWA --> HTTPS
+iOS ..> Ngrok
+Android ..> Ngrok
+
+UI --> Riverpod
+Riverpod --> Dio
+Dio --> SQLite
+
+HTTPS --> WSGI
+Ngrok --> WSGI
+
+WSGI --> DRF
+DRF --> JWT
+DRF --> UsersApp
+DRF --> StoriesApp
+DRF --> QRCodesApp
+DRF --> GamificationApp
+DRF --> MediaApp
+DRF --> APIApp
+
+UsersApp --> SQLiteProd
+StoriesApp --> SQLiteProd
+QRCodesApp --> SQLiteProd
+GamificationApp --> SQLiteProd
+MediaApp --> SQLiteProd
+SQLiteProd ..> PostgreSQL
+
+StoriesApp --> MediaFiles
+QRCodesApp --> MediaFiles
+
+MediaApp --> LumaAI
+MediaApp --> TTSService
+APIApp --> Sentry
+
+@enduml
+
+---
+
+@startuml Development vs Production
+!theme plain
+skinparam node {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam artifact {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+title Development vs Production Environment
+
+package "Development Environment" {
+  artifact "Flutter App\n(flutter run)" as DevApp
+  artifact "Django Dev Server\n(manage.py runserver)" as DevServer
+  database "SQLite\n(african_teller.db)" as DevDB
+  artifact "Ngrok\n(ngrok-free.app)" as DevNgrok
+  artifact "Media: /media/" as DevMedia
+
+  DevApp --> DevNgrok
+  DevNgrok --> DevServer
+  DevServer --> DevDB
+  DevServer --> DevMedia
+}
+
+package "Production Environment" {
+  artifact "Flutter Web/Mobile\n(built assets)" as ProdApp
+  artifact "Django + Gunicorn\n(WSGI)" as ProdServer
+  database "PostgreSQL\n(managed)" as ProdDB
+  artifact "CDN / Static Files" as ProdCDN
+  artifact "Cloud Storage\n(S3 / GCS)" as ProdMedia
+  artifact "Sentry\n(error tracking)" as ProdSentry
+
+  ProdApp -->|HTTPS| ProdCDN
+  ProdCDN -->|API calls| ProdServer
+  ProdServer --> ProdDB
+  ProdServer --> ProdMedia
+  ProdServer --> ProdSentry
+}
+
+@enduml

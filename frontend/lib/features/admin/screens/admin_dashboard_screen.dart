@@ -12,6 +12,7 @@ import '../widgets/growth_chart.dart';
 import '../widgets/moderation_widgets.dart';
 import '../widgets/ranked_tile.dart';
 import '../widgets/stat_card.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Admin dashboard — Phase 9.
 ///
@@ -36,7 +37,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ref.invalidate(dashboardSummaryProvider);
               ref.invalidate(moderationQueueProvider);
             },
-            icon: const Icon(Icons.refresh),
+            icon: const FaIcon(AppIcons.refresh),
           ),
         ],
       ),
@@ -76,7 +77,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         child: StatCard(
                           label: 'Total Users',
                           value: _formatCount(summary.users.totalUsers),
-                          icon: Icons.people_outline,
+                          icon: AppIcons.people_outline,
                           color: AppColors.terracotta,
                           subtitle:
                               '${summary.users.activeUsers30d} active (30d)',
@@ -87,7 +88,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         child: StatCard(
                           label: 'Stories',
                           value: _formatCount(summary.stories.totalStories),
-                          icon: Icons.auto_stories_outlined,
+                          icon: AppIcons.auto_stories_outlined,
                           color: AppColors.ochre,
                           subtitle:
                               '${summary.stories.pendingReview} pending review',
@@ -100,7 +101,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           value: _formatCount(
                             summary.gamification.totalQuizzesTaken,
                           ),
-                          icon: Icons.quiz_outlined,
+                          icon: AppIcons.quiz_outlined,
                           color: AppColors.savannahGreen,
                           subtitle:
                               '${summary.gamification.passRate}% pass rate',
@@ -111,7 +112,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         child: StatCard(
                           label: 'QR Scans',
                           value: _formatCount(summary.qrCodes.totalScans),
-                          icon: Icons.qr_code_scanner,
+                          icon: AppIcons.qr_code_scanner,
                           color: AppColors.terracottaDark,
                           subtitle:
                               '${summary.qrCodes.uniqueScanners} unique scanners',
@@ -132,7 +133,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       child: _GrowthCard(
                         title: 'User growth',
                         subtitle: 'New registrations, last 14 days',
-                        icon: Icons.people_outline,
+                        icon: AppIcons.people_outline,
                         color: AppColors.terracotta,
                         data: summary.users.userGrowth,
                       ),
@@ -142,7 +143,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       child: _GrowthCard(
                         title: 'Story growth',
                         subtitle: 'Stories published, last 14 days',
-                        icon: Icons.auto_stories_outlined,
+                        icon: AppIcons.auto_stories_outlined,
                         color: AppColors.savannahGreen,
                         data: summary.stories.storyGrowth,
                       ),
@@ -153,7 +154,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                 _GrowthCard(
                   title: 'User growth',
                   subtitle: 'New registrations, last 14 days',
-                  icon: Icons.people_outline,
+                  icon: AppIcons.people_outline,
                   color: AppColors.terracotta,
                   data: summary.users.userGrowth,
                 ),
@@ -161,7 +162,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                 _GrowthCard(
                   title: 'Story growth',
                   subtitle: 'Stories published, last 14 days',
-                  icon: Icons.auto_stories_outlined,
+                  icon: AppIcons.auto_stories_outlined,
                   color: AppColors.savannahGreen,
                   data: summary.stories.storyGrowth,
                 ),
@@ -240,7 +241,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.emoji_events_outlined,
+                            icon: AppIcons.emoji_events_outlined,
                             label: 'Pass rate',
                             value: '${summary.gamification.passRate}%',
                             color: AppColors.savannahGreen,
@@ -249,7 +250,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.analytics_outlined,
+                            icon: AppIcons.analytics_outlined,
                             label: 'Avg score',
                             value: '${summary.gamification.avgScore}%',
                             color: AppColors.terracotta,
@@ -258,7 +259,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.military_tech_outlined,
+                            icon: AppIcons.military_tech_outlined,
                             label: 'Badges earned',
                             value: '${summary.gamification.badgesEarned}',
                             color: AppColors.ochre,
@@ -267,7 +268,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.bolt_outlined,
+                            icon: AppIcons.bolt_outlined,
                             label: 'XP earned',
                             value: _formatCount(
                               summary.gamification.totalXpEarned,
@@ -329,7 +330,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.qr_code_scanner,
+                            icon: AppIcons.qr_code_scanner,
                             label: 'Total scans',
                             value: _formatCount(summary.qrCodes.totalScans),
                             color: AppColors.terracotta,
@@ -338,7 +339,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.person_pin_outlined,
+                            icon: AppIcons.person_pin_outlined,
                             label: 'Unique scanners',
                             value: _formatCount(summary.qrCodes.uniqueScanners),
                             color: AppColors.savannahGreen,
@@ -347,7 +348,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         SizedBox(
                           width: isWide ? 120 : 140,
                           child: MiniStat(
-                            icon: Icons.museum_outlined,
+                            icon: AppIcons.museum_outlined,
                             label: 'Published',
                             value:
                                 '${summary.qrCodes.publishedArtifacts}/${summary.qrCodes.totalArtifacts}',
@@ -407,7 +408,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                             SizedBox(
                               width: width,
                               child: MiniStat(
-                                icon: Icons.person_add_alt,
+                                icon: AppIcons.person_add_alt,
                                 label: 'New users',
                                 value:
                                     '${summary.engagement.recentActivity.newUsers}',
@@ -417,7 +418,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                             SizedBox(
                               width: width,
                               child: MiniStat(
-                                icon: Icons.auto_stories_outlined,
+                                icon: AppIcons.auto_stories_outlined,
                                 label: 'New stories',
                                 value:
                                     '${summary.engagement.recentActivity.newStories}',
@@ -427,7 +428,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                             SizedBox(
                               width: width,
                               child: MiniStat(
-                                icon: Icons.quiz_outlined,
+                                icon: AppIcons.quiz_outlined,
                                 label: 'Quiz attempts',
                                 value:
                                     '${summary.engagement.recentActivity.quizAttempts}',
@@ -437,7 +438,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                             SizedBox(
                               width: width,
                               child: MiniStat(
-                                icon: Icons.qr_code_scanner,
+                                icon: AppIcons.qr_code_scanner,
                                 label: 'QR scans',
                                 value:
                                     '${summary.engagement.recentActivity.qrScans}',
@@ -447,7 +448,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                             SizedBox(
                               width: width,
                               child: MiniStat(
-                                icon: Icons.share_outlined,
+                                icon: AppIcons.share_outlined,
                                 label: 'Shares',
                                 value:
                                     '${summary.engagement.recentActivity.shares}',
@@ -463,7 +464,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: MiniStat(
-                            icon: Icons.favorite_outline,
+                            icon: AppIcons.favorite_outline,
                             label: 'Total likes',
                             value: _formatCount(summary.engagement.totalLikes),
                             color: AppColors.terracotta,
@@ -472,7 +473,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: MiniStat(
-                            icon: Icons.bookmark_border,
+                            icon: AppIcons.bookmark_border,
                             label: 'Bookmarks',
                             value: _formatCount(
                               summary.engagement.totalBookmarks,
@@ -487,7 +488,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: MiniStat(
-                            icon: Icons.share_outlined,
+                            icon: AppIcons.share_outlined,
                             label: 'Shares',
                             value: _formatCount(summary.engagement.totalShares),
                             color: AppColors.savannahGreen,
@@ -496,7 +497,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: MiniStat(
-                            icon: Icons.task_alt,
+                            icon: AppIcons.task_alt,
                             label: 'Completed reads',
                             value: _formatCount(
                               summary.engagement.completedReadings,
@@ -509,7 +510,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     // total_reading_time sums character positions, not minutes.
                     MiniStat(
-                      icon: Icons.menu_book_outlined,
+                      icon: AppIcons.menu_book_outlined,
                       label: 'Characters read',
                       value: _formatCount(summary.engagement.totalReadingTime),
                       color: AppColors.charcoalMuted,
@@ -781,8 +782,8 @@ class _ModerationSectionState extends ConsumerState<_ModerationSection> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          icon: const Icon(
-            Icons.warning_amber_rounded,
+          icon: const FaIcon(
+            AppIcons.warning_amber_rounded,
             color: AppColors.error,
             size: 40,
           ),
@@ -848,7 +849,7 @@ class _GrowthCard extends StatelessWidget {
 
   final String title;
   final String subtitle;
-  final IconData icon;
+  final FaIconData icon;
   final Color color;
   final List<GrowthPoint> data;
 
@@ -857,7 +858,7 @@ class _GrowthCard extends StatelessWidget {
     return DashboardSection(
       title: title,
       subtitle: subtitle,
-      trailing: Icon(icon, color: color),
+      trailing: FaIcon(icon, color: color),
       child: GrowthChart(data: data, color: color),
     );
   }
@@ -1073,7 +1074,7 @@ class _EngagementTotals extends StatelessWidget {
       children: [
         Expanded(
           child: MiniStat(
-            icon: Icons.visibility_outlined,
+            icon: AppIcons.visibility_outlined,
             label: 'Views',
             value: _formatCount(stories.totalViews),
             color: AppColors.terracotta,
@@ -1082,7 +1083,7 @@ class _EngagementTotals extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: MiniStat(
-            icon: Icons.favorite_outline,
+            icon: AppIcons.favorite_outline,
             label: 'Likes',
             value: _formatCount(stories.totalLikes),
             color: AppColors.ochre,
@@ -1183,7 +1184,7 @@ class _DashboardError extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const FaIcon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

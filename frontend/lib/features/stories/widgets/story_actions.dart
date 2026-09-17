@@ -6,6 +6,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../sharing/widgets/share_button.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Story actions menu (bookmark, like, flag, share).
 class StoryActionsMenu extends ConsumerWidget {
@@ -22,8 +23,8 @@ class StoryActionsMenu extends ConsumerWidget {
     final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
 
     return PopupMenuButton<String>(
-      icon: const Icon(
-        Icons.more_vert,
+      icon: const FaIcon(
+        AppIcons.more_vert,
         color: Colors.white,
       ),
       onSelected: (value) => _handleAction(context, ref, value, isAuthenticated),
@@ -33,8 +34,8 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'bookmark',
           child: Row(
             children: [
-              Icon(
-                story.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              FaIcon(
+                story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
                 color: story.isBookmarked ? AppColors.ochre : null,
               ),
               const SizedBox(width: 12),
@@ -48,8 +49,8 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'like',
           child: Row(
             children: [
-              Icon(
-                story.isLiked ? Icons.favorite : Icons.favorite_border,
+              FaIcon(
+                story.isLiked ? AppIcons.favorite : AppIcons.favorite_border,
                 color: story.isLiked ? AppColors.error : null,
               ),
               const SizedBox(width: 12),
@@ -65,7 +66,7 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'flag',
           child: Row(
             children: [
-              const Icon(Icons.flag_outlined, color: AppColors.error),
+              const FaIcon(AppIcons.flag_outlined, color: AppColors.error),
               const SizedBox(width: 12),
               Text(
                 'Flag Cultural Inaccuracy',
@@ -80,7 +81,7 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'share',
           child: Row(
             children: [
-              const Icon(Icons.share_outlined),
+              const FaIcon(AppIcons.share_outlined),
               const SizedBox(width: 12),
               const Text('Share'),
             ],
@@ -148,8 +149,8 @@ class StoryActionsMenu extends ConsumerWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          icon: const Icon(
-            Icons.flag_outlined,
+          icon: const FaIcon(
+            AppIcons.flag_outlined,
             color: AppColors.error,
             size: 48,
           ),
@@ -289,8 +290,8 @@ class StoryQuickActions extends ConsumerWidget {
       children: [
         // Like button
         IconButton(
-          icon: Icon(
-            story.isLiked ? Icons.favorite : Icons.favorite_border,
+          icon: FaIcon(
+            story.isLiked ? AppIcons.favorite : AppIcons.favorite_border,
             color: story.isLiked ? AppColors.error : null,
             size: 20,
           ),
@@ -306,8 +307,8 @@ class StoryQuickActions extends ConsumerWidget {
 
         // Bookmark button
         IconButton(
-          icon: Icon(
-            story.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+          icon: FaIcon(
+            story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
             color: story.isBookmarked ? AppColors.ochre : null,
             size: 20,
           ),

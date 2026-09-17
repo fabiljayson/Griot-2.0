@@ -1,6 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/models/cached_story.dart';
+import '../../../core/database/repositories/story_cache_repository.dart';
+import '../../../core/network/connectivity_service.dart';
+import '../../auth/models/user_model.dart';
 import '../models/story_model.dart';
 import '../repositories/story_repository.dart';
 
@@ -87,14 +91,58 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
         currentPage: page + 1,
       );
     } on DioException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: _extractErrorMessage(e),
-      );
+      // If offline, try to load from cache
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        await _loadFromCache();
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: _extractErrorMessage(e),
+        );
+      }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),
+      );
+    }
+  }
+
+  /// Load stories from local cache when offline.
+  Future<void> _loadFromCache() async {
+    try {
+      // Use the provider's repository to maintain consistency
+      final cacheRepository = StoryCacheRepository();
+      final cachedStories = await cacheRepository.getAllStories();
+
+      // Convert cached stories to StoryModel for display
+      final storyModels = cachedStories.map((cached) => StoryModel(
+        id: cached.storyId,
+        slug: 'cached-${cached.storyId}',
+        title: cached.title,
+        summary: '',
+        content: cached.contentMarkdown ?? '',
+        author: UserModel(id: 0, username: 'offline'),
+        language: 'en',
+        region: cached.region ?? '',
+        categories: [],
+        coverImage: cached.heroImagePath,
+        audioUrl: cached.audioPath ?? '',
+        videoUrl: cached.videoUrl ?? '',
+        estimatedReadTime: cached.estimatedReadTime ?? 0,
+        isBookmarked: cached.isFavorite,
+      )).toList();
+
+      state = state.copyWith(
+        stories: storyModels,
+        isLoading: false,
+        hasMore: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'No cached stories available offline',
       );
     }
   }

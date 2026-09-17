@@ -1,0 +1,217 @@
+@startuml Story Reading Communication
+!theme plain
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title Story Reading Communication
+
+package "Flutter Client" {
+  [User] as U
+  [StoriesScreen] as SS
+  [StoryDetailScreen] as SD
+  [StoryProvider] as SP
+  [StoryRepository] as SR
+  [ApiClient] as AC
+  [AuthInterceptor] as AI
+  [AppDatabase] as DB
+}
+
+package "Backend API" {
+  [StoryViewSet] as SV
+  [StorySerializer] as SVS
+  [Story Model] as Mod
+}
+
+U -downn-> SD : 2. navigate(slug)
+SD -dow-> SS : 1. select story
+SS -down-> SP : 3. fetchStory(slug)
+SP -down-> SR : 4. getStory(slug)
+SR -down-> AC : 5. GET /api/stories/{slug}/
+AC -down-> AI : 6. inject Bearer token
+AI -down-> SV : 7. forwarded request
+SV -down-> Mod : 8. get_object()
+Mod -up-> SV : 9. story data
+SV -up-> SVS : 10. serialize
+SVS -up-> AI : 11. JSON response
+AI -up-> AC : 12. pass response
+AC -up-> SR : 13. StoryModel
+SR -up-> SP : 14. update state
+SP -up-> SD : 15. story data
+SD -up-> U : 16. render content
+
+SD -right-> DB : 17. cache story
+
+@enduml
+
+---
+
+@startuml Authentication Communication
+!theme plain
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title Authentication Communication
+
+package "Flutter Client" {
+  [User] as U
+  [LoginScreen] as LS
+  [AuthRepository] as AR
+  [ApiClient] as AC
+  [AuthWrapper] as AW
+  [HomeScreen] as HS
+}
+
+package "Backend API" {
+  [TokenObtainPairView] as TV
+  [RegisterView] as RV
+  [MeView] as MV
+}
+
+U -down-> LS : 1. enter credentials
+LS -down-> AR : 2. login(user, pass)
+AR -down-> AC : 3. POST /api/auth/token/
+AC -down-> TV : 4. credentials
+TV -up-> AR : 5. JWT {access, refresh}
+AR -right-> AR : 6. store tokens
+AR -up-> AW : 7. AuthState.authenticated
+AW -down-> HS : 8. rebuild
+HS -up-> U : 9. show home
+
+@enduml
+
+---
+
+@startuml Offline Queue Communication
+!theme plain
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title Offline Queue Communication
+
+package "Flutter Client" {
+  [User] as U
+  [App Widget] as App
+  [OfflineQueueInterceptor] as OQI
+  [ConnectivityService] as CS
+  [OfflineRequestRepo] as ORepo
+  [OfflineSyncManager] as OSM
+  [ApiClient] as AC
+}
+
+package "Backend API" {
+  [Django REST Views] as API
+}
+
+U -down-> App : 1. bookmark story
+App -down-> OQI : 2. POST bookmark/
+OQI -down-> CS : 3. isOnline?
+CS -up-> OQI : 4. false
+OQI -down-> ORepo : 5. saveRequest()
+OQI -up-> App : 6. 202 Queued
+App -up-> U : 7. show queued msg
+
+CS -down-> OSM : 8. connectivity restored
+OSM -down-> ORepo : 9. getPending()
+ORepo -up-> OSM : 10. pending list
+OSM -down-> AC : 11. replay POST bookmark/
+AC -down-> API : 12. HTTP request
+API -up-> OSM : 13. 201 Created
+OSM -down-> ORepo : 14. markCompleted()
+
+@enduml
+
+---
+
+@startuml QR Scan Communication
+!theme plain
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title QR Scan Communication
+
+package "Flutter Client" {
+  [User] as U
+  [QRScannerWidget] as QR
+  [ArtifactDetailScreen] as AD
+  [QrApiService] as QAS
+  [ApiClient] as AC
+}
+
+package "Backend API" {
+  [ArtifactViewSet] as AV
+  [Artifact Model] as AM
+  [QRCodeScan Model] as QS
+}
+
+U -down-> QR : 1. scan QR code
+QR -down-> QR : 2. decode slug
+QR -down-> QAS : 3. lookupArtifact(slug)
+QAS -down-> AC : 4. GET /api/artifacts/lookup/
+AC -down-> AV : 5. request
+AV -down-> AM : 6. find artifact
+AV -right-> QS : 7. record scan
+AM -up-> AV : 8. artifact JSON
+AV -up-> QAS : 9. artifact JSON
+QAS -up-> AD : 10. navigate
+AD -up-> U : 11. display info
+
+@enduml
+
+---
+
+@startuml Media Generation Communication
+!theme plain
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title Media Generation Communication
+
+package "Flutter Client" {
+  [User] as U
+  [VideoGenerationSheet] as VGS
+  [VideoStatusPoller] as VPS
+  [VideoApiService] as VAS
+  [ApiClient] as AC
+}
+
+package "Backend API" {
+  [VideoViewSet] as VV
+  [VideoGenerationJob] as VJ
+}
+
+package "External" {
+  [Luma AI API] as Luma
+}
+
+U -down-> VGS : 1. enter prompt
+VGS -down-> VAS : 2. generateVideo()
+VAS -down-> AC : 3. POST /api/media/videos/
+AC -down-> VV : 4. request
+VV -down-> VJ : 5. create job
+VV -down-> Luma : 6. call Luma AI
+Luma -up-> VV : 7. job_id
+VV -up-> VAS : 8. job created
+VAS -up-> VPS : 9. start polling
+
+loop Poll every 10s
+  VPS -down-> AC : 10. GET /status/video/{id}/
+  AC -down-> VV : 11. request
+  VV -up-> VPS : 12. job status
+  VPS -up-> VGS : 13. update badge
+end
+
+VV -up-> VPS : 14. completed + video_url
+VPS -up-> VGS : 15. video ready
+VGS -up-> U : 16. show player
+
+@enduml

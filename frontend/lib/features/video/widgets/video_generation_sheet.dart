@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../providers/video_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Bottom sheet for requesting AI video generation for a story.
 ///
@@ -46,9 +47,9 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
 
   static const _durations = [5, 10, 15, 20, 30];
   static const _aspectRatios = [
-    {'value': '16:9', 'label': 'Landscape', 'icon': Icons.crop_landscape},
-    {'value': '9:16', 'label': 'Portrait', 'icon': Icons.crop_portrait},
-    {'value': '1:1', 'label': 'Square', 'icon': Icons.crop_square},
+    {'value': '16:9', 'label': 'Landscape', 'icon': AppIcons.crop_landscape},
+    {'value': '9:16', 'label': 'Portrait', 'icon': AppIcons.crop_portrait},
+    {'value': '1:1', 'label': 'Square', 'icon': AppIcons.crop_square},
   ];
 
   // Prompt suggestions for AI video generation.
@@ -181,8 +182,8 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                 color: AppColors.terracotta.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.movie_creation_outlined,
+              child: const FaIcon(
+                AppIcons.movie_creation_outlined,
                 color: AppColors.terracotta,
                 size: 24,
               ),
@@ -210,7 +211,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             ),
             IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, color: AppColors.charcoalMuted),
+              icon: const FaIcon(AppIcons.close, color: AppColors.charcoalMuted),
             ),
           ],
         ),
@@ -417,8 +418,8 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          ratio['icon'] as IconData,
+                        FaIcon(
+                          ratio['icon'] as FaIconData,
                           color: isSelected
                               ? Colors.white
                               : AppColors.charcoalMuted,
@@ -494,7 +495,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.auto_awesome, size: 20),
+                  FaIcon(AppIcons.auto_awesome, size: 20),
                   SizedBox(width: 8),
                   Text(
                     'Generate Video',

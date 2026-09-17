@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../stories/screens/story_detail_screen.dart';
 import '../providers/library_provider.dart';
 import '../screens/library_screen.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// Horizontal scrollable widget showing stories in progress.
 ///
@@ -148,8 +149,8 @@ class ContinueReadingWidget extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
-                          Icons.timer_outlined,
+                        FaIcon(
+                          AppIcons.timer_outlined,
                           size: 12,
                           color: AppColors.charcoalMuted,
                         ),
