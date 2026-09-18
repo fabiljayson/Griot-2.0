@@ -43,6 +43,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'drf_spectacular',
 ]
 
 # Modular Griot 2.0 apps (feature-first architecture)
@@ -54,7 +55,7 @@ LOCAL_APPS = [
     'media_app',
     'api',
     'web',
-    'artifacts',
+    'artifacts',  # Deprecated: kept for migration history; remove after migrate
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -143,6 +144,16 @@ REST_FRAMEWORK = {
         'user': '600/min',   # authenticated API traffic
         'auth': '5/min',     # auth endpoints (login, register, refresh)
     },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# --- drf-spectacular (OpenAPI 3.0 schema) ---
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Griot 2.0 API',
+    'DESCRIPTION': 'African Teller digital heritage platform — stories, artifacts, gamification, and media generation.',
+    'VERSION': '0.2.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': r'/api/',
 }
 
 SIMPLE_JWT = {
@@ -209,6 +220,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ---------------------------------------------------------------------------
+# Site URL (used by QR codes, deep links, and share URLs)
+# ---------------------------------------------------------------------------
+SITE_URL = os.environ.get('SITE_URL', 'https://africanteller.org')
+DEEP_LINK_BASE_URL = os.environ.get('DEEP_LINK_BASE_URL', SITE_URL)
 
 # ---------------------------------------------------------------------------
 # Web interface (server-rendered, session-based)

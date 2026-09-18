@@ -12,34 +12,34 @@ Include with `variant='sidebar'` or `variant='bottom'`.
   {% url 'web:gamification' as url_gamification %}
 
   <a href="{{ url_home }}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'home' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'home' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'home' 'text-sm w-5 text-center' %}<span>Home</span>
   </a>
   <a href="{{ url_stories }}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'stories' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'stories' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'book-open' 'text-sm w-5 text-center' %}<span>Stories</span>
   </a>
   <a href="{{ url_artifacts }}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'artifacts' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'artifacts' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'landmark' 'text-sm w-5 text-center' %}<span>Artifacts</span>
   </a>
   <a href="{{ url_library }}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'library' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'library' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'bookmark' 'text-sm w-5 text-center' %}<span>Library</span>
   </a>
   <a href="{{ url_gamification }}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'gamification' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'gamification' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'trophy' 'text-sm w-5 text-center' %}<span>Rewards</span>
   </a>
   {% if is_contributor_plus %}
   <a href="{% url 'web:story-new' %}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'story-new' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'story-new' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'feather' 'text-sm w-5 text-center' %}<span>Write a Story</span>
   </a>
   {% endif %}
   {% if user.is_authenticated and user.role == 'admin' or user.role == 'institution_manager' %}
   <a href="{% url 'web:admin-dashboard' %}"
-     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'admin' %}bg-terracotta/10 text-terracotta{% else %}text-secondary-text hover:bg-terracotta-tint/40 dark:text-sand/70 dark:hover:bg-warm-brown/40{% endif %}">
+     class="flex items-center gap-3 rounded-lg px-3 py-2 {% if active_nav == 'admin' %}bg-cam-indigo/10 text-cam-indigo{% else %}text-secondary-text hover:bg-cam-indigo/5 dark:text-sand/70 dark:hover:bg-cam-indigo/20{% endif %}">
     {% icon 'chart' 'text-sm w-5 text-center' %}<span>Dashboard</span>
   </a>
   {% endif %}
@@ -52,19 +52,19 @@ Include with `variant='sidebar'` or `variant='bottom'`.
   {% url 'web:library' as url_library %}
   {% url 'web:gamification' as url_gamification %}
 
-  <a href="{{ url_home }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'home' %}text-terracotta{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+  <a href="{{ url_home }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'home' %}text-cam-indigo{% else %}text-secondary-text dark:text-sand/60{% endif %}">
     {% icon 'home' 'text-base' %}<span>Home</span>
   </a>
-  <a href="{{ url_stories }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'stories' %}text-terracotta{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+  <a href="{{ url_stories }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'stories' %}text-cam-indigo{% else %}text-secondary-text dark:text-sand/60{% endif %}">
     {% icon 'book-open' 'text-base' %}<span>Stories</span>
   </a>
-  <a href="{{ url_artifacts }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'artifacts' %}text-terracotta{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+  <a href="{{ url_artifacts }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'artifacts' %}text-cam-indigo{% else %}text-secondary-text dark:text-sand/60{% endif %}">
     {% icon 'landmark' 'text-base' %}<span>Artifacts</span>
   </a>
-  <a href="{{ url_library }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'library' %}text-terracotta{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+  <a href="{{ url_library }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'library' %}text-cam-indigo{% else %}text-secondary-text dark:text-sand/60{% endif %}">
     {% icon 'bookmark' 'text-base' %}<span>Library</span>
   </a>
-  <a href="{{ url_gamification }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'gamification' %}text-terracotta{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+  <a href="{{ url_gamification }}" class="flex flex-col items-center gap-1 py-2.5 {% if active_nav == 'gamification' %}text-cam-indigo{% else %}text-secondary-text dark:text-sand/60{% endif %}">
     {% icon 'trophy' 'text-base' %}<span>Rewards</span>
   </a>
 {% endif %}

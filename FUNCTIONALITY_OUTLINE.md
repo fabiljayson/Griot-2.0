@@ -167,18 +167,18 @@
 | Feature | Details |
 |---|---|
 | **QR Scanner** | In-app QR code scanner for museum artifact codes |
-| **Artifact Catalog** | Digital catalog of cultural artifacts (sculptures, textiles, instruments, jewelry, pottery, masks, weapons, fabric, tools, etc.) |
-| **Artifact Detail Screen** | Full artifact info: title, description, culture, region, date, materials, dimensions |
-| **Deep Linking** | `/artifact/<slug>` deep links for QR codes and shared links |
-| **QR Code Generation** | Server-side QR code generation (SVG) with custom deep link paths |
-| **QR Scan Tracking** | Records device type, IP, user agent, GPS coordinates per scan |
-| **Related Stories** | Each artifact links to related cultural stories |
-| **Museum Metadata** | Museum name, floor, display case location |
-| **Image Gallery** | Primary image + additional images with blurhash placeholders |
+| **Artifact Catalog** | Digital catalog of cultural artifacts |
+| **Artifact Detail Screen** | Full artifact info: title, story, audio, video |
+| **Deep Linking** | `/artifacts/<slug>` deep links for QR codes and shared links |
+| **Auto QR Generation** | QR codes auto-generated on artifact save (PNG format) |
+| **QR Scan Tracking** | Records device type, IP, user agent per scan |
+| **Crawl Data Import** | 127 artifacts imported from discover-cameroon.com |
+| **Mobile-First Design** | Optimized QR landing page for smartphone scans |
 
 ### Artifact Data Model Fields
 
-- **Artifact** — `title`, `slug`, `description`, `category` (`sculpture/textile/instrument/jewelry/pottery/mask/weapon/fabric/tool/other`), `created_by`, `culture`, `region`, `estimated_date`, `materials`, `dimensions`, `image`, `image_blurhash`, `additional_images`, `qr_code_url`, `qr_code_svg`, `deep_link_path`, `stories` (M2M), `museum_name`, `floor`, `display_case`, `is_published`.
+- **Artifact (new `artifacts` app)** — `title`, `slug`, `category` (`kingdom/landmark/artifact/legend/culture`), `location`, `story` (narrative text), `historical_significance`, `source_url`, `audio_file` (optional), `video_url` (optional), `qr_code` (auto-generated PNG).
+- **Artifact (existing `qr_codes` app)** — `title`, `slug`, `description`, `category` (`sculpture/textile/instrument/jewelry/pottery/mask/weapon/fabric/tool/other`), `created_by`, `culture`, `region`, `estimated_date`, `materials`, `dimensions`, `image`, `image_blurhash`, `additional_images`, `qr_code_url`, `qr_code_svg`, `deep_link_path`, `stories` (M2M), `museum_name`, `floor`, `display_case`, `is_published`.
 - **QRCodeScan** — `artifact`, `user`, `device_type`, `ip_address`, `user_agent`, `latitude`, `longitude`.
 
 ### API Endpoints
@@ -322,7 +322,7 @@
 
 | Feature | Details |
 |---|---|
-| **African Heritage Palette** | Custom colors: Terracotta, Ochre, Savannah Green |
+| **Cameroonian Heritage Palette** | Culturally resonant, WCAG 2.1 AA compliant colors |
 | **Dark / Light Mode** | System-following theme with in-app toggle |
 | **Custom Typography** | Fraunces + Plus Jakarta Sans fonts |
 | **Emoji Icons** | Emoji-based category glyphs |
@@ -333,12 +333,15 @@
 
 ### Color Palette
 
-| Color | Name |
-|---|---|
-| 🟧 | `AppColors.terracotta` / `terracottaDark` |
-| 🟨 | `AppColors.ochre` / `ochreTint` |
-| 🟩 | `AppColors.savannahGreen` |
-| 🟥 | `AppColors.error` |
+| Color | Hex | CSS Class | Usage |
+|---|---|---|---|
+| 🟦 | `#1E2B58` | `cam-indigo` | Primary headers, navigation |
+| 🟨 | `#C68B29` | `cam-bronze` | CTAs, active states, audio controls |
+| 🟥 | `#A0382B` | `cam-earth` | Historical alerts, badges |
+| 🟩 | `#1B4332` | `cam-green` | Success states, location tags |
+| ⬜ | `#FBF9F4` | `cam-ivory` | Background canvas (60%) |
+| ⬜ | `#FFFFFF` | `cam-white` | Cards, surfaces (30%) |
+| ⬛ | `#1C1C1E` | `cam-dark` | Body text |
 
 ### Supported Locales
 

@@ -7,21 +7,21 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
 
 <article class="group flex flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-warm-brown dark:bg-deep-earth">
   <a href="{% url 'web:story-detail' story.slug %}" class="relative block">
-    <div class="aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-terracotta-tint via-ochre-tint to-savannah-tint dark:from-warm-brown dark:to-deep-earth">
+    <div class="aspect-[16/9] w-full overflow-hidden bg-slate-50 dark:bg-slate-800">
       {% if story.cover_image %}
       <img src="{{ story.cover_image.url }}" alt="{{ story.title }}"
            class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]">
       {% else %}
-      <div class="flex h-full w-full items-center justify-center">
-        {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-5xl text-terracotta/60' %}{% else %}{% icon 'book-open' 'text-5xl text-terracotta/60' %}{% endif %}
+      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-cam-indigo/5 to-cam-bronze/10 dark:from-cam-indigo/20 dark:to-cam-bronze/10">
+        {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-5xl text-cam-indigo/30' %}{% else %}{% icon 'book-open' 'text-5xl text-cam-indigo/30' %}{% endif %}
       </div>
       {% endif %}
     </div>
-    <span class="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-terracotta shadow-sm dark:bg-mud-charcoal/90 dark:text-ochre-dark">
+    <span class="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-cam-indigo shadow-sm dark:bg-mud-charcoal/90 dark:text-cam-bronze">
       {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-xs' %}{{ story.categories.first.name }}{% else %}{% icon 'book-open' 'text-xs' %}Story{% endif %}
     </span>
     {% if story.region %}
-    <span class="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-deep-earth/70 px-2.5 py-1 text-xs font-medium text-sand">
+    <span class="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-cam-indigo/70 px-2.5 py-1 text-xs font-medium text-white">
       {% icon 'location' 'text-[10px]' %} {{ story.region }}
     </span>
     {% endif %}
@@ -29,16 +29,16 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
 
   <div class="flex flex-1 flex-col p-4">
     <a href="{% url 'web:story-detail' story.slug %}">
-      <h3 class="font-display text-base font-bold leading-snug group-hover:text-terracotta sm:text-lg">{{ story.title }}</h3>
+      <h3 class="font-display text-base font-bold leading-snug group-hover:text-cam-bronze sm:text-lg">{{ story.title }}</h3>
     </a>
     {% if story.summary %}
     <p class="mt-1.5 line-clamp-2 text-sm text-secondary-text dark:text-sand/70">{{ story.summary }}</p>
     {% endif %}
 
     <div class="mt-3 flex items-center gap-2 text-xs text-secondary-text dark:text-sand/60">
-      <span class="flex h-6 w-6 items-center justify-center rounded-full bg-ochre/20 font-bold text-ochre">{{ story.author.username|first|upper }}</span>
+      <span class="flex h-6 w-6 items-center justify-center rounded-full bg-cam-indigo/10 font-bold text-cam-indigo">{{ story.author.username|first|upper }}</span>
       <span class="font-medium">{{ story.author.username }}</span>
-      <span>•</span>
+      <span>·</span>
       <span class="flex items-center gap-1">{% icon 'clock' 'text-[10px]' %} {{ story.estimated_read_time }} min</span>
     </div>
 
@@ -54,7 +54,7 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
           <button title="{% if story.liked %}Unlike{% else %}Like{% endif %}" aria-label="{% if story.liked %}Unlike{% else %}Like{% endif %}"
-                  class="rounded-full p-1.5 transition hover:bg-terracotta-tint/50 {% if story.liked %}text-brand-error{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+                  class="rounded-full p-1.5 transition hover:bg-cam-earth/10 {% if story.liked %}text-brand-error{% else %}text-secondary-text dark:text-sand/60{% endif %}">
             {% if story.liked %}{% icon 'heart' 'text-sm' %}{% else %}{% icon 'heart-regular' 'text-sm' %}{% endif %}
           </button>
         </form>
@@ -62,12 +62,12 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
           <button title="{% if story.bookmarked %}Remove bookmark{% else %}Bookmark{% endif %}" aria-label="{% if story.bookmarked %}Remove bookmark{% else %}Bookmark{% endif %}"
-                  class="rounded-full p-1.5 transition hover:bg-ochre-tint/50 {% if story.bookmarked %}text-ochre{% else %}text-secondary-text dark:text-sand/60{% endif %}">
+                  class="rounded-full p-1.5 transition hover:bg-cam-bronze/10 {% if story.bookmarked %}text-cam-bronze{% else %}text-secondary-text dark:text-sand/60{% endif %}">
             {% if story.bookmarked %}{% icon 'bookmark-solid' 'text-sm' %}{% else %}{% icon 'bookmark-regular' 'text-sm' %}{% endif %}
           </button>
         </form>
         {% else %}
-        <a href="{% url 'web:story-detail' story.slug %}" class="flex items-center gap-1 text-xs font-semibold text-terracotta">Read {% icon 'arrow-right' 'text-[10px]' %}</a>
+        <a href="{% url 'web:story-detail' story.slug %}" class="flex items-center gap-1 text-xs font-semibold text-cam-bronze">Read {% icon 'arrow-right' 'text-[10px]' %}</a>
         {% endif %}
       </div>
     </div>

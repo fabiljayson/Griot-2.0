@@ -8,7 +8,7 @@ when they scan a QR code.
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
-from .models import Artifact
+from qr_codes.models import Artifact
 
 
 def artifact_detail(request, slug):
@@ -22,8 +22,8 @@ def artifact_detail(request, slug):
 
     # Process video URL for embedding (YouTube/Vimeo)
     video_embed_url = None
-    if artifact.video_url:
-        video_embed_url = _get_embed_url(artifact.video_url)
+    if artifact.video_url_field:
+        video_embed_url = _get_embed_url(artifact.video_url_field)
 
     context = {
         'artifact': artifact,

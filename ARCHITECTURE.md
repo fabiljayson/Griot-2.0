@@ -111,6 +111,7 @@ AfricanTellerApp (MaterialApp)
 | `users` | Custom User model, JWT auth, roles, delete-account |
 | `stories` | Stories, categories, bookmarks, likes, flags, reading progress, shares |
 | `qr_codes` | Artifacts, QR code generation, scan tracking, deep links |
+| `artifacts` | **NEW:** Artifact model with auto QR generation, category, location |
 | `gamification` | Quizzes, attempts, badges, user profiles, certificates, leaderboard |
 | `media_app` | AI video generation (Luma AI), TTS narration jobs |
 | `api` | Health probes, analytics dashboard, observability middleware, seeding |
@@ -371,13 +372,25 @@ repositories/services, screens, widgets) following a consistent convention.
   offline user registrations — works on all three platforms.
 - **Backend:** Django REST Framework (Python), deployed via WSGI/ASGI.
 
-### 7.2 Existing Design System
-- Shared theme defined in Flutter (`AppTheme.light/dark`) with a custom
-  **African heritage palette**:
-  - `AppColors.terracotta` / `terracottaDark`
-  - `AppColors.ochre` / `ochreTint`
-  - `AppColors.savannahGreen`
-  - `AppColors.error`
+### 7.2 Design System
+
+**Cameroonian Heritage Color Palette** (WCAG 2.1 AA compliant):
+
+| Color | Hex | CSS/Tailwind | Usage |
+|-------|-----|-------------|-------|
+| cam-indigo | `#1E2B58` | `bg-cam-indigo` | Primary headers, navigation |
+| cam-bronze | `#C68B29` | `bg-cam-bronze` | CTAs, active states, audio controls |
+| cam-earth | `#A0382B` | `bg-cam-earth` | Historical alerts, badges |
+| cam-green | `#1B4332` | `bg-cam-green` | Success states, location tags |
+| cam-ivory | `#FBF9F4` | `bg-cam-ivory` | Background canvas (60%) |
+| cam-white | `#FFFFFF` | `bg-cam-white` | Cards, surfaces (30%) |
+| cam-dark | `#1C1C1E` | `text-cam-dark` | Body text |
+
+**Design Rules (60-30-10):**
+- 60% Neutral: `cam-ivory` backgrounds, `cam-white` cards
+- 30% Structural: `cam-indigo` headers, navigation
+- 10% Accents: `cam-bronze` CTAs, `cam-earth` badges
+
 - Custom typography (`AppTypography`), emoji-based icons/category glyphs, and
   QR scanner overlays with **traditional border motifs**.
 - Dark/light mode follows the system theme (togglable in-app via

@@ -142,6 +142,34 @@ class Artifact(models.Model):
         help_text='Display case or exhibit number.',
     )
 
+    # --- Narrative content (merged from artifacts app) ---
+    story = models.TextField(
+        blank=True,
+        default='',
+        help_text='Narrative description of the artifact\'s cultural significance.',
+    )
+    historical_significance = models.TextField(
+        blank=True,
+        default='',
+        help_text='Cultural background or legend details.',
+    )
+    source_url = models.URLField(
+        blank=True,
+        default='',
+        help_text='Original source URL of the content.',
+    )
+    audio_file = models.FileField(
+        upload_to='audio/',
+        blank=True,
+        null=True,
+        help_text='Optional audio narration file.',
+    )
+    video_url_field = models.URLField(
+        blank=True,
+        null=True,
+        help_text='Optional YouTube/Vimeo video URL.',
+    )
+
     # --- Status ---
     is_published = models.BooleanField(
         default=False,
@@ -168,6 +196,15 @@ class Artifact(models.Model):
         if not self.deep_link_path:
             self.deep_link_path = f'/artifact/{self.slug}'
         super().save(*args, **kwargs)
+        # Auto-resize and generate BlurHash placeholder for the artifact image
+        if self.image:
+            from media_app.services.blurhash_utils import resize_image, generate_blurhash
+            resize_image(self.image)
+            if not self.image_blurhash:
+                blurhash_str = generate_blurhash(self.image)
+                if blurhash_str:
+                    Artifact.objects.filter(pk=self.pk).update(image_blurhash=blurhash_str)
+                    self.image_blurhash = blurhash_str
 
     def __str__(self):
         return self.title

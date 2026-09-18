@@ -16,18 +16,17 @@ masonry-style responsive grid, empty & error states.
       <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-secondary-text">{% icon 'search' 'text-sm' %}</span>
       <input type="search" name="search" value="{{ search }}"
              placeholder="Search stories…"
-             class="w-full rounded-xl border border-transparent bg-white py-2.5 pl-11 pr-10 text-sm shadow-sm outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 dark:bg-deep-earth">
+             class="w-full rounded-xl border border-transparent bg-white py-2.5 pl-11 pr-10 text-sm shadow-sm outline-none transition focus:border-cam-indigo focus:ring-2 focus:ring-cam-indigo/20 dark:bg-deep-earth">
       {% if search %}
       <button type="button" id="clear-search" title="Clear search" aria-label="Clear search"
               class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-secondary-text hover:bg-terracotta-tint/50">
         {% icon 'close' 'text-xs' %}
       </button>
       {% endif %}
-    </div>
-    <button type="button" id="filter-toggle" title="Filters" aria-label="Toggle filters" aria-expanded="false"
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white shadow-sm transition hover:border-brand-border dark:bg-deep-earth {% if selected_language or selected_category or selected_region %}text-terracotta{% else %}text-secondary-text{% endif %}">
-      {% icon 'filter' 'text-sm' %}
-    </button>
+    </div>      <button type="button" id="filter-toggle" title="Filters" aria-label="Toggle filters" aria-expanded="false"
+            class="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent bg-white shadow-sm transition hover:border-brand-border dark:bg-deep-earth {% if selected_language or selected_category or selected_region %}text-cam-indigo{% else %}text-secondary-text{% endif %}">
+        {% icon 'filter' 'text-sm' %}
+      </button>
   </form>
 
   {# ── Filters panel — mirrors mobile _FilterChips ── #}
@@ -36,10 +35,10 @@ masonry-style responsive grid, empty & error states.
       <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-secondary-text">Language</p>
       <div class="flex flex-wrap gap-2">
         <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}sort={{ selected_sort }}"
-           class="rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if not selected_language %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">All</a>
+           class="rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if not selected_language %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">All</a>
         {% for code, label in languages %}
         <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}language={{ code }}&sort={{ selected_sort }}"
-           class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if selected_language == code %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+           class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if selected_language == code %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
           {{ label }}
         </a>
         {% endfor %}
@@ -50,10 +49,10 @@ masonry-style responsive grid, empty & error states.
       <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-secondary-text">Category</p>
       <div class="flex flex-wrap gap-2">
         <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_language %}language={{ selected_language }}&{% endif %}sort={{ selected_sort }}"
-           class="rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if not selected_category %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">All</a>
+           class="rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if not selected_category %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">All</a>
         {% for category in categories %}
         <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_language %}language={{ selected_language }}&{% endif %}category={{ category.slug }}&sort={{ selected_sort }}"
-           class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if selected_category == category.slug %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+           class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition {% if selected_category == category.slug %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
           {% emoji_icon category.icon 'text-xs' %} {{ category.name }}
         </a>
         {% endfor %}
@@ -64,10 +63,10 @@ masonry-style responsive grid, empty & error states.
       <p class="text-xs font-semibold uppercase tracking-wide text-secondary-text">Sort by</p>
       {% for value, label in sort_options.items %}
       <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_language %}language={{ selected_language }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort={{ value }}"
-         class="rounded-full px-3 py-1.5 text-xs font-medium transition {% if selected_sort == value %}bg-deep-earth text-sand dark:bg-sand dark:text-deep-earth{% else %}text-secondary-text hover:bg-terracotta-tint/40{% endif %}">{{ label }}</a>
+         class="rounded-full px-3 py-1.5 text-xs font-medium transition {% if selected_sort == value %}bg-cam-indigo text-white{% else %}text-secondary-text hover:bg-cam-indigo/10{% endif %}">{{ label }}</a>
       {% endfor %}
       {% if selected_language or selected_category or selected_region or search %}
-      <a href="{% url 'web:stories' %}" class="ml-auto flex items-center gap-1.5 text-xs font-semibold text-terracotta hover:underline">
+      <a href="{% url 'web:stories' %}" class="ml-auto flex items-center gap-1.5 text-xs font-semibold text-cam-bronze hover:underline">
         {% icon 'close' 'text-[10px]' %} Clear all
       </a>
       {% endif %}
@@ -98,7 +97,7 @@ masonry-style responsive grid, empty & error states.
     {% if search %}No stories found for "{{ search }}"{% else %}No stories yet. Be the first to share!{% endif %}
   </p>
   {% if search %}
-  <a href="{% url 'web:stories' %}" class="mt-5 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">Browse all stories</a>
+  <a href="{% url 'web:stories' %}" class="mt-5 inline-block rounded-xl bg-cam-indigo px-5 py-2.5 text-sm font-semibold text-white hover:bg-cam-indigo-dark">Browse all stories</a>
   {% endif %}
 </div>
 {% endif %}

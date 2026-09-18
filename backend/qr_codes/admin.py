@@ -36,8 +36,11 @@ class ArtifactAdmin(admin.ModelAdmin):
         ('Cultural Metadata', {
             'fields': ('culture', 'region', 'estimated_date', 'materials', 'dimensions'),
         }),
+        ('Narrative Content', {
+            'fields': ('story', 'historical_significance', 'source_url'),
+        }),
         ('Media', {
-            'fields': ('image', 'image_blurhash', 'additional_images'),
+            'fields': ('image', 'image_blurhash', 'additional_images', 'audio_file', 'video_url_field'),
         }),
         ('QR Code', {
             'fields': ('qr_code_url', 'qr_code_svg', 'deep_link_path'),

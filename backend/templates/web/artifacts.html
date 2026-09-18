@@ -19,13 +19,13 @@ category chips, artifact cards with image, culture/region metadata.
 <div class="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
   <a href="{% url 'web:artifacts' %}"
      class="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition
-            {% if not selected_category %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+            {% if not selected_category %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
     {% icon 'layer-group' 'text-xs' %} All
   </a>
   {% for code, label in categories %}
   <a href="?category={{ code }}"
      class="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition
-            {% if selected_category == code %}border-terracotta bg-terracotta text-white{% else %}border-brand-border bg-white hover:border-terracotta/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
+            {% if selected_category == code %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
     {% artifact_category_icon code %} {{ label }}
   </a>
   {% endfor %}
@@ -37,12 +37,12 @@ category chips, artifact cards with image, culture/region metadata.
   {% for artifact in artifacts %}
   <a href="{% url 'web:artifact-detail' artifact.slug %}"
      class="group flex flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-warm-brown dark:bg-deep-earth">
-    <div class="aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-ochre-tint to-terracotta-tint dark:from-warm-brown dark:to-deep-earth">
+    <div class="aspect-[4/3] w-full overflow-hidden bg-slate-50 dark:bg-slate-800">
       {% if artifact.image %}
       <img src="{{ artifact.image.url }}" alt="{{ artifact.title }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]">
       {% else %}
-      <div class="flex h-full w-full items-center justify-center text-terracotta/50">
-        {% artifact_category_icon artifact.category 'text-5xl' %}
+      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-cam-indigo/5 to-cam-bronze/10 dark:from-cam-indigo/20 dark:to-cam-bronze/10">
+        <span class="text-cam-indigo/30">{% artifact_category_icon artifact.category 'text-5xl' %}</span>
       </div>
       {% endif %}
     </div>

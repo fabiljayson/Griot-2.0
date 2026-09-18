@@ -17,21 +17,10 @@ class ArtifactListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Artifact
         fields = [
-            'id',
-            'title',
-            'slug',
-            'category',
-            'culture',
-            'region',
-            'estimated_date',
-            'image',
-            'image_blurhash',
-            'museum_name',
-            'is_published',
-            'created_by_username',
-            'story_count',
-            'scan_count',
-            'created_at',
+            'id', 'title', 'slug', 'category', 'culture', 'region',
+            'estimated_date', 'story', 'image', 'image_blurhash',
+            'museum_name', 'is_published', 'created_by_username',
+            'story_count', 'scan_count', 'created_at',
         ]
 
     def get_story_count(self, obj):
@@ -56,33 +45,14 @@ class ArtifactDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Artifact
         fields = [
-            'id',
-            'title',
-            'slug',
-            'description',
-            'category',
-            'created_by',
-            'created_by_username',
-            'culture',
-            'region',
-            'estimated_date',
-            'materials',
-            'dimensions',
-            'image',
-            'image_blurhash',
-            'additional_images',
-            'qr_code_url',
-            'qr_code_svg',
-            'deep_link_path',
-            'qr_deep_link',
-            'stories',
-            'museum_name',
-            'floor',
-            'display_case',
-            'is_published',
-            'created_at',
-            'updated_at',
-            'scan_count',
+            'id', 'title', 'slug', 'description', 'category', 'created_by',
+            'created_by_username', 'culture', 'region', 'estimated_date',
+            'materials', 'dimensions', 'story', 'historical_significance',
+            'source_url', 'audio_file', 'video_url_field',
+            'image', 'image_blurhash', 'additional_images',
+            'qr_code_url', 'qr_code_svg', 'deep_link_path', 'qr_deep_link',
+            'stories', 'museum_name', 'floor', 'display_case',
+            'is_published', 'created_at', 'updated_at', 'scan_count',
         ]
         read_only_fields = [
             'id',
@@ -116,21 +86,12 @@ class ArtifactCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Artifact
         fields = [
-            'title',
-            'description',
-            'category',
-            'culture',
-            'region',
-            'estimated_date',
-            'materials',
-            'dimensions',
-            'image',
-            'additional_images',
-            'museum_name',
-            'floor',
-            'display_case',
-            'is_published',
-            'story_ids',
+            'title', 'description', 'category', 'culture', 'region',
+            'estimated_date', 'materials', 'dimensions',
+            'story', 'historical_significance', 'source_url',
+            'audio_file', 'video_url_field',
+            'image', 'additional_images', 'museum_name', 'floor',
+            'display_case', 'is_published', 'story_ids',
         ]
         read_only_fields = ['slug', 'deep_link_path']
 

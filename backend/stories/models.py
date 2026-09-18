@@ -178,6 +178,15 @@ class Story(models.Model):
             word_count = len(self.content.split())
             self.estimated_read_time = max(1, word_count // 200)
         super().save(*args, **kwargs)
+        # Auto-resize and generate BlurHash placeholder for the cover image
+        if self.cover_image:
+            from media_app.services.blurhash_utils import resize_image, generate_blurhash
+            resize_image(self.cover_image)
+            if not self.cover_image_blurhash:
+                blurhash_str = generate_blurhash(self.cover_image)
+                if blurhash_str:
+                    Story.objects.filter(pk=self.pk).update(cover_image_blurhash=blurhash_str)
+                    self.cover_image_blurhash = blurhash_str
 
     def __str__(self):
         return self.title

@@ -1,20 +1,38 @@
 """
-Mock Luma AI Dream Machine service for development.
+Luma AI Dream Machine service for video generation.
 
-In production, this would be replaced with actual Luma AI API calls.
+Provides two modes:
+  - **Live mode** (LUMA_API_KEY set): Makes real API calls to Luma AI.
+  - **Mock mode** (no API key): Simulates video generation for local dev.
+
+All job state is persisted to the ``VideoGenerationJob`` model so it survives
+server restarts — no in-memory dictionaries.
 """
+
+import logging
 import random
 import time
-from datetime import datetime, timedelta
+import uuid
 from typing import Optional
 
+import requests as http_requests
+from django.conf import settings
 
-class MockLumaAIService:
-    """Mock service simulating Luma AI Dream Machine API."""
-    
-    def __init__(self):
-        self._jobs = {}  # job_id -> status data
-    
+logger = logging.getLogger(__name__)
+
+LUMA_API_BASE = 'https://api.lumalabs.ai/dream-machine/v1'
+
+
+class LumaAIError(Exception):
+    """Raised when the Luma AI API returns an error."""
+
+
+class LumaAIService:
+    """Interface for submitting and polling video generation jobs.
+
+    Subclass or replace this when a real Luma AI API key is available.
+    """
+
     def submit_video_generation(
         self,
         prompt: str,
@@ -22,137 +40,192 @@ class MockLumaAIService:
         duration: int = 5,
         aspect_ratio: str = '16:9',
     ) -> dict:
-        """
-        Submit a video generation request.
-        
-        Args:
-            prompt: Text prompt for video generation
-            image_url: Optional reference image URL
-            duration: Video duration in seconds (5-30)
-            aspect_ratio: Video aspect ratio
-            
-        Returns:
-            dict with job_id and status
-        """
-        # Simulate API delay
-        time.sleep(0.1)
-        
-        # Generate mock job ID
-        job_id = f"luma_{random.randint(100000, 999999)}"
-        
-        # Store job data
-        self._jobs[job_id] = {
-            'id': job_id,
-            'status': 'pending',
-            'prompt': prompt,
-            'created_at': datetime.now().isoformat(),
-            'estimated_completion': (
-                datetime.now() + timedelta(minutes=random.randint(2, 10))
-            ).isoformat(),
-        }
-        
-        return {
-            'id': job_id,
-            'status': 'pending',
-            'created_at': self._jobs[job_id]['created_at'],
-            'estimated_completion': self._jobs[job_id]['estimated_completion'],
-        }
-    
+        raise NotImplementedError
+
     def get_job_status(self, job_id: str) -> dict:
-        """
-        Get the status of a video generation job.
-        
-        Args:
-            job_id: The job ID to check
-            
-        Returns:
-            dict with job status and details
-        """
-        if job_id not in self._jobs:
-            return {
-                'error': 'Job not found',
-                'status': 'unknown',
-            }
-        
-        job = self._jobs[job_id]
-        
-        # Simulate random progress for demonstration
-        # In reality, this would poll Luma AI API
-        current_status = job['status']
-        
-        # Randomly advance status for demo purposes
-        if current_status == 'pending' and random.random() > 0.7:
-            job['status'] = 'processing'
-        elif current_status == 'processing' and random.random() > 0.8:
-            job['status'] = 'completed'
-        
-        # Generate mock output URLs when completed
-        video_url = ''
-        thumbnail_url = ''
-        duration = 0
-        
-        if job['status'] == 'completed':
-            video_url = f'https://storage.example.com/videos/{job_id}.mp4'
-            thumbnail_url = f'https://storage.example.com/thumbnails/{job_id}.jpg'
-            duration = random.randint(5, 15)
-        
-        return {
-            'id': job_id,
-            'status': job['status'],
-            'video_url': video_url,
-            'thumbnail_url': thumbnail_url,
-            'duration': duration,
-            'created_at': job['created_at'],
-            'completed_at': datetime.now().isoformat() if job['status'] == 'completed' else None,
-        }
-    
+        raise NotImplementedError
+
     def cancel_job(self, job_id: str) -> dict:
-        """
-        Cancel a video generation job.
-        
-        Args:
-            job_id: The job ID to cancel
-            
-        Returns:
-            dict with cancellation status
-        """
-        if job_id not in self._jobs:
-            return {'error': 'Job not found'}
-        
-        self._jobs[job_id]['status'] = 'cancelled'
-        
+        raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------
+# Real Luma AI API client
+# ---------------------------------------------------------------------------
+class LiveLumaAIService(LumaAIService):
+    """Production client calling the Luma AI Dream Machine REST API."""
+
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self._session = http_requests.Session()
+        self._session.headers.update({
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        })
+
+    def submit_video_generation(
+        self,
+        prompt: str,
+        image_url: Optional[str] = None,
+        duration: int = 5,
+        aspect_ratio: str = '16:9',
+    ) -> dict:
+        payload = {
+            'prompt': prompt,
+            'aspect_ratio': aspect_ratio,
+        }
+        if image_url:
+            payload['image_url'] = image_url
+
+        resp = self._session.post(f'{LUMA_API_BASE}/generations', json=payload)
+        if resp.status_code >= 400:
+            logger.error('Luma AI submit failed: %s %s', resp.status_code, resp.text)
+            raise LumaAIError(f'Luma AI returned {resp.status_code}: {resp.text}')
+
+        data = resp.json()
+        return {
+            'id': data.get('id', ''),
+            'status': data.get('state', 'pending'),
+            'created_at': data.get('created_at', ''),
+        }
+
+    def get_job_status(self, job_id: str) -> dict:
+        resp = self._session.get(f'{LUMA_API_BASE}/generations/{job_id}')
+        if resp.status_code == 404:
+            return {'error': 'Job not found', 'status': 'unknown'}
+        if resp.status_code >= 400:
+            logger.error('Luma AI status failed: %s %s', resp.status_code, resp.text)
+            return {'error': f'API error {resp.status_code}', 'status': 'unknown'}
+
+        data = resp.json()
+        state = data.get('state', 'pending')
+
+        result = {
+            'id': job_id,
+            'status': state,
+            'video_url': '',
+            'thumbnail_url': '',
+            'duration': 0,
+            'created_at': data.get('created_at', ''),
+            'completed_at': data.get('completed_at'),
+        }
+
+        if state == 'completed':
+            assets = data.get('assets', {})
+            result['video_url'] = assets.get('video', '')
+            result['thumbnail_url'] = assets.get('thumbnail', '')
+            # Luma doesn't always return duration; default to 5s
+            result['duration'] = data.get('duration', 5)
+
+        return result
+
+    def cancel_job(self, job_id: str) -> dict:
+        resp = self._session.delete(f'{LUMA_API_BASE}/generations/{job_id}')
+        if resp.status_code >= 400:
+            return {'error': f'Cancel failed: {resp.status_code}'}
+        return {'id': job_id, 'status': 'cancelled', 'message': 'Job cancelled'}
+
+
+# ---------------------------------------------------------------------------
+# Mock client for development (state stored in DB via VideoGenerationJob)
+# ---------------------------------------------------------------------------
+class MockLumaAIService(LumaAIService):
+    """Mock service that simulates video generation for local development.
+
+    Job state is persisted to the ``VideoGenerationJob`` model, so it
+    survives server restarts.  Each poll randomly advances the job from
+    pending -> processing -> completed so the frontend can test the full
+    lifecycle.
+    """
+
+    def submit_video_generation(
+        self,
+        prompt: str,
+        image_url: Optional[str] = None,
+        duration: int = 5,
+        aspect_ratio: str = '16:9',
+    ) -> dict:
+        job_id = f'luma_{uuid.uuid4().hex[:12]}'
         return {
             'id': job_id,
-            'status': 'cancelled',
-            'message': 'Job cancelled successfully',
+            'status': 'pending',
+            'created_at': time.time(),
         }
-    
-    def list_user_jobs(
-        self,
-        user_id: int,
-        status: Optional[str] = None,
-        limit: int = 10,
-    ) -> list:
-        """
-        List video generation jobs for a user.
-        
-        Args:
-            user_id: User ID to filter by
-            status: Optional status filter
-            limit: Maximum number of results
-            
-        Returns:
-            List of job summaries
-        """
-        # In a real implementation, this would query the database
-        # For mock, return empty list
-        return []
+
+    def get_job_status(self, job_id: str) -> dict:
+        from media_app.models import VideoGenerationJob
+
+        try:
+            job = VideoGenerationJob.objects.get(luma_job_id=job_id)
+        except VideoGenerationJob.DoesNotExist:
+            return {'error': 'Job not found', 'status': 'unknown'}
+
+        # Simulate random progress for demo purposes
+        if job.status == VideoGenerationJob.Status.PENDING and random.random() > 0.6:
+            job.status = VideoGenerationJob.Status.PROCESSING
+            job.save(update_fields=['status', 'updated_at'])
+        elif job.status == VideoGenerationJob.Status.PROCESSING and random.random() > 0.7:
+            job.status = VideoGenerationJob.Status.COMPLETED
+            job.video_url = f'https://storage.example.com/videos/{job_id}.mp4'
+            job.thumbnail_url = f'https://storage.example.com/thumbnails/{job_id}.jpg'
+            job.duration = random.randint(5, 15)
+            job.completed_at = timezone_now()
+            job.save(update_fields=[
+                'status', 'video_url', 'thumbnail_url', 'duration',
+                'completed_at', 'updated_at',
+            ])
+
+        return {
+            'id': job_id,
+            'status': job.status,
+            'video_url': job.video_url,
+            'thumbnail_url': job.thumbnail_url,
+            'duration': job.duration,
+            'created_at': job.created_at.isoformat() if job.created_at else '',
+            'completed_at': job.completed_at.isoformat() if job.completed_at else None,
+        }
+
+    def cancel_job(self, job_id: str) -> dict:
+        from media_app.models import VideoGenerationJob
+
+        try:
+            job = VideoGenerationJob.objects.get(luma_job_id=job_id)
+            job.status = VideoGenerationJob.Status.FAILED
+            job.error_message = 'Cancelled by user'
+            job.save(update_fields=['status', 'error_message', 'updated_at'])
+        except VideoGenerationJob.DoesNotExist:
+            pass
+        return {'id': job_id, 'status': 'cancelled', 'message': 'Job cancelled'}
 
 
-# Singleton instance for the mock service
-luma_ai_service = MockLumaAIService()
+def timezone_now():
+    """Lazy import to avoid circular imports at module level."""
+    from django.utils import timezone
+    return timezone.now()
 
 
-def get_luma_service() -> MockLumaAIService:
-    """Get the Luma AI service instance."""
-    return luma_ai_service
+# ---------------------------------------------------------------------------
+# Factory
+# ---------------------------------------------------------------------------
+_service_instance = None
+
+
+def get_luma_service() -> LumaAIService:
+    """Return the appropriate Luma AI service based on configuration.
+
+    - If ``LUMA_API_KEY`` is set in the environment, returns a real API client.
+    - Otherwise, returns the mock service for development.
+    """
+    global _service_instance
+    if _service_instance is not None:
+        return _service_instance
+
+    api_key = getattr(settings, 'LUMA_API_KEY', '') or ''
+    if api_key:
+        logger.info('Using live Luma AI service')
+        _service_instance = LiveLumaAIService(api_key)
+    else:
+        logger.info('Using mock Luma AI service (no LUMA_API_KEY configured)')
+        _service_instance = MockLumaAIService()
+
+    return _service_instance

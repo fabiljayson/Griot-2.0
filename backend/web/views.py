@@ -193,12 +193,18 @@ def _narration_payload(job):
 # Home — mirrors mobile HomeScreen
 # ---------------------------------------------------------------------------
 def home_view(request):
-    trending, popular = _home_stories()
-    trending = _with_flags(trending, request.user)
-    popular = _with_flags(popular, request.user)
     categories = StoryCategory.objects.all()[:8]
     artifact_count = Artifact.objects.filter(is_published=True).count()
     story_count = Story.objects.filter(status=Story.Status.PUBLISHED).count()
+
+    # Anonymous users see a clean landing page; authenticated users see the feed.
+    if request.user.is_authenticated:
+        trending, popular = _home_stories()
+        trending = _with_flags(trending, request.user)
+        popular = _with_flags(popular, request.user)
+    else:
+        trending = []
+        popular = []
 
     context = {
         'trending_stories': trending,

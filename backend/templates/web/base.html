@@ -18,21 +18,40 @@
   <!-- Font Awesome 6 — icon parity with the mobile app's FaIcon widgets -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
   <script>
-    /* Brand design tokens lifted from frontend/lib/core/theme/app_colors.dart */
+    /* Cameroonian heritage color palette — WCAG 2.1 AA compliant */
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            terracotta: { DEFAULT: '#C84C09', dark: '#E26D33', tint: '#F3D9CC' },
-            ochre: { DEFAULT: '#D99B22', dark: '#E8B854', tint: '#F6E7C8' },
-            savannah: { DEFAULT: '#5B7040', tint: '#DCE8D5' },
-            sand: '#F9F5F0',
-            'deep-earth': '#2C241B',
-            'mud-charcoal': '#1A1512',
-            'warm-brown': '#3D2E1E',
-            'secondary-text': '#6B5B4B',
-            'brand-border': '#E5D8C2',
+            /* Primary — Royal Ndop indigo */
+            'cam-indigo': { DEFAULT: '#1E2B58', dark: '#151F42', light: '#2A3B73' },
+            /* Primary Accent — Foumban bronze */
+            'cam-bronze': { DEFAULT: '#C68B29', dark: '#A67420', light: '#D9A84D', tint: '#F5ECD6' },
+            /* Secondary Accent — Highland earth */
+            'cam-earth': { DEFAULT: '#A0382B', dark: '#852D22', light: '#C44D3E', tint: '#F4DDD9' },
+            /* Supporting Nature — Equatorial green */
+            'cam-green': { DEFAULT: '#1B4332', dark: '#143326', light: '#2D6A4F', tint: '#D8E8E0' },
+            /* Background Neutral — Raffia ivory */
+            'cam-ivory': '#FBF9F4',
+            /* Surface — Pure white for cards */
+            'cam-white': '#FFFFFF',
+            /* Dark Text — Slate charcoal */
+            'cam-dark': '#1C1C1E',
+            /* Secondary text */
+            'cam-muted': '#6B7280',
+            /* Error */
+            'cam-error': '#D32F2F',
+            /* Legacy aliases for backward compatibility */
+            terracotta: { DEFAULT: '#C68B29', dark: '#A67420', tint: '#F5ECD6' },
+            ochre: { DEFAULT: '#C68B29', dark: '#A67420', tint: '#F5ECD6' },
+            savannah: { DEFAULT: '#1B4332', tint: '#D8E8E0' },
+            sand: '#FBF9F4',
+            'deep-earth': '#1C1C1E',
+            'mud-charcoal': '#0F1219',
+            'warm-brown': '#1E2B58',
+            'secondary-text': '#6B7280',
+            'brand-border': '#E5E7EB',
             'brand-error': '#D32F2F',
           },
           fontFamily: {
@@ -52,32 +71,32 @@
     .story-content h1, .story-content h2, .story-content h3 {
       font-family: 'Fraunces', Georgia, serif;
       font-weight: 700;
-      color: #2C241B;
+      color: #1E2B58;
       margin: 1.4em 0 .5em;
       line-height: 1.2;
     }
     .story-content h1 { font-size: 1.75rem; }
     .story-content h2 { font-size: 1.45rem; }
     .story-content h3 { font-size: 1.2rem; }
-    .story-content p { margin: .85em 0; line-height: 1.8; color: #4A3F32; }
+    .story-content p { margin: .85em 0; line-height: 1.8; color: #1C1C1E; }
     .story-content ul, .story-content ol { margin: .85em 0; padding-left: 1.4em; }
     .story-content ul { list-style: disc; }
     .story-content ol { list-style: decimal; }
     .story-content blockquote {
-      border-left: 4px solid #C84C09;
-      background: #F3D9CC40;
+      border-left: 4px solid #C68B29;
+      background: #F5ECD640;
       padding: .8em 1.1em;
       border-radius: 0 .6rem .6rem 0;
       margin: 1.1em 0;
       font-style: italic;
       font-family: 'Fraunces', Georgia, serif;
     }
-    .story-content a { color: #C84C09; text-decoration: underline; }
-    .story-content code { background: #F6E7C8; padding: .1em .4em; border-radius: .3rem; font-size: .9em; }
+    .story-content a { color: #C68B29; text-decoration: underline; }
+    .story-content code { background: #F5ECD6; padding: .1em .4em; border-radius: .3rem; font-size: .9em; }
     .story-content img { border-radius: .8rem; margin: 1em 0; }
-    .story-content hr { border-color: #E5D8C2; margin: 1.6em 0; }
-    .dark .story-content h1, .dark .story-content h2, .dark .story-content h3 { color: #F9F5F0; }
-    .dark .story-content p { color: #D8CDBC; }
+    .story-content hr { border-color: #E5E7EB; margin: 1.6em 0; }
+    .dark .story-content h1, .dark .story-content h2, .dark .story-content h3 { color: #FBF9F4; }
+    .dark .story-content p { color: #D1D5DB; }
 
     /* Hide scrollbar on horizontal chip strips, like the mobile ListView */
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -87,7 +106,7 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="font-body bg-sand text-deep-earth dark:bg-mud-charcoal dark:text-sand min-h-screen antialiased" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
+<body class="font-body bg-cam-ivory text-cam-dark dark:bg-mud-charcoal dark:text-sand min-h-screen antialiased" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
 
   {% if messages %}
   <div class="fixed top-4 inset-x-0 z-[70] flex flex-col items-center gap-2 px-4" id="toast-stack">
@@ -106,12 +125,12 @@
     {# ── Desktop sidebar (lg+): the web counterpart of the mobile navigation ── #}
     <aside class="hidden lg:flex w-60 shrink-0 flex-col border-r border-brand-border dark:border-warm-brown bg-white/70 dark:bg-deep-earth/60 backdrop-blur sticky top-0 h-screen">
       <a href="{% url 'web:home' %}" class="flex items-center gap-3 px-5 pt-6 pb-5">
-        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-warm-brown to-mud-charcoal ring-2 ring-ochre/60 shadow-lg shadow-terracotta/25">
-          <span class="fa-solid fa-drum text-lg text-ochre-dark" aria-hidden="true"></span>
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-cam-indigo ring-2 ring-cam-bronze/60 shadow-lg">
+          <span class="fa-solid fa-drum text-lg text-cam-bronze" aria-hidden="true"></span>
         </span>
         <span class="leading-tight">
-          <span class="block font-display text-lg font-bold">Griot <span class="text-terracotta">AI</span></span>
-          <span class="block text-[11px] tracking-wide text-secondary-text dark:text-ochre/80">Digital Heritage Platform</span>
+          <span class="block font-display text-lg font-bold">Griot <span class="text-cam-bronze">AI</span></span>
+          <span class="block text-[11px] tracking-wide text-secondary-text">Digital Heritage Platform</span>
         </span>
       </a>
 
@@ -122,7 +141,7 @@
       <div class="border-t border-brand-border dark:border-warm-brown p-4">
         {% if user.is_authenticated %}
         <a href="{% url 'web:profile' %}" class="flex items-center gap-3 rounded-lg p-1 transition hover:bg-terracotta-tint/30">
-          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-terracotta/10 text-sm font-bold text-terracotta">
+          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-cam-indigo/10 text-sm font-bold text-cam-indigo">
             {{ user.username|first|upper }}
           </span>
           <div class="min-w-0 flex-1">
@@ -137,7 +156,7 @@
           </button>
         </form>
         {% else %}
-        <a href="{% url 'web:login' %}" class="block rounded-lg bg-terracotta px-3 py-2 text-center text-xs font-semibold text-white hover:bg-terracotta-dark">Sign in</a>
+        <a href="{% url 'web:login' %}" class="block rounded-lg bg-cam-indigo px-3 py-2 text-center text-xs font-semibold text-white hover:bg-cam-indigo-dark">Sign in</a>
         {% endif %}
       </div>
     </aside>
@@ -146,15 +165,15 @@
     <div class="flex-1 min-w-0 pb-24 lg:pb-8">
 
       {# Mobile top bar (below lg) — mirrors the mobile app header #}
-      <header class="lg:hidden sticky top-0 z-40 bg-gradient-to-br from-terracotta to-terracotta-dark px-5 py-4 shadow-md">
+      <header class="lg:hidden sticky top-0 z-40 bg-gradient-to-br from-cam-indigo to-cam-indigo-dark px-5 py-4 shadow-md">
         <div class="flex items-center gap-3">
           <a href="{% url 'web:home' %}" class="flex items-center gap-2.5">
-            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 ring-1 ring-ochre/70">
-              <span class="fa-solid fa-drum text-ochre-dark" aria-hidden="true"></span>
+            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 ring-1 ring-cam-bronze/70">
+              <span class="fa-solid fa-drum text-cam-bronze" aria-hidden="true"></span>
             </span>
             <span class="leading-tight">
               <span class="block font-body text-sm font-bold tracking-[0.18em] text-white">GRIOT AI</span>
-              <span class="block text-[11px] text-ochre-dark">Digital Heritage Platform</span>
+              <span class="block text-[11px] text-cam-bronze/80">Digital Heritage Platform</span>
             </span>
           </a>
           <div class="ml-auto flex items-center gap-1">
@@ -166,7 +185,7 @@
             <a href="{% url 'web:admin-dashboard' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="Dashboard" title="Dashboard"><span class="fa-solid fa-chart-simple" aria-hidden="true"></span></a>
             {% endif %}
             {% else %}
-            <a href="{% url 'web:login' %}" class="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/30">Sign in</a>
+            <a href="{% url 'web:login' %}" class="rounded-full bg-cam-bronze/80 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/30">Sign in</a>
             {% endif %}
           </div>
         </div>

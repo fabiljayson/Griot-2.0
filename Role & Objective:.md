@@ -1,24 +1,86 @@
-Role & Objective:
-You are a Lead UI/UX Designer and Frontend Engineer specializing in cultural heritage platforms. Your task is to apply a unified, culturally resonant, yet modern and professional color palette across all user interfaces (web Django templates, Tailwind CSS, and mobile components) for the Discover Cameroon project.
+# Role & Objective
 
-Cultural Design Philosophy:
-The design system must draw inspiration from Cameroonian heritage—specifically the royal Ndop textiles of the Western Grassfields, rich red volcanic soil, traditional metalsmithing, and lush equatorial landscapes—while keeping the visual language crisp, clean, and accessible according to modern WCAG 2.1 AA UI standards.
+## Completed Work Summary
 
-Color Palette Definition:
-- Primary / Brand (`cam-indigo`: #1E2B58): Deep royal indigo inspired by traditional Ndop cloth. Use for primary navigation, top headers, main section titles, and core branding elements.
-- Primary Accent / Action (`cam-bronze`: #C68B29): Radiant bronze inspired by Foumban royal metalcraft. Use sparingly for primary Call-to-Action (CTA) buttons, active tab indicators, audio play buttons, and QR scanner highlight frames.
-- Secondary Accent / Heritage (`cam-earth`: #A0382B): Rich red clay earth of the Cameroonian highlands. Use for historical alerts, landmark badges, secondary actions, and emphasis elements.
-- Supporting Nature (`cam-green`: #1B4332): Deep forest green reflecting the equatorial rainforests and national flag. Use for success states, natural site tags, and environmental content badges.
-- Background Neutral (`cam-ivory`: #FBF9F4): Off-white raffia/woven cotton hue. Use as the base canvas background for screens to soften visual fatigue compared to pure harsh white.
-- Surface / Cards (`white`: #FFFFFF): Pure white used strictly for elevated cards, media player containers, and modal dialogs to maximize readability and content separation.
-- Dark Text (`cam-dark`: #1C1C1E): High-contrast slate charcoal for all body text, headings on light surfaces, and icons.
+### 1. Web Crawler (✅ Complete)
+- Built Python crawler for discover-cameroon.com
+- Extracted 127 artifacts with stories, categories, and locations
+- Downloaded 137 images to `downloads/images/`
+- Output: `downloads/cameroon_content.json`
 
-UI Distribution Rules (60-30-10 Professional Design Rule):
-1. 60% Neutral Surfaces: Keep screen backgrounds (`cam-ivory`) and content containers (`white`) dominant so historical images, audio players, and videos remain the main focus.
-2. 30% Structural Elements: Apply `cam-indigo` for top bars, navigation menus, sub-headers, and major structural frames.
-3. 10% High-Intent Accents: Reserve `cam-bronze` and `cam-earth` strictly for interactive elements (buttons, active toggles, badges, audio playback controls, and QR code scan frames). Never use accent colors for large background areas.
+### 2. Django Artifacts App (✅ Complete)
+- Created `artifacts` app with auto QR code generation
+- Model: `title`, `slug`, `category`, `location`, `story`, `historical_significance`, `source_url`, `audio_file`, `video_url`, `qr_code`
+- QR codes auto-generated on save (PNG format, terracotta brand color)
+- Mobile-first template with Tailwind CSS
 
-Implementation Guidelines:
-- Ensure all text-on-background combinations maintain a contrast ratio of at least 4.5:1.
-- Provide clean Tailwind CSS class mappings (`bg-cam-indigo`, `text-cam-dark`, `border-cam-bronze`) in all generated code components.
-- Maintain subtle rounded corners (`rounded-2xl` for cards, `rounded-xl` for buttons) and gentle drop shadows (`shadow-sm`) to ensure an app-like feel on mobile screens.
+### 3. Data Import (✅ Complete)
+- Management command: `python manage.py import_crawl_data`
+- 127 artifacts imported with stories, categories, locations
+- 127 QR codes auto-generated
+- 107 images downloaded to `media/artifacts/images/`
+
+### 4. Color Palette (✅ Complete)
+Applied unified Cameroonian heritage color palette:
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| cam-indigo | #1E2B58 | Primary headers, navigation |
+| cam-bronze | #C68B29 | CTAs, active states, audio controls |
+| cam-earth | #A0382B | Historical alerts, badges |
+| cam-green | #1B4332 | Success states, location tags |
+| cam-ivory | #FBF9F4 | Background canvas |
+| cam-white | #FFFFFF | Cards, surfaces |
+| cam-dark | #1C1C1E | Body text |
+
+Design rules (60-30-10):
+- 60% Neutral: cam-ivory backgrounds, cam-white cards
+- 30% Structural: cam-indigo headers, navigation
+- 10% Accents: cam-bronze CTAs, cam-earth badges
+
+## File Structure
+
+```
+backend/
+├── artifacts/           # NEW: Artifact model with auto QR generation
+│   ├── models.py        # Artifact model
+│   ├── admin.py         # Admin with QR preview & download
+│   ├── views.py         # Artifact detail view
+│   ├── urls.py          # URL routing
+│   └── management/
+│       └── commands/
+│           └── import_crawl_data.py  # Import crawl JSON
+├── templates/
+│   └── artifacts/
+│       └── detail.html  # Mobile-first QR landing page
+└── media/
+    ├── artifacts/       # Crawl images
+    └── qr_codes/        # Auto-generated QR PNGs
+
+crawler/
+└── main.py              # Web crawler script
+
+downloads/
+├── cameroon_content.json  # 127 artifacts
+└── images/                # 137 downloaded images
+```
+
+## How to Use
+
+### Run the Crawler
+```bash
+python crawler/main.py              # Full crawl + download
+python crawler/main.py --dry-run    # Crawl only
+```
+
+### Import Data to Django
+```bash
+cd backend
+python manage.py import_crawl_data
+```
+
+### Access in Browser
+- Home: `http://localhost:8000/`
+- Artifacts: `http://localhost:8000/artifacts/`
+- Artifact Detail: `http://localhost:8000/artifacts/<slug>/`
+- Admin: `http://localhost:8000/admin/`

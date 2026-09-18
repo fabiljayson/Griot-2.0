@@ -366,10 +366,16 @@ class Certificate(models.Model):
     level_achieved = models.PositiveIntegerField(default=1)
 
     # PDF generation
+    pdf_file = models.FileField(
+        upload_to='certificates/',
+        blank=True,
+        null=True,
+        help_text='Generated PDF certificate file.',
+    )
     pdf_url = models.URLField(
         blank=True,
         default='',
-        help_text='URL to the generated PDF certificate.',
+        help_text='Legacy URL to the generated PDF (kept for compatibility).',
     )
 
     class Meta:
@@ -383,3 +389,32 @@ class Certificate(models.Model):
             import uuid
             self.certificate_number = f'AT-{uuid.uuid4().hex[:8].upper()}'
         super().save(*args, **kwargs)
+
+    def generate_pdf(self):
+        """Generate a PDF certificate and save it to the pdf field.
+
+        Returns the URL of the generated PDF, or empty string on failure.
+        """
+        from django.core.files.base import ContentFile
+        from gamification.services.certificate_generator import generate_certificate_pdf
+
+        try:
+            pdf_bytes = generate_certificate_pdf(
+                title=self.title,
+                username=self.user.username,
+                description=self.description,
+                certificate_number=self.certificate_number,
+                certificate_type=self.certificate_type,
+                issued_at=self.issued_at,
+                stories_read=self.stories_read,
+                quizzes_passed=self.quizzes_passed,
+                level_achieved=self.level_achieved,
+            )
+            filename = f'{self.certificate_number}.pdf'
+            self.pdf_file.save(filename, ContentFile(pdf_bytes), save=False)
+            self.save(update_fields=['pdf_file'])
+            return self.pdf_file.url
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Failed to generate PDF for %s', self.certificate_number)
+            return ''

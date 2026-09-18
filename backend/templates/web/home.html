@@ -9,152 +9,223 @@ discover-regions strip. All glyphs are Font Awesome icons.
 {% block title %}Griot AI — Journey through Cameroon's living heritage{% endblock %}
 
 {% block content %}
-{# ── Hero band — mirrors the mobile gradient header ── #}
-<section class="-mx-4 -mt-6 mb-8 bg-gradient-to-br from-terracotta to-terracotta-dark px-4 py-8 dark:from-warm-brown dark:via-deep-earth dark:to-mud-charcoal sm:-mx-6 sm:px-6 lg:-mx-8 lg:rounded-b-3xl lg:px-8">
-  <div class="mx-auto max-w-6xl">
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="min-w-0 flex-1">
-        <h1 class="font-display text-2xl font-bold text-white sm:text-3xl">
-          {% if user.is_authenticated %}{{ user.first_name|default:user.username }}'s heritage feed{% else %}Welcome to Griot AI{% endif %}
-        </h1>
-        <p class="mt-1 text-sm text-white/80">Tales carried by griots, preserved for generations.</p>
-      </div>
-      {% if user.is_authenticated %}
-      {# Role badge — mirrors mobile RoleBadge #}
-      <span class="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold text-white ring-1 ring-white/30 backdrop-blur">
-        {% role_icon user.role %} {{ user.get_role_display }}
-      </span>
-      {% endif %}
+
+{# ── HERO BAND — always visible ── #}
+<section class="-mx-4 -mt-6 mb-10 bg-gradient-to-br from-cam-indigo to-cam-indigo-dark px-5 py-10 sm:-mx-6 sm:px-6 lg:-mx-8 lg:rounded-b-3xl lg:px-8">
+  <div class="mx-auto max-w-4xl text-center">
+    {# Brand mark #}
+    <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/15 ring-2 ring-cam-bronze/60 shadow-lg">
+      <span class="fa-solid fa-drum text-2xl text-cam-bronze" aria-hidden="true"></span>
     </div>
 
-    {# Platform stat chips — web counterpart of OfflineStoryCounter #}
-    <div class="mt-6 flex flex-wrap gap-3">
+    <h1 class="font-display text-3xl font-extrabold text-white sm:text-5xl">
+      {% if user.is_authenticated %}
+        {{ user.first_name|default:user.username }}'s Heritage Feed
+      {% else %}
+        Journey through Cameroon's<br class="hidden sm:inline"> Living Heritage
+      {% endif %}
+    </h1>
+
+    <p class="mx-auto mt-4 max-w-xl text-base text-white/70 sm:text-lg">
+      {% if user.is_authenticated %}
+        Tales carried by griots, preserved for generations.
+      {% else %}
+        Explore cultural tales, scan museum artifact QR codes, and earn heritage badges — all in one place.
+      {% endif %}
+    </p>
+
+    {# Platform stats #}
+    <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
       <span class="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur">
-        {% icon 'book' 'text-sm' %} {{ story_count }} stories published
+        {% icon 'book' 'text-sm' %} {{ story_count }} stories
       </span>
       <span class="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur">
-        {% icon 'landmark' 'text-sm' %} {{ artifact_count }} museum artifacts
+        {% icon 'landmark' 'text-sm' %} {{ artifact_count }} artifacts
       </span>
       <span class="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 backdrop-blur">
         {% icon 'globe' 'text-sm' %} 6 languages
       </span>
     </div>
-  </div>
-</section>
 
-{# ── Language toggle — mirrors mobile _buildLanguageToggle ── #}
-<div class="mb-8 flex justify-center">
-  <div class="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-brand-border dark:bg-deep-earth dark:ring-warm-brown">
-    <button class="lang-toggle flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold data-[active=true]:bg-terracotta data-[active=true]:text-white data-[active=false]:text-secondary-text"
-            data-lang="en" data-active="true">
-      {% icon 'language' 'text-sm' %} EN
-    </button>
-    <button class="lang-toggle flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold data-[active=true]:bg-terracotta data-[active=true]:text-white data-[active=false]:text-secondary-text"
-            data-lang="fr" data-active="false">
-      {% icon 'globe' 'text-sm' %} FR
-    </button>
-  </div>
-</div>
-
-{# ── Hero copy (bilingual, like the mobile screen) ── #}
-<section class="mb-10 text-center" data-lang-en>
-  <h2 class="font-display text-3xl font-bold sm:text-4xl">Journey through Cameroon's living heritage</h2>
-  <p class="mx-auto mt-3 max-w-2xl text-secondary-text dark:text-sand/70">
-    Tales carried by griots, preserved for generations. Read, listen, and explore the voices of the motherland.
-  </p>
-</section>
-<section class="mb-10 text-center" data-lang-fr hidden>
-  <h2 class="font-display text-3xl font-bold sm:text-4xl">Voyage à travers l'héritage vivant du Cameroun</h2>
-  <p class="mx-auto mt-3 max-w-2xl text-secondary-text dark:text-sand/70">
-    Contes transmis par les griots, préservés depuis des générations. Lisez, écoutez et explorez les voix de la mère patrie.
-  </p>
-</section>
-
-{# ── Trending rail — mirrors TrendingStoriesWidget ── #}
-{% if trending_stories %}
-<section class="mb-12">
-  <div class="mb-4 flex items-center gap-2.5">
-    {% icon 'fire' 'text-xl text-terracotta' %}
-    <h2 class="font-display text-xl font-bold sm:text-2xl">Trending Now</h2>
-  </div>
-  <div class="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-    {% for story in trending_stories %}
-    <div class="w-72 shrink-0 snap-start sm:w-80">
-      {% include 'web/partials/story_card.html' with story=story %}
+    {# CTA for anonymous users #}
+    {% if not user.is_authenticated %}
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a href="{% url 'web:stories' %}"
+         class="rounded-xl bg-cam-bronze px-7 py-3 text-sm font-bold text-white shadow-lg shadow-cam-bronze/30 transition hover:-translate-y-0.5 hover:bg-cam-bronze-dark hover:shadow-xl">
+        {% icon 'book-open' 'text-xs' %} Start Reading
+      </a>
+      <a href="{% url 'web:login' %}"
+         class="rounded-xl bg-white/15 px-7 py-3 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/25">
+        Sign in
+      </a>
     </div>
-    {% endfor %}
+    {% endif %}
   </div>
 </section>
-{% endif %}
 
-{# ── Popular grid — mirrors mobile popular stories list ── #}
-{% if popular_stories %}
-<section class="mb-12">
-  <div class="mb-4 flex items-center justify-between">
-    <div class="flex items-center gap-2.5">
-      {% icon 'heart' 'text-xl text-terracotta' %}
-      <h2 class="font-display text-xl font-bold sm:text-2xl">Popular Stories</h2>
+{% if user.is_authenticated %}
+  {# ── Language toggle — mirrors mobile _buildLanguageToggle ── #}
+  <div class="mb-8 flex justify-center">
+    <div class="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-brand-border dark:bg-deep-earth dark:ring-warm-brown">
+      <button class="lang-toggle flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold data-[active=true]:bg-cam-indigo data-[active=true]:text-white data-[active=false]:text-secondary-text"
+              data-lang="en" data-active="true">
+        {% icon 'language' 'text-sm' %} EN
+      </button>
+      <button class="lang-toggle flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold data-[active=true]:bg-cam-indigo data-[active=true]:text-white data-[active=false]:text-secondary-text"
+              data-lang="fr" data-active="false">
+        {% icon 'globe' 'text-sm' %} FR
+      </button>
     </div>
-    <a href="{% url 'web:stories' %}?sort=-view_count" class="flex items-center gap-1 text-sm font-semibold text-terracotta hover:underline">See all {% icon 'arrow-right' 'text-xs' %}</a>
   </div>
-  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-    {% for story in popular_stories %}
-    {% include 'web/partials/story_card.html' with story=story %}
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
 
-{# ── Category strip ── #}
-{% if categories %}
-<section class="mb-12">
-  <div class="mb-4 flex items-center gap-2.5">
-    {% icon 'layer-group' 'text-xl text-terracotta' %}
-    <h2 class="font-display text-xl font-bold sm:text-2xl">Browse by Category</h2>
-  </div>
-  <div class="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-    {% for category in categories %}
-    <a href="{% url 'web:stories' %}?category={{ category.slug }}"
-       class="group flex shrink-0 items-center gap-2.5 rounded-2xl border border-brand-border bg-white px-5 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-terracotta/40 hover:shadow-md dark:border-warm-brown dark:bg-deep-earth">
-      {% emoji_icon category.icon 'text-lg text-terracotta' %}
-      <span class="text-sm font-semibold group-hover:text-terracotta">{{ category.name }}</span>
-    </a>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+  {# ── Hero copy (bilingual, like the mobile screen) ── #}
+  <section class="mb-10 text-center" data-lang-en>
+    <h2 class="font-display text-3xl font-bold sm:text-4xl">Journey through Cameroon's living heritage</h2>
+    <p class="mx-auto mt-3 max-w-2xl text-secondary-text dark:text-sand/70">
+      Tales carried by griots, preserved for generations. Read, listen, and explore the voices of the motherland.
+    </p>
+  </section>
+  <section class="mb-10 text-center" data-lang-fr hidden>
+    <h2 class="font-display text-3xl font-bold sm:text-4xl">Voyage à travers l'héritage vivant du Cameroun</h2>
+    <p class="mx-auto mt-3 max-w-2xl text-secondary-text dark:text-sand/70">
+      Contes transmis par les griots, préservés depuis des générations. Lisez, écoutez et explorez les voix de la mère patrie.
+    </p>
+  </section>
 
-{# ── Discover regions — mirrors mobile _RegionChip strip ── #}
-<section class="mb-4">
-  <div class="mb-4 flex items-center gap-2.5">
-    {% icon 'compass' 'text-xl text-terracotta' %}
-    <h2 class="font-display text-xl font-bold sm:text-2xl">Discover Regions</h2>
-  </div>
-  <div class="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-    {% for region in regions %}
-    <a href="{% url 'web:stories' %}?region={{ region.label }}"
-       class="group relative flex h-36 w-44 shrink-0 flex-col justify-between overflow-hidden rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-lg
-              {% if region.color == 'terracotta' %}border-terracotta/30 bg-terracotta/10{% elif region.color == 'ochre' %}border-ochre/30 bg-ochre/10{% elif region.color == 'savannah' %}border-savannah/30 bg-savannah/10{% else %}border-terracotta-dark/30 bg-terracotta-dark/10{% endif %}">
-      {% if region.color == 'terracotta' %}
-        {% icon 'gopuram' 'text-3xl text-terracotta' %}
-      {% elif region.color == 'ochre' %}
-        {% icon 'mountain-sun' 'text-3xl text-ochre' %}
-      {% elif region.color == 'savannah' %}
-        {% icon 'water' 'text-3xl text-savannah' %}
-      {% else %}
-        {% icon 'monument' 'text-3xl text-terracotta-dark' %}
-      {% endif %}
-      <div>
-        <p class="font-display text-lg font-bold">{{ region.label }}</p>
-        <p class="text-xs text-secondary-text">{{ region.count }} stor{{ region.count|yesno:'y,ies' }}</p>
+  {# ── Trending rail — mirrors TrendingStoriesWidget ── #}
+  {% if trending_stories %}
+  <section class="mb-12">
+    <div class="mb-4 flex items-center gap-2.5">
+      {% icon 'fire' 'text-xl text-cam-bronze' %}
+      <h2 class="font-display text-xl font-bold sm:text-2xl">Trending Now</h2>
+    </div>
+    <div class="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      {% for story in trending_stories %}
+      <div class="w-72 shrink-0 snap-start sm:w-80">
+        {% include 'web/partials/story_card.html' with story=story %}
       </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Popular grid — mirrors mobile popular stories list ── #}
+  {% if popular_stories %}
+  <section class="mb-12">
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        {% icon 'heart' 'text-xl text-cam-earth' %}
+        <h2 class="font-display text-xl font-bold sm:text-2xl">Popular Stories</h2>
+      </div>
+      <a href="{% url 'web:stories' %}?sort=-view_count" class="flex items-center gap-1 text-sm font-semibold text-cam-bronze hover:underline">See all {% icon 'arrow-right' 'text-xs' %}</a>
+    </div>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {% for story in popular_stories %}
+      {% include 'web/partials/story_card.html' with story=story %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Category strip ── #}
+  {% if categories %}
+  <section class="mb-12">
+    <div class="mb-4 flex items-center gap-2.5">
+      {% icon 'layer-group' 'text-xl text-cam-bronze' %}
+      <h2 class="font-display text-xl font-bold sm:text-2xl">Browse by Category</h2>
+    </div>
+    <div class="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      {% for category in categories %}
+      <a href="{% url 'web:stories' %}?category={{ category.slug }}"
+         class="group flex shrink-0 items-center gap-2.5 rounded-2xl border border-brand-border bg-white px-5 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-cam-bronze/40 hover:shadow-md dark:border-warm-brown dark:bg-deep-earth">
+        {% emoji_icon category.icon 'text-lg text-cam-bronze' %}
+        <span class="text-sm font-semibold group-hover:text-cam-bronze">{{ category.name }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Discover regions — mirrors mobile _RegionChip strip ── #}
+  <section class="mb-4">
+    <div class="mb-4 flex items-center gap-2.5">
+      {% icon 'compass' 'text-xl text-cam-bronze' %}
+      <h2 class="font-display text-xl font-bold sm:text-2xl">Discover Regions</h2>
+    </div>
+    <div class="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      {% for region in regions %}
+      <a href="{% url 'web:stories' %}?region={{ region.label }}"
+         class="group relative flex h-36 w-44 shrink-0 flex-col justify-between overflow-hidden rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-lg
+                border-cam-indigo/20 bg-cam-indigo/5 hover:border-cam-bronze/40 hover:bg-cam-bronze/5">
+        {% icon 'gopuram' 'text-3xl text-cam-indigo/50' %}
+        <div>
+          <p class="font-display text-lg font-bold">{{ region.label }}</p>
+          <p class="text-xs text-secondary-text">{{ region.count }} stor{{ region.count|yesno:'y,ies' }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+{% else %}
+  {# ── Anonymous landing: feature highlights ── #}
+  <section class="mb-10">
+    <h2 class="mb-6 text-center font-display text-2xl font-bold">What awaits you</h2>
+    <div class="grid gap-6 sm:grid-cols-3">
+      <div class="rounded-2xl border border-brand-border bg-white p-6 text-center shadow-sm dark:border-warm-brown dark:bg-deep-earth">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cam-bronze/10">
+          {% icon 'book-open' 'text-2xl text-cam-bronze' %}
+        </div>
+        <h3 class="font-display text-lg font-bold">Cultural Stories</h3>
+        <p class="mt-2 text-sm text-secondary-text">Explore tales from every corner of Cameroon — from the highlands to the coast.</p>
+      </div>
+      <div class="rounded-2xl border border-brand-border bg-white p-6 text-center shadow-sm dark:border-warm-brown dark:bg-deep-earth">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cam-earth/10">
+          {% icon 'qrcode' 'text-2xl text-cam-earth' %}
+        </div>
+        <h3 class="font-display text-lg font-bold">Museum QR Codes</h3>
+        <p class="mt-2 text-sm text-secondary-text">Scan artifact codes for immersive digital experiences and hidden histories.</p>
+      </div>
+      <div class="rounded-2xl border border-brand-border bg-white p-6 text-center shadow-sm dark:border-warm-brown dark:bg-deep-earth">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cam-green/10">
+          {% icon 'trophy' 'text-2xl text-cam-green' %}
+        </div>
+        <h3 class="font-display text-lg font-bold">Earn Badges</h3>
+        <p class="mt-2 text-sm text-secondary-text">Test your knowledge with quizzes, earn XP, and collect heritage certificates.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Featured categories for anonymous users ── #}
+  {% if categories %}
+  <section class="mb-10">
+    <h2 class="mb-4 font-display text-xl font-bold">Browse by Category</h2>
+    <div class="flex flex-wrap gap-3">
+      {% for category in categories %}
+      <a href="{% url 'web:stories' %}?category={{ category.slug }}"
+         class="flex items-center gap-2 rounded-xl border border-brand-border bg-white px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-cam-bronze/40 hover:shadow-md dark:border-warm-brown dark:bg-deep-earth">
+        {% emoji_icon category.icon 'text-base text-cam-bronze' %} {{ category.name }}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Final CTA ── #}
+  <section class="rounded-2xl bg-gradient-to-br from-cam-indigo to-cam-indigo-dark p-8 text-center text-white sm:p-12">
+    <h2 class="font-display text-2xl font-bold sm:text-3xl">Ready to explore?</h2>
+    <p class="mx-auto mt-3 max-w-md text-white/70">Join thousands discovering Cameroon's rich oral traditions.</p>
+    <a href="{% url 'web:login' %}"
+       class="mt-6 inline-block rounded-xl bg-cam-bronze px-8 py-3 text-sm font-bold text-white shadow-lg shadow-cam-bronze/30 transition hover:-translate-y-0.5 hover:bg-cam-bronze-dark">
+      Get started — it's free
     </a>
-    {% endfor %}
-  </div>
-</section>
+  </section>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
+{% if user.is_authenticated %}
 <script>
   // Language toggle — mirrors the mobile EN/FR switch (client-side only).
   document.querySelectorAll('.lang-toggle').forEach(function (btn) {
@@ -173,4 +244,5 @@ discover-regions strip. All glyphs are Font Awesome icons.
     if (saved === 'fr') { document.querySelector('.lang-toggle[data-lang="fr"]').click(); }
   } catch (e) {}
 </script>
+{% endif %}
 {% endblock %}
