@@ -8,6 +8,7 @@ media UI (§6/§7), quizzes hub (§8) and the artifact audio guide (§5).
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.template import Context, Template
 
 from gamification.models import Badge, Quiz, QuizAttempt, QuizQuestion, UserProfile
 from media_app.models import AudioNarrationJob, VideoGenerationJob
@@ -43,6 +44,18 @@ class WebSmokeTestCase(TestCase):
 
     def setUp(self):
         self.client.defaults['HTTP_USER_AGENT'] = 'TestAgent/1.0'
+
+
+class MarkdownRenderingTests(TestCase):
+    def test_story_markdown_renders_as_html_instead_of_escaped_tags(self):
+        template = Template('{% load web_extras %}{{ content|markdown }}')
+        rendered = template.render(Context({
+            'content': '# A Title\n\nA **bold** paragraph.',
+        }))
+
+        self.assertIn('<h1>A Title</h1>', rendered)
+        self.assertIn('<p>A <strong>bold</strong> paragraph.</p>', rendered)
+        self.assertNotIn('&lt;h1&gt;', rendered)
 
 
 class StoryFormTests(WebSmokeTestCase):
@@ -253,6 +266,33 @@ class QuizzesHubTests(WebSmokeTestCase):
         )
         response = self.client.get(reverse('web:gamification'))
         self.assertContains(response, reverse('web:quizzes'))
+
+    def test_story_shows_quiz_to_anonymous_visitors(self):
+        response = self.client.get(reverse('web:story-detail', args=[self.story.slug]))
+        self.assertContains(response, 'Sign in to take quiz')
+        self.assertContains(response, reverse('web:quiz-play', args=[self.quiz.id]))
+
+    def test_web_quiz_can_start_answer_and_finish(self):
+        self.client.login(username='web_visitor', password='testpass123')
+        quiz_url = reverse('web:quiz-play', args=[self.quiz.id])
+
+        response = self.client.post(reverse('web:quiz-start', args=[self.quiz.id]))
+        self.assertRedirects(response, quiz_url)
+        response = self.client.get(quiz_url)
+        self.assertContains(response, self.quiz.questions.first().question_text)
+
+        question = self.quiz.questions.first()
+        response = self.client.post(
+            reverse('web:quiz-answer', args=[self.quiz.id, question.id]),
+            {'answer': question.correct_answer},
+        )
+        self.assertRedirects(response, quiz_url)
+
+        response = self.client.post(reverse('web:quiz-finish', args=[self.quiz.id]))
+        self.assertRedirects(response, quiz_url)
+        attempt = QuizAttempt.objects.get(user=self.visitor, quiz=self.quiz)
+        self.assertEqual(attempt.status, QuizAttempt.Status.COMPLETED)
+        self.assertEqual(attempt.score, 100)
 
 
 class ArtifactAudioGuideTests(WebSmokeTestCase):

@@ -68,18 +68,26 @@
 
   <style>
     /* Markdown reader typography (story content) */
+    .story-content {
+      max-width: 68ch;
+      color: #1C1C1E;
+      text-wrap: pretty;
+    }
     .story-content h1, .story-content h2, .story-content h3 {
       font-family: 'Fraunces', Georgia, serif;
       font-weight: 700;
       color: #1E2B58;
-      margin: 1.4em 0 .5em;
+      margin: 1.8em 0 .65em;
       line-height: 1.2;
+      text-wrap: balance;
     }
+    .story-content > h1:first-child { display: none; }
     .story-content h1 { font-size: 1.75rem; }
-    .story-content h2 { font-size: 1.45rem; }
-    .story-content h3 { font-size: 1.2rem; }
-    .story-content p { margin: .85em 0; line-height: 1.8; color: #1C1C1E; }
-    .story-content ul, .story-content ol { margin: .85em 0; padding-left: 1.4em; }
+    .story-content h2 { font-size: 1.45rem; margin-top: 2.2em; }
+    .story-content h3 { font-size: 1.2rem; margin-top: 1.5em; }
+    .story-content p { margin: 1em 0; line-height: 1.85; color: #1C1C1E; }
+    .story-content ul, .story-content ol { margin: 1em 0 1.25em; padding-left: 1.6em; }
+    .story-content li { margin: .45em 0; padding-left: .2em; line-height: 1.7; }
     .story-content ul { list-style: disc; }
     .story-content ol { list-style: decimal; }
     .story-content blockquote {
@@ -92,11 +100,14 @@
       font-family: 'Fraunces', Georgia, serif;
     }
     .story-content a { color: #C68B29; text-decoration: underline; }
+    .story-content strong { color: #1E2B58; font-weight: 700; }
     .story-content code { background: #F5ECD6; padding: .1em .4em; border-radius: .3rem; font-size: .9em; }
     .story-content img { border-radius: .8rem; margin: 1em 0; }
     .story-content hr { border-color: #E5E7EB; margin: 1.6em 0; }
     .dark .story-content h1, .dark .story-content h2, .dark .story-content h3 { color: #FBF9F4; }
     .dark .story-content p { color: #D1D5DB; }
+    .dark .story-content { color: #D1D5DB; }
+    .dark .story-content strong { color: #F5ECD6; }
 
     /* Hide scrollbar on horizontal chip strips, like the mobile ListView */
     .no-scrollbar::-webkit-scrollbar { display: none; }

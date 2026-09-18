@@ -169,7 +169,10 @@ class Command(BaseCommand):
 
     def _create_quizzes(self):
         """Create quizzes for published stories."""
-        stories = Story.objects.filter(status=Story.Status.PUBLISHED)
+        stories = list(
+            Story.objects.filter(status=Story.Status.PUBLISHED)
+            .prefetch_related('categories')
+        )
 
         quiz_data = {
             'The Legend of Mount Mbapit\'s Crater Lake': {
@@ -589,24 +592,90 @@ class Command(BaseCommand):
         }
 
         for story in stories:
-            if story.title in quiz_data:
-                data = quiz_data[story.title]
-                quiz, created = Quiz.objects.get_or_create(
-                    story=story,
-                    defaults={
-                        'title': data['title'],
-                        'description': data['description'],
-                        'passing_score': 70,
-                    },
+            data = quiz_data.get(story.title) or self._fallback_quiz_data(story, stories)
+            quiz, created = Quiz.objects.get_or_create(
+                story=story,
+                defaults={
+                    'title': data['title'],
+                    'description': data['description'],
+                    'passing_score': 70,
+                },
+            )
+
+            if created or not quiz.questions.exists():
+                if not created:
+                    quiz.title = data['title']
+                    quiz.description = data['description']
+                    quiz.save(update_fields=['title', 'description'])
+                for i, question in enumerate(data['questions'], 1):
+                    QuizQuestion.objects.create(quiz=quiz, order=i, **question)
+                self.stdout.write(
+                    f'  {"Created" if created else "Repaired"} quiz: '
+                    f'{data["title"]} ({len(data["questions"])} questions)'
                 )
 
-                if created:
-                    for i, q in enumerate(data['questions'], 1):
-                        QuizQuestion.objects.create(
-                            quiz=quiz,
-                            order=i,
-                            **q,
-                        )
-                    self.stdout.write(f'  Created quiz: {data["title"]} ({len(data["questions"])} questions)')
+    def _fallback_quiz_data(self, story, stories):
+        """Build a useful four-question quiz for any story without custom data."""
+        category = story.categories.first()
+        category_name = category.name if category else 'Cameroonian heritage'
+        region = story.region or 'Cameroon'
+        other_regions = [
+            candidate.region for candidate in stories
+            if candidate.region and candidate.region != region
+        ]
+        other_regions = list(dict.fromkeys(other_regions))
+        while len(other_regions) < 3:
+            other_regions.append('Another region of Cameroon')
+        title_choices = [story.title]
+        title_choices.extend(candidate.title for candidate in stories if candidate != story)
+        title_choices = title_choices[:4]
+        while len(title_choices) < 4:
+            title_choices.append('A different cultural story')
 
+        return {
+            'title': f'Test Your Knowledge: {story.title}',
+            'description': f'Check what you remember from “{story.title}”.',
+            'questions': [
+                {
+                    'question_text': 'Which story did you just read?',
+                    'option_a': title_choices[0],
+                    'option_b': title_choices[1],
+                    'option_c': title_choices[2],
+                    'option_d': title_choices[3],
+                    'correct_answer': 'a',
+                    'explanation': f'This quiz is based on “{story.title}”.',
+                    'difficulty': 'easy',
+                },
+                {
+                    'question_text': 'Which region is associated with this story?',
+                    'option_a': region,
+                    'option_b': other_regions[0],
+                    'option_c': other_regions[1],
+                    'option_d': other_regions[2],
+                    'correct_answer': 'a',
+                    'explanation': f'This story is associated with {region}.',
+                    'difficulty': 'easy',
+                },
+                {
+                    'question_text': 'What is the main cultural focus of this story?',
+                    'option_a': category_name,
+                    'option_b': 'Modern technology',
+                    'option_c': 'International finance',
+                    'option_d': 'Space exploration',
+                    'correct_answer': 'a',
+                    'explanation': f'The story is categorized under {category_name}.',
+                    'difficulty': 'medium',
+                },
+                {
+                    'question_text': 'What should a reader gain from this story?',
+                    'option_a': 'A deeper understanding of Cameroon’s heritage',
+                    'option_b': 'A recipe for a new dish',
+                    'option_c': 'A software tutorial',
+                    'option_d': 'A travel booking confirmation',
+                    'correct_answer': 'a',
+                    'explanation': 'The quizzes reinforce learning about Cameroon’s history and culture.',
+                    'difficulty': 'medium',
+                },
+            ],
+        }
 

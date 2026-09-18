@@ -193,15 +193,15 @@ Reading progress posts back to the same model the mobile app syncs.
     {% endif %}
 
     {# ── Quiz entry — mirrors mobile quiz invitation card ── #}
-    {% if quiz and user.is_authenticated %}
+    {% if quiz %}
     <section class="mt-8 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-br from-cam-indigo to-cam-indigo-dark p-6 text-white">
       <span class="fa-solid fa-graduation-cap text-3xl" aria-hidden="true"></span>
       <div class="min-w-0 flex-1">
         <h2 class="font-display text-lg font-bold">Test your knowledge</h2>
         <p class="text-sm text-white/85">{{ quiz.question_count }} questions • earn {{ quiz.xp_reward }} XP if you pass</p>
       </div>
-      <a href="{% url 'web:quiz-play' quiz.id %}" class="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-cam-indigo transition hover:bg-cam-bronze/10">
-        Take the quiz
+      <a href="{% if user.is_authenticated %}{% url 'web:quiz-play' quiz.id %}{% else %}{% url 'web:login' %}?next={% url 'web:quiz-play' quiz.id %}{% endif %}" class="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-cam-indigo transition hover:bg-cam-bronze/10">
+        {% if user.is_authenticated %}Take the quiz{% else %}Sign in to take quiz{% endif %}
       </a>
     </section>
     {% endif %}

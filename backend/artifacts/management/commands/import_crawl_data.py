@@ -14,6 +14,7 @@ Usage:
 
 import json
 import os
+import shutil
 import time
 from pathlib import Path
 from urllib.parse import urlparse
@@ -134,6 +135,8 @@ class Command(BaseCommand):
                         existing.historical_significance = historical_significance
                         existing.source_url = source_url
                         existing.save()
+                        if not skip_images and images:
+                            image_count += self._attach_images(existing, images, images_dir)
                         self.stdout.write(self.style.SUCCESS(f'  🔄 [{i}] Updated: {title}'))
                         updated_count += 1
                 else:
@@ -163,13 +166,7 @@ class Command(BaseCommand):
 
             # Download images
             if not skip_images and images:
-                for img_data in images[:3]:  # Limit to 3 images per artifact
-                    img_url = img_data.get('original_url', '')
-                    alt_text = img_data.get('alt_text', '')
-                    if img_url:
-                        downloaded = self._download_image(img_url, slug, images_dir)
-                        if downloaded:
-                            image_count += 1
+                image_count += self._attach_images(artifact, images, images_dir)
 
             # Small delay to avoid overwhelming the server
             if i % 10 == 0:
@@ -214,3 +211,27 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'    ⚠️  Failed to download {url}: {e}'))
             return False
+
+    def _attach_images(self, artifact, images, images_dir):
+        """Attach crawled local images to the primary and gallery fields."""
+        project_root = Path(settings.BASE_DIR).parent
+        attached = []
+
+        for index, image_data in enumerate(images[:3]):
+            local_filename = image_data.get('local_filename', '')
+            source = project_root / 'downloads' / local_filename
+            if not source.exists():
+                continue
+
+            filename = f'{artifact.slug}-{index + 1}{source.suffix.lower()}'
+            destination = images_dir / filename
+            shutil.copy2(source, destination)
+            relative_path = f'artifacts/images/{filename}'
+            attached.append(f'{settings.MEDIA_URL}{relative_path}')
+            if index == 0:
+                artifact.image = relative_path
+
+        if attached:
+            artifact.additional_images = attached[1:]
+            artifact.save(update_fields=['image', 'additional_images'])
+        return len(attached)

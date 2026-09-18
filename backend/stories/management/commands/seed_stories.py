@@ -6,8 +6,13 @@ Usage:
     python manage.py seed_stories --clear  # Clear existing data first
 """
 
+from pathlib import Path
+import shutil
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 
 from stories.models import Story, StoryCategory
 
@@ -1059,5 +1064,41 @@ The sacred forest teaches us:
                 self.stdout.write(f'  Created story: {story_data["title"]}')
             else:
                 self.stdout.write(f'  Story already exists: {story_data["title"]}')
+
+            if self._attach_cover_image(story):
+                self.stdout.write(f'  Attached cover image: {story.title}')
         
         self.stdout.write(f'\nCreated {len(stories)} stories across {len(categories)} categories')
+
+    def _attach_cover_image(self, story):
+        """Copy a matching crawled image into MEDIA_ROOT and attach it."""
+        if story.cover_image:
+            return False
+
+        project_root = Path(settings.BASE_DIR).parent
+        image_root = project_root / 'downloads' / 'images'
+        story_slug = slugify(story.title)
+        candidates = list(image_root.rglob(f'{story_slug}-01.*'))
+        aliases = {
+            'the-legend-of-mount-mbapits-crater-lake': 'mount-and-lake-mbapit',
+            'the-baaka-pygmies-keepers-of-the-forest': 'visit-pygmies-encampments',
+            'the-bamileke-guardians-of-the-highlands': 'cameroon-cultures',
+            'the-bamoun-sultanate-a-legacy-of-innovation': 'foumban',
+            'bimbia-where-memory-lives': 'bimbia',
+            'the-mysterious-lakes-of-manengouba': 'manengouba-mountains',
+            'the-ekom-nkam-waterfalls-where-tarzan-was-born': 'ekom-nkam-waterfalls',
+            'the-bamileke-elephant-dance': 'elephant',
+            'the-sacred-forest-of-foreke-dschang': 'dschang-attractions',
+        }
+        if not candidates and story_slug in aliases:
+            candidates = sorted(image_root.rglob(f"{aliases[story_slug]}-01.*"))
+        if not candidates:
+            return False
+
+        destination = Path(settings.MEDIA_ROOT) / 'stories' / 'covers'
+        destination.mkdir(parents=True, exist_ok=True)
+        filename = f'{story_slug}{candidates[0].suffix.lower()}'
+        shutil.copy2(candidates[0], destination / filename)
+        story.cover_image = f'stories/covers/{filename}'
+        story.save(update_fields=['cover_image'])
+        return True

@@ -56,8 +56,33 @@ python manage.py runserver
 ### Import Crawl Data
 ```bash
 cd backend
-python manage.py import_crawl_data
+python manage.py import_crawl_data                         # Import content and images
+python manage.py import_crawl_data --dry-run               # Validate without saving
+python manage.py import_crawl_data --update-existing       # Refresh existing artifacts and images
 ```
+
+### Seed Stories, Quizzes, and Badges
+Run these after migrations to populate the web app with stories and gamification data:
+
+```bash
+cd backend
+python manage.py seed_stories                         # Create story categories and stories
+python manage.py seed_gamification                    # Create quizzes for every published story
+python manage.py seed_gamification --clear            # Rebuild quizzes and badges from scratch
+```
+
+`seed_gamification` preserves existing custom quizzes, repairs empty quizzes, and generates a four-question quiz for every published story that does not have custom questions.
+
+### Refresh Existing Media
+The seed and import commands also attach downloaded images to existing records:
+
+```bash
+cd backend
+python manage.py seed_stories
+python manage.py import_crawl_data --update-existing
+```
+
+After starting the server, stories are available at `/stories/`, quizzes at `/quizzes/`, and artifacts at `/artifacts/`.
 
 ### Web Crawler
 ```bash

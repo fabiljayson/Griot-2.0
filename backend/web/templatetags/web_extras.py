@@ -15,7 +15,7 @@ import html
 import re
 
 from django import template
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 
 register = template.Library()
 
@@ -285,7 +285,7 @@ def markdown(value: str) -> str:
         paragraph.append(line.strip())
 
     flush_paragraph(); close_list(); close_quote()
-    return '\n'.join(out)
+    return mark_safe('\n'.join(out))
 
 
 # ---------------------------------------------------------------------------

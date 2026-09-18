@@ -81,6 +81,17 @@ QR deep link info and related stories.
       {{ artifact.description|markdown }}
     </div>
 
+    {% if artifact.additional_images %}
+    <section class="mt-8" aria-label="More views of {{ artifact.title }}">
+      <h2 class="mb-4 font-display text-xl font-bold">More views</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% for image_url in artifact.additional_images %}
+        <img src="{{ image_url }}" alt="{{ artifact.title }}" class="aspect-[4/3] w-full rounded-2xl object-cover">
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
     {# ── Audio guide — mirrors the mobile artifact narration player (§6) ── #}
     {% if narration %}
     <section class="mt-8 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">

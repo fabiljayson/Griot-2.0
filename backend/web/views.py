@@ -514,9 +514,24 @@ def quiz_play_view(request, quiz_id):
         user=request.user, quiz=quiz, status=QuizAttempt.Status.IN_PROGRESS,
     ).first()
 
+    questions = list(quiz.questions.all())
+    answered_ids = set()
+    for answer in (attempt.answers if attempt else []):
+        try:
+            answered_ids.add(int(answer.get('question_id')))
+        except (TypeError, ValueError):
+            continue
+    next_question = next(
+        (question for question in questions if question.id not in answered_ids),
+        None,
+    )
+
     context = {
         'quiz': quiz,
         'attempt': attempt,
+        'questions': questions,
+        'answered_count': len(answered_ids),
+        'next_question': next_question,
         'active_nav': 'gamification',
     }
     return render(request, 'web/quiz_play.html', context)

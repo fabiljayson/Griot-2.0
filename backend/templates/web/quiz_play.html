@@ -46,7 +46,7 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
 
   {% elif attempt.status == 'in_progress' %}
   {# ── Question flow ── #}
-  {% with answered=attempt.answers|length next_index=answered %}
+  {% with answered=answered_count %}
   {# Progress bar — mirrors mobile progress indicator #}
   <div class="mb-6">
     <div class="mb-1.5 flex justify-between text-xs font-semibold text-secondary-text">
@@ -58,24 +58,25 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
     </div>
   </div>
 
-  {% if next_index < quiz.question_count %}
-  {% with question=quiz.questions.all|dict_item:next_index %}
+  {% if next_question %}
   <div class="rounded-3xl border border-brand-border bg-white p-6 dark:border-warm-brown dark:bg-deep-earth sm:p-8">
-    <h2 class="font-display text-lg font-bold leading-snug sm:text-xl">{{ question.question_text }}</h2>
+    <h2 class="font-display text-lg font-bold leading-snug sm:text-xl">{{ next_question.question_text }}</h2>
     <div class="mt-6 space-y-3">
-      {% for letter, text in question|question_options %}
-      <form method="post" action="{% url 'web:quiz-answer' quiz.id question.id %}">
+      <form method="post" action="{% url 'web:quiz-answer' quiz.id next_question.id %}">
         {% csrf_token %}
-        <input type="hidden" name="answer" value="{{ letter }}">
-        <button class="flex w-full items-center gap-4 rounded-2xl border-2 border-brand-border bg-white p-4 text-left transition hover:border-terracotta hover:bg-terracotta-tint/20 dark:border-warm-brown dark:bg-mud-charcoal dark:hover:border-terracotta">
+        {% for letter, text in next_question|question_options %}
+        <label class="mb-3 flex w-full cursor-pointer items-center gap-4 rounded-2xl border-2 border-brand-border bg-white p-4 text-left transition hover:border-terracotta hover:bg-terracotta-tint/20 dark:border-warm-brown dark:bg-mud-charcoal dark:hover:border-terracotta">
+          <input required type="radio" name="answer" value="{{ letter }}" class="accent-terracotta">
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 font-bold text-terracotta">{{ letter|upper }}</span>
           <span class="text-sm sm:text-base">{{ text }}</span>
+        </label>
+        {% endfor %}
+        <button type="submit" class="mt-3 w-full rounded-xl bg-terracotta px-6 py-3.5 text-sm font-bold text-white transition hover:bg-terracotta-dark">
+          Submit answer
         </button>
       </form>
-      {% endfor %}
     </div>
   </div>
-  {% endwith %}
   {% else %}
   {# All questions answered — show finish button #}
   <div class="rounded-3xl border border-brand-border bg-white p-8 text-center dark:border-warm-brown dark:bg-deep-earth">
