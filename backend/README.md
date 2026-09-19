@@ -32,15 +32,14 @@ backend/
 │   └── settings/      # Split settings: base.py / dev.py / prod.py / test.py
 ├── users/             # Custom user model & roles
 ├── stories/           # Story repository & reader engine
-├── qr_codes/          # Artifact QR engine (existing)
-├── artifacts/         # NEW: Artifact model with auto QR generation
+├── qr_codes/          # Canonical artifact model, QR engine & import command
+├── artifacts/         # RETIRED: migration-history shell only (see artifacts/README.md)
 ├── gamification/      # Quizzes, badges & certificates
 ├── media_app/         # Luma AI video & TTS narration jobs
 ├── api/               # Top-level API routing, health, analytics, seeding
 ├── web/               # Server-rendered web UI (session auth, mirrors mobile)
 ├── templates/         # Django templates
-│   ├── web/           # Web UI templates
-│   └── artifacts/     # Artifact detail template (mobile-first)
+│   └── web/           # Web UI templates (incl. artifact detail, mobile-first)
 ├── static/web/        # Web UI assets
 ├── media/             # Uploaded files
 │   ├── artifacts/     # Artifact images from crawl data
@@ -63,7 +62,8 @@ python manage.py runserver
 
 ### Import Crawl Data
 
-Import the 127 crawled artifacts from discover-cameroon.com:
+Import the 127 crawled artifacts from discover-cameroon.com. The command
+lives in the canonical `qr_codes` app:
 
 ```bash
 python manage.py import_crawl_data              # Full import with images
@@ -83,7 +83,7 @@ This creates artifacts with:
 ### Auto QR Code Generation
 
 When an artifact is created or updated in Django Admin, a QR code PNG is
-automatically generated encoding the artifact's detail URL (`/artifacts/<slug>/`).
+automatically generated encoding the artifact's detail URL (`/artifact/<slug>/`).
 
 ```python
 # The QR code is generated automatically on save
@@ -98,7 +98,7 @@ artifact = Artifact.objects.create(
 
 ### Mobile-First Templates
 
-The artifact detail page (`/artifacts/<slug>/`) is optimized for mobile:
+The artifact detail page (`/artifact/<slug>/`) is optimized for mobile:
 - Sticky header with back button
 - Audio player for narration
 - Responsive video embed (16:9)
@@ -140,8 +140,16 @@ Key routes:
 - `/stories/` — Story discovery
 - `/story/<slug>/` — Story reader
 - `/artifacts/` — Artifact catalog
-- `/artifacts/<slug>/` — Artifact detail (QR landing page)
+- `/artifact/<slug>/` — Artifact detail (QR landing page)
 - `/admin/` — Django admin
+
+### Legacy artifact URLs
+
+The pre-consolidation landing path `/artifacts/<slug>/` (note the plural)
+permanently redirects (301) to `/artifact/<slug>/` so printed QR codes
+from earlier museum materials keep working. The old `artifacts` app is
+retired; only its migration history remains under `artifacts/migrations/`
+(see `artifacts/README.md`).
 
 ## Data seeding
 

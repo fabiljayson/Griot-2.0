@@ -18,7 +18,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '.ngrok-free.app',
     '.ngrok.io',
-    '*',
+    # No wildcard: unknown Host headers are rejected with 400 (feature 001,
+    # contract C5). Add team tunneling hosts explicitly if needed.
 ]
 
 # CORS: allow the Flutter web/PWA dev server, mobile emulators, and ngrok.

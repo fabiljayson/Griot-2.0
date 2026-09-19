@@ -18,14 +18,22 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     # Server-rendered web interface (mirrors the Flutter mobile app).
     path('', include('web.urls')),
-    # Artifacts with auto-generated QR codes.
-    path('artifacts/', include('artifacts.urls')),
+    # Legacy artifact QR landing route (pre-consolidation printed codes):
+    # permanently redirect to the canonical web detail page. The deprecated
+    # `artifacts` app itself is retired (see artifacts/README.md); only its
+    # migration history remains on disk.
+    path(
+        'artifacts/<slug:slug>/',
+        RedirectView.as_view(url='/artifact/%(slug)s/', permanent=True),
+        name='legacy-artifact-redirect',
+    ),
 ]
 
 # Serve uploaded media in development.

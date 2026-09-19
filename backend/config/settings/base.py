@@ -55,7 +55,9 @@ LOCAL_APPS = [
     'media_app',
     'api',
     'web',
-    'artifacts',  # Deprecated: kept for migration history; remove after migrate
+    # 'artifacts' retired (feature 001): was consolidated into qr_codes.
+    # Its migration history remains on disk under artifacts/migrations/ —
+    # do not delete while deployed databases reference it.
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

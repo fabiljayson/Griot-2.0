@@ -7,16 +7,180 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Griot AI — Digital Heritage Platform{% endblock %}</title>
 
-  <!-- All styling assets are served locally — no CDN / network required. -->
+  <!--
+    Hybrid asset loading: everything is served locally (works fully offline).
+    The inline JS below only reaches out to a CDN when a local stylesheet is
+    missing/broken (e.g. partial download), so online is a fallback, never a
+    requirement.
+  -->
 
   <!-- Fonts (Fraunces + Plus Jakarta Sans), self-hosted subsets -->
   <link rel="stylesheet" href="{% static 'web/css/fonts.css' %}">
 
   <!-- Font Awesome 6 — icon parity with the mobile app's FaIcon widgets -->
-  <link rel="stylesheet" href="{% static 'web/vendor/fontawesome/all.min.css' %}">
+  <link rel="stylesheet" href="{% static 'web/vendor/fontawesome/all.min.css' %}"
+        data-cdn-fallback="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <!-- Tailwind CSS — compiled locally with the Tailwind CLI -->
-  <link rel="stylesheet" href="{% static 'web/css/tailwind.css' %}">
+  <link rel="stylesheet" href="{% static 'web/css/tailwind.css' %}"
+        data-cdn-fallback="https://cdn.tailwindcss.com"
+        data-theme-src="{% static 'web/js/tailwind-theme.js' %}">
+
+  <script>
+    /*
+     * Hybrid stylesheet fallback.
+     * For every stylesheet tagged with data-cdn-fallback, verify the styles
+     * (and, for icon fonts, the font binaries) actually work. If not, inject
+     * the CDN copy. Runs after fonts settle, so a fully-local deployment
+     * never touches the network.
+     */
+    (function () {
+      function after(el, node) { el.parentNode.insertBefore(node, el.nextSibling); }
+
+      function injectCss(href) {
+        var fb = document.createElement('link');
+        fb.rel = 'stylesheet';
+        fb.href = href;
+        fb.crossOrigin = 'anonymous';
+        fb.referrerPolicy = 'no-referrer';
+        return fb;
+      }
+
+      /* Tailwind Play CDN is a script (not a stylesheet) and needs the theme
+       * config; static/web/js/tailwind-theme.js is shared with the CLI build
+       * so both paths produce identical utilities. */
+      function injectTailwindCdn(anchor) {
+        var theme = document.createElement('script');
+        theme.src = anchor.getAttribute('data-theme-src');
+        theme.onload = function () {
+          var cdn = document.createElement('script');
+          cdn.src = 'https://cdn.tailwindcss.com';
+          cdn.onload = function () {
+            if (window.GRIOT_TAILWIND_CONFIG && window.tailwind) {
+              window.tailwind.config = window.GRIOT_TAILWIND_CONFIG;
+            }
+          };
+          document.head.appendChild(cdn);
+        };
+        document.head.appendChild(theme);
+      }
+
+      function checkTailwind(anchor) {
+        var probe = document.createElement('span');
+        probe.className = 'bg-cam-bronze';
+        probe.style.display = 'none';
+        document.body.appendChild(probe);
+        var ok = getComputedStyle(probe).backgroundColor === 'rgb(198, 139, 41)';
+        probe.remove();
+        if (!ok) injectTailwindCdn(anchor);
+      }
+
+      function checkFontAwesome(anchor) {
+        /* CSS rule applied? (catches a 404'd stylesheet) */
+        var probe = document.createElement('span');
+        probe.className = 'fa-solid';
+        probe.style.display = 'none';
+        document.body.appendChild(probe);
+        var cssOk = getComputedStyle(probe).fontFamily.indexOf('Font Awesome') !== -1;
+        probe.remove();
+        /* Font binaries reachable? (catches 404'd woff2 even when CSS loaded) */
+        if (cssOk && document.fonts && document.fonts.load) {
+          Promise.all([
+            document.fonts.load('900 1em "Font Awesome 6 Free"'),
+            document.fonts.load('400 1em "Font Awesome 6 Brands"'),
+          ]).then(function (results) {
+            /* Solid glyphs are used everywhere; brands is a nice-to-have. */
+            var solidOk = results[0].length && results[0].some(function (f) { return f.status === 'loaded'; });
+            if (!solidOk) after(anchor, injectCss(anchor.getAttribute('data-cdn-fallback')));
+          }).catch(function () {
+            after(anchor, injectCss(anchor.getAttribute('data-cdn-fallback')));
+          });
+        } else if (!cssOk) {
+          after(anchor, injectCss(anchor.getAttribute('data-cdn-fallback')));
+        }
+      }
+
+      function fixSheets() {
+        document.querySelectorAll('link[data-cdn-fallback]').forEach(function (anchor) {
+          if (anchor.href.indexOf('tailwind.css') !== -1) checkTailwind(anchor);
+          else checkFontAwesome(anchor);
+        });
+      }
+
+      function run() {
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(fixSheets, fixSheets);
+        } else {
+          fixSheets();
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+      } else {
+        run();
+      }
+    })();
+
+    /*
+     * Hybrid image fallback: uploaded media (covers, artifact photos) is not
+     * part of the repo, so a deployment without its media/ folder renders
+     * broken <img> tags. Swap any failed image for a branded inline-SVG
+     * placeholder instead of a broken-image icon. Works offline by design.
+     */
+    (function () {
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0" stop-color="#1E2B58"/><stop offset="1" stop-color="#C68B29"/>' +
+        '</linearGradient></defs>' +
+        '<rect width="800" height="450" fill="url(#g)" opacity="0.12"/>' +
+        '<text x="50%" y="54%" font-size="130" text-anchor="middle" dominant-baseline="middle" opacity="0.35">\uD83E\uDD41</text>' +
+        '</svg>';
+      var placeholder = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+
+      window.addEventListener('error', function (e) {
+        var img = e.target;
+        if (!(img instanceof HTMLImageElement) || img.dataset.imgFallback) return;
+        img.dataset.imgFallback = '1';
+        img.src = placeholder;
+        img.removeAttribute('srcset');
+      }, true);
+    })();
+
+    /*
+     * Hybrid webfont fallback: fonts.css registers 'Fraunces' and
+     * 'Plus Jakarta Sans' from local woff2 subsets. If those files are
+     * missing, load() resolves empty/error — then pull the same families
+     * from Google Fonts. Offline machines just keep the system stacks.
+     */
+    (function () {
+      function fontOnlineFallback() {
+        if (!document.fonts || !document.fonts.load) return;
+        var fams = ['700 1em Fraunces', '600 1em "Plus Jakarta Sans"'];
+        Promise.all(fams.map(function (f) { return document.fonts.load(f); })).then(function (faces) {
+          var broken = faces.some(function (list) {
+            return !list.length || list.every(function (f) { return f.status !== 'loaded'; });
+          });
+          if (!broken || document.getElementById('gfonts-fallback')) return;
+          var link = document.createElement('link');
+          link.id = 'gfonts-fallback';
+          link.rel = 'stylesheet';
+          link.href = 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..800;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..600&display=swap';
+          document.head.appendChild(link);
+        }).catch(function () { /* offline + local fonts missing: system stacks apply */ });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fontOnlineFallback);
+      } else {
+        fontOnlineFallback();
+      }
+    })();
+  </script>
+
+  <!-- No-JS safety net: CDN icon CSS when scripting is off and local assets are broken -->
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  </noscript>
 
   <style>
     /* Markdown reader typography (story content) */

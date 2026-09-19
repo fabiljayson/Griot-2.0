@@ -100,10 +100,7 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -115,22 +112,26 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
       final cachedStories = await cacheRepository.getAllStories();
 
       // Convert cached stories to StoryModel for display
-      final storyModels = cachedStories.map((cached) => StoryModel(
-        id: cached.storyId,
-        slug: 'cached-${cached.storyId}',
-        title: cached.title,
-        summary: '',
-        content: cached.contentMarkdown ?? '',
-        author: UserModel(id: 0, username: 'offline'),
-        language: 'en',
-        region: cached.region ?? '',
-        categories: [],
-        coverImage: cached.heroImagePath,
-        audioUrl: cached.audioPath ?? '',
-        videoUrl: cached.videoUrl ?? '',
-        estimatedReadTime: cached.estimatedReadTime ?? 0,
-        isBookmarked: cached.isFavorite,
-      )).toList();
+      final storyModels = cachedStories
+          .map(
+            (cached) => StoryModel(
+              id: cached.storyId,
+              slug: 'cached-${cached.storyId}',
+              title: cached.title,
+              summary: '',
+              content: cached.contentMarkdown ?? '',
+              author: UserModel(id: 0, username: 'offline'),
+              language: 'en',
+              region: cached.region ?? '',
+              categories: [],
+              coverImage: cached.heroImagePath,
+              audioUrl: cached.audioPath ?? '',
+              videoUrl: cached.videoUrl ?? '',
+              estimatedReadTime: cached.estimatedReadTime ?? 0,
+              isBookmarked: cached.isFavorite,
+            ),
+          )
+          .toList();
 
       state = state.copyWith(
         stories: storyModels,
@@ -288,13 +289,11 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
     } on DioException catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.response?.data['detail'] as String? ?? 'Failed to load story',
+        errorMessage:
+            e.response?.data['detail'] as String? ?? 'Failed to load story',
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -326,7 +325,9 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
       state = state.copyWith(
         story: state.story!.copyWith(
           isLiked: isLiked,
-          likeCount: isLiked ? state.story!.likeCount + 1 : state.story!.likeCount - 1,
+          likeCount: isLiked
+              ? state.story!.likeCount + 1
+              : state.story!.likeCount - 1,
         ),
       );
     } catch (e) {
@@ -353,7 +354,8 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
         story: state.story!.copyWith(
           readingProgress: ReadingProgressData(
             percent: percent,
-            lastPosition: lastPosition ?? state.story!.readingProgress?.lastPosition ?? 0,
+            lastPosition:
+                lastPosition ?? state.story!.readingProgress?.lastPosition ?? 0,
             completed: completed ?? false,
           ),
         ),
@@ -364,10 +366,7 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
   }
 
   /// Flag story.
-  Future<void> flagStory({
-    required String reason,
-    String? details,
-  }) async {
+  Future<void> flagStory({required String reason, String? details}) async {
     if (state.story == null) return;
 
     try {
@@ -392,14 +391,14 @@ final storyRepositoryProvider = Provider<StoryRepository>((ref) {
 /// Story list provider.
 final storyListProvider =
     StateNotifierProvider<StoryListNotifier, StoryListState>((ref) {
-  return StoryListNotifier(ref.read(storyRepositoryProvider));
-});
+      return StoryListNotifier(ref.read(storyRepositoryProvider));
+    });
 
 /// Story detail provider.
 final storyDetailProvider =
     StateNotifierProvider<StoryDetailNotifier, StoryDetailState>((ref) {
-  return StoryDetailNotifier(ref.read(storyRepositoryProvider));
-});
+      return StoryDetailNotifier(ref.read(storyRepositoryProvider));
+    });
 
 /// Categories provider.
 final categoriesProvider = FutureProvider<List<StoryCategory>>((ref) async {

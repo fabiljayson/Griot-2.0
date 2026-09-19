@@ -44,6 +44,10 @@ PASSWORD_HASHERS = [
 # SMTP server.
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
+# Explicit host allow-list (feature 001, contract C5): 'testserver' is
+# required by Django's test client; localhost/loopback cover local runs.
+ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
+
 # This is a settings module, not a test module — keep unittest discovery from
 # loading it as one (the `test*.py` name pattern would otherwise match).
 __test__ = False
