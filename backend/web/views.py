@@ -285,11 +285,13 @@ def story_detail_view(request, slug):
     quiz = None
     narration = None
     video_job = None
+    # Quiz invitation is shown to everyone (anonymous users get a sign-in
+    # link, per the mobile app's quiz card parity).
+    quiz = Quiz.objects.filter(story=story, is_published=True).first()
     if request.user.is_authenticated:
         is_bookmarked = StoryBookmark.objects.filter(user=request.user, story=story).exists()
         is_liked = StoryLike.objects.filter(user=request.user, story=story).exists()
         progress = ReadingProgress.objects.filter(user=request.user, story=story).first()
-        quiz = Quiz.objects.filter(story=story, is_published=True).first()
 
         # Media parity (§6 audio / §7 video): reuse any completed narration for
         # this story, and surface the user's latest video job if they own one.
