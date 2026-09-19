@@ -85,7 +85,6 @@ class OfflineErrorBuffer {
           } else {
             // It's a simple error
             final message = error['message'] as String;
-            final stackTrace = error['stackTrace'] as String?;
             final extra = error['extra'] as Map<String, dynamic>?;
             final levelName = error['level'] as String? ?? 'error';
             SentryLevel level;

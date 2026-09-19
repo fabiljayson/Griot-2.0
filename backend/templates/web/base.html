@@ -7,64 +7,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Griot AI — Digital Heritage Platform{% endblock %}</title>
 
-  <!-- Fonts mirroring the mobile app: Fraunces (display) + Plus Jakarta Sans (body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..800;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..600&display=swap" rel="stylesheet">
+  <!-- All styling assets are served locally — no CDN / network required. -->
 
-  <!-- Tailwind CSS (Play CDN — swap to CLI build for production) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fonts (Fraunces + Plus Jakarta Sans), self-hosted subsets -->
+  <link rel="stylesheet" href="{% static 'web/css/fonts.css' %}">
 
   <!-- Font Awesome 6 — icon parity with the mobile app's FaIcon widgets -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-  <script>
-    /* Cameroonian heritage color palette — WCAG 2.1 AA compliant */
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            /* Primary — Royal Ndop indigo */
-            'cam-indigo': { DEFAULT: '#1E2B58', dark: '#151F42', light: '#2A3B73' },
-            /* Primary Accent — Foumban bronze */
-            'cam-bronze': { DEFAULT: '#C68B29', dark: '#A67420', light: '#D9A84D', tint: '#F5ECD6' },
-            /* Secondary Accent — Highland earth */
-            'cam-earth': { DEFAULT: '#A0382B', dark: '#852D22', light: '#C44D3E', tint: '#F4DDD9' },
-            /* Supporting Nature — Equatorial green */
-            'cam-green': { DEFAULT: '#1B4332', dark: '#143326', light: '#2D6A4F', tint: '#D8E8E0' },
-            /* Background Neutral — Raffia ivory */
-            'cam-ivory': '#FBF9F4',
-            /* Surface — Pure white for cards */
-            'cam-white': '#FFFFFF',
-            /* Dark Text — Slate charcoal */
-            'cam-dark': '#1C1C1E',
-            /* Secondary text */
-            'cam-muted': '#6B7280',
-            /* Error */
-            'cam-error': '#D32F2F',
-            /* Legacy aliases for backward compatibility */
-            terracotta: { DEFAULT: '#C68B29', dark: '#A67420', tint: '#F5ECD6' },
-            ochre: { DEFAULT: '#C68B29', dark: '#A67420', tint: '#F5ECD6' },
-            savannah: { DEFAULT: '#1B4332', tint: '#D8E8E0' },
-            sand: '#FBF9F4',
-            'deep-earth': '#1C1C1E',
-            'mud-charcoal': '#0F1219',
-            'warm-brown': '#1E2B58',
-            'secondary-text': '#6B7280',
-            'brand-border': '#E5E7EB',
-            'brand-error': '#D32F2F',
-          },
-          fontFamily: {
-            display: ['Fraunces', 'Georgia', 'serif'],
-            body: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-          },
-          borderRadius: {
-            xl2: '1rem',
-          },
-        },
-      },
-    };
-  </script>
+  <link rel="stylesheet" href="{% static 'web/vendor/fontawesome/all.min.css' %}">
+
+  <!-- Tailwind CSS — compiled locally with the Tailwind CLI -->
+  <link rel="stylesheet" href="{% static 'web/css/tailwind.css' %}">
 
   <style>
     /* Markdown reader typography (story content) */

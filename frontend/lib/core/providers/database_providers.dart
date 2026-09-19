@@ -7,7 +7,6 @@ import '../database/repositories/reading_progress_repository.dart';
 import '../database/repositories/search_history_repository.dart';
 import '../database/repositories/story_cache_repository.dart';
 import '../network/api_client.dart';
-import '../network/connectivity_service.dart';
 
 /// Single shared API client.
 final apiClientProvider = Provider<ApiClient>((ref) => ApiClient.instance);

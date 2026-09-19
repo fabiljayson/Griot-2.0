@@ -224,11 +224,11 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
   final _cardKey = GlobalKey();
 
   static const _accentColors = [
-    AppColors.terracotta,
-    AppColors.ochre,
-    AppColors.savannahGreen,
-    Color(0xFF4B0082),
-    Color(0xFF8B4513),
+    AppColors.terracotta, // Ndop indigo
+    AppColors.ochre, // Foumban bronze
+    AppColors.savannahGreen, // Equatorial green
+    AppColors.earth, // Highland earth
+    AppColors.bronzeDark,
   ];
 
   @override

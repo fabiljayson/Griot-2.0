@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +7,6 @@ import '../../../core/database/repositories/offline_user_repository.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/connectivity_service.dart';
 import '../../../core/providers/database_providers.dart';
-import '../models/user_model.dart';
 
 /// Repository for handling offline user registration and syncing.
 ///
@@ -20,9 +17,9 @@ class OfflineAuthRepository {
     required OfflineUserRepository offlineUserRepository,
     required ApiClient apiClient,
     required ConnectivityService connectivityService,
-  })  : _offlineUserRepository = offlineUserRepository,
-        _apiClient = apiClient,
-        _connectivityService = connectivityService;
+  }) : _offlineUserRepository = offlineUserRepository,
+       _apiClient = apiClient,
+       _connectivityService = connectivityService;
 
   final OfflineUserRepository _offlineUserRepository;
   final ApiClient _apiClient;
@@ -66,9 +63,13 @@ class OfflineAuthRepository {
     if (_connectivityService.isOnline) {
       try {
         await _syncUser(offlineUser);
-        debugPrint('[OfflineAuth] User synced immediately: ${offlineUser.username}');
+        debugPrint(
+          '[OfflineAuth] User synced immediately: ${offlineUser.username}',
+        );
       } catch (e) {
-        debugPrint('[OfflineAuth] Failed to sync immediately, will retry later: $e');
+        debugPrint(
+          '[OfflineAuth] Failed to sync immediately, will retry later: $e',
+        );
       }
     }
 
@@ -96,9 +97,12 @@ class OfflineAuthRepository {
       final serverUserId = userData['user']?['id'] as int? ?? 0;
 
       await _offlineUserRepository.markSynced(offlineUser.id!, serverUserId);
-      debugPrint('[OfflineAuth] User synced to server: ${offlineUser.username} (ID: $serverUserId)');
+      debugPrint(
+        '[OfflineAuth] User synced to server: ${offlineUser.username} (ID: $serverUserId)',
+      );
     } on DioException catch (e) {
-      final errorMessage = e.response?.data?['detail'] as String? ?? e.message ?? 'Sync failed';
+      final errorMessage =
+          e.response?.data?['detail'] as String? ?? e.message ?? 'Sync failed';
       await _offlineUserRepository.markFailed(offlineUser.id!, errorMessage);
       debugPrint('[OfflineAuth] Failed to sync user: $errorMessage');
       rethrow;

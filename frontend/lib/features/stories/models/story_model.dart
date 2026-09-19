@@ -266,7 +266,7 @@ class StoryCategory {
       final hex = color.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return const Color(0xFF8B4513); // Default brown
+      return const Color(0xFFC68B29); // Default Foumban bronze (web accent)
     }
   }
 }

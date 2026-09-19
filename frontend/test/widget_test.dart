@@ -46,12 +46,12 @@ void main() {
     // Landing branding is visible.
     expect(find.text('GRIOT AI'), findsOneWidget);
 
-    // Design tokens match the Griot 2.0 savannah palette.
-    expect(AppColors.terracotta.toARGB32(), 0xFFC84C09);
-    expect(AppColors.ochre.toARGB32(), 0xFFD99B22);
-    expect(AppColors.savannahGreen.toARGB32(), 0xFF5B7040);
-    expect(AppColors.parchment.toARGB32(), 0xFFF9F5F0);
-    expect(AppColors.charcoal.toARGB32(), 0xFF2C241B);
+    // Design tokens match the webapp's Cameroonian heritage palette.
+    expect(AppColors.terracotta.toARGB32(), 0xFF1E2B58); // Ndop indigo
+    expect(AppColors.ochre.toARGB32(), 0xFFC68B29); // Foumban bronze
+    expect(AppColors.savannahGreen.toARGB32(), 0xFF1B4332); // Equatorial green
+    expect(AppColors.parchment.toARGB32(), 0xFFFBF9F4); // Raffia ivory
+    expect(AppColors.charcoal.toARGB32(), 0xFF1C1C1E); // Slate charcoal
 
     // Region cards from the landing grid render (below the fold in the
     // 800x600 test viewport, so scroll the outer list to reveal them).

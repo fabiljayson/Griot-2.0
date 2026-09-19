@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:african_teller/features/admin/models/analytics_models.dart';
-import 'package:african_teller/features/admin/models/moderation_models.dart';
+import 'package:griot_ai/features/admin/models/analytics_models.dart';
+import 'package:griot_ai/features/admin/models/moderation_models.dart';
 
 import 'support/admin_fixtures.dart';
 

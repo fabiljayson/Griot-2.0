@@ -32,7 +32,8 @@ class GriotMark extends StatelessWidget {
             : null,
         boxShadow: [
           BoxShadow(
-            color: AppColors.terracotta.withValues(alpha: 0.28),
+            // Bronze glow ring, mirroring the web's ring-cam-bronze/60 logo.
+            color: AppColors.bronze.withValues(alpha: 0.28),
             blurRadius: size * 0.22,
             offset: Offset(0, size * 0.06),
           ),
@@ -50,8 +51,8 @@ class GriotMark extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF3D2E1E),
-                  Color(0xFF2C241B),
+                  AppColors.indigoDark,
+                  AppColors.indigo,
                 ],
               ),
             ),
@@ -67,12 +68,12 @@ class GriotMark extends StatelessWidget {
                   children: [
                     TextSpan(
                       text: 'G',
-                      style: TextStyle(color: AppColors.ochreDark),
+                      style: TextStyle(color: AppColors.bronzeLight),
                     ),
                     TextSpan(
                       text: 'A',
                       style: TextStyle(
-                        color: AppColors.terracotta,
+                        color: AppColors.bronze,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -106,8 +107,10 @@ class GriotLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Web wordmark: ink "Griot" + bronze "AI" (sidebar), ivory + bronze on
+    // dark panels (mobile header).
     final baseColor = light ? AppColors.sand : AppColors.deepEarth;
-    final accent = light ? AppColors.ochreDark : AppColors.terracotta;
+    final accent = light ? AppColors.bronzeLight : AppColors.bronze;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

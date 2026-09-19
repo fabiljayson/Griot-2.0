@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide consolidateHttpClientResponseBytes;
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 

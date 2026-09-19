@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/network/connectivity_service.dart';
-import '../../core/providers/database_providers.dart';
 import '../../core/providers/settings_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../stories/models/story_model.dart';
@@ -41,7 +39,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       title: 'The Spider\'s Gift: Anansi and the Wisdom Pot',
       slug: 'anansi-wisdom-pot',
       summary: 'How Anansi tried to hoard all the world\'s wisdom.',
-      author: UserModel(id: 1, username: 'griot_ama', firstName: 'Ama', lastName: 'Ata'),
+      author: UserModel(
+        id: 1,
+        username: 'griot_ama',
+        firstName: 'Ama',
+        lastName: 'Ata',
+      ),
       region: 'Grassfields',
       estimatedReadTime: 5,
       likeCount: 234,
@@ -53,7 +56,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       title: 'The Lion\'s Bath: A Tale from the Bamoun Kingdom',
       slug: 'lions-bath',
       summary: 'A clever rabbit outsmarts the lion king.',
-      author: UserModel(id: 2, username: 'kofi_duma', firstName: 'Kofi', lastName: 'Duma'),
+      author: UserModel(
+        id: 2,
+        username: 'kofi_duma',
+        firstName: 'Kofi',
+        lastName: 'Duma',
+      ),
       region: 'Bamoun',
       estimatedReadTime: 8,
       likeCount: 189,
@@ -65,7 +73,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       title: 'The Talking Drum of Foumban',
       slug: 'talking-drum-foumban',
       summary: 'The drum that spoke the truth to the people.',
-      author: UserModel(id: 3, username: 'nana_yemo', firstName: 'Nana', lastName: 'Yemo'),
+      author: UserModel(
+        id: 3,
+        username: 'nana_yemo',
+        firstName: 'Nana',
+        lastName: 'Yemo',
+      ),
       region: 'Bamoun',
       estimatedReadTime: 12,
       likeCount: 312,
@@ -80,7 +93,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       title: 'The River Goddess of the Sanaga',
       slug: 'river-goddess',
       summary: 'A fisherman\'s encounter with the spirit of the water.',
-      author: UserModel(id: 4, username: 'mami_wata', firstName: 'Sarah', lastName: 'Biya'),
+      author: UserModel(
+        id: 4,
+        username: 'mami_wata',
+        firstName: 'Sarah',
+        lastName: 'Biya',
+      ),
       region: 'Coastal',
       estimatedReadTime: 10,
       likeCount: 456,
@@ -92,7 +110,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       title: 'Why the Chameleon Changes Color',
       slug: 'chameleon-color',
       summary: 'A cautionary tale about greed and transformation.',
-      author: UserModel(id: 5, username: 'papa_mbei', firstName: 'Papa', lastName: 'Mbei'),
+      author: UserModel(
+        id: 5,
+        username: 'papa_mbei',
+        firstName: 'Papa',
+        lastName: 'Mbei',
+      ),
       region: 'Adamawa',
       estimatedReadTime: 4,
       likeCount: 178,
@@ -158,27 +181,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 200,
-                    child: TrendingStoriesWidget(
-                      stories: _trendingStories,
-                    ),
+                    child: TrendingStoriesWidget(stories: _trendingStories),
                   ),
                   const SizedBox(height: 32),
 
                   // --- Popular Section ---
                   _SectionHeader(
-                    title: _isEnglish ? 'Popular Stories' : 'Histoires Populaires',
+                    title: _isEnglish
+                        ? 'Popular Stories'
+                        : 'Histoires Populaires',
                     icon: AppIcons.favorite,
                   ),
                   const SizedBox(height: 12),
-                  ...(_popularStories.map((story) => _StoryCard(
-                        story: story,
-                        onTap: () => _navigateToStory(context, story.slug),
-                      ))),
+                  ...(_popularStories.map(
+                    (story) => _StoryCard(
+                      story: story,
+                      onTap: () => _navigateToStory(context, story.slug),
+                    ),
+                  )),
                   const SizedBox(height: 32),
 
                   // --- Discover Regions ---
                   _SectionHeader(
-                    title: _isEnglish ? 'Discover Regions' : 'Découvrir les Régions',
+                    title: _isEnglish
+                        ? 'Discover Regions'
+                        : 'Découvrir les Régions',
                     icon: AppIcons.explore,
                   ),
                   const SizedBox(height: 12),
@@ -235,10 +262,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            scheme.primary,
-            scheme.primary.withValues(alpha: 0.8),
-          ],
+          colors: [scheme.primary, scheme.primary.withValues(alpha: 0.8)],
         ),
       ),
       child: Column(
@@ -258,10 +282,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     width: 1.2,
                   ),
                 ),
-                child: const Text(
-                  '🪘',
-                  style: TextStyle(fontSize: 22),
-                ),
+                child: const Text('🪘', style: TextStyle(fontSize: 22)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -289,8 +310,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onPressed: () => ref
                     .read(settingsProvider.notifier)
                     .toggleDarkMode(
-                      systemBrightness:
-                          MediaQuery.of(context).platformBrightness,
+                      systemBrightness: MediaQuery.of(
+                        context,
+                      ).platformBrightness,
                     ),
                 icon: const FaIcon(AppIcons.dark_mode_outlined),
                 color: AppColors.surfaceLight,
@@ -300,9 +322,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   tooltip: 'Profile',
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
                     );
                   },
                   icon: const FaIcon(AppIcons.account_circle_outlined),
@@ -351,19 +371,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _navigateToStory(BuildContext context, String slug) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => StoryDetailScreen(slug: slug),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => StoryDetailScreen(slug: slug)));
   }
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.icon,
-  });
+  const _SectionHeader({required this.title, required this.icon});
 
   final String title;
   final FaIconData icon;
@@ -416,10 +431,7 @@ class _LanguageChip extends StatelessWidget {
 }
 
 class _StoryCard extends StatelessWidget {
-  const _StoryCard({
-    required this.story,
-    required this.onTap,
-  });
+  const _StoryCard({required this.story, required this.onTap});
 
   final StoryModel story;
   final VoidCallback onTap;
@@ -484,10 +496,7 @@ class _StoryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              FaIcon(
-                AppIcons.chevron_right,
-                color: scheme.onSurfaceVariant,
-              ),
+              FaIcon(AppIcons.chevron_right, color: scheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -529,9 +538,7 @@ class _RegionChip extends StatelessWidget {
             const Spacer(),
             Text(
               label,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: color,
-              ),
+              style: theme.textTheme.titleSmall?.copyWith(color: color),
             ),
           ],
         ),

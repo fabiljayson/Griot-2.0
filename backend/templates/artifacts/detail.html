@@ -5,32 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ artifact.title }} | Griot AI</title>
     
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Cameroonian heritage color palette -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'cam-indigo': { DEFAULT: '#1E2B58', dark: '#151F42', light: '#2A3B73' },
-                        'cam-bronze': { DEFAULT: '#C68B29', dark: '#A67420', light: '#D9A84D', tint: '#F5ECD6' },
-                        'cam-earth': { DEFAULT: '#A0382B', dark: '#852D22', light: '#C44D3E', tint: '#F4DDD9' },
-                        'cam-green': { DEFAULT: '#1B4332', dark: '#143326', light: '#2D6A4F', tint: '#D8E8E0' },
-                        'cam-ivory': '#FBF9F4',
-                        'cam-white': '#FFFFFF',
-                        'cam-dark': '#1C1C1E',
-                        'cam-muted': '#6B7280',
-                    },
-                    fontFamily: {
-                        display: ['Fraunces', 'Georgia', 'serif'],
-                        body: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
+    <!-- Tailwind CSS + fonts, compiled/self-hosted locally (no CDN) -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'web/css/fonts.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/tailwind.css' %}">
 
     <!-- Custom styles -->
     <style>

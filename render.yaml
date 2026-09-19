@@ -12,7 +12,7 @@ services:
     rootDir: backend
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    buildCommand: pip install -r requirements.txt && test -f static/web/css/tailwind.css || (npm install --no-save @tailwindcss/cli tailwindcss && npx tailwindcss -i static/web/css/tailwind.input.css -o static/web/css/tailwind.css --minify); python manage.py collectstatic --noinput
     preDeployCommand: python manage.py migrate --noinput
     startCommand: gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT
     healthCheckPath: /api/health/

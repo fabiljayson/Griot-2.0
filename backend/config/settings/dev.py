@@ -39,7 +39,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # Serve media files in development via Django.
-STATICFILES_DIRS = [BASE_DIR / 'static']
+# (STATICFILES_DIRS now lives in base.py so prod collectstatic picks up the
+# compiled Tailwind CSS, fonts, and Font Awesome assets.)
 
 # SQLite already configured in base.py — keep it for local dev.
 DATABASES = {

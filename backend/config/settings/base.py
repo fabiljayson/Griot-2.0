@@ -216,6 +216,22 @@ LOGGING = {
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Project static assets (compiled Tailwind CSS, self-hosted fonts, Font
+# Awesome). App static dirs are discovered automatically by staticfiles.
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Serve everything locally (fonts, CSS, icons) — no CDN / external network.
+# WhiteNoise (if installed) compresses and serves these efficiently in prod;
+# it must sit directly after SecurityMiddleware.
+try:
+    import whitenoise  # noqa: F401
+
+    if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+        MIDDLEWARE.insert(
+            1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+except ImportError:
+    pass
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 

@@ -38,7 +38,7 @@ class _OfflineProviderState extends ConsumerState<OfflineProvider> {
 }
 
 /// Extension to easily add offline support to any provider.
-extension OfflineSupport on ProviderRef {
+extension OfflineSupport on Ref {
   /// Get the current connectivity status.
   bool get isOnline => read(isCurrentlyOnlineProvider);
 

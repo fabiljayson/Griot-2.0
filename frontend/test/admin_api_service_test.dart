@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:african_teller/features/admin/services/admin_api_service.dart';
+import 'package:griot_ai/features/admin/services/admin_api_service.dart';
 
 import 'support/admin_fixtures.dart';
 

@@ -36,3 +36,4 @@ reportlab==5.0.1                               # Heritage certificate PDFs
 
 # --- Observability (Phase 10) ---------------------------------------------
 sentry-sdk==2.28.0
+whitenoise==6.11.0

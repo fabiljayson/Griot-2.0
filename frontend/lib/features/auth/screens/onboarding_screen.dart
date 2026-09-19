@@ -78,7 +78,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     final isWide = screenWidth >= 720;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1512),
+      backgroundColor: const Color(0xFF151F42), // Ndop indigo dark
       body: isWide
           ? _buildWideLayout(screenWidth, screenHeight)
           : _buildCompactLayout(screenWidth, screenHeight),
@@ -158,8 +158,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF2C241B),
-            Color(0xFF1A1512),
+            Color(0xFF1E2B58), // Ndop indigo
+            Color(0xFF151F42), // Ndop indigo dark
           ],
         ),
       ),
@@ -242,7 +242,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     return Container(
       padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 24),
       decoration: const BoxDecoration(
-        color: Color(0xFF1A1512),
+        color: Color(0xFF151F42), // Ndop indigo dark
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -342,9 +342,9 @@ class _OnboardingSlide extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1A1512),
-            Color(0xFF2C241B),
-            Color(0xFF3D2E1E),
+            Color(0xFF151F42), // Ndop indigo dark
+            Color(0xFF1E2B58), // Ndop indigo
+            Color(0xFF2A3B73), // Indigo light
           ],
           stops: [0.0, 0.5, 1.0],
         ),

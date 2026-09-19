@@ -4,21 +4,17 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../database/repositories/offline_request_repository.dart';
+
 
 /// Service that monitors network connectivity and manages offline/online transitions.
 ///
 /// When the device goes offline, pending requests are queued.
 /// When connectivity is restored, queued requests are replayed.
 class ConnectivityService {
-  ConnectivityService._({
-    required Connectivity connectivity,
-    required OfflineRequestRepository offlineRepository,
-  })  : _connectivity = connectivity,
-        _offlineRepository = offlineRepository;
+  ConnectivityService._({required Connectivity connectivity})
+      : _connectivity = connectivity;
 
   final Connectivity _connectivity;
-  final OfflineRequestRepository _offlineRepository;
 
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   final _connectivityController = StreamController<bool>.broadcast();
@@ -75,7 +71,6 @@ class ConnectivityService {
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
   final service = ConnectivityService._(
     connectivity: Connectivity(),
-    offlineRepository: OfflineRequestRepository(),
   );
   ref.onDispose(() => service.dispose());
   return service;

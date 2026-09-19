@@ -33,7 +33,7 @@ class ConnectivityStatusWidget extends ConsumerWidget {
             isOnline: isOnline,
             pendingCount: 0,
           ),
-          error: (_, __) => _buildStatusCard(
+          error: (_, _) => _buildStatusCard(
             context,
             theme,
             isOnline: isOnline,
@@ -42,7 +42,7 @@ class ConnectivityStatusWidget extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -82,8 +82,8 @@ class ConnectivityStatusWidget extends ConsumerWidget {
           Text(
             isOnline
                 ? (pendingCount > 0
-                    ? 'Syncing $pendingCount ${pendingCount == 1 ? "change" : "changes"}...'
-                    : 'Online')
+                      ? 'Syncing $pendingCount ${pendingCount == 1 ? "change" : "changes"}...'
+                      : 'Online')
                 : 'Offline — Changes will sync later',
             style: theme.textTheme.bodySmall?.copyWith(
               color: isOnline ? AppColors.savannahGreen : AppColors.terracotta,
