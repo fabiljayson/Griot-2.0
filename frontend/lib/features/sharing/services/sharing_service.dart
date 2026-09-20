@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -70,8 +71,9 @@ class SharingService {
     try {
       final api = ApiClient.instance;
       api.dio.post('/api/stories/$slug/share/', data: {'platform': platform});
-    } catch (_) {
-      // Silently fail - share tracking is non-critical
+    } catch (e) {
+      // Non-critical analytics — log but don't surface.
+      debugPrint('[SharingService] share tracking failed: $e');
     }
   }
 }

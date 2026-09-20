@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../stories/screens/story_detail_screen.dart';
 import '../providers/library_provider.dart';
 import '../screens/library_screen.dart';
@@ -62,6 +61,8 @@ class ContinueReadingWidget extends ConsumerWidget {
   }
 
   Widget _buildContinueCard(BuildContext context, story) {
+    final scheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -74,11 +75,11 @@ class ContinueReadingWidget extends ConsumerWidget {
         width: 280,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: scheme.shadow,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -100,9 +101,9 @@ class ContinueReadingWidget extends ConsumerWidget {
                           height: 100,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorWidget: (_, _, _) => _buildPlaceholder(),
+                          errorWidget: (_, _, _) => _buildPlaceholder(context),
                         )
-                      : _buildPlaceholder(),
+                      : _buildPlaceholder(context),
                 ),
                 // Progress badge
                 Positioned(
@@ -114,13 +115,13 @@ class ContinueReadingWidget extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.terracotta,
+                      color: scheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '${story.progressPercent}%',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: scheme.onPrimary,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -152,14 +153,14 @@ class ContinueReadingWidget extends ConsumerWidget {
                         FaIcon(
                           AppIcons.timer_outlined,
                           size: 12,
-                          color: AppColors.charcoalMuted,
+                          color: scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 2),
                         Text(
                           '${story.estimatedReadTime} min left',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.charcoalMuted,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -170,9 +171,9 @@ class ContinueReadingWidget extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(2),
                       child: LinearProgressIndicator(
                         value: story.progressFraction,
-                        backgroundColor: AppColors.parchmentDark,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.terracotta,
+                        backgroundColor: scheme.surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          scheme.primary,
                         ),
                         minHeight: 4,
                       ),
@@ -187,16 +188,24 @@ class ContinueReadingWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 100,
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.terracottaTint, AppColors.ochreTint],
+          colors: [scheme.primaryContainer, scheme.secondaryContainer],
         ),
       ),
-      child: const Center(child: FaIcon(AppIcons.menu_book_outlined, size: 28)),
+      child: Center(
+        child: FaIcon(
+          AppIcons.menu_book_outlined,
+          size: 28,
+          color: scheme.onPrimaryContainer,
+        ),
+      ),
     );
   }
 }

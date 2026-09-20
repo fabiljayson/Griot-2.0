@@ -1,0 +1,104 @@
+{
+  "accounts": [
+    {
+      "username": "visitor1",
+      "email": "visitor1@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Amara",
+      "lastName": "Nkomo",
+      "role": "visitor",
+      "institution": "",
+      "description": "Explorer mode visitor account"
+    },
+    {
+      "username": "visitor2",
+      "email": "visitor2@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Kofi",
+      "lastName": "Asante",
+      "role": "visitor",
+      "institution": "",
+      "description": "Explorer mode visitor account"
+    },
+    {
+      "username": "visitor3",
+      "email": "visitor3@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Fatima",
+      "lastName": "Diallo",
+      "role": "visitor",
+      "institution": "",
+      "description": "Explorer mode visitor account"
+    },
+    {
+      "username": "contributor1",
+      "email": "contributor1@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Nana",
+      "lastName": "Yemo",
+      "role": "contributor",
+      "institution": "",
+      "description": "Storyteller contributor account"
+    },
+    {
+      "username": "contributor2",
+      "email": "contributor2@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Ama",
+      "lastName": "Ata",
+      "role": "contributor",
+      "institution": "",
+      "description": "Storyteller contributor account"
+    },
+    {
+      "username": "griot_ama",
+      "email": "griot@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Ama",
+      "lastName": "Ata",
+      "role": "contributor",
+      "institution": "",
+      "description": "Featured griot contributor"
+    },
+    {
+      "username": "manager1",
+      "email": "manager1@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Jean",
+      "lastName": "Moulin",
+      "role": "institution_manager",
+      "institution": "National Museum of Cameroon",
+      "description": "Museum curator account"
+    },
+    {
+      "username": "museum_bamoun",
+      "email": "bamoun@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Sultan",
+      "lastName": "Ibrahim",
+      "role": "institution_manager",
+      "institution": "Bamoun Palace Museum",
+      "description": "Bamoun museum curator"
+    },
+    {
+      "username": "admin",
+      "email": "admin@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Super",
+      "lastName": "Admin",
+      "role": "admin",
+      "institution": "",
+      "description": "Full administrator access"
+    },
+    {
+      "username": "admin_test",
+      "email": "admin.test@griot-ai.com",
+      "password": "REPLACE_WITH_PASSWORD",
+      "firstName": "Test",
+      "lastName": "Administrator",
+      "role": "admin",
+      "institution": "",
+      "description": "Test administrator account"
+    }
+  ]
+}

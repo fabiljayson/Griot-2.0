@@ -81,7 +81,10 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
           // --- Filters ---
           if (_showFilters)
             _FilterChips(
-              storyState: storyState,
+              selectedLanguage: ref.read(storyListProvider.notifier).selectedLanguage,
+              selectedCategory: ref.read(storyListProvider.notifier).selectedCategory,
+              selectedRegion: ref.read(storyListProvider.notifier).selectedRegion,
+              sortBy: ref.read(storyListProvider.notifier).currentSortBy,
               categories: categories,
               onLanguageChanged: (lang) {
                 ref.read(storyListProvider.notifier).filterByLanguage(lang);
@@ -90,7 +93,7 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
                 ref.read(storyListProvider.notifier).filterByCategory(cat);
               },
               onSortChanged: (sort) {
-                ref.read(storyListProvider.notifier).sortBy(sort);
+                ref.read(storyListProvider.notifier).sortStories(sort);
               },
               onClearFilters: () {
                 ref.read(storyListProvider.notifier).clearFilters();
@@ -108,54 +111,123 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
   }
 
   Widget _buildStoryGrid(StoryListState state, ThemeData theme) {
-    if (state.isLoading && state.stories.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return switch (state) {
+      StoryListInitial() || StoryListLoading(stories: []) =>
+        const Center(child: CircularProgressIndicator()),
 
-    if (state.errorMessage != null && state.stories.isEmpty) {
-      return _ErrorWidget(
-        message: state.errorMessage!,
+      StoryListFailure(:final message, stories: []) => _ErrorWidget(
+        message: message,
         onRetry: () {
           ref.read(storyListProvider.notifier).loadStories(refresh: true);
         },
-      );
-    }
-
-    if (state.stories.isEmpty) {
-      return _EmptyWidget(
-        message: state.searchQuery.isNotEmpty
-            ? 'No stories found for "${state.searchQuery}"'
+      ),      StoryListReady(stories: []) => _EmptyWidget(
+        message: ref.read(storyListProvider.notifier).searchQuery.isNotEmpty
+            ? 'No stories found for "${ref.read(storyListProvider.notifier).searchQuery}"'
             : 'No stories yet. Be the first to share!',
-      );
-    }
+      ),
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        await ref.read(storyListProvider.notifier).loadStories(refresh: true);
-      },
-      child: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // Stories grid
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverMasonryGrid.count(
-              crossAxisCount: _getCrossAxisCount(context),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childCount: state.stories.length + (state.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == state.stories.length) {
-                  // Loading indicator at the end
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: CircularProgressIndicator(),
-                    ),
+      StoryListReady(:final stories, :final hasMore) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(storyListProvider.notifier).loadStories(refresh: true);
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: _getCrossAxisCount(context),
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childCount: stories.length + (hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == stories.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                  final story = stories[index];
+                  return StoryCard(
+                    story: story,
+                    onTap: () => _navigateToStory(story),
+                    onBookmark: () {
+                      ref.read(storyListProvider.notifier).toggleBookmark(story.slug);
+                    },
+                    onLike: () {
+                      ref.read(storyListProvider.notifier).toggleLike(story.slug);
+                    },
                   );
-                }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
 
-                final story = state.stories[index];
+      // StoryListLoading with existing stories — show spinner below list.
+      StoryListLoading(:final stories) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(storyListProvider.notifier).loadStories(refresh: true);
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: _getCrossAxisCount(context),
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childCount: stories.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == stories.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                  final story = stories[index];
+                  return StoryCard(
+                    story: story,
+                    onTap: () => _navigateToStory(story),
+                    onBookmark: () {
+                      ref.read(storyListProvider.notifier).toggleBookmark(story.slug);
+                    },
+                    onLike: () {
+                      ref.read(storyListProvider.notifier).toggleLike(story.slug);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // StoryListFailure with existing stories — show error banner above list.
+      StoryListFailure(:final message, :final stories) => Column(
+        children: [
+          MaterialBanner(
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  ref.read(storyListProvider.notifier).loadStories(refresh: true);
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: stories.length,
+              itemBuilder: (context, index) {
+                final story = stories[index];
                 return StoryCard(
                   story: story,
                   onTap: () => _navigateToStory(story),
@@ -171,7 +243,7 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
           ),
         ],
       ),
-    );
+    };
   }
 
   int _getCrossAxisCount(BuildContext context) {
@@ -273,7 +345,10 @@ class _SearchBar extends StatelessWidget {
 /// Filter chips widget.
 class _FilterChips extends StatelessWidget {
   const _FilterChips({
-    required this.storyState,
+    required this.selectedLanguage,
+    required this.selectedCategory,
+    required this.selectedRegion,
+    required this.sortBy,
     required this.categories,
     required this.onLanguageChanged,
     required this.onCategoryChanged,
@@ -281,7 +356,10 @@ class _FilterChips extends StatelessWidget {
     required this.onClearFilters,
   });
 
-  final StoryListState storyState;
+  final String? selectedLanguage;
+  final String? selectedCategory;
+  final String? selectedRegion;
+  final String sortBy;
   final AsyncValue<List<StoryCategory>> categories;
   final ValueChanged<String?> onLanguageChanged;
   final ValueChanged<String?> onCategoryChanged;
@@ -291,9 +369,9 @@ class _FilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasFilters = storyState.selectedLanguage != null ||
-        storyState.selectedCategory != null ||
-        storyState.selectedRegion != null;
+    final hasFilters = selectedLanguage != null ||
+        selectedCategory != null ||
+        selectedRegion != null;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -320,16 +398,16 @@ class _FilterChips extends StatelessWidget {
             children: [
               FilterChip(
                 label: const Text('All'),
-                selected: storyState.selectedLanguage == null,
+                selected: selectedLanguage == null,
                 onSelected: (_) => onLanguageChanged(null),
               ),
               ...StoryLanguage.values.map((lang) {
                 return FilterChip(
                   label: Text('${lang.flag} ${lang.label}'),
-                  selected: storyState.selectedLanguage == lang.value,
+                  selected: selectedLanguage == lang.value,
                   onSelected: (_) {
                     onLanguageChanged(
-                      storyState.selectedLanguage == lang.value
+                      selectedLanguage == lang.value
                           ? null
                           : lang.value,
                     );
@@ -357,16 +435,16 @@ class _FilterChips extends StatelessWidget {
                     children: [
                       FilterChip(
                         label: const Text('All'),
-                        selected: storyState.selectedCategory == null,
+                        selected: selectedCategory == null,
                         onSelected: (_) => onCategoryChanged(null),
                       ),
                       ...cats.map((cat) {
                         return FilterChip(
                           label: Text('${cat.icon} ${cat.name}'),
-                          selected: storyState.selectedCategory == cat.slug,
+                          selected: selectedCategory == cat.slug,
                           onSelected: (_) {
                             onCategoryChanged(
-                              storyState.selectedCategory == cat.slug
+                              selectedCategory == cat.slug
                                   ? null
                                   : cat.slug,
                             );
@@ -392,7 +470,7 @@ class _FilterChips extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               DropdownButton<String>(
-                value: storyState.sortBy,
+                value: sortBy,
                 underline: const SizedBox.shrink(),
                 items: const [
                   DropdownMenuItem(

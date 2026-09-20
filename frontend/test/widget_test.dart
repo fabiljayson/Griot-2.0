@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:griot_ai/app.dart';
+import 'package:griot_ai/core/network/connectivity_service.dart';
+import 'package:griot_ai/core/network/offline_sync_manager.dart';
 import 'package:griot_ai/core/theme/app_colors.dart';
 import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/auth/providers/auth_provider.dart';
@@ -29,12 +33,58 @@ class _FakeAuthRepository extends AuthRepository {
   Future<void> logout() async {}
 }
 
+/// No-op connectivity service for tests (no platform channels).
+///
+/// Overrides the real [ConnectivityService] which depends on
+/// `connectivity_plus` platform channels unavailable in tests.
+class _FakeConnectivityService implements ConnectivityService {
+  final _controller = StreamController<bool>.broadcast();
+
+  @override
+  Stream<bool> get connectivityStream => _controller.stream;
+
+  @override
+  bool get isOnline => true;
+
+  @override
+  void initialize() {} // no-op in tests
+
+  @override
+  void dispose() {
+    _controller.close();
+  }
+}
+
+/// No-op offline sync manager for tests.
+class _FakeOfflineSyncManager implements OfflineSyncManager {
+  @override
+  void initialize() {} // no-op in tests
+
+  @override
+  void dispose() {} // no-op in tests
+
+  @override
+  Future<void> triggerSync() async {} // no-op in tests
+}
+
 void main() {
   testWidgets('App shell renders the landing screen', (tester) async {
+    // Use a wider viewport to avoid RenderFlex overflows in the test.
+    tester.view.physicalSize = const Size(1280, 960);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+          connectivityServiceProvider.overrideWithValue(
+            _FakeConnectivityService(),
+          ),
+          offlineSyncManagerProvider.overrideWithValue(
+            _FakeOfflineSyncManager(),
+          ),
         ],
         child: const GriotAiApp(),
       ),
@@ -43,8 +93,9 @@ void main() {
     // Let the (mocked) auth check resolve so the home screen renders.
     await tester.pumpAndSettle();
 
-    // Landing branding is visible.
-    expect(find.text('Griot AI', findRichText: true), findsOneWidget);
+    // Landing branding is visible — the GriotLogo renders "Griot " and
+    // "AI" as separate TextSpans inside a single RichText.
+    expect(find.textContaining('Griot', findRichText: true), findsWidgets);
 
     // Design tokens match the webapp's Cameroonian heritage palette.
     expect(AppColors.terracotta.toARGB32(), 0xFF1E2B58); // Ndop indigo

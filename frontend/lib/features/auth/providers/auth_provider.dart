@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/app_error.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/offline_auth_repository.dart';
@@ -109,15 +110,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         user: user,
       ));
     } on DioException catch (e) {
-      final message = _extractErrorMessage(e);
       state = AsyncData(AuthState(
         status: AuthStatus.error,
-        errorMessage: message,
+        errorMessage: AppErrorMapper.fromDio(e).message,
       ));
     } catch (e) {
       state = AsyncData(AuthState(
         status: AuthStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: AppErrorMapper.fromException(e).message,
       ));
     }
   }
@@ -187,16 +187,15 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
           return AuthStatus.error;
         }
       }
-      final message = _extractErrorMessage(e);
       state = AsyncData(AuthState(
         status: AuthStatus.error,
-        errorMessage: message,
+        errorMessage: AppErrorMapper.fromDio(e).message,
       ));
       return AuthStatus.error;
     } catch (e) {
       state = AsyncData(AuthState(
         status: AuthStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: AppErrorMapper.fromException(e).message,
       ));
       return AuthStatus.error;
     }
@@ -221,10 +220,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         user: user,
       ));
     } on DioException catch (e) {
-      final message = _extractErrorMessage(e);
       state = AsyncData(AuthState(
         status: AuthStatus.error,
-        errorMessage: message,
+        errorMessage: AppErrorMapper.fromDio(e).message,
       ));
     } catch (e) {
       state = AsyncData(AuthState(
@@ -248,7 +246,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     } catch (e) {
       state = AsyncData(AuthState(
         status: AuthStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: AppErrorMapper.fromException(e).message,
       ));
     }
   }
@@ -267,35 +265,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   void clearError() {
     final current = state.value;
     if (current != null && current.hasError) {
-      state = AsyncData(current.copyWith(
+      state = AsyncData(AuthState(
         status: AuthStatus.unauthenticated,
-        errorMessage: null,
+        user: current.user,
       ));
     }
-  }
-
-  String _extractErrorMessage(DioException e) {
-    if (e.response?.data is Map) {
-      final data = e.response!.data as Map<String, dynamic>;
-      if (data.containsKey('detail')) {
-        return data['detail'] as String;
-      }
-      // Extract first error message from validation errors.
-      for (final value in data.values) {
-        if (value is List && value.isNotEmpty) {
-          return value.first.toString();
-        }
-        if (value is String) return value;
-      }
-    }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return 'Connection timed out. Please check your network.';
-    }
-    if (e.type == DioExceptionType.connectionError) {
-      return 'You appear to be offline. Check your connection and try again.';
-    }
-    return 'An unexpected error occurred. Please try again.';
   }
 
   /// Whether [e] indicates the server could not be reached (offline).

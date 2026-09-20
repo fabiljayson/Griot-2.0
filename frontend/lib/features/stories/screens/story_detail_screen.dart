@@ -79,32 +79,32 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     final isAuthenticated = authState.value?.isAuthenticated ?? false;
 
     return Scaffold(
-      body: storyState.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : storyState.errorMessage != null
-          ? _ErrorWidget(
-              message: storyState.errorMessage!,
-              onRetry: () {
-                ref.read(storyDetailProvider.notifier).loadStory(widget.slug);
-              },
-            )
-          : storyState.story == null
-          ? const SizedBox.shrink()
-          : _buildStoryContent(
-              storyState.story!,
-              theme,
-              scheme,
-              isAuthenticated,
-            ),
-      bottomNavigationBar: storyState.story != null
-          ? _buildBottomBar(
-              context,
-              theme,
-              scheme,
-              storyState.story!,
-              isAuthenticated,
-            )
-          : null,
+      body: switch (storyState) {
+        StoryDetailInitial() || StoryDetailLoading() =>
+          const Center(child: CircularProgressIndicator()),
+        StoryDetailFailure(:final message) => _ErrorWidget(
+          message: message,
+          onRetry: () {
+            ref.read(storyDetailProvider.notifier).loadStory(widget.slug);
+          },
+        ),
+        StoryDetailReady(:final story) => _buildStoryContent(
+          story,
+          theme,
+          scheme,
+          isAuthenticated,
+        ),
+      },
+      bottomNavigationBar: switch (storyState) {
+        StoryDetailReady(:final story) => _buildBottomBar(
+          context,
+          theme,
+          scheme,
+          story,
+          isAuthenticated,
+        ),
+        _ => null,
+      },
     );
   }
 

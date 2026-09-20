@@ -1,117 +1,152 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/repositories/story_cache_repository.dart';
+import '../../../core/network/app_error.dart';
 import '../../auth/models/user_model.dart';
 import '../models/story_model.dart';
 import '../repositories/story_repository.dart';
 
-/// State for story list.
-class StoryListState {
-  const StoryListState({
-    this.stories = const [],
-    this.isLoading = false,
-    this.errorMessage,
+// ---------------------------------------------------------------------------
+// Story List — sealed union state
+// ---------------------------------------------------------------------------
+
+/// Sealed union for the story list async lifecycle.
+///
+/// Filter/search state lives on the notifier so it persists across
+/// state transitions (loading → ready → loading again with same filters).
+sealed class StoryListState {
+  const StoryListState();
+}
+
+/// No stories loaded yet; the notifier has just been created.
+final class StoryListInitial extends StoryListState {
+  const StoryListInitial();
+}
+
+/// A fetch is in progress.
+final class StoryListLoading extends StoryListState {
+  const StoryListLoading({this.stories = const []});
+
+  /// Existing stories when refreshing (so the UI can keep showing them).
+  final List<StoryModel> stories;
+}
+
+/// Stories loaded successfully.
+final class StoryListReady extends StoryListState {
+  const StoryListReady({
+    required this.stories,
     this.hasMore = true,
     this.currentPage = 1,
-    this.searchQuery = '',
-    this.selectedLanguage,
-    this.selectedCategory,
-    this.selectedRegion,
-    this.sortBy = '-created_at',
   });
 
   final List<StoryModel> stories;
-  final bool isLoading;
-  final String? errorMessage;
   final bool hasMore;
   final int currentPage;
-  final String searchQuery;
-  final String? selectedLanguage;
-  final String? selectedCategory;
-  final String? selectedRegion;
-  final String sortBy;
 
-  StoryListState copyWith({
+  StoryListReady copyWith({
     List<StoryModel>? stories,
-    bool? isLoading,
-    String? errorMessage,
     bool? hasMore,
     int? currentPage,
-    String? searchQuery,
-    String? selectedLanguage,
-    String? selectedCategory,
-    String? selectedRegion,
-    String? sortBy,
   }) {
-    return StoryListState(
+    return StoryListReady(
       stories: stories ?? this.stories,
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
       hasMore: hasMore ?? this.hasMore,
       currentPage: currentPage ?? this.currentPage,
-      searchQuery: searchQuery ?? this.searchQuery,
-      selectedLanguage: selectedLanguage,
-      selectedCategory: selectedCategory,
-      selectedRegion: selectedRegion,
-      sortBy: sortBy ?? this.sortBy,
     );
   }
 }
 
-/// Notifier managing story list state.
+/// A fetch failed.
+final class StoryListFailure extends StoryListState {
+  const StoryListFailure({required this.message, this.stories = const []});
+
+  final String message;
+
+  /// Existing stories when a refresh fails (so the UI can keep showing them).
+  final List<StoryModel> stories;
+}
+
+/// Notifier managing story list state with filter persistence.
 class StoryListNotifier extends StateNotifier<StoryListState> {
-  StoryListNotifier(this._repository) : super(const StoryListState());
+  StoryListNotifier(this._repository, {StoryCacheRepository? cacheRepository})
+      : _cacheRepository = cacheRepository ?? StoryCacheRepository(),
+        super(const StoryListInitial());
 
   final StoryRepository _repository;
+  final StoryCacheRepository _cacheRepository;
 
-  /// Load stories (initial load or refresh).
+  // --- Filter state (persists across async transitions) ---
+
+  String _searchQuery = '';
+  String? _selectedLanguage;
+  String? _selectedCategory;
+  String? _selectedRegion;
+  String _sortBy = '-created_at';
+
+  String get searchQuery => _searchQuery;
+  String? get selectedLanguage => _selectedLanguage;
+  String? get selectedCategory => _selectedCategory;
+  String? get selectedRegion => _selectedRegion;
+  String get currentSortBy => _sortBy;
+
+  // --- Load stories ---
+
   Future<void> loadStories({bool refresh = false}) async {
-    if (state.isLoading) return;
+    if (state is StoryListLoading) return;
 
-    final page = refresh ? 1 : state.currentPage;
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    final existingStories = switch (state) {
+      StoryListReady(:final stories) => stories,
+      StoryListLoading(:final stories) => stories,
+      _ => <StoryModel>[],
+    };
+
+    final prevPage = switch (state) {
+      StoryListReady(:final currentPage) => currentPage,
+      _ => 1,
+    };
+    final page = refresh ? 1 : prevPage;
+    state = StoryListLoading(stories: refresh ? const [] : existingStories);
 
     try {
       final stories = await _repository.getStories(
-        search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
-        language: state.selectedLanguage,
-        category: state.selectedCategory,
-        region: state.selectedRegion,
-        sort: state.sortBy,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        language: _selectedLanguage,
+        category: _selectedCategory,
+        region: _selectedRegion,
+        sort: _sortBy,
         page: page,
       );
 
-      state = state.copyWith(
-        stories: refresh ? stories : [...state.stories, ...stories],
-        isLoading: false,
-        hasMore: stories.length >= 20, // PAGE_SIZE from backend
+      final allStories = refresh ? stories : [...existingStories, ...stories];
+      state = StoryListReady(
+        stories: allStories,
+        hasMore: stories.length >= 20,
         currentPage: page + 1,
       );
     } on DioException catch (e) {
-      // If offline, try to load from cache
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout) {
         await _loadFromCache();
       } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: _extractErrorMessage(e),
+        state = StoryListFailure(
+          message: AppErrorMapper.fromDio(e).message,
+          stories: refresh ? const [] : existingStories,
         );
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = StoryListFailure(
+        message: AppErrorMapper.fromException(e).message,
+        stories: refresh ? const [] : existingStories,
+      );
     }
   }
 
-  /// Load stories from local cache when offline.
   Future<void> _loadFromCache() async {
     try {
-      // Use the provider's repository to maintain consistency
-      final cacheRepository = StoryCacheRepository();
-      final cachedStories = await cacheRepository.getAllStories();
+      final cachedStories = await _cacheRepository.getAllStories();
 
-      // Convert cached stories to StoryModel for display
       final storyModels = cachedStories
           .map(
             (cached) => StoryModel(
@@ -133,245 +168,232 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
           )
           .toList();
 
-      state = state.copyWith(
+      state = StoryListReady(
         stories: storyModels,
-        isLoading: false,
         hasMore: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'No cached stories available offline',
+      state = const StoryListFailure(
+        message: 'No cached stories available offline',
       );
     }
   }
 
-  /// Load more stories (pagination).
+  // --- Pagination ---
+
   Future<void> loadMore() async {
-    if (state.isLoading || !state.hasMore) return;
+    final current = state;
+    if (current is StoryListLoading || current is! StoryListReady) return;
+    if (!current.hasMore) return;
     await loadStories();
   }
 
-  /// Search stories.
+  // --- Search & filters ---
+
   Future<void> search(String query) async {
-    state = state.copyWith(searchQuery: query);
+    _searchQuery = query;
     await loadStories(refresh: true);
   }
 
-  /// Filter by language.
   Future<void> filterByLanguage(String? language) async {
-    state = state.copyWith(selectedLanguage: language);
+    _selectedLanguage = language;
     await loadStories(refresh: true);
   }
 
-  /// Filter by category.
   Future<void> filterByCategory(String? category) async {
-    state = state.copyWith(selectedCategory: category);
+    _selectedCategory = category;
     await loadStories(refresh: true);
   }
 
-  /// Filter by region.
   Future<void> filterByRegion(String? region) async {
-    state = state.copyWith(selectedRegion: region);
+    _selectedRegion = region;
     await loadStories(refresh: true);
   }
 
-  /// Sort stories.
-  Future<void> sortBy(String sort) async {
-    state = state.copyWith(sortBy: sort);
+  Future<void> sortStories(String sort) async {
+    _sortBy = sort;
     await loadStories(refresh: true);
   }
 
-  /// Clear all filters.
   Future<void> clearFilters() async {
-    state = const StoryListState();
+    _searchQuery = '';
+    _selectedLanguage = null;
+    _selectedCategory = null;
+    _selectedRegion = null;
+    _sortBy = '-created_at';
     await loadStories(refresh: true);
   }
 
-  /// Toggle bookmark on a story.
+  // --- Interactions ---
+
   Future<void> toggleBookmark(String slug) async {
     try {
       final isBookmarked = await _repository.toggleBookmark(slug);
-      state = state.copyWith(
-        stories: state.stories.map((s) {
-          if (s.slug == slug) {
-            return s.copyWith(
-              isBookmarked: isBookmarked,
-              bookmarkCount: isBookmarked
-                  ? s.bookmarkCount + 1
-                  : s.bookmarkCount - 1,
-            );
-          }
-          return s;
-        }).toList(),
-      );
+      final current = state;
+      if (current is StoryListReady) {
+        state = current.copyWith(
+          stories: current.stories.map((s) {
+            if (s.slug == slug) {
+              return s.copyWith(
+                isBookmarked: isBookmarked,
+                bookmarkCount:
+                    isBookmarked ? s.bookmarkCount + 1 : s.bookmarkCount - 1,
+              );
+            }
+            return s;
+          }).toList(),
+        );
+      }
     } catch (e) {
-      // Silently fail for interactions
+      debugPrint('[StoryProvider] toggleBookmark failed: $e');
     }
   }
 
-  /// Toggle like on a story.
   Future<void> toggleLike(String slug) async {
     try {
       final isLiked = await _repository.toggleLike(slug);
-      state = state.copyWith(
-        stories: state.stories.map((s) {
-          if (s.slug == slug) {
-            return s.copyWith(
-              isLiked: isLiked,
-              likeCount: isLiked ? s.likeCount + 1 : s.likeCount - 1,
-            );
-          }
-          return s;
-        }).toList(),
-      );
-    } catch (e) {
-      // Silently fail for interactions
-    }
-  }
-
-  String _extractErrorMessage(DioException e) {
-    if (e.response?.data is Map) {
-      final data = e.response!.data as Map<String, dynamic>;
-      if (data.containsKey('detail')) {
-        return data['detail'] as String;
+      final current = state;
+      if (current is StoryListReady) {
+        state = current.copyWith(
+          stories: current.stories.map((s) {
+            if (s.slug == slug) {
+              return s.copyWith(
+                isLiked: isLiked,
+                likeCount: isLiked ? s.likeCount + 1 : s.likeCount - 1,
+              );
+            }
+            return s;
+          }).toList(),
+        );
       }
+    } catch (e) {
+      debugPrint('[StoryProvider] toggleLike failed: $e');
     }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return 'Connection timed out. Please check your network.';
-    }
-    if (e.type == DioExceptionType.connectionError) {
-      return 'Unable to connect to the server.';
-    }
-    return 'An unexpected error occurred. Please try again.';
   }
 }
 
-/// State for single story detail.
-class StoryDetailState {
-  const StoryDetailState({
-    this.story,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+// ---------------------------------------------------------------------------
+// Story Detail — sealed union state
+// ---------------------------------------------------------------------------
 
-  final StoryModel? story;
-  final bool isLoading;
-  final String? errorMessage;
+/// Sealed union for single story detail async lifecycle.
+sealed class StoryDetailState {
+  const StoryDetailState();
+}
 
-  StoryDetailState copyWith({
-    StoryModel? story,
-    bool? isLoading,
-    String? errorMessage,
-  }) {
-    return StoryDetailState(
-      story: story ?? this.story,
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
-    );
-  }
+final class StoryDetailInitial extends StoryDetailState {
+  const StoryDetailInitial();
+}
+
+final class StoryDetailLoading extends StoryDetailState {
+  const StoryDetailLoading();
+}
+
+final class StoryDetailReady extends StoryDetailState {
+  const StoryDetailReady({required this.story});
+
+  final StoryModel story;
+}
+
+final class StoryDetailFailure extends StoryDetailState {
+  const StoryDetailFailure({required this.message});
+
+  final String message;
 }
 
 /// Notifier managing single story detail state.
 class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
-  StoryDetailNotifier(this._repository) : super(const StoryDetailState());
+  StoryDetailNotifier(this._repository) : super(const StoryDetailInitial());
 
   final StoryRepository _repository;
 
-  /// Load story by slug.
   Future<void> loadStory(String slug) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = const StoryDetailLoading();
 
     try {
       final story = await _repository.getStory(slug);
-      state = state.copyWith(story: story, isLoading: false);
+      state = StoryDetailReady(story: story);
     } on DioException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage:
-            e.response?.data['detail'] as String? ?? 'Failed to load story',
-      );
+      state = StoryDetailFailure(message: AppErrorMapper.fromDio(e).message);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = StoryDetailFailure(
+        message: AppErrorMapper.fromException(e).message,
+      );
     }
   }
 
-  /// Toggle bookmark.
   Future<void> toggleBookmark() async {
-    if (state.story == null) return;
+    final current = state;
+    if (current is! StoryDetailReady) return;
 
     try {
-      final isBookmarked = await _repository.toggleBookmark(state.story!.slug);
-      state = state.copyWith(
-        story: state.story!.copyWith(
+      final isBookmarked = await _repository.toggleBookmark(current.story.slug);
+      state = StoryDetailReady(
+        story: current.story.copyWith(
           isBookmarked: isBookmarked,
-          bookmarkCount: isBookmarked
-              ? state.story!.bookmarkCount + 1
-              : state.story!.bookmarkCount - 1,
+          bookmarkCount:
+              isBookmarked ? current.story.bookmarkCount + 1 : current.story.bookmarkCount - 1,
         ),
       );
     } catch (e) {
-      // Silently fail
+      debugPrint('[StoryDetailNotifier] toggleBookmark failed: $e');
     }
   }
 
-  /// Toggle like.
   Future<void> toggleLike() async {
-    if (state.story == null) return;
+    final current = state;
+    if (current is! StoryDetailReady) return;
 
     try {
-      final isLiked = await _repository.toggleLike(state.story!.slug);
-      state = state.copyWith(
-        story: state.story!.copyWith(
+      final isLiked = await _repository.toggleLike(current.story.slug);
+      state = StoryDetailReady(
+        story: current.story.copyWith(
           isLiked: isLiked,
-          likeCount: isLiked
-              ? state.story!.likeCount + 1
-              : state.story!.likeCount - 1,
+          likeCount: isLiked ? current.story.likeCount + 1 : current.story.likeCount - 1,
         ),
       );
     } catch (e) {
-      // Silently fail
+      debugPrint('[StoryDetailNotifier] toggleLike failed: $e');
     }
   }
 
-  /// Update reading progress.
   Future<void> updateProgress({
     required int percent,
     int? lastPosition,
     bool? completed,
   }) async {
-    if (state.story == null) return;
+    final current = state;
+    if (current is! StoryDetailReady) return;
 
     try {
       await _repository.updateReadingProgress(
-        state.story!.slug,
+        current.story.slug,
         percent: percent,
         lastPosition: lastPosition,
         completed: completed,
       );
-      state = state.copyWith(
-        story: state.story!.copyWith(
+      state = StoryDetailReady(
+        story: current.story.copyWith(
           readingProgress: ReadingProgressData(
             percent: percent,
             lastPosition:
-                lastPosition ?? state.story!.readingProgress?.lastPosition ?? 0,
+                lastPosition ?? current.story.readingProgress?.lastPosition ?? 0,
             completed: completed ?? false,
           ),
         ),
       );
     } catch (e) {
-      // Silently fail
+      debugPrint('[StoryDetailNotifier] updateProgress failed: $e');
     }
   }
 
-  /// Flag story.
   Future<void> flagStory({required String reason, String? details}) async {
-    if (state.story == null) return;
+    final current = state;
+    if (current is! StoryDetailReady) return;
 
     try {
       await _repository.flagStory(
-        state.story!.slug,
+        current.story.slug,
         reason: reason,
         details: details,
       );

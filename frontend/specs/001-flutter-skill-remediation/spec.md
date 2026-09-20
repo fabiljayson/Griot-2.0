@@ -4,12 +4,13 @@
 
 **Created**: 2026-09-20
 
-**Status**: Draft — awaiting user approval
+**Status**: Approved — ready for implementation
 
-**Input**: Audit of `griot_ai` Flutter frontend against the newly imported
-`.agents/skills` Flutter skill set (flutter-best-practices, flutter-app-architecture,
-architecture-feature-first, riverpod, effective-dart, dart-3-updates, flutter-errors,
-testing, mocktail, code-review).
+**Input**: Audit of `griot_ai` Flutter frontend against the full `.agents/skills/`
+Flutter skill set (flutter-best-practices, flutter-app-architecture,
+architecture-feature-first, riverpod, effective-dart, dart-3-updates,
+flutter-errors, flutter-security, flutter-testing, testing, mocktail,
+code-review).
 
 ---
 
@@ -21,8 +22,9 @@ discipline (`watch` in build / `read` in callbacks), `mounted` checks, and
 controller disposal. **No re-architecture is needed.**
 
 **Quality: CHANGES REQUESTED.** 1 broken build, 1 red test, 1 functional bug
-(filters/search), ~60 unsafe catches, hardcoded credentials, near-zero feature
-test coverage.
+(filters/search), ~66 unsafe catches, 6 silent error swallows, hardcoded
+credentials, near-zero feature test coverage, zero sealed-class states,
+no `riverpod_lint`, duplicated error-extraction logic.
 
 ---
 
@@ -47,9 +49,9 @@ test coverage.
 
 `StoryListState.copyWith` unconditionally resets `selectedLanguage`,
 `selectedCategory`, `selectedRegion` (lines: `selectedLanguage: selectedLanguage,`
-without `?? this.…`). `StoryListNotifier.loadStories()` calls `copyWith(isLoading:
-true)` **before** reading `state.selectedLanguage` — so every fetch sends
-`null` filters. Active filters are visually wiped on every load.
+without `?? this.…`). `StoryListNotifier.loadStories()` calls `copyWith(isLoading: true)`
+**before** reading `state.selectedLanguage` — so every fetch sends `null` filters.
+Active filters are visually wiped on every load.
 
 **Acceptance**:
 - copyWith preserves all fields unless explicitly cleared (explicit `clearX` flags)
@@ -62,7 +64,8 @@ true)` **before** reading `state.selectedLanguage` — so every fetch sends
 
 ### User Story 3 — Red widget test is fixed (Priority: P1)
 
-`test/widget_test.dart` "App shell renders the landing screen" fails.
+`test/widget_test.dart` "App shell renders the landing screen" fails with
+"Looking up a deactivated widget's ancestor is unsafe."
 
 **Acceptance**: `flutter test` reports 26 passing / 0 failing.
 
@@ -72,8 +75,9 @@ true)` **before** reading `state.selectedLanguage` — so every fetch sends
 
 ### User Story 4 — No secrets in source control (Priority: P1)
 
-`lib/core/constants/pre_registered_accounts.dart` contains plaintext passwords
-(`Visitor123!`, etc.) committed to the repo.
+`lib/core/constants/pre_registered_accounts.dart` contains 10 plaintext passwords
+(`Visitor123!`, `Contributor123!`, `Manager123!`, `Admin2024!`, etc.) committed
+to the repo.
 
 **Acceptance**:
 - Passwords no longer hardcoded; sourced from `--dart-define` or a
@@ -84,18 +88,22 @@ true)` **before** reading `state.selectedLanguage` — so every fetch sends
 
 ### User Story 5 — Errors are handled, typed, and surfaced (Priority: P2)
 
-~60 broad `catch (e)` blocks; several swallow errors silently
+~66 broad `catch (e)` blocks across the codebase; 6 swallow errors silently
 (`// Silently fail for interactions`) so users and Sentry never see failures.
 `_extractErrorMessage(DioException)` is duplicated in `story_provider.dart` and
-`auth_provider.dart` (violates effective-dart: prefer `on SomeException`,
-DRY; dart-coding-practices: structured error handling).
+`auth_provider.dart` (violates effective-dart: prefer `on SomeException`, DRY;
+flutter-error-handling: structured error handling with typed failures).
 
 **Acceptance**:
-- Shared `AppErrorMapper`/`AppFailure` in `core/network/` used by all notifiers
+- Shared `AppFailure` (sealed: network/server/validation/offline/unknown) in
+  `core/network/app_error.dart` used by all notifiers
+- `AppErrorMapper.fromDio()` replaces both duplicated `_extractErrorMessage`
 - Catches narrowed to `on DioException` / specific types; a broad catch only as
   documented last resort with `Error.throwWithStackTrace` → mapped failure
 - Silent catches replaced with surfaced UI feedback or logged-and-reported
   (Sentry capture) with a comment stating why silence is intended
+
+**Independent test**: analyze clean; existing tests green.
 
 ---
 
@@ -103,40 +111,52 @@ DRY; dart-coding-practices: structured error handling).
 
 Zero `sealed class` / `AsyncValue.guard` / union states in the codebase. State
 is `bool isLoading + String? errorMessage` classes with inconsistent `copyWith`
-semantics across features (some clear, some keep, one has a `clearError` flag).
+semantics across features. The `dart-3-updates` skill requires sealed classes
+for exhaustive switch handling.
 
 **Acceptance**:
 - Story list/detail, library, gamification, video, qr, audio notifiers use
   Dart 3 `sealed class` states (`initial/inProgress/ready/failure`) with
   exhaustive `switch` in views
+- Auth notifier upgrades its `AuthStatus` enum to sealed-class pattern
 - `AsyncValue.guard` used where an `AsyncNotifier` already applies
 - One consistent copyWith policy (explicit clear flags)
+
+**Independent test**: per-feature analyze + tests green; exhaustive switch compile-checked.
 
 ---
 
 ### User Story 7 — Feature test coverage exists (Priority: P2)
 
-Only 4 test files exist (all admin + app shell). Per the `testing` skill:
-unit tests at the notifier/repository boundary, mirroring `lib/` under `test/`.
+Only 4 test files exist (all admin + app shell). Per the `flutter-testing`
+and `testing` skills: unit tests at the notifier/repository boundary, mirroring
+`lib/` under `test/`. Use `mocktail` for mocks with `registerFallbackValue`.
 
 **Acceptance**:
 - `test/features/<feature>/providers/*_test.dart` for stories, auth, library,
-  gamification (mocktail fakes at repository boundary; `registerFallbackValue`
-  in `setUpAll`; fresh `ProviderContainer` per test)
+  gamification, video, qr, audio
+- Mocktail fakes at repository boundary; `registerFallbackValue` in `setUpAll`;
+  fresh `ProviderContainer` per test
+- Widget tests for stories list (loading/error/ready/empty) and login screen
 - Every test can fail against broken code (no mock-only assertions)
+
+**Independent test**: `flutter test --coverage` all green.
 
 ---
 
 ### User Story 8 — Code-hygiene sweep (Priority: P3)
 
 - `StoryListNotifier._loadFromCache` instantiates `StoryCacheRepository()`
-  directly — inject via provider (DI rule)
+  directly — inject via provider (riverpod DI rule)
 - `hasMore: stories.length >= 20` magic number → `AppConstants.pageSize`
-- 130 `Container(` usages → convert obvious single-purpose cases to
-  `Padding`/`DecoratedBox`/`ColoredBox` (sweep, keep legitimate combos)
 - `admin_dashboard_screen.dart` is 1220 lines → split into section widgets
 - Add `riverpod_lint` + `custom_lint` to `analysis_options.yaml`
 - Extract duplicated `_extractErrorMessage` (covered in US5)
+
+**Acceptance**:
+- Full analyze + test suite green
+- Final audit checklist re-run: sealed classes > 0, `catch (e)` documented,
+  no password literals
 
 ---
 
@@ -150,6 +170,8 @@ unit tests at the notifier/repository boundary, mirroring `lib/` under `test/`.
 
 1. Build green, all tests green, filters/search functionally fixed
 2. No plaintext credentials in VCS
-3. Every notifier either sealed-union state or documented exception
-4. Notifier unit tests exist for all 10 features' core providers
-5. `flutter analyze` clean with `riverpod_lint` enabled
+3. Every notifier uses sealed-union states with exhaustive switch
+4. Shared typed error handling (`AppFailure` + `AppErrorMapper`)
+5. Notifier unit tests exist for all 10 features' core providers
+6. Widget tests for stories list and login screen
+7. `flutter analyze` clean with `riverpod_lint` enabled

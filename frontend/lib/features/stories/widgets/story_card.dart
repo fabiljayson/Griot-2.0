@@ -252,7 +252,7 @@ class _CoverImage extends StatelessWidget {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: AppColors.parchment,
+                color: scheme.surfaceContainerHighest,
                 child: Center(
                   child: FaIcon(
                     AppIcons.image_outlined,

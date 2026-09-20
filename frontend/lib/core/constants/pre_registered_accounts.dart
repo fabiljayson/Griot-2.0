@@ -3,16 +3,60 @@
 /// These accounts are pre-configured in the database and can be used
 /// for testing and demonstration purposes. They work offline and will
 /// sync to the server when connectivity is restored.
+///
+/// **Security**: Passwords are injected at build time via --dart-define.
+/// See `pre_registered_accounts.example.json` for the expected keys.
+/// Example build command:
+/// ```
+/// flutter run --dart-define=PRE_REG_VISITOR_PASSWORD=Visitor123! \
+///             --dart-define=PRE_REG_CONTRIBUTOR_PASSWORD=Contributor123! \
+///             --dart-define=PRE_REG_MANAGER_PASSWORD=Manager123! \
+///             --dart-define=PRE_REG_ADMIN_PASSWORD=Admin2024! \
+///             --dart-define=PRE_REG_GRIOT_PASSWORD=Griot2024! \
+///             --dart-define=PRE_REG_MUSEUM_PASSWORD=Bamoun2024! \
+///             --dart-define=PRE_REG_TEST_ADMIN_PASSWORD=TestAdmin123!
+/// ```
 class PreRegisteredAccounts {
   PreRegisteredAccounts._();
 
+  // Passwords injected via --dart-define at build time.
+  // These must be provided when building the app; empty string as fallback.
+  static const String _visitorPassword = String.fromEnvironment(
+    'PRE_REG_VISITOR_PASSWORD',
+    defaultValue: '',
+  );
+  static const String _contributorPassword = String.fromEnvironment(
+    'PRE_REG_CONTRIBUTOR_PASSWORD',
+    defaultValue: '',
+  );
+  static const String _griotPassword = String.fromEnvironment(
+    'PRE_REG_GRIOT_PASSWORD',
+    defaultValue: '',
+  );
+  static const String _managerPassword = String.fromEnvironment(
+    'PRE_REG_MANAGER_PASSWORD',
+    defaultValue: '',
+  );
+  static const String _museumPassword = String.fromEnvironment(
+    'PRE_REG_MUSEUM_PASSWORD',
+    defaultValue: '',
+  );
+  static const String _adminPassword = String.fromEnvironment(
+    'PRE_REG_ADMIN_PASSWORD',
+    defaultValue: '',
+  );
+  static const String _testAdminPassword = String.fromEnvironment(
+    'PRE_REG_TEST_ADMIN_PASSWORD',
+    defaultValue: '',
+  );
+
   /// All pre-registered accounts.
-  static const List<PreRegisteredAccount> accounts = [
+  static List<PreRegisteredAccount> get accounts => [
     // Visitor accounts
     PreRegisteredAccount(
       username: 'visitor1',
       email: 'visitor1@griot-ai.com',
-      password: 'Visitor123!',
+      password: _visitorPassword,
       firstName: 'Amara',
       lastName: 'Nkomo',
       role: 'visitor',
@@ -21,7 +65,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'visitor2',
       email: 'visitor2@griot-ai.com',
-      password: 'Visitor123!',
+      password: _visitorPassword,
       firstName: 'Kofi',
       lastName: 'Asante',
       role: 'visitor',
@@ -30,7 +74,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'visitor3',
       email: 'visitor3@griot-ai.com',
-      password: 'Visitor123!',
+      password: _visitorPassword,
       firstName: 'Fatima',
       lastName: 'Diallo',
       role: 'visitor',
@@ -41,7 +85,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'contributor1',
       email: 'contributor1@griot-ai.com',
-      password: 'Contributor123!',
+      password: _contributorPassword,
       firstName: 'Nana',
       lastName: 'Yemo',
       role: 'contributor',
@@ -50,7 +94,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'contributor2',
       email: 'contributor2@griot-ai.com',
-      password: 'Contributor123!',
+      password: _contributorPassword,
       firstName: 'Ama',
       lastName: 'Ata',
       role: 'contributor',
@@ -59,7 +103,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'griot_ama',
       email: 'griot@griot-ai.com',
-      password: 'Griot2024!',
+      password: _griotPassword,
       firstName: 'Ama',
       lastName: 'Ata',
       role: 'contributor',
@@ -70,7 +114,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'manager1',
       email: 'manager1@griot-ai.com',
-      password: 'Manager123!',
+      password: _managerPassword,
       firstName: 'Jean',
       lastName: 'Moulin',
       role: 'institution_manager',
@@ -80,7 +124,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'museum_bamoun',
       email: 'bamoun@griot-ai.com',
-      password: 'Bamoun2024!',
+      password: _museumPassword,
       firstName: 'Sultan',
       lastName: 'Ibrahim',
       role: 'institution_manager',
@@ -92,7 +136,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'admin',
       email: 'admin@griot-ai.com',
-      password: 'Admin2024!',
+      password: _adminPassword,
       firstName: 'Super',
       lastName: 'Admin',
       role: 'admin',
@@ -101,7 +145,7 @@ class PreRegisteredAccounts {
     PreRegisteredAccount(
       username: 'admin_test',
       email: 'admin.test@griot-ai.com',
-      password: 'TestAdmin123!',
+      password: _testAdminPassword,
       firstName: 'Test',
       lastName: 'Administrator',
       role: 'admin',

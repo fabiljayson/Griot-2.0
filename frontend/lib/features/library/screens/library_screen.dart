@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../stories/screens/story_detail_screen.dart';
 import '../providers/library_provider.dart';
 import '../services/library_api_service.dart';
@@ -42,19 +41,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(libraryProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.parchment,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: const Text('My Library'),
-        backgroundColor: AppColors.parchment,
+        backgroundColor: scheme.surface,
         elevation: 0,
-        foregroundColor: AppColors.charcoal,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.terracotta,
-          unselectedLabelColor: AppColors.charcoalMuted,
-          indicatorColor: AppColors.terracotta,
+          labelColor: scheme.primary,
+          unselectedLabelColor: scheme.onSurfaceVariant,
+          indicatorColor: scheme.primary,
           tabs: const [
             Tab(text: 'Continue', icon: FaIcon(AppIcons.play_circle_outline)),
             Tab(text: 'Recent', icon: FaIcon(AppIcons.history)),
@@ -63,8 +62,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         ),
       ),
       body: state.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.terracotta),
+          ? Center(
+              child: CircularProgressIndicator(color: scheme.primary),
             )
           : TabBarView(
               controller: _tabController,
@@ -135,16 +134,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   }
 
   Widget _buildContinueCard(LibraryStoryModel story) {
+    final scheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => _openStory(story),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: scheme.shadow,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -168,10 +169,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                           fit: BoxFit.cover,
                           placeholder: (_, _) => Container(
                             height: 140,
-                            color: AppColors.parchmentDark,
-                            child: const Center(
+                            color: scheme.surfaceContainerHighest,
+                            child: Center(
                               child: CircularProgressIndicator(
-                                color: AppColors.terracotta,
+                                color: scheme.primary,
                               ),
                             ),
                           ),
@@ -189,13 +190,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.terracotta,
+                      color: scheme.primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${story.progressPercent}% read',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: scheme.onPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -223,7 +224,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   Text(
                     story.summary.isNotEmpty ? story.summary : story.region,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.charcoalMuted,
+                      color: scheme.onSurfaceVariant,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -234,10 +235,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: story.progressFraction,
-                      backgroundColor: AppColors.parchmentDark,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.terracotta,
-                      ),
+                      backgroundColor: scheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
                       minHeight: 6,
                     ),
                   ),
@@ -254,17 +253,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     LibraryStoryModel story, {
     bool showBookmark = false,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => _openStory(story),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.charcoalMuted.withValues(alpha: 0.1),
-          ),
+          border: Border.all(color: scheme.outline),
         ),
         child: Row(
           children: [
@@ -304,14 +303,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                         FaIcon(
                           AppIcons.place_outlined,
                           size: 12,
-                          color: AppColors.charcoalMuted,
+                          color: scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 2),
                         Text(
                           story.region,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.charcoalMuted,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -319,14 +318,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                       FaIcon(
                         AppIcons.timer_outlined,
                         size: 12,
-                        color: AppColors.charcoalMuted,
+                        color: scheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         '${story.estimatedReadTime} min',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.charcoalMuted,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -345,31 +344,29 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   children: [
                     CircularProgressIndicator(
                       value: story.progressFraction,
-                      backgroundColor: AppColors.parchmentDark,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.terracotta,
-                      ),
+                      backgroundColor: scheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
                       strokeWidth: 3,
                     ),
                     Text(
                       '${story.progressPercent}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.terracotta,
+                        color: scheme.primary,
                       ),
                     ),
                   ],
                 ),
               )
             else if (story.completed)
-              const FaIcon(
+              FaIcon(
                 AppIcons.check_circle,
-                color: AppColors.savannahGreen,
+                color: scheme.tertiary,
                 size: 24,
               )
             else if (showBookmark)
-              FaIcon(AppIcons.bookmark, color: AppColors.ochre, size: 24),
+              FaIcon(AppIcons.bookmark, color: scheme.secondary, size: 24),
           ],
         ),
       ),
@@ -381,6 +378,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     required String title,
     required String subtitle,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -390,20 +389,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             FaIcon(
               icon,
               size: 64,
-              color: AppColors.charcoalMuted.withValues(alpha: 0.3),
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               title,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(color: AppColors.charcoalMuted),
+              ).textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 4),
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.charcoalMuted.withValues(alpha: 0.7),
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -414,27 +413,43 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   }
 
   Widget _buildPlaceholderImage() {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 140,
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.terracottaTint, AppColors.ochreTint],
+          colors: [scheme.primaryContainer, scheme.secondaryContainer],
         ),
       ),
-      child: const Center(child: FaIcon(AppIcons.menu_book_outlined, size: 44)),
+      child: Center(
+        child: FaIcon(
+          AppIcons.menu_book_outlined,
+          size: 44,
+          color: scheme.onPrimaryContainer,
+        ),
+      ),
     );
   }
 
   Widget _buildSmallPlaceholder() {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: AppColors.parchmentDark,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Center(child: FaIcon(AppIcons.menu_book_outlined, size: 22)),
+      child: Center(
+        child: FaIcon(
+          AppIcons.menu_book_outlined,
+          size: 22,
+          color: scheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 

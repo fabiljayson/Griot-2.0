@@ -33,6 +33,7 @@ abstract final class AppIcons {
       FontAwesomeIcons.solidCircleUser;
   static const FaIconData analytics_outlined = FontAwesomeIcons.chartColumn;
   static const FaIconData arrow_forward_ios = FontAwesomeIcons.chevronRight;
+  static const FaIconData badge_outlined = FontAwesomeIcons.solidIdCard;
   static const FaIconData auto_awesome = FontAwesomeIcons.wandMagicSparkles;
   static const FaIconData auto_stories = FontAwesomeIcons.bookOpen;
   static const FaIconData auto_stories_outlined = FontAwesomeIcons.bookOpen;

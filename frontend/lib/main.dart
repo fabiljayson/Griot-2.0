@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'app.dart';
@@ -17,8 +18,16 @@ Future<void> main() async {
   // which runs SQLite compiled to wasm inside a (shared) web worker and
   // persists databases in the browser's IndexedDB. Must happen before any
   // repository opens the database.
+  //
+  // Desktop targets (Linux/Windows/macOS) have no sqflite platform plugin
+  // either, so they need the FFI factory backed by the system sqlite3
+  // library.
   if (kIsWeb) {
     sqflite.databaseFactory = databaseFactoryFfiWeb;
+  } else if (defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.macOS) {
+    sqflite.databaseFactory = databaseFactoryFfi;
   }
 
   // Initialize offline error buffer (in-memory on web, disk-backed on mobile)

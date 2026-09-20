@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../services/gamification_api_service.dart';
 
 /// Card widget displaying a badge with unlock state.
@@ -20,6 +21,8 @@ class BadgeCard extends StatelessWidget {
   }
 
   Widget _buildCompact(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Tooltip(
       message: badge.name,
       child: Container(
@@ -28,19 +31,21 @@ class BadgeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: badge.earned
               ? _parseColor(badge.color).withValues(alpha: 0.1)
-              : AppColors.parchmentDark,
+              : scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: badge.earned
                 ? _parseColor(badge.color).withValues(alpha: 0.3)
-                : AppColors.charcoalMuted.withValues(alpha: 0.1),
+                : scheme.outline,
           ),
         ),
         child: Center(
           child: FaIcon(
             badge.earned ? AppIcons.star : AppIcons.lock_outline,
             size: 22,
-            color: badge.earned ? _parseColor(badge.color) : Colors.grey,
+            color: badge.earned
+                ? _parseColor(badge.color)
+                : scheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -48,18 +53,20 @@ class BadgeCard extends StatelessWidget {
   }
 
   Widget _buildFull(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: badge.earned
-            ? Colors.white
-            : Colors.white.withValues(alpha: 0.5),
+            ? scheme.surface
+            : scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: badge.earned
               ? _parseColor(badge.color).withValues(alpha: 0.3)
-              : AppColors.charcoalMuted.withValues(alpha: 0.1),
+              : scheme.outline,
         ),
         boxShadow: badge.earned
             ? [
@@ -81,14 +88,16 @@ class BadgeCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: badge.earned
                   ? _parseColor(badge.color).withValues(alpha: 0.1)
-                  : AppColors.parchmentDark,
+                  : scheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: FaIcon(
                 badge.earned ? AppIcons.star : AppIcons.lock_outline,
                 size: 30,
-                color: badge.earned ? _parseColor(badge.color) : Colors.grey,
+                color: badge.earned
+                    ? _parseColor(badge.color)
+                    : scheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -104,8 +113,8 @@ class BadgeCard extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: badge.earned
-                  ? AppColors.charcoal
-                  : AppColors.charcoalMuted,
+                  ? scheme.onSurface
+                  : scheme.onSurfaceVariant,
             ),
           ),
 
@@ -115,7 +124,7 @@ class BadgeCard extends StatelessWidget {
               '${badge.xpRequired} XP needed',
               style: Theme.of(
                 context,
-              ).textTheme.labelSmall?.copyWith(color: AppColors.charcoalMuted),
+              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ],

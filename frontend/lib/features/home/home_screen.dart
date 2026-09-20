@@ -430,7 +430,7 @@ class _StoryCard extends StatelessWidget {
             border: Border.all(color: scheme.outline),
             boxShadow: [
               BoxShadow(
-                color: AppColors.charcoal.withValues(alpha: 0.04),
+                color: scheme.shadow,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
