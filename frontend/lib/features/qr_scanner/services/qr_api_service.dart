@@ -193,7 +193,7 @@ class QrApiService {
 
     String path;
 
-    // Handle africanteller.org deep links
+    // Keep accepting legacy africanteller.org links for existing QR codes.
     if (uri.host.contains('africanteller.org') ||
         uri.host.contains('africanteller')) {
       path = uri.path;

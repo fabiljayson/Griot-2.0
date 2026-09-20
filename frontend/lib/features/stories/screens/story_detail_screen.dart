@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../audio/models/narration_job_model.dart';
 import '../../audio/providers/audio_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_actions.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Story detail screen with interactive markdown reader.
 ///
@@ -51,7 +51,8 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
   void _onScroll() {
     if (_scrollController.position.hasContentDimensions) {
       final progress =
-          (_scrollController.offset / _scrollController.position.maxScrollExtent)
+          (_scrollController.offset /
+                  _scrollController.position.maxScrollExtent)
               .clamp(0.0, 1.0);
       if (progress != _scrollProgress) {
         setState(() => _scrollProgress = progress);
@@ -61,7 +62,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
   }
 
   void _updateReadingProgress(int percent) {
-    ref.read(storyDetailProvider.notifier).updateProgress(
+    ref
+        .read(storyDetailProvider.notifier)
+        .updateProgress(
           percent: percent,
           lastPosition: _scrollController.offset.round(),
         );
@@ -73,23 +76,34 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     final scheme = theme.colorScheme;
     final storyState = ref.watch(storyDetailProvider);
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+    final isAuthenticated = authState.value?.isAuthenticated ?? false;
 
     return Scaffold(
       body: storyState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : storyState.errorMessage != null
-              ? _ErrorWidget(
-                  message: storyState.errorMessage!,
-                  onRetry: () {
-                    ref.read(storyDetailProvider.notifier).loadStory(widget.slug);
-                  },
-                )
-              : storyState.story == null
-                  ? const SizedBox.shrink()
-                  : _buildStoryContent(storyState.story!, theme, scheme, isAuthenticated),
+          ? _ErrorWidget(
+              message: storyState.errorMessage!,
+              onRetry: () {
+                ref.read(storyDetailProvider.notifier).loadStory(widget.slug);
+              },
+            )
+          : storyState.story == null
+          ? const SizedBox.shrink()
+          : _buildStoryContent(
+              storyState.story!,
+              theme,
+              scheme,
+              isAuthenticated,
+            ),
       bottomNavigationBar: storyState.story != null
-          ? _buildBottomBar(context, theme, scheme, storyState.story!, isAuthenticated)
+          ? _buildBottomBar(
+              context,
+              theme,
+              scheme,
+              storyState.story!,
+              isAuthenticated,
+            )
           : null,
     );
   }
@@ -133,7 +147,10 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.terracotta,
                       borderRadius: BorderRadius.circular(12),
@@ -166,7 +183,10 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                 // --- Region Badge ---
                 if (story.region.isNotEmpty) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.ochre.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -174,7 +194,11 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const FaIcon(AppIcons.location_on, size: 16, color: AppColors.ochre),
+                        const FaIcon(
+                          AppIcons.location_on,
+                          size: 16,
+                          color: AppColors.ochre,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           story.region,
@@ -234,7 +258,10 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
 
                 // --- Cultural Context ---
                 if (story.culturalContext.isNotEmpty) ...[
-                  _SectionTitle(title: '🏛️ Cultural Context'),
+                  _SectionTitle(
+                    title: 'Cultural Context',
+                    icon: AppIcons.museum_outlined,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     story.culturalContext,
@@ -245,7 +272,10 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
 
                 // --- Moral Lesson ---
                 if (story.moralLesson.isNotEmpty) ...[
-                  _SectionTitle(title: '💡 Moral Lesson'),
+                  _SectionTitle(
+                    title: 'Moral Lesson',
+                    icon: AppIcons.lightbulb_outline,
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -325,7 +355,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
             const SizedBox(width: 12),
             // Like button
             _ActionButton(
-              icon: story.isLiked ? AppIcons.favorite : AppIcons.favorite_border,
+              icon: story.isLiked
+                  ? AppIcons.favorite
+                  : AppIcons.favorite_border,
               label: story.formattedLikeCount,
               color: story.isLiked ? AppColors.error : null,
               onTap: isAuthenticated
@@ -335,11 +367,14 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
             const SizedBox(width: 16),
             // Bookmark button
             _ActionButton(
-              icon: story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
+              icon: story.isBookmarked
+                  ? AppIcons.bookmark
+                  : AppIcons.bookmark_border,
               label: story.formattedBookmarkCount,
               color: story.isBookmarked ? AppColors.ochre : null,
               onTap: isAuthenticated
-                  ? () => ref.read(storyDetailProvider.notifier).toggleBookmark()
+                  ? () =>
+                        ref.read(storyDetailProvider.notifier).toggleBookmark()
                   : () => _showLoginPrompt(context),
             ),
             const SizedBox(width: 16),
@@ -414,7 +449,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
       ),
       child: Center(
         child: Text(
-          story.categories.isNotEmpty ? story.categories.first.icon : '📖',
+          story.categories.isNotEmpty ? story.categories.first.icon : '',
           style: const TextStyle(fontSize: 64),
         ),
       ),
@@ -426,7 +461,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sign In Required'),
-        content: const Text('Please sign in to interact with stories and take quizzes.'),
+        content: const Text(
+          'Please sign in to interact with stories and take quizzes.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -480,10 +517,7 @@ class _AuthorSection extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                story.readTimeDisplay,
-                style: theme.textTheme.bodySmall,
-              ),
+              Text(story.readTimeDisplay, style: theme.textTheme.bodySmall),
             ],
           ),
         ),
@@ -504,18 +538,25 @@ class _AuthorSection extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+  const _SectionTitle({required this.title, required this.icon});
 
   final String title;
+  final FaIconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+    return Row(
+      children: [
+        FaIcon(icon, color: AppColors.terracotta, size: 17),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: AppColors.terracotta,
           ),
+        ),
+      ],
     );
   }
 }
@@ -567,7 +608,11 @@ class _ErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const FaIcon(AppIcons.error_outline, size: 64, color: AppColors.error),
+            const FaIcon(
+              AppIcons.error_outline,
+              size: 64,
+              color: AppColors.error,
+            ),
             const SizedBox(height: 16),
             Text(
               'Failed to load story',

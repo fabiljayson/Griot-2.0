@@ -243,7 +243,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final narrationState = ref.watch(audioNarrationProvider);
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+    final isAuthenticated = authState.value?.isAuthenticated ?? false;
     final isGenerating = narrationState.isGenerating;
 
     return Container(
@@ -268,7 +268,11 @@ class ArtifactDetailScreen extends ConsumerWidget {
               color: AppColors.terracotta,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const FaIcon(AppIcons.headphones, color: Colors.white, size: 22),
+            child: const FaIcon(
+              AppIcons.headphones,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -342,7 +346,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
     } else if (job.isCompleted && job.audioUrl.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('🎧 Playing “${artifact.title}”'),
+          content: Text('Playing “${artifact.title}”'),
           backgroundColor: AppColors.savannahGreen,
         ),
       );
@@ -468,7 +472,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
 
   Widget _buildRelatedStories(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+    final isAuthenticated = authState.value?.isAuthenticated ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,7 +568,9 @@ class _RelatedStoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.charcoalMuted.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AppColors.charcoalMuted.withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,9 +579,9 @@ class _RelatedStoryCard extends StatelessWidget {
             story.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontSize: 13,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontSize: 13),
           ),
           const Spacer(),
           Row(
@@ -599,9 +605,9 @@ class _RelatedStoryCard extends StatelessWidget {
               const Spacer(),
               Text(
                 story.language.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.terracotta,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: AppColors.terracotta),
               ),
             ],
           ),

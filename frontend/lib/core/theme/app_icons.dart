@@ -29,7 +29,8 @@ abstract final class AppIcons {
   static const FaIconData alternate_email = FontAwesomeIcons.xTwitter;
 
   // --- Solid icons ---
-  static const FaIconData account_circle_outlined = FontAwesomeIcons.solidCircleUser;
+  static const FaIconData account_circle_outlined =
+      FontAwesomeIcons.solidCircleUser;
   static const FaIconData analytics_outlined = FontAwesomeIcons.chartColumn;
   static const FaIconData arrow_forward_ios = FontAwesomeIcons.chevronRight;
   static const FaIconData auto_awesome = FontAwesomeIcons.wandMagicSparkles;
@@ -87,11 +88,13 @@ abstract final class AppIcons {
   static const FaIconData military_tech_outlined = FontAwesomeIcons.medal;
   static const FaIconData more_horiz = FontAwesomeIcons.ellipsis;
   static const FaIconData more_vert = FontAwesomeIcons.ellipsisVertical;
-  static const FaIconData movie_creation_outlined = FontAwesomeIcons.clapperboard;
+  static const FaIconData movie_creation_outlined =
+      FontAwesomeIcons.clapperboard;
   static const FaIconData museum = FontAwesomeIcons.buildingColumns;
   static const FaIconData museum_outlined = FontAwesomeIcons.buildingColumns;
   static const FaIconData pause = FontAwesomeIcons.pause;
-  static const FaIconData pause_circle_filled = FontAwesomeIcons.solidCirclePause;
+  static const FaIconData pause_circle_filled =
+      FontAwesomeIcons.solidCirclePause;
   static const FaIconData people_outline = FontAwesomeIcons.users;
   static const FaIconData person_add_alt = FontAwesomeIcons.userPlus;
   static const FaIconData person_outline = FontAwesomeIcons.solidUser;
@@ -100,7 +103,8 @@ abstract final class AppIcons {
   static const FaIconData play_arrow = FontAwesomeIcons.play;
   static const FaIconData play_arrow_rounded = FontAwesomeIcons.play;
   static const FaIconData play_circle_filled = FontAwesomeIcons.solidCirclePlay;
-  static const FaIconData play_circle_outline = FontAwesomeIcons.solidCirclePlay;
+  static const FaIconData play_circle_outline =
+      FontAwesomeIcons.solidCirclePlay;
   static const FaIconData preview = FontAwesomeIcons.eye;
   static const FaIconData qr_code_scanner = FontAwesomeIcons.qrcode;
   static const FaIconData quiz = FontAwesomeIcons.solidCircleQuestion;
@@ -124,7 +128,21 @@ abstract final class AppIcons {
   static const FaIconData visibility_outlined = FontAwesomeIcons.eye;
   static const FaIconData volume_off = FontAwesomeIcons.volumeXmark;
   static const FaIconData volume_up = FontAwesomeIcons.volumeHigh;
-  static const FaIconData warning_amber_rounded = FontAwesomeIcons.triangleExclamation;
+  static const FaIconData warning_amber_rounded =
+      FontAwesomeIcons.triangleExclamation;
   static const FaIconData wifi = FontAwesomeIcons.wifi;
   static const FaIconData wifi_off = FontAwesomeIcons.wifi;
+
+  static FaIconData role(String value) {
+    switch (value) {
+      case 'contributor':
+        return edit_outlined;
+      case 'institution_manager':
+        return museum_outlined;
+      case 'admin':
+        return account_circle_outlined;
+      default:
+        return explore;
+    }
+  }
 }

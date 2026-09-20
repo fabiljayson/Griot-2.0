@@ -1,0 +1,554 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader in an unnamed module (file:/home/fabiljayson/.gradle/wrapper/dists/gradle-9.1.0-all/7wzd0jkjit61aq2p43wpjgij9/gradle-9.1.0/lib/native-platform-0.22-milestone-28.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): sentry_flutter
+Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+
+Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
+If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing
+an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+
+If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
+lib/features/home/home_screen.dart:132:28: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final user = authState.valueOrNull?.user;
+                           ^^^^^^^^^^^
+lib/features/stories/screens/story_detail_screen.dart:76:39: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+                                      ^^^^^^^^^^^
+lib/features/stories/widgets/story_actions.dart:23:39: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+                                      ^^^^^^^^^^^
+lib/features/stories/widgets/story_actions.dart:286:39: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+                                      ^^^^^^^^^^^
+lib/features/stories/providers/story_provider.dart:63:33: Error: Type 'StateNotifier' not found.
+class StoryListNotifier extends StateNotifier<StoryListState> {
+                                ^^^^^^^^^^^^^
+lib/features/stories/providers/story_provider.dart:277:35: Error: Type 'StateNotifier' not found.
+class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
+                                  ^^^^^^^^^^^^^
+lib/features/stories/providers/story_provider.dart:393:5: Error: Method not found: 'StateNotifierProvider'.
+    StateNotifierProvider<StoryListNotifier, StoryListState>((ref) {
+    ^^^^^^^^^^^^^^^^^^^^^
+lib/features/stories/providers/story_provider.dart:399:5: Error: Method not found: 'StateNotifierProvider'.
+    StateNotifierProvider<StoryDetailNotifier, StoryDetailState>((ref) {
+    ^^^^^^^^^^^^^^^^^^^^^
+lib/features/stories/providers/story_provider.dart:70:9: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.isLoading) return;
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:72:32: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    final page = refresh ? 1 : state.currentPage;
+                               ^^^^^
+lib/features/stories/providers/story_provider.dart:73:13: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(isLoading: true, errorMessage: null);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:73:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:77:17: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:77:48: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+                                               ^^^^^
+lib/features/stories/providers/story_provider.dart:78:19: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        language: state.selectedLanguage,
+                  ^^^^^
+lib/features/stories/providers/story_provider.dart:79:19: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        category: state.selectedCategory,
+                  ^^^^^
+lib/features/stories/providers/story_provider.dart:80:17: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        region: state.selectedRegion,
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:81:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        sort: state.sortBy,
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:85:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:86:42: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        stories: refresh ? stories : [...state.stories, ...stories],
+                                         ^^^^^
+lib/features/stories/providers/story_provider.dart:85:7: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:97:17: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        state = state.copyWith(
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:97:9: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+        state = state.copyWith(
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:103:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:103:7: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:136:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:136:7: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:142:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:142:7: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:151:9: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.isLoading || !state.hasMore) return;
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:151:29: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.isLoading || !state.hasMore) return;
+                            ^^^^^
+lib/features/stories/providers/story_provider.dart:157:13: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(searchQuery: query);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:157:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(searchQuery: query);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:163:13: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(selectedLanguage: language);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:163:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(selectedLanguage: language);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:169:13: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(selectedCategory: category);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:169:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(selectedCategory: category);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:175:13: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(selectedRegion: region);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:175:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(selectedRegion: region);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:181:13: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(sortBy: sort);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:181:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(sortBy: sort);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:187:5: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = const StoryListState();
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:195:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:196:18: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        stories: state.stories.map((s) {
+                 ^^^^^
+lib/features/stories/providers/story_provider.dart:195:7: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:217:15: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:218:18: Error: The getter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        stories: state.stories.map((s) {
+                 ^^^^^
+lib/features/stories/providers/story_provider.dart:217:7: Error: The setter 'state' isn't defined for the type 'StoryListNotifier'.
+ - 'StoryListNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:284:13: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(isLoading: true, errorMessage: null);
+            ^^^^^
+lib/features/stories/providers/story_provider.dart:284:5: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    ^^^^^
+lib/features/stories/providers/story_provider.dart:288:15: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(story: story, isLoading: false);
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:288:7: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(story: story, isLoading: false);
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:290:15: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:290:7: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:296:15: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:296:7: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:302:9: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.story == null) return;
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:305:61: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      final isBookmarked = await _repository.toggleBookmark(state.story!.slug);
+                                                            ^^^^^
+lib/features/stories/providers/story_provider.dart:306:15: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:307:16: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        story: state.story!.copyWith(
+               ^^^^^
+lib/features/stories/providers/story_provider.dart:310:17: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+              ? state.story!.bookmarkCount + 1
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:311:17: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+              : state.story!.bookmarkCount - 1,
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:306:7: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:321:9: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.story == null) return;
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:324:52: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      final isLiked = await _repository.toggleLike(state.story!.slug);
+                                                   ^^^^^
+lib/features/stories/providers/story_provider.dart:325:15: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:326:16: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        story: state.story!.copyWith(
+               ^^^^^
+lib/features/stories/providers/story_provider.dart:329:17: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+              ? state.story!.likeCount + 1
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:330:17: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+              : state.story!.likeCount - 1,
+                ^^^^^
+lib/features/stories/providers/story_provider.dart:325:7: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:344:9: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.story == null) return;
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:348:9: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        state.story!.slug,
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:353:15: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/stories/providers/story_provider.dart:354:16: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        story: state.story!.copyWith(
+               ^^^^^
+lib/features/stories/providers/story_provider.dart:358:33: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+                lastPosition ?? state.story!.readingProgress?.lastPosition ?? 0,
+                                ^^^^^
+lib/features/stories/providers/story_provider.dart:353:7: Error: The setter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/stories/providers/story_provider.dart:370:9: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    if (state.story == null) return;
+        ^^^^^
+lib/features/stories/providers/story_provider.dart:374:9: Error: The getter 'state' isn't defined for the type 'StoryDetailNotifier'.
+ - 'StoryDetailNotifier' is from 'package:griot_ai/features/stories/providers/story_provider.dart' ('lib/features/stories/providers/story_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+        state.story!.slug,
+        ^^^^^
+lib/features/auth/providers/auth_provider.dart:268:27: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final current = state.valueOrNull;
+                          ^^^^^^^^^^^
+lib/features/audio/providers/audio_provider.dart:9:35: Error: Type 'StateNotifier' not found.
+class AudioPlayerNotifier extends StateNotifier<AudioPlayerState> {
+                                  ^^^^^^^^^^^^^
+lib/features/audio/providers/audio_provider.dart:149:38: Error: Type 'StateNotifier' not found.
+class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
+                                     ^^^^^^^^^^^^^
+lib/features/audio/providers/audio_provider.dart:104:5: Error: Method not found: 'StateNotifierProvider'.
+    StateNotifierProvider<AudioPlayerNotifier, AudioPlayerState>((ref) {
+    ^^^^^^^^^^^^^^^^^^^^^
+lib/features/audio/providers/audio_provider.dart:195:5: Error: Method not found: 'StateNotifierProvider'.
+    StateNotifierProvider<AudioNarrationNotifier, AudioNarrationState>((ref) {
+    ^^^^^^^^^^^^^^^^^^^^^
+lib/features/audio/providers/audio_provider.dart:18:7: Error: The setter 'state' isn't defined for the type 'AudioPlayerNotifier'.
+ - 'AudioPlayerNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = serviceState;
+      ^^^^^
+lib/features/audio/providers/audio_provider.dart:165:13: Error: The getter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(isGenerating: true, clearError: true);
+            ^^^^^
+lib/features/audio/providers/audio_provider.dart:165:5: Error: The setter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(isGenerating: true, clearError: true);
+    ^^^^^
+lib/features/audio/providers/audio_provider.dart:172:15: Error: The getter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(isGenerating: false, lastJob: job);
+              ^^^^^
+lib/features/audio/providers/audio_provider.dart:172:7: Error: The setter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(isGenerating: false, lastJob: job);
+      ^^^^^
+lib/features/audio/providers/audio_provider.dart:179:15: Error: The getter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+      state = state.copyWith(
+              ^^^^^
+lib/features/audio/providers/audio_provider.dart:179:7: Error: The setter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = state.copyWith(
+      ^^^^^
+lib/features/audio/providers/audio_provider.dart:189:13: Error: The getter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'state'.
+    state = state.copyWith(clearError: true);
+            ^^^^^
+lib/features/audio/providers/audio_provider.dart:189:5: Error: The setter 'state' isn't defined for the type 'AudioNarrationNotifier'.
+ - 'AudioNarrationNotifier' is from 'package:griot_ai/features/audio/providers/audio_provider.dart' ('lib/features/audio/providers/audio_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = state.copyWith(clearError: true);
+    ^^^^^
+lib/features/auth/screens/profile_screen.dart:33:41: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final user = ref.read(authProvider).valueOrNull?.user;
+                                        ^^^^^^^^^^^
+lib/features/auth/screens/profile_screen.dart:49:28: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<AuthState>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+ - 'AuthState' is from 'package:griot_ai/features/auth/providers/auth_provider.dart' ('lib/features/auth/providers/auth_provider.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+    final user = authState.valueOrNull?.user;
+                           ^^^^^^^^^^^
+lib/features/admin/providers/admin_provider.dart:33:34: Error: Type 'StateNotifier' not found.
+class ModerationNotifier extends StateNotifier<ModerationState> {
+                                 ^^^^^^^^^^^^^
+lib/features/admin/providers/admin_provider.dart:58:5: Error: Method not found: 'StateNotifierProvider'.
+    StateNotifierProvider<ModerationNotifier, ModerationState>(
+    ^^^^^^^^^^^^^^^^^^^^^
+lib/features/admin/providers/admin_provider.dart:44:5: Error: The setter 'state' isn't defined for the type 'ModerationNotifier'.
+ - 'ModerationNotifier' is from 'package:griot_ai/features/admin/providers/admin_provider.dart' ('lib/features/admin/providers/admin_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = ModerationState(busyStoryId: story.storyId, busyAction: action);
+    ^^^^^
+lib/features/admin/providers/admin_provider.dart:47:7: Error: The setter 'state' isn't defined for the type 'ModerationNotifier'.
+ - 'ModerationNotifier' is from 'package:griot_ai/features/admin/providers/admin_provider.dart' ('lib/features/admin/providers/admin_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = const ModerationState();
+      ^^^^^
+lib/features/admin/providers/admin_provider.dart:50:7: Error: The setter 'state' isn't defined for the type 'ModerationNotifier'.
+ - 'ModerationNotifier' is from 'package:griot_ai/features/admin/providers/admin_provider.dart' ('lib/features/admin/providers/admin_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+      state = ModerationState(errorMessage: 'Moderation failed: $e');
+      ^^^^^
+lib/core/providers/onboarding_provider.dart:13:34: Error: Type 'StateNotifier' not found.
+class OnboardingNotifier extends StateNotifier<bool> {
+                                 ^^^^^^^^^^^^^
+lib/core/providers/onboarding_provider.dart:8:28: Error: Method not found: 'StateNotifierProvider'.
+final onboardingProvider = StateNotifierProvider<OnboardingNotifier, bool>(
+                           ^^^^^^^^^^^^^^^^^^^^^
+lib/core/providers/onboarding_provider.dart:22:5: Error: The setter 'state' isn't defined for the type 'OnboardingNotifier'.
+ - 'OnboardingNotifier' is from 'package:griot_ai/core/providers/onboarding_provider.dart' ('lib/core/providers/onboarding_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = value == 'true';
+    ^^^^^
+lib/core/providers/onboarding_provider.dart:28:5: Error: The setter 'state' isn't defined for the type 'OnboardingNotifier'.
+ - 'OnboardingNotifier' is from 'package:griot_ai/core/providers/onboarding_provider.dart' ('lib/core/providers/onboarding_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = true;
+    ^^^^^
+lib/core/providers/onboarding_provider.dart:34:5: Error: The setter 'state' isn't defined for the type 'OnboardingNotifier'.
+ - 'OnboardingNotifier' is from 'package:griot_ai/core/providers/onboarding_provider.dart' ('lib/core/providers/onboarding_provider.dart').
+Try correcting the name to the name of an existing setter, or defining a setter or field named 'state'.
+    state = false;
+    ^^^^^
+lib/features/auth/screens/login_screen.dart:226:34: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<dynamic>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+                  if ((authState.valueOrNull?.hasError ?? false)) ...[
+                                 ^^^^^^^^^^^
+lib/features/auth/screens/login_screen.dart:246:41: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<dynamic>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+                              authState.valueOrNull?.errorMessage ??
+                                        ^^^^^^^^^^^
+lib/features/auth/screens/register_screen.dart:375:34: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<dynamic>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+                  if ((authState.valueOrNull?.hasError ?? false)) ...[
+                                 ^^^^^^^^^^^
+lib/features/auth/screens/register_screen.dart:395:41: Error: The getter 'valueOrNull' isn't defined for the type 'AsyncValue<dynamic>'.
+ - 'AsyncValue' is from 'package:riverpod/src/framework.dart' ('../../../.pub-cache/hosted/pub.dev/riverpod-3.4.3/lib/src/framework.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'valueOrNull'.
+                              authState.valueOrNull?.errorMessage ??
+                                        ^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/fabiljayson/fvm/versions/3.35.7/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 58s
+Running Gradle task 'assembleDebug'...                             59.1s
+Error: Gradle task assembleDebug failed with exit code 1

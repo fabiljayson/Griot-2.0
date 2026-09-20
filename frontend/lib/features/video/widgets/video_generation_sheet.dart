@@ -93,7 +93,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '🎬 Video generation started! We\'ll notify you when it\'s ready.',
+            'Video generation started. We\'ll notify you when it\'s ready.',
           ),
           backgroundColor: AppColors.savannahGreen,
           duration: const Duration(seconds: 4),
@@ -211,7 +211,10 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             ),
             IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const FaIcon(AppIcons.close, color: AppColors.charcoalMuted),
+              icon: const FaIcon(
+                AppIcons.close,
+                color: AppColors.charcoalMuted,
+              ),
             ),
           ],
         ),

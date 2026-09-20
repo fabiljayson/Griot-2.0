@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../admin/admin_feature.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Profile/Account screen showing user info and settings.
 ///
@@ -30,7 +30,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authProvider).valueOrNull?.user;
+    final user = ref.read(authProvider).value?.user;
     _firstNameController = TextEditingController(text: user?.firstName ?? '');
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
   }
@@ -46,7 +46,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = ref.watch(authProvider);
-    final user = authState.valueOrNull?.user;
+    final user = authState.value?.user;
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -91,10 +91,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                     child: Center(
-                      child: Text(
-                        user.role.emoji,
-                        style: const TextStyle(fontSize: 44),
-                      ),
+                      child: FaIcon(AppIcons.role(user.role.value), size: 42),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -112,10 +109,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          user.role.emoji,
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                        FaIcon(AppIcons.role(user.role.value), size: 14),
                         const SizedBox(width: 6),
                         Text(
                           user.role.modeName,
@@ -449,7 +443,7 @@ class _RoleSwitcher extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(currentRole.emoji, style: const TextStyle(fontSize: 28)),
+              FaIcon(AppIcons.role(currentRole.value), size: 26),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -471,7 +465,7 @@ class _RoleSwitcher extends StatelessWidget {
           if (currentRole == UserRole.visitor) ...[
             const SizedBox(height: 12),
             Text(
-              '💡 Want to share your own stories? Upgrade to Contributor!',
+              'Want to share your own stories? Upgrade to Contributor.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.charcoalMuted,
                 fontStyle: FontStyle.italic,

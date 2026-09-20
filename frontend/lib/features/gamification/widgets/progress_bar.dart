@@ -176,7 +176,7 @@ class _LevelProgressBarState extends State<LevelProgressBar>
             const SizedBox(height: 12),
             Row(
               children: [
-                const Text('🔥', style: TextStyle(fontSize: 16)),
+                const FaIcon(AppIcons.bolt_outlined, size: 15),
                 const SizedBox(width: 6),
                 Text(
                   '${widget.currentStreak} day streak',

@@ -9,9 +9,9 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/auth_feature.dart';
 import 'features/home/home_screen.dart';
 
-/// Root of the African Teller application.
-class AfricanTellerApp extends ConsumerWidget {
-  const AfricanTellerApp({super.key});
+/// Root of the Griot AI application.
+class GriotAiApp extends ConsumerWidget {
+  const GriotAiApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,14 +28,9 @@ class AfricanTellerApp extends ConsumerWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('en'),
-          Locale('fr'),
-        ],
+        supportedLocales: const [Locale('en'), Locale('fr')],
         // Auth-aware home: shows login if unauthenticated, otherwise home screen.
-        home: const AuthWrapper(
-          child: HomeScreen(),
-        ),
+        home: const AuthWrapper(child: HomeScreen()),
       ),
     );
   }

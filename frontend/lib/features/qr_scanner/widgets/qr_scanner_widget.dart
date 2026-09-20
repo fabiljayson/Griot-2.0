@@ -97,7 +97,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            hintText: 'https://africanteller.org/artifact/...',
+            hintText: 'https://griot-ai.org/artifact/...',
             border: OutlineInputBorder(),
           ),
           autofocus: true,

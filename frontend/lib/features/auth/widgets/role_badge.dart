@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../models/user_model.dart';
 
-/// Visual badge displaying the user's role with emoji and label.
+/// Visual badge displaying the user's role with an icon and label.
 ///
 /// Used in headers, profile screens, and navigation elements.
 class RoleBadge extends StatelessWidget {
-  const RoleBadge({
-    super.key,
-    required this.role,
-    this.compact = false,
-  });
+  const RoleBadge({super.key, required this.role, this.compact = false});
 
   final UserRole role;
   final bool compact;
@@ -27,11 +24,14 @@ class RoleBadge extends StatelessWidget {
           color: _getRoleColor(role).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Wrap(
+          spacing: 4,
           children: [
-            Text(role.emoji, style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 4),
+            FaIcon(
+              AppIcons.role(role.value),
+              size: 12,
+              color: _getRoleColor(role),
+            ),
             Text(
               role.label,
               style: theme.textTheme.labelSmall?.copyWith(
@@ -49,15 +49,17 @@ class RoleBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: _getRoleColor(role).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _getRoleColor(role).withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: _getRoleColor(role).withValues(alpha: 0.3)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 2,
         children: [
-          Text(role.emoji, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
+          FaIcon(
+            AppIcons.role(role.value),
+            size: 18,
+            color: _getRoleColor(role),
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

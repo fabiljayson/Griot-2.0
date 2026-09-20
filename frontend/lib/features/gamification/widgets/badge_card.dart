@@ -21,7 +21,7 @@ class BadgeCard extends StatelessWidget {
 
   Widget _buildCompact(BuildContext context) {
     return Tooltip(
-      message: badge.earned ? badge.name : '🔒 ${badge.name}',
+      message: badge.name,
       child: Container(
         width: 48,
         height: 48,
@@ -37,12 +37,10 @@ class BadgeCard extends StatelessWidget {
           ),
         ),
         child: Center(
-          child: Text(
-            badge.earned ? badge.emoji : '🔒',
-            style: TextStyle(
-              fontSize: 24,
-              color: badge.earned ? null : Colors.grey,
-            ),
+          child: FaIcon(
+            badge.earned ? AppIcons.star : AppIcons.lock_outline,
+            size: 22,
+            color: badge.earned ? _parseColor(badge.color) : Colors.grey,
           ),
         ),
       ),
@@ -76,7 +74,7 @@ class BadgeCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Badge emoji
+          // Badge icon
           Container(
             width: 64,
             height: 64,
@@ -87,12 +85,10 @@ class BadgeCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text(
-                badge.earned ? badge.emoji : '🔒',
-                style: TextStyle(
-                  fontSize: 32,
-                  color: badge.earned ? null : Colors.grey,
-                ),
+              child: FaIcon(
+                badge.earned ? AppIcons.star : AppIcons.lock_outline,
+                size: 30,
+                color: badge.earned ? _parseColor(badge.color) : Colors.grey,
               ),
             ),
           ),

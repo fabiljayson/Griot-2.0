@@ -2,7 +2,7 @@
 ///
 /// Complete museum artifact QR code scanning system including:
 ///   - In-app camera QR scanner with traditional border motif overlays
-///   - Deep link handling for `https://africanteller.org/artifact/<slug>`
+///   - Deep link handling for `https://griot-ai.org/artifact/<slug>`
 ///   - Artifact lookup and detail views
 ///   - Scan tracking and analytics
 ///   - Manual URL input fallback

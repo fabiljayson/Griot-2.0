@@ -78,7 +78,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     final isWide = screenWidth >= 720;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF151F42), // Ndop indigo dark
+      backgroundColor: AppColors.indigoDark,
       body: isWide
           ? _buildWideLayout(screenWidth, screenHeight)
           : _buildCompactLayout(screenWidth, screenHeight),
@@ -90,15 +90,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     return Row(
       children: [
         // Left: Page content
-        Expanded(
-          flex: 5,
-          child: _buildPageView(),
-        ),
+        Expanded(flex: 5, child: _buildPageView()),
         // Right: Branding & controls
-        Expanded(
-          flex: 4,
-          child: _buildSidePanel(screenWidth),
-        ),
+        Expanded(flex: 4, child: _buildSidePanel(screenWidth)),
       ],
     );
   }
@@ -114,11 +108,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             alignment: Alignment.topRight,
             child: TextButton(
               onPressed: _skipToEnd,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                foregroundColor: AppColors.sand.withValues(alpha: 0.72),
+              ),
               child: Text(
                 'Skip',
                 style: TextStyle(
                   fontFamily: 'PlusJakartaSans',
-                  color: AppColors.sand.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -126,9 +123,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         ),
         // Page content
-        Expanded(
-          child: _buildPageView(),
-        ),
+        Expanded(child: _buildPageView()),
         // Bottom controls
         _buildBottomControls(isWide: false),
       ],
@@ -172,44 +167,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // GriotMark
-              const GriotMark(size: 72),
-              const SizedBox(height: 32),
-              // Brand name
-              Text.rich(
-                TextSpan(
-                  style: TextStyle(
-                    fontFamily: 'Fraunces',
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                    letterSpacing: -0.3,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: 'Griot ',
-                      style: TextStyle(color: AppColors.sand),
-                    ),
-                    TextSpan(
-                      text: 'AI',
-                      style: TextStyle(
-                        color: AppColors.ochreDark,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Digital Heritage Platform',
-                style: TextStyle(
-                  fontFamily: 'PlusJakartaSans',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.ochreTint.withValues(alpha: 0.6),
-                  letterSpacing: 1.5,
-                ),
+              const GriotLogo(
+                size: 72,
+                light: true,
+                tagline: 'Digital Heritage Platform',
               ),
               const SizedBox(height: 48),
               // Page indicator
@@ -240,7 +201,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   // ─── Bottom controls (compact layout) ──────────────────────────────
   Widget _buildBottomControls({required bool isWide}) {
     return Container(
-      padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        0,
+        24,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFF151F42), // Ndop indigo dark
       ),
@@ -268,7 +234,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           height: 8,
           decoration: BoxDecoration(
             color: isActive
-                ? AppColors.terracotta
+                ? AppColors.bronze
                 : AppColors.sand.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -287,8 +253,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       child: FilledButton(
         onPressed: _nextPage,
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.terracotta,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.bronze,
+          foregroundColor: AppColors.charcoal,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -353,19 +319,14 @@ class _OnboardingSlide extends StatelessWidget {
         children: [
           // Decorative pattern
           Positioned.fill(
-            child: CustomPaint(
-              painter: _AfricanPatternPainter(),
-            ),
+            child: CustomPaint(painter: _AfricanPatternPainter()),
           ),
           // Warm glow
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  center: Alignment(
-                    -0.3 + pageIndex * 0.3,
-                    -0.2,
-                  ),
+                  center: Alignment(-0.3 + pageIndex * 0.3, -0.2),
                   radius: 1.2,
                   colors: [
                     slideData.accentColor.withValues(alpha: 0.15),
@@ -383,38 +344,73 @@ class _OnboardingSlide extends StatelessWidget {
                 curve: const Interval(0.0, 0.6),
               ),
               child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.08),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animController,
-                  curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-                )),
+                position:
+                    Tween<Offset>(
+                      begin: const Offset(0, 0.08),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animController,
+                        curve: const Interval(
+                          0.0,
+                          0.6,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
+                    ),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isWide ? 48 : 32,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: isWide ? 48 : 32),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Icon
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: slideData.accentColor.withValues(alpha: 0.12),
-                          border: Border.all(
-                            color: slideData.accentColor.withValues(alpha: 0.25),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Center(
-                          child: FaIcon(
-                            slideData.icon,
-                            size: 44,
-                            color: slideData.accentColor,
+                      // Image-led hero card with a branded feature marker.
+                      SizedBox(
+                        width: double.infinity,
+                        height: isWide ? 220 : 170,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                slideData.imageAsset,
+                                fit: BoxFit.cover,
+                              ),
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      AppColors.indigoDark.withValues(
+                                        alpha: 0.82,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                left: 16,
+                                bottom: 16,
+                                child: Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: slideData.accentColor,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Center(
+                                    child: FaIcon(
+                                      slideData.icon,
+                                      size: 19,
+                                      color: AppColors.charcoal,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -454,7 +450,9 @@ class _OnboardingSlide extends StatelessWidget {
                             color: AppColors.terracotta.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: AppColors.terracotta.withValues(alpha: 0.15),
+                              color: AppColors.terracotta.withValues(
+                                alpha: 0.15,
+                              ),
                             ),
                           ),
                           child: Text(
@@ -464,7 +462,9 @@ class _OnboardingSlide extends StatelessWidget {
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               fontStyle: FontStyle.italic,
-                              color: AppColors.ochreDark.withValues(alpha: 0.85),
+                              color: AppColors.ochreDark.withValues(
+                                alpha: 0.85,
+                              ),
                               height: 1.5,
                             ),
                             textAlign: TextAlign.center,
@@ -490,6 +490,7 @@ class _OnboardingSlide extends StatelessWidget {
 class _SlideData {
   const _SlideData({
     required this.icon,
+    required this.imageAsset,
     required this.title,
     required this.subtitle,
     this.quote,
@@ -497,6 +498,7 @@ class _SlideData {
   });
 
   final FaIconData icon;
+  final String imageAsset;
   final String title;
   final String subtitle;
   final String? quote;
@@ -506,22 +508,26 @@ class _SlideData {
 final _slides = [
   _SlideData(
     icon: AppIcons.explore,
+    imageAsset: 'assets/imagery/onboarding/discover-heritage.jpg',
     title: 'Discover\nAfrican Heritage',
     subtitle:
         'Explore a rich digital library of cultural tales, oral traditions, and historical artifacts from Cameroon and Central Africa.',
     quote: 'Every artifact has a story to tell.',
-    accentColor: AppColors.terracotta,
+    accentColor: AppColors.bronze,
   ),
   _SlideData(
     icon: AppIcons.qr_code_scanner,
+    imageAsset: 'assets/imagery/onboarding/scan-experience.jpg',
     title: 'Scan &\nExperience',
     subtitle:
         'Scan QR codes at museums and cultural sites to unlock immersive digital experiences with AI-powered narration and video.',
-    quote: 'Until the lion learns to write, every story will glorify the hunter.',
+    quote:
+        'Until the lion learns to write, every story will glorify the hunter.',
     accentColor: AppColors.ochre,
   ),
   _SlideData(
     icon: AppIcons.favorite,
+    imageAsset: 'assets/imagery/onboarding/preserve-share.jpg',
     title: 'Preserve &\nShare',
     subtitle:
         'Contribute stories, earn heritage badges, and help preserve Africa\'s oral traditions for future generations.',

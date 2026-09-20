@@ -60,7 +60,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
-    final status = await ref.read(authProvider.notifier).register(
+    final status = await ref
+        .read(authProvider.notifier)
+        .register(
           username: _usernameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -110,8 +112,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         selectedRole: _selectedRole,
         onTogglePassword: () =>
             setState(() => _obscurePassword = !_obscurePassword),
-        onToggleConfirmPassword: () => setState(
-            () => _obscureConfirmPassword = !_obscureConfirmPassword),
+        onToggleConfirmPassword: () =>
+            setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
         onRoleChanged: (role) => setState(() => _selectedRole = role),
         onRegister: _handleRegister,
         onNavigateToLogin: () => Navigator.of(context).pop(),
@@ -190,25 +192,22 @@ class _RegisterFormPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // ── Header ──
-                  if (isWide) ...[
-                    Text(
-                      'Join the Journey',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        fontFamily: 'Fraunces',
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    'Join the journey',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontFamily: 'Fraunces',
+                      fontWeight: FontWeight.w700,
+                      fontSize: isWide ? null : 30,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create an account to save your progress and contribute stories.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create an account to save your progress and contribute stories.',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 32),
-                  ] else ...[
-                    const SizedBox(height: 8),
-                  ],
+                  ),
+                  SizedBox(height: isWide ? 32 : 24),
 
                   // ── Role selection ──
                   Text(
@@ -254,8 +253,7 @@ class _RegisterFormPanel extends StatelessWidget {
                       if (value.trim().length < 3) {
                         return 'Must be at least 3 characters';
                       }
-                      if (!RegExp(r'^[a-zA-Z0-9_]+$')
-                          .hasMatch(value.trim())) {
+                      if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
                         return 'Only letters, numbers, and underscores';
                       }
                       return null;
@@ -275,8 +273,9 @@ class _RegisterFormPanel extends StatelessWidget {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter your email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                          .hasMatch(value.trim())) {
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value.trim())) {
                         return 'Please enter a valid email';
                       }
                       return null;
@@ -372,7 +371,7 @@ class _RegisterFormPanel extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // ── Error message ──
-                  if ((authState.valueOrNull?.hasError ?? false)) ...[
+                  if ((authState.value?.hasError ?? false)) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -392,7 +391,7 @@ class _RegisterFormPanel extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              authState.valueOrNull?.errorMessage ??
+                              authState.value?.errorMessage ??
                                   'An error occurred',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: AppColors.error,
@@ -510,7 +509,15 @@ class _RoleCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Text(role.emoji, style: const TextStyle(fontSize: 28)),
+              FaIcon(
+                role == UserRole.visitor
+                    ? AppIcons.explore
+                    : AppIcons.edit_outlined,
+                color: selected
+                    ? AppColors.terracotta
+                    : theme.colorScheme.onSurfaceVariant,
+                size: 24,
+              ),
               const SizedBox(height: 8),
               Text(
                 role.label,
@@ -525,9 +532,7 @@ class _RoleCard extends StatelessWidget {
                 role == UserRole.visitor
                     ? 'Browse & read stories'
                     : 'Submit & share stories',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 11,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -581,9 +586,7 @@ class _AuthTextField extends StatelessWidget {
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       keyboardType: keyboardType,
-      style: theme.textTheme.bodyLarge?.copyWith(
-        fontFamily: 'PlusJakartaSans',
-      ),
+      style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'PlusJakartaSans'),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -599,35 +602,23 @@ class _AuthTextField extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: scheme.outline.withValues(alpha: 0.3),
-          ),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: scheme.outline.withValues(alpha: 0.3),
-          ),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: AppColors.terracotta,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.terracotta, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: AppColors.error.withValues(alpha: 0.5),
-          ),
+          borderSide: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: AppColors.error,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
       validator: validator,

@@ -71,7 +71,6 @@ class ConnectivityStatusWidget extends ConsumerWidget {
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           FaIcon(
             isOnline ? AppIcons.wifi : AppIcons.wifi_off,
@@ -79,14 +78,19 @@ class ConnectivityStatusWidget extends ConsumerWidget {
             color: isOnline ? AppColors.savannahGreen : AppColors.terracotta,
           ),
           const SizedBox(width: 8),
-          Text(
-            isOnline
-                ? (pendingCount > 0
-                      ? 'Syncing $pendingCount ${pendingCount == 1 ? "change" : "changes"}...'
-                      : 'Online')
-                : 'Offline — Changes will sync later',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: isOnline ? AppColors.savannahGreen : AppColors.terracotta,
+          Expanded(
+            child: Text(
+              isOnline
+                  ? (pendingCount > 0
+                        ? 'Syncing $pendingCount ${pendingCount == 1 ? "change" : "changes"}...'
+                        : 'Online')
+                  : 'Offline — Changes will sync later',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isOnline
+                    ? AppColors.savannahGreen
+                    : AppColors.terracotta,
+              ),
+              softWrap: true,
             ),
           ),
           if (pendingCount > 0) ...[

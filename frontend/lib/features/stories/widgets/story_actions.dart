@@ -20,7 +20,7 @@ class StoryActionsMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+    final isAuthenticated = authState.value?.isAuthenticated ?? false;
 
     return PopupMenuButton<String>(
       icon: const FaIcon(
@@ -283,7 +283,7 @@ class StoryQuickActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+    final isAuthenticated = authState.value?.isAuthenticated ?? false;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

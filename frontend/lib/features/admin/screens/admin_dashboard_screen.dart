@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../auth/models/user_model.dart';
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';
@@ -12,7 +13,6 @@ import '../widgets/growth_chart.dart';
 import '../widgets/moderation_widgets.dart';
 import '../widgets/ranked_tile.dart';
 import '../widgets/stat_card.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Admin dashboard — Phase 9.
 ///
@@ -294,7 +294,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           title: user.username,
                           subtitle:
                               'Level ${user.level} · ${user.storiesRead} stories · '
-                              '🔥 ${user.currentStreak} day streak',
+                              '${user.currentStreak} day streak',
                           trailing: '${_formatCount(user.totalXp)} XP',
                           color: AppColors.ochre,
                         ),
@@ -741,7 +741,7 @@ class _ModerationSectionState extends ConsumerState<_ModerationSection> {
         ),
         child: Row(
           children: [
-            const Text('🎉', style: TextStyle(fontSize: 22)),
+            const FaIcon(AppIcons.check_circle, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -1165,7 +1165,7 @@ class _DashboardError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('📊', style: TextStyle(fontSize: 48)),
+            const FaIcon(AppIcons.analytics_outlined, size: 44),
             const SizedBox(height: 16),
             Text(
               'Dashboard unavailable',

@@ -154,6 +154,14 @@
      * from Google Fonts. Offline machines just keep the system stacks.
      */
     (function () {
+      function injectGfontsFallback() {
+        if (document.getElementById('gfonts-fallback')) return;
+        var link = document.createElement('link');
+        link.id = 'gfonts-fallback';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..800;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..600&display=swap';
+        document.head.appendChild(link);
+      }
       function fontOnlineFallback() {
         if (!document.fonts || !document.fonts.load) return;
         var fams = ['700 1em Fraunces', '600 1em "Plus Jakarta Sans"'];
@@ -161,13 +169,11 @@
           var broken = faces.some(function (list) {
             return !list.length || list.every(function (f) { return f.status !== 'loaded'; });
           });
-          if (!broken || document.getElementById('gfonts-fallback')) return;
-          var link = document.createElement('link');
-          link.id = 'gfonts-fallback';
-          link.rel = 'stylesheet';
-          link.href = 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..800;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..600&display=swap';
-          document.head.appendChild(link);
-        }).catch(function () { /* offline + local fonts missing: system stacks apply */ });
+          if (broken) injectGfontsFallback();
+        }).catch(function () {
+          /* Chrome rejects load() when a matching face fails to fetch. */
+          injectGfontsFallback();
+        });
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', fontOnlineFallback);

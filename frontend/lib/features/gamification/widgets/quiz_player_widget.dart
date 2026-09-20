@@ -436,7 +436,7 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
             const SizedBox(height: 24),
 
             Text(
-              passed ? '🎉 Congratulations!' : '📚 Keep Learning!',
+              passed ? 'Congratulations!' : 'Keep Learning!',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),

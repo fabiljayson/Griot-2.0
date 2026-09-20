@@ -422,7 +422,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
           colors: [AppColors.terracottaTint, AppColors.ochreTint],
         ),
       ),
-      child: const Center(child: Text('📖', style: TextStyle(fontSize: 48))),
+      child: const Center(child: FaIcon(AppIcons.menu_book_outlined, size: 44)),
     );
   }
 
@@ -434,7 +434,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         color: AppColors.parchmentDark,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Center(child: Text('📖', style: TextStyle(fontSize: 24))),
+      child: const Center(child: FaIcon(AppIcons.menu_book_outlined, size: 22)),
     );
   }
 

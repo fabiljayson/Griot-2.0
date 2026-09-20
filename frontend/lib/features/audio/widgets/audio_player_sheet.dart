@@ -79,7 +79,7 @@ class _MiniPlayer extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(
-                        child: Text('🎵', style: TextStyle(fontSize: 24)),
+                        child: FaIcon(AppIcons.headphones, size: 22),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -224,7 +224,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                       ],
                     ),
                     child: const Center(
-                      child: Text('🎵', style: TextStyle(fontSize: 80)),
+                      child: FaIcon(AppIcons.headphones, size: 72),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -421,7 +421,10 @@ class _FullPlayerSheet extends ConsumerWidget {
                   title: Text(speed.label),
                   trailing:
                       ref.read(audioPlayerProvider).playbackSpeed == speed.value
-                      ? const FaIcon(AppIcons.check, color: AppColors.terracotta)
+                      ? const FaIcon(
+                          AppIcons.check,
+                          color: AppColors.terracotta,
+                        )
                       : null,
                   onTap: () {
                     ref
@@ -457,7 +460,10 @@ class _FullPlayerSheet extends ConsumerWidget {
                 return ListTile(
                   title: Text(timer.label),
                   trailing: ref.read(audioPlayerProvider).sleepTimer == timer
-                      ? const FaIcon(AppIcons.check, color: AppColors.terracotta)
+                      ? const FaIcon(
+                          AppIcons.check,
+                          color: AppColors.terracotta,
+                        )
                       : null,
                   onTap: () {
                     ref.read(audioPlayerProvider.notifier).setSleepTimer(timer);
@@ -497,7 +503,9 @@ class _FullPlayerSheet extends ConsumerWidget {
                       children: [
                         IconButton(
                           icon: FaIcon(
-                            volume == 0 ? AppIcons.volume_off : AppIcons.volume_up,
+                            volume == 0
+                                ? AppIcons.volume_off
+                                : AppIcons.volume_up,
                             color: AppColors.terracotta,
                           ),
                           tooltip: volume == 0 ? 'Unmute' : 'Mute',

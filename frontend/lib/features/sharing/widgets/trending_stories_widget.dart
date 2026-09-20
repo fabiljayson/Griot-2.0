@@ -71,14 +71,7 @@ class TrendingStoriesWidget extends StatelessWidget {
                     top: Radius.circular(16),
                   ),
                   child: story.coverImage != null
-                      ? CachedNetworkImage(
-                          imageUrl: story.coverImage!,
-                          height: 96,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, _, _) =>
-                              _buildPlaceholder(context),
-                        )
+                      ? _buildCoverImage(context, story.coverImage!)
                       : _buildPlaceholder(context),
                 ),
                 // Rank badge.
@@ -202,6 +195,26 @@ class TrendingStoriesWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildCoverImage(BuildContext context, String source) {
+    if (source.startsWith('assets/')) {
+      return Image.asset(
+        source,
+        height: 96,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _buildPlaceholder(context),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: source,
+      height: 96,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorWidget: (_, _, _) => _buildPlaceholder(context),
+    );
+  }
+
   Widget _buildPlaceholder(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
@@ -212,7 +225,13 @@ class TrendingStoriesWidget extends StatelessWidget {
           colors: [scheme.primaryContainer, scheme.secondaryContainer],
         ),
       ),
-      child: const Center(child: Text('📖', style: TextStyle(fontSize: 32))),
+      child: Center(
+        child: FaIcon(
+          AppIcons.menu_book_outlined,
+          color: scheme.onPrimaryContainer,
+          size: 30,
+        ),
+      ),
     );
   }
 }

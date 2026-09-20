@@ -97,6 +97,11 @@ flutter run
 # With custom backend URL
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
 
+# With a physical Android/iOS device on the same Wi-Fi network
+# Replace 10.5.50.13 with the computer running Django.
+DJANGO_LOCAL_IP=10.5.50.13 python manage.py runserver 0.0.0.0:8000
+flutter run --dart-define=API_BASE_URL=http://10.5.50.13:8000
+
 # With Ngrok tunnel (physical device testing)
 flutter run --dart-define=NGROK_URL=https://xxxx-xx-xx-xx-xx.ngrok-free.app
 ```

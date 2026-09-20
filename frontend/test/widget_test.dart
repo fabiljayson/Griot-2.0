@@ -36,7 +36,7 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
         ],
-        child: const AfricanTellerApp(),
+        child: const GriotAiApp(),
       ),
     );
 
@@ -44,7 +44,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Landing branding is visible.
-    expect(find.text('GRIOT AI'), findsOneWidget);
+    expect(find.text('Griot AI', findRichText: true), findsOneWidget);
 
     // Design tokens match the webapp's Cameroonian heritage palette.
     expect(AppColors.terracotta.toARGB32(), 0xFF1E2B58); // Ndop indigo

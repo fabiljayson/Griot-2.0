@@ -30,17 +30,16 @@ Future<void> main() async {
   // Sentry monitoring (Phase 10.1) — only when a DSN is provided.
   //   flutter run --dart-define=SENTRY_DSN=https://xxx@sentry.io/yyy
   if (AppConstants.sentryDsn.isNotEmpty) {
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = AppConstants.sentryDsn;
-        options.tracesSampleRate = 0.2;
-        options.environment =
-            const String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
-      },
-      appRunner: () => runApp(const ProviderScope(child: AfricanTellerApp())),
-    );
+    await SentryFlutter.init((options) {
+      options.dsn = AppConstants.sentryDsn;
+      options.tracesSampleRate = 0.2;
+      options.environment = const String.fromEnvironment(
+        'ENVIRONMENT',
+        defaultValue: 'dev',
+      );
+    }, appRunner: () => runApp(const ProviderScope(child: GriotAiApp())));
     return;
   }
 
-  runApp(const ProviderScope(child: AfricanTellerApp()));
+  runApp(const ProviderScope(child: GriotAiApp()));
 }

@@ -89,16 +89,28 @@ class GamificationScreen extends ConsumerWidget {
   Widget _buildStatsRow(GamificationProfileModel profile) {
     return Row(
       children: [
-        _buildStatCard('📖', '${profile.storiesRead}', 'Stories'),
+        _buildStatCard(
+          AppIcons.menu_book_outlined,
+          '${profile.storiesRead}',
+          'Stories',
+        ),
         const SizedBox(width: 8),
-        _buildStatCard('🧠', '${profile.quizzesPassed}', 'Quizzes'),
+        _buildStatCard(
+          AppIcons.quiz_outlined,
+          '${profile.quizzesPassed}',
+          'Quizzes',
+        ),
         const SizedBox(width: 8),
-        _buildStatCard('🏆', '${profile.badgesCount}', 'Badges'),
+        _buildStatCard(
+          AppIcons.emoji_events_outlined,
+          '${profile.badgesCount}',
+          'Badges',
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String emoji, String value, String label) {
+  Widget _buildStatCard(FaIconData icon, String value, String label) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -111,7 +123,7 @@ class GamificationScreen extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 24)),
+            FaIcon(icon, color: AppColors.bronze, size: 22),
             const SizedBox(height: 4),
             Text(
               value,
@@ -188,7 +200,7 @@ class GamificationScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Text('🧠', style: TextStyle(fontSize: 24)),
+                child: FaIcon(AppIcons.quiz_outlined, size: 22),
               ),
             ),
             title: Text(

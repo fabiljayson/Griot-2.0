@@ -265,7 +265,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   /// Clear any error message.
   void clearError() {
-    final current = state.valueOrNull;
+    final current = state.value;
     if (current != null && current.hasError) {
       state = AsyncData(current.copyWith(
         status: AuthStatus.unauthenticated,

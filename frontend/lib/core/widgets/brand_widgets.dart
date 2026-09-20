@@ -78,14 +78,8 @@ class _WideLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          flex: 5,
-          child: BrandPanel(animController: animController),
-        ),
-        Expanded(
-          flex: 4,
-          child: child,
-        ),
+        Expanded(flex: 5, child: BrandPanel(animController: animController)),
+        Expanded(flex: 4, child: child),
       ],
     );
   }
@@ -102,13 +96,11 @@ class _CompactLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            BrandHeader(animController: animController),
-            child,
-          ],
-        ),
+      child: Column(
+        children: [
+          BrandHeader(animController: animController),
+          Expanded(child: child),
+        ],
       ),
     );
   }
@@ -135,9 +127,7 @@ class BrandPanel extends StatelessWidget {
       child: Stack(
         children: [
           // Decorative pattern overlay
-          Positioned.fill(
-            child: CustomPaint(painter: BrandPatternPainter()),
-          ),
+          Positioned.fill(child: CustomPaint(painter: BrandPatternPainter())),
           // Warm glow
           Positioned.fill(
             child: DecoratedBox(
@@ -155,7 +145,10 @@ class BrandPanel extends StatelessWidget {
           ),
           // Content
           Center(
-            child: _buildContent(screenWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: _buildContent(screenWidth),
+            ),
           ),
         ],
       ),
@@ -168,11 +161,7 @@ class BrandPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const GriotMark(size: 80),
-          const SizedBox(height: 32),
-          const _BrandNameText(fontSize: 36, letterSpacing: -0.5),
-          const SizedBox(height: 8),
-          const _BrandTaglineText(fontSize: 14, letterSpacing: 1.5),
+          const GriotLogo(size: 80, light: true, tagline: kBrandTagline),
           const SizedBox(height: 40),
           _buildProverbCard(),
           const SizedBox(height: 40),
@@ -189,13 +178,13 @@ class BrandPanel extends StatelessWidget {
         curve: const Interval(0.0, 0.6),
       ),
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.1),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: animController!,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-        )),
+        position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+            .animate(
+              CurvedAnimation(
+                parent: animController!,
+                curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+              ),
+            ),
         child: content,
       ),
     );
@@ -207,9 +196,7 @@ class BrandPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.terracotta.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.terracotta.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -263,16 +250,11 @@ class BrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget content = Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
-      decoration:
-          const BoxDecoration(gradient: AppColors.brandGradientCompact),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
+      decoration: const BoxDecoration(gradient: AppColors.brandGradientCompact),
       child: Column(
         children: [
-          const GriotMark(size: 64),
-          const SizedBox(height: 20),
-          const _BrandNameText(fontSize: 28, letterSpacing: -0.3),
-          const SizedBox(height: 6),
-          const _BrandTaglineText(fontSize: 12, letterSpacing: 1.2),
+          const GriotLogo(size: 58, light: true, tagline: kBrandTagline),
         ],
       ),
     );
@@ -288,67 +270,5 @@ class BrandHeader extends StatelessWidget {
     }
 
     return content;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  Shared text components
-// ═══════════════════════════════════════════════════════════════════════
-
-/// Brand name text: "Griot" in sand + "AI" in ochre dark.
-class _BrandNameText extends StatelessWidget {
-  const _BrandNameText({this.fontSize = 36, this.letterSpacing = -0.5});
-
-  final double fontSize;
-  final double letterSpacing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        style: TextStyle(
-          fontFamily: 'Fraunces',
-          fontSize: fontSize,
-          fontWeight: FontWeight.w700,
-          height: 1.1,
-          letterSpacing: letterSpacing,
-        ),
-        children: [
-          TextSpan(
-            text: 'Griot ',
-            style: TextStyle(color: AppColors.sand),
-          ),
-          TextSpan(
-            text: 'AI',
-            style: TextStyle(
-              color: AppColors.ochreDark,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// "Digital Heritage Platform" tagline text.
-class _BrandTaglineText extends StatelessWidget {
-  const _BrandTaglineText({this.fontSize = 14, this.letterSpacing = 1.5});
-
-  final double fontSize;
-  final double letterSpacing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      kBrandTagline,
-      style: TextStyle(
-        fontFamily: 'PlusJakartaSans',
-        fontSize: fontSize,
-        fontWeight: FontWeight.w500,
-        color: AppColors.ochreTint.withValues(alpha: 0.7),
-        letterSpacing: letterSpacing,
-      ),
-    );
   }
 }

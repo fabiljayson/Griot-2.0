@@ -196,7 +196,7 @@ class ContinueReadingWidget extends ConsumerWidget {
           colors: [AppColors.terracottaTint, AppColors.ochreTint],
         ),
       ),
-      child: const Center(child: Text('📖', style: TextStyle(fontSize: 32))),
+      child: const Center(child: FaIcon(AppIcons.menu_book_outlined, size: 28)),
     );
   }
 }

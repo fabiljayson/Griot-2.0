@@ -36,9 +36,7 @@ class StoryCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
         child: Column(
@@ -112,7 +110,9 @@ class StoryCard extends StatelessWidget {
                       // Author avatar
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: AppColors.terracotta.withValues(alpha: 0.2),
+                        backgroundColor: AppColors.terracotta.withValues(
+                          alpha: 0.2,
+                        ),
                         child: Text(
                           story.author.username.isNotEmpty
                               ? story.author.username[0].toUpperCase()
@@ -224,9 +224,7 @@ class _CoverImage extends StatelessWidget {
           children: [
             Center(
               child: Text(
-                story.categories.isNotEmpty
-                    ? story.categories.first.icon
-                    : '📖',
+                story.categories.isNotEmpty ? story.categories.first.icon : '',
                 style: const TextStyle(fontSize: 48),
               ),
             ),
@@ -282,10 +280,7 @@ class _CoverImage extends StatelessWidget {
 
 /// Bookmark button.
 class _BookmarkButton extends StatelessWidget {
-  const _BookmarkButton({
-    required this.isBookmarked,
-    required this.onPressed,
-  });
+  const _BookmarkButton({required this.isBookmarked, required this.onPressed});
 
   final bool isBookmarked;
   final VoidCallback onPressed;
@@ -313,11 +308,7 @@ class _BookmarkButton extends StatelessWidget {
 
 /// Stat chip (views, likes).
 class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _StatChip({required this.icon, required this.label, this.color});
 
   final FaIconData icon;
   final String label;

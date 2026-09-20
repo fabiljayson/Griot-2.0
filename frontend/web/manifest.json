@@ -1,11 +1,11 @@
 {
-    "name": "african_teller",
-    "short_name": "african_teller",
+    "name": "Griot AI",
+    "short_name": "Griot AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Digital heritage platform for Cameroon's oral traditions.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

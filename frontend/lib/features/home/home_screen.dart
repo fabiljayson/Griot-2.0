@@ -10,6 +10,7 @@ import '../auth/providers/auth_provider.dart';
 import '../auth/screens/profile_screen.dart';
 import '../auth/widgets/role_badge.dart';
 import '../sharing/widgets/trending_stories_widget.dart';
+import '../../core/widgets/griot_logo.dart';
 import 'widgets/connectivity_status_widget.dart';
 import 'widgets/offline_story_counter.dart';
 import '../../core/theme/app_icons.dart';
@@ -46,6 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         lastName: 'Ata',
       ),
       region: 'Grassfields',
+      coverImage: 'assets/imagery/stories/anansi-wisdom-pot.jpg',
       estimatedReadTime: 5,
       likeCount: 234,
       viewCount: 1200,
@@ -63,6 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         lastName: 'Duma',
       ),
       region: 'Bamoun',
+      coverImage: 'assets/imagery/stories/lions-bath.jpg',
       estimatedReadTime: 8,
       likeCount: 189,
       viewCount: 980,
@@ -80,6 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         lastName: 'Yemo',
       ),
       region: 'Bamoun',
+      coverImage: 'assets/imagery/stories/talking-drum-foumban.jpg',
       estimatedReadTime: 12,
       likeCount: 312,
       viewCount: 1500,
@@ -129,7 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final authState = ref.watch(authProvider);
-    final user = authState.valueOrNull?.user;
+    final user = authState.value?.user;
 
     return Scaffold(
       body: SafeArea(
@@ -215,25 +219,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       scrollDirection: Axis.horizontal,
                       children: [
                         _RegionChip(
-                          emoji: '🛕',
+                          icon: AppIcons.museum_outlined,
                           label: 'Bamoun',
                           color: AppColors.terracotta,
                         ),
                         const SizedBox(width: 12),
                         _RegionChip(
-                          emoji: '🌄',
+                          icon: AppIcons.explore,
                           label: 'Adamawa',
                           color: AppColors.ochre,
                         ),
                         const SizedBox(width: 12),
                         _RegionChip(
-                          emoji: '🌊',
+                          icon: AppIcons.place_outlined,
                           label: 'Coastal',
                           color: AppColors.savannahGreen,
                         ),
                         const SizedBox(width: 12),
                         _RegionChip(
-                          emoji: '🗿',
+                          icon: AppIcons.location_on,
                           label: 'Grassfields',
                           color: AppColors.terracottaDark,
                         ),
@@ -270,41 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.ochre.withValues(alpha: 0.7),
-                    width: 1.2,
-                  ),
-                ),
-                child: const Text('🪘', style: TextStyle(fontSize: 22)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'GRIOT AI',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.surfaceLight,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                    Text(
-                      'Digital Heritage Platform',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.ochre,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const Expanded(child: GriotLogo(size: 44, light: true)),
               IconButton(
                 tooltip: 'Toggle theme',
                 onPressed: () => ref
@@ -352,16 +322,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: 4,
         children: [
           _LanguageChip(
-            label: '🇬🇧 EN',
+            label: 'EN',
             isSelected: _isEnglish,
             onTap: () => setState(() => _isEnglish = true),
           ),
           _LanguageChip(
-            label: '🇫🇷 FR',
+            label: 'FR',
             isSelected: !_isEnglish,
             onTap: () => setState(() => _isEnglish = false),
           ),
@@ -390,7 +360,14 @@ class _SectionHeader extends StatelessWidget {
       children: [
         FaIcon(icon, color: AppColors.terracotta, size: 20),
         const SizedBox(width: 8),
-        Text(title, style: theme.textTheme.titleLarge),
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleLarge,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
@@ -472,7 +449,7 @@ class _StoryCard extends StatelessWidget {
                   child: Text(
                     story.categories.isNotEmpty
                         ? story.categories.first.icon
-                        : '📖',
+                        : '',
                     style: const TextStyle(fontSize: 24),
                   ),
                 ),
@@ -507,12 +484,12 @@ class _StoryCard extends StatelessWidget {
 
 class _RegionChip extends StatelessWidget {
   const _RegionChip({
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.color,
   });
 
-  final String emoji;
+  final FaIconData icon;
   final String label;
   final Color color;
 
@@ -534,7 +511,7 @@ class _RegionChip extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
+            FaIcon(icon, color: color, size: 24),
             const Spacer(),
             Text(
               label,

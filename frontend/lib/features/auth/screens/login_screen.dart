@@ -51,7 +51,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(
+    await ref
+        .read(authProvider.notifier)
+        .login(
           username: _usernameController.text.trim(),
           password: _passwordController.text,
         );
@@ -73,10 +75,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         onTogglePassword: () =>
             setState(() => _obscurePassword = !_obscurePassword),
         onLogin: _handleLogin,
-        onNavigateToRegister: () => navigateWithFadeSlide(
-          context,
-          const RegisterScreen(),
-        ),
+        onNavigateToRegister: () =>
+            navigateWithFadeSlide(context, const RegisterScreen()),
         authState: authState,
         theme: theme,
         scheme: scheme,
@@ -136,25 +136,22 @@ class _LoginFormPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // ── Welcome text ──
-                  if (isWide) ...[
-                    Text(
-                      'Welcome Back',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        fontFamily: 'Fraunces',
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    'Welcome back',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontFamily: 'Fraunces',
+                      fontWeight: FontWeight.w700,
+                      fontSize: isWide ? null : 30,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Sign in to continue your journey',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sign in to continue your journey through living heritage.',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 40),
-                  ] else ...[
-                    const SizedBox(height: 8),
-                  ],
+                  ),
+                  SizedBox(height: isWide ? 40 : 28),
 
                   // ── Username / Email field ──
                   _AuthTextField(
@@ -199,31 +196,10 @@ class _LoginFormPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // ── Forgot password ──
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        // TODO: Forgot password flow
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Forgot password?',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.terracotta,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // ── Error message ──
-                  if ((authState.valueOrNull?.hasError ?? false)) ...[
+                  if ((authState.value?.hasError ?? false)) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -243,7 +219,7 @@ class _LoginFormPanel extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              authState.valueOrNull?.errorMessage ??
+                              authState.value?.errorMessage ??
                                   'An error occurred',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: AppColors.error,
@@ -287,26 +263,27 @@ class _LoginFormPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // ── Explorer mode note ──
+                  // ── Closing note ──
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.ochreTint.withValues(alpha: 0.5),
+                      color: AppColors.bronzeTint.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '🗺️',
-                          style: const TextStyle(fontSize: 14),
+                        const FaIcon(
+                          AppIcons.bookmark_outline,
+                          color: AppColors.bronzeDark,
+                          size: 15,
                         ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
-                            'Explorer Mode: Browse stories without an account!',
+                            'Your saved stories and progress stay with you.',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.charcoalMuted,
+                              color: AppColors.charcoal,
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
@@ -366,9 +343,7 @@ class _AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
-      style: theme.textTheme.bodyLarge?.copyWith(
-        fontFamily: 'PlusJakartaSans',
-      ),
+      style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'PlusJakartaSans'),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -384,35 +359,23 @@ class _AuthTextField extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: scheme.outline.withValues(alpha: 0.3),
-          ),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: scheme.outline.withValues(alpha: 0.3),
-          ),
+          borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: AppColors.terracotta,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.terracotta, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: AppColors.error.withValues(alpha: 0.5),
-          ),
+          borderSide: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: AppColors.error,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
       validator: validator,
@@ -467,5 +430,3 @@ class _AuthButton extends StatelessWidget {
     );
   }
 }
-
-

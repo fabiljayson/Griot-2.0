@@ -5,6 +5,8 @@ Usage:  DJANGO_SETTINGS_MODULE=config.settings.dev
 Default for local `manage.py` commands.
 """
 
+import os
+
 from .base import *  # noqa: F401,F403
 from .base import BASE_DIR
 
@@ -20,6 +22,7 @@ ALLOWED_HOSTS = [
     '.ngrok.io',
     # No wildcard: unknown Host headers are rejected with 400 (feature 001,
     # contract C5). Add team tunneling hosts explicitly if needed.
+    *filter(None, os.environ.get('DJANGO_LOCAL_IP', '').split(',')),
 ]
 
 # CORS: allow the Flutter web/PWA dev server, mobile emulators, and ngrok.
