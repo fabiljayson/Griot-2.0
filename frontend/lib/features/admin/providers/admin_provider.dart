@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';

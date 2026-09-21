@@ -272,7 +272,7 @@ class _ScanOverlayPainter extends CustomPainter {
 
     // Draw corner brackets (traditional motif)
     final bracketLength = scanAreaSize * 0.15;
-    paint.color = AppColors.terracotta;
+    paint.color = AppColors.bronze;
     paint.strokeCap = StrokeCap.round;
 
     // Top-left

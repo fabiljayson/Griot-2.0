@@ -61,7 +61,7 @@ class _MiniPlayer extends ConsumerWidget {
               value: audioState.progress,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
               valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.terracotta,
+                AppColors.bronze,
               ),
               minHeight: 2,
             ),
@@ -75,7 +75,7 @@ class _MiniPlayer extends ConsumerWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.terracotta.withValues(alpha: 0.1),
+                        color: AppColors.bronze.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(
@@ -136,7 +136,7 @@ class _MiniPlayer extends ConsumerWidget {
                             ? AppIcons.pause_circle_filled
                             : AppIcons.play_circle_filled,
                         size: 40,
-                        color: AppColors.terracotta,
+                        color: AppColors.bronze,
                       ),
                       onPressed: () => ref
                           .read(audioPlayerProvider.notifier)
@@ -213,11 +213,11 @@ class _FullPlayerSheet extends ConsumerWidget {
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: AppColors.terracotta.withValues(alpha: 0.1),
+                      color: AppColors.bronze.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.terracotta.withValues(alpha: 0.2),
+                          color: AppColors.bronze.withValues(alpha: 0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -255,10 +255,10 @@ class _FullPlayerSheet extends ConsumerWidget {
                     children: [
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: AppColors.terracotta,
+                          activeTrackColor: AppColors.bronze,
                           inactiveTrackColor:
                               theme.colorScheme.surfaceContainerHighest,
-                          thumbColor: AppColors.terracotta,
+                          thumbColor: AppColors.bronze,
                           thumbShape: const RoundSliderThumbShape(
                             enabledThumbRadius: 6,
                           ),
@@ -314,11 +314,11 @@ class _FullPlayerSheet extends ConsumerWidget {
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
-                          color: AppColors.terracotta,
+                          color: AppColors.bronze,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.terracotta.withValues(
+                              color: AppColors.bronze.withValues(
                                 alpha: 0.3,
                               ),
                               blurRadius: 12,
@@ -357,7 +357,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                             .read(audioPlayerProvider.notifier)
                             .toggleRepeat(),
                         color: audioState.isRepeatEnabled
-                            ? AppColors.terracotta
+                            ? AppColors.bronze
                             : theme.colorScheme.onSurfaceVariant,
                         tooltip: 'Repeat',
                       ),
@@ -423,7 +423,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                       ref.read(audioPlayerProvider).playbackSpeed == speed.value
                       ? const FaIcon(
                           AppIcons.check,
-                          color: AppColors.terracotta,
+                          color: AppColors.bronze,
                         )
                       : null,
                   onTap: () {
@@ -462,7 +462,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                   trailing: ref.read(audioPlayerProvider).sleepTimer == timer
                       ? const FaIcon(
                           AppIcons.check,
-                          color: AppColors.terracotta,
+                          color: AppColors.bronze,
                         )
                       : null,
                   onTap: () {
@@ -506,7 +506,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                             volume == 0
                                 ? AppIcons.volume_off
                                 : AppIcons.volume_up,
-                            color: AppColors.terracotta,
+                            color: AppColors.bronze,
                           ),
                           tooltip: volume == 0 ? 'Unmute' : 'Mute',
                           onPressed: () => ref
@@ -516,7 +516,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                         Expanded(
                           child: Slider(
                             value: volume,
-                            activeColor: AppColors.terracotta,
+                            activeColor: AppColors.bronze,
                             inactiveColor:
                                 theme.colorScheme.surfaceContainerHighest,
                             onChanged: (value) => ref

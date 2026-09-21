@@ -151,7 +151,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: AppColors.terracotta.withValues(alpha: 0.9),
+                      color: AppColors.bronze.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -202,7 +202,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                             _controller,
                             allowScrubbing: true,
                             colors: const VideoProgressColors(
-                              playedColor: AppColors.terracotta,
+                              playedColor: AppColors.bronze,
                               bufferedColor: Colors.white38,
                               backgroundColor: Colors.white24,
                             ),

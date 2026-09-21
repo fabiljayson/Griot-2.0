@@ -114,7 +114,7 @@ abstract final class AppTypography {
       ),
       labelSmall: TextStyle(
         fontFamily: 'PlusJakartaSans',
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: FontWeight.w500,
         color: muted,
         letterSpacing: 0.6,

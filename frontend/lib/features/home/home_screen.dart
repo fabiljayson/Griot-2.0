@@ -133,7 +133,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final authState = ref.watch(authProvider);
-    final user = authState.value?.user;
+    final user = authState.maybeWhen(
+      data: (s) => s.user,
+      orElse: () => null,
+    );
 
     return Scaffold(
       body: SafeArea(

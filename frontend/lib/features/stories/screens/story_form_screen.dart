@@ -328,7 +328,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.ochreTint,
+                color: AppColors.bronzeTint,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -370,7 +370,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
                     .map((tag) {
                   return Chip(
                     label: Text(tag),
-                    backgroundColor: AppColors.terracotta.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.bronze.withValues(alpha: 0.1),
                   );
                 }).toList(),
               ),

@@ -198,7 +198,10 @@ class _LoginFormPanel extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // ── Error message ──
-                  if ((authState.value?.hasError ?? false)) ...[
+                  if (authState.maybeWhen(
+                    data: (s) => s.hasError,
+                    orElse: () => false,
+                  )) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -219,8 +222,10 @@ class _LoginFormPanel extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              authState.value?.errorMessage ??
-                                  'An error occurred',
+                              authState.maybeWhen(
+                                data: (s) => s.errorMessage,
+                                orElse: () => 'An error occurred',
+                              ),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: AppColors.error,
                               ),

@@ -20,12 +20,16 @@ class StoryActionsMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.value?.isAuthenticated ?? false;
+    final isAuthenticated = authState.when(
+      data: (s) => s.isAuthenticated,
+      loading: () => false,
+      error: (_, __) => false,
+    );
 
     return PopupMenuButton<String>(
-      icon: const FaIcon(
+      icon: FaIcon(
         AppIcons.more_vert,
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.onPrimary,
       ),
       onSelected: (value) => _handleAction(context, ref, value, isAuthenticated),
       itemBuilder: (context) => [
@@ -36,7 +40,7 @@ class StoryActionsMenu extends ConsumerWidget {
             children: [
               FaIcon(
                 story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
-                color: story.isBookmarked ? AppColors.ochre : null,
+                color: story.isBookmarked ? AppColors.accentTextStrong : null,
               ),
               const SizedBox(width: 12),
               Text(story.isBookmarked ? 'Remove Bookmark' : 'Bookmark'),
@@ -283,7 +287,11 @@ class StoryQuickActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isAuthenticated = authState.value?.isAuthenticated ?? false;
+    final isAuthenticated = authState.when(
+      data: (s) => s.isAuthenticated,
+      loading: () => false,
+      error: (_, __) => false,
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,

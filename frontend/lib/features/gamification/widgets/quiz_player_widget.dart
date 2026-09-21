@@ -90,6 +90,7 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(quizPlayerProvider);
 
     if (state.isLoading) {
@@ -256,8 +257,9 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
     required bool showFeedback,
     required VoidCallback onTap,
   }) {
-    Color borderColor = AppColors.charcoalMuted.withValues(alpha: 0.2);
-    Color bgColor = Colors.white;
+    final scheme = Theme.of(context).colorScheme;
+    Color borderColor = scheme.onSurfaceVariant.withValues(alpha: 0.2);
+    Color bgColor = scheme.surface;
     Color letterColor = AppColors.charcoalMuted;
 
     if (showFeedback) {
@@ -382,6 +384,7 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
   }
 
   Widget _buildCompletionView(QuizPlayerState state) {
+    final scheme = Theme.of(context).colorScheme;
     final score = state.score ?? 0;
     final passed = score >= (state.quiz?.passingScore ?? 70);
 

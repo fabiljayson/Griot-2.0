@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 
 import '../services/gamification_api_service.dart';
 
@@ -181,4 +182,15 @@ final badgesProvider = FutureProvider<List<BadgeModel>>((ref) async {
 final quizzesProvider = FutureProvider<List<QuizModel>>((ref) async {
   final apiService = GamificationApiService.instance;
   return apiService.listQuizzes();
+});
+
+/// Quizzes filtered to a specific story, used by the story-reader "Take Quiz"
+/// CTA. Derived from [quizzesProvider] so it stays in sync without a new
+/// endpoint.
+final quizzesByStoryProvider =
+    Provider.autoDispose.family<List<QuizModel>, int>((ref, storyId) {
+  final quizzes = ref.watch(quizzesProvider).value ?? const <QuizModel>[];
+  return quizzes
+      .where((quiz) => quiz.storyId == storyId)
+      .toList();
 });

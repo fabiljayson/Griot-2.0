@@ -46,9 +46,9 @@ class VideoGenerationState {
 /// Notifier for managing video generation jobs.
 class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
   VideoGenerationNotifier()
-      : _apiService = VideoApiService.instance,
-        _poller = VideoStatusPoller.instance,
-        super(const VideoGenerationState());
+    : _apiService = VideoApiService.instance,
+      _poller = VideoStatusPoller.instance,
+      super(const VideoGenerationState());
 
   final VideoApiService _apiService;
   final VideoStatusPoller _poller;
@@ -84,10 +84,7 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
       );
 
       // Add to local list and start polling.
-      state = state.copyWith(
-        jobs: [job, ...state.jobs],
-        isCreating: false,
-      );
+      state = state.copyWith(jobs: [job, ...state.jobs], isCreating: false);
 
       // Start background polling for this job.
       _startPollingForJob(job);
@@ -111,7 +108,10 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
       // Update local state.
       final updatedJobs = state.jobs.map((j) {
         if (j.id == jobId) {
-          return j.copyWith(status: VideoStatus.failed, errorMessage: 'Cancelled by user');
+          return j.copyWith(
+            status: VideoStatus.failed,
+            errorMessage: 'Cancelled by user',
+          );
         }
         return j;
       }).toList();
@@ -137,14 +137,16 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
   }
 
   void _startPollingForJob(VideoModel job) {
-    _poller.startPolling(job.id).listen(
-      (updated) {
-        _updateJobInState(updated);
-      },
-      onError: (e) {
-        // Polling error — the poller will retry internally.
-      },
-    );
+    _poller
+        .startPolling(job.id)
+        .listen(
+          (updated) {
+            _updateJobInState(updated);
+          },
+          onError: (e) {
+            // Polling error — the poller will retry internally.
+          },
+        );
   }
 
   void _updateJobInState(VideoModel updated) {
@@ -165,8 +167,8 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
 /// Main video generation provider.
 final videoGenerationProvider =
     StateNotifierProvider<VideoGenerationNotifier, VideoGenerationState>((ref) {
-  return VideoGenerationNotifier();
-});
+      return VideoGenerationNotifier();
+    });
 
 /// Video for a specific story.
 final videoForStoryProvider = Provider.family<VideoModel?, int>((ref, storyId) {

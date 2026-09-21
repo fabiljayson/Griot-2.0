@@ -9,5 +9,6 @@
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
     "java.compile.nullAnalysis.mode": "automatic",
-    "cmake.sourceDirectory": "/home/fabiljayson/Projects/Griot_2.0/frontend/linux"
+    "cmake.sourceDirectory": "/home/fabiljayson/Projects/Griot_2.0/frontend/linux",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable"
 }

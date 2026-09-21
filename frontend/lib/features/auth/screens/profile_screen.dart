@@ -30,7 +30,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authProvider).value?.user;
+    final user = ref.read(authProvider).maybeWhen(
+          data: (s) => s.user,
+          orElse: () => null,
+        );
     _firstNameController = TextEditingController(text: user?.firstName ?? '');
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
   }
@@ -46,7 +49,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = ref.watch(authProvider);
-    final user = authState.value?.user;
+    final user = authState.maybeWhen(
+      data: (s) => s.user,
+      orElse: () => null,
+    );
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

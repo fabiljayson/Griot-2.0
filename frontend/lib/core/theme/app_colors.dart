@@ -172,4 +172,17 @@ abstract final class AppColors {
 
   /// Legacy name → now web muted gray.
   static const Color charcoalMuted = muted;
+
+  // --- Semantic accent tokens (WCAG AA) -------------------------------------
+  /// Strong bronze for small accent text on ivory/white. Darkened from
+  /// `bronze` (#C68B29, ~2.8:1) to ~#8A5D13 so it clears 4.5:1 on ivory.
+  /// Use for region badges, summary boxes, role badges, small bronze labels.
+  static const Color accentTextStrong = Color(0xFF8A5D13);
+
+  /// Strong indigo for small accent text on ivory/white. Clears 4.5:1 on
+  /// ivory; use for section titles and small primary accent labels.
+  static const Color accentTextStrongIndigo = Color(0xFF151F42);
+
+  /// Strong green for small accent text on ivory/white.
+  static const Color accentTextStrongGreen = Color(0xFF0E3326);
 }
