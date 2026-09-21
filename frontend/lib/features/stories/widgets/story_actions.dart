@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/widgets/sign_in_prompt.dart';
 import '../../sharing/widgets/share_button.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
@@ -124,25 +125,9 @@ class StoryActionsMenu extends ConsumerWidget {
   }
 
   void _showLoginPrompt(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign In Required'),
-        content: const Text('Please sign in to interact with stories.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Navigation to login would be handled by auth wrapper
-            },
-            child: const Text('Sign In'),
-          ),
-        ],
-      ),
+    SignInPrompt.show(
+      context,
+      message: 'Please sign in to interact with stories.',
     );
   }
 
@@ -331,16 +316,9 @@ class StoryQuickActions extends ConsumerWidget {
   }
 
   void _showLoginPrompt(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Sign in to interact with stories'),
-        action: SnackBarAction(
-          label: 'Sign In',
-          onPressed: () {
-            // Navigation to login would be handled by auth wrapper
-          },
-        ),
-      ),
+    SignInPrompt.show(
+      context,
+      message: 'Sign in to like and bookmark stories.',
     );
   }
 }

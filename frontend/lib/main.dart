@@ -12,6 +12,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'app.dart';
 import 'core/constants/app_constants.dart';
+import 'core/navigation/app_router.dart';
 import 'core/offline/offline_error_buffer.dart';
 
 Future<void> main() async {
@@ -40,8 +41,9 @@ Future<void> main() async {
   // Note: Offline auth sync is handled by OfflineSyncManager
   // which is initialized in the OfflineProvider widget.
 
-  // Initialize deep linking.
-  _initDeepLinks();
+  // Initialize deep linking (awaits the platform's initial link, if any, so the
+  // first frame can route straight to the linked screen).
+  await _initDeepLinks();
 
   // Sentry monitoring (Phase 10.1) — only when a DSN is provided.
   //   flutter run --dart-define=SENTRY_DSN=https://xxx@sentry.io/yyy
@@ -63,35 +65,37 @@ Future<void> main() async {
 /// Initialize deep linking via app_links.
 ///
 /// Handles both initial link (app opened from link) and subsequent links
-/// (app already running when link is tapped).
-void _initDeepLinks() {
+/// (app already running when link is tapped). A link received before the first
+/// frame is queued by [AppRouter] and routed once the navigator exists.
+Future<void> _initDeepLinks() async {
   final appLinks = AppLinks();
 
-  // Handle initial link (app opened from a deep link).
-  appLinks.getInitialLink().then((link) {
-    if (link != null) {
-      _handleDeepLink(link);
-    }
-  }).catchError((e) {
-    developer.log('Failed to get initial link: $e', name: 'DeepLink');
-  });
-
   // Handle subsequent links (app already running).
-  appLinks.uriLinkStream.listen((uri) {
-    _handleDeepLink(uri);
-  }).onError((e) {
-    developer.log('Deep link stream error: $e', name: 'DeepLink');
-  });
+  appLinks.uriLinkStream.listen(
+    _handleDeepLink,
+    onError: (Object e) {
+      developer.log('Deep link stream error: $e', name: 'DeepLink');
+    },
+  );
+
+  // Handle the initial link (app cold-started from a deep link).
+  try {
+    final initial = await appLinks.getInitialLink();
+    if (initial != null) _handleDeepLink(initial);
+  } catch (e) {
+    developer.log('Failed to get initial link: $e', name: 'DeepLink');
+  }
 }
 
 /// Handle a deep link URI.
 ///
-/// Supports:
+/// Supports (see [AppDeepLink] for the full grammar):
 /// - griot-ai://story/{slug} — opens a story
 /// - https://griot-ai.org/story/{slug} — opens a story
+/// - https://griot-ai.org/artifact/{slug} — opens a museum artifact
+/// - https://griot-ai.org/qr/{slug} — the link printed on museum QR labels
+/// - https://griot-ai.org/stories?region={slug} — opens a region
 void _handleDeepLink(Uri uri) {
   developer.log('Deep link received: $uri', name: 'DeepLink');
-  // Deep link navigation is handled by the app's router.
-  // For now, log the link for future implementation.
-  // TODO: Wire to Navigator once a proper router is set up.
+  AppRouter.handle(uri);
 }

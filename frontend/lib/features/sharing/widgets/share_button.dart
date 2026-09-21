@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../services/sharing_service.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../services/sharing_service.dart';
 
-/// Share button that opens a platform picker.
+/// Icon button that opens the share sheet.
 class ShareButton extends StatelessWidget {
   const ShareButton({
     super.key,
@@ -12,6 +12,7 @@ class ShareButton extends StatelessWidget {
     required this.slug,
     required this.summary,
     this.compact = false,
+    this.color,
   });
 
   final String title;
@@ -19,24 +20,21 @@ class ShareButton extends StatelessWidget {
   final String summary;
   final bool compact;
 
+  /// Overrides the icon colour (e.g. white on a dark app bar). Defaults to the
+  /// inherited icon theme so the button adapts to light and dark surfaces.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
-    if (compact) {
-      return IconButton(
-        icon: const FaIcon(AppIcons.share_outlined, size: 20),
-        onPressed: () => _showShareSheet(context),
-        tooltip: 'Share',
-      );
-    }
-
     return IconButton(
-      icon: const FaIcon(AppIcons.share_outlined, color: Colors.white),
-      onPressed: () => _showShareSheet(context),
+      icon: FaIcon(AppIcons.share_outlined, size: compact ? 20 : 24, color: color),
+      onPressed: () => showShareSheet(context),
+      tooltip: 'Share',
     );
   }
 
-  void _showShareSheet(BuildContext context) {
-    showModalBottomSheet(
+  void showShareSheet(BuildContext context) {
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => ShareSheet(title: title, slug: slug, summary: summary),
@@ -45,6 +43,9 @@ class ShareButton extends StatelessWidget {
 }
 
 /// Share sheet with platform options.
+///
+/// The sheet surface and its labels come from the active [ColorScheme]; it used
+/// to hardcode the ivory `parchment` surface, which is a light-mode-only panel.
 class ShareSheet extends StatelessWidget {
   const ShareSheet({
     super.key,
@@ -59,118 +60,84 @@ class ShareSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.parchment,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.hero),
+        ),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle
           Container(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.charcoalMuted.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
+              color: scheme.outline,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           Text(
             'Share "$title"',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
 
-          // Platform buttons
           GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
+            mainAxisSpacing: AppSpacing.lg,
+            crossAxisSpacing: AppSpacing.lg,
             children: [
-              _buildPlatformButton(
-                context,
+              _PlatformButton(
                 icon: AppIcons.language,
                 label: 'Copy Link',
-                color: AppColors.charcoalMuted,
+                color: scheme.onSurfaceVariant,
                 onTap: () => _share(context, 'link'),
               ),
-              _buildPlatformButton(
-                context,
+              _PlatformButton(
                 icon: AppIcons.chat_bubble,
                 label: 'WhatsApp',
                 color: const Color(0xFF25D366),
                 onTap: () => _share(context, 'whatsapp'),
               ),
-              _buildPlatformButton(
-                context,
+              _PlatformButton(
                 icon: AppIcons.send,
                 label: 'Telegram',
-                color: const Color(0xFF0088cc),
+                color: const Color(0xFF0088CC),
                 onTap: () => _share(context, 'telegram'),
               ),
-              _buildPlatformButton(
-                context,
+              _PlatformButton(
                 icon: AppIcons.facebook,
                 label: 'Facebook',
                 color: const Color(0xFF1877F2),
                 onTap: () => _share(context, 'facebook'),
               ),
-              _buildPlatformButton(
-                context,
+              _PlatformButton(
                 icon: AppIcons.alternate_email,
-                label: 'Twitter',
-                color: const Color(0xFF1DA1F2),
+                label: 'X',
+                color: scheme.onSurface,
                 onTap: () => _share(context, 'twitter'),
               ),
-              _buildPlatformButton(
-                context,
+              _PlatformButton(
                 icon: AppIcons.more_horiz,
                 label: 'More',
-                color: AppColors.charcoalMuted,
+                color: scheme.onSurfaceVariant,
                 onTap: () => _share(context, 'other'),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlatformButton(
-    BuildContext context, {
-    required FaIconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: FaIcon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, color: AppColors.charcoalMuted),
-          ),
+          const SizedBox(height: AppSpacing.xl),
         ],
       ),
     );
@@ -178,7 +145,8 @@ class ShareSheet extends StatelessWidget {
 
   void _share(BuildContext context, String platform) {
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.pop(context);
+    Navigator.of(context).pop();
+
     if (platform == 'link') {
       // Copy Link copies to the clipboard instead of opening the share sheet.
       SharingService.instance.copyLink(slug: slug);
@@ -187,11 +155,61 @@ class ShareSheet extends StatelessWidget {
       );
       return;
     }
+
     SharingService.instance.shareToPlatform(
       title: title,
       slug: slug,
       summary: summary,
       platform: platform,
+    );
+  }
+}
+
+class _PlatformButton extends StatelessWidget {
+  const _PlatformButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final FaIconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Semantics(
+      button: true,
+      label: 'Share to $label',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: FaIcon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

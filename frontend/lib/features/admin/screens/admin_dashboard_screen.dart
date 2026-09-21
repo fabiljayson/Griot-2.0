@@ -900,9 +900,11 @@ class _RoleBreakdown extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  UserRole.fromString(entry.key).emoji,
-                  style: const TextStyle(fontSize: 13),
+                // Real icon for the role instead of the model's emoji glyph.
+                FaIcon(
+                  AppIcons.role(entry.key),
+                  size: 13,
+                  color: AppColors.bronzeDark,
                 ),
                 const SizedBox(width: 6),
                 Text(

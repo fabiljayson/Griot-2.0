@@ -1,4 +1,3 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../features/library/services/library_api_service.dart';
@@ -9,21 +8,12 @@ import '../app_database.dart';
 /// Provides continue reading, recently read, and bookmarks — all from
 /// the local database with no network requests.
 class LocalLibraryRepository {
-  LocalLibraryRepository({
-    AppDatabase? database,
-    FlutterSecureStorage? secureStorage,
-  })  : _database = database ?? AppDatabase.instance,
-        _storage = secureStorage ?? const FlutterSecureStorage();
+  LocalLibraryRepository({AppDatabase? database})
+      : _database = database ?? AppDatabase.instance;
 
   final AppDatabase _database;
-  final FlutterSecureStorage _storage;
 
   Future<Database> get _db async => _database.database;
-
-  Future<int?> get _currentUserId async {
-    final s = await _storage.read(key: 'current_user_id');
-    return s != null ? int.tryParse(s) : null;
-  }
 
   /// Get stories the user has started but not completed (progress > 0, < 100%).
   Future<List<LibraryStoryModel>> getContinueReading() async {

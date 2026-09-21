@@ -128,11 +128,17 @@ abstract final class AppColors {
   static const Color success = Color(0xFF1B4332);
 
   // --- Compatibility aliases -----------------------------------------------
-  /// Legacy name → now Royal Ndop indigo (the web primary).
-  static const Color terracotta = indigo;
+  // NOTE: these aliases intentionally resolve to the *same* values as the
+  // legacy aliases in `backend/static/web/js/tailwind-theme.js`, so a call
+  // site keeps the same colour on both platforms:
+  //   terracotta → cam-bronze, ochre → cam-bronze, savannah → cam-green,
+  //   sand → cam-ivory, deep-earth → cam-dark, secondary-text → cam-muted.
 
-  /// Legacy name → now darker indigo (dark-mode primary).
-  static const Color terracottaDark = indigoLight;
+  /// Legacy name → Foumban bronze (web `terracotta.DEFAULT`).
+  static const Color terracotta = bronze;
+
+  /// Legacy name → dark bronze (web `terracotta.dark`).
+  static const Color terracottaDark = bronzeDark;
 
   /// Legacy name → now Equatorial green (web `savannah`).
   static const Color savannahGreen = equatorialGreen;
@@ -140,8 +146,8 @@ abstract final class AppColors {
   /// Legacy name → now Foumban bronze (the web's actual accent).
   static const Color ochre = bronze;
 
-  /// Legacy name → now light bronze (dark-mode accent).
-  static const Color ochreDark = bronzeLight;
+  /// Legacy name → dark bronze (web `ochre.dark` = `cam-bronze-dark`).
+  static const Color ochreDark = bronzeDark;
 
   /// Legacy name → now Raffia ivory (web `sand`).
   static const Color sand = ivory;
@@ -155,8 +161,8 @@ abstract final class AppColors {
   /// Legacy name → now surface dark indigo.
   static const Color surfaceDarkAlias = surfaceDark;
 
-  /// Legacy tint — indigo wash used for subtle primary surfaces.
-  static const Color terracottaTint = Color(0xFFE3E7F3);
+  /// Legacy tint — bronze wash (web `terracotta.tint` = `cam-bronze-tint`).
+  static const Color terracottaTint = bronzeTint;
 
   /// Legacy tint — bronze wash (web `cam-bronze-tint`).
   static const Color ochreTint = bronzeTint;

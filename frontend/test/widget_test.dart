@@ -11,6 +11,8 @@ import 'package:griot_ai/core/theme/app_colors.dart';
 import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/auth/providers/auth_provider.dart';
 import 'package:griot_ai/features/auth/repositories/auth_repository.dart';
+import 'package:griot_ai/features/discover/models/region_model.dart';
+import 'package:griot_ai/features/discover/providers/region_provider.dart';
 
 /// Auth repository stub that bypasses secure storage.
 ///
@@ -85,6 +87,16 @@ void main() {
           offlineSyncManagerProvider.overrideWithValue(
             _FakeOfflineSyncManager(),
           ),
+          // Home's region strip is data-driven: it lists the curated regions
+          // that resolve to at least one story in the local database. This
+          // test runs with no database, so feed it the four web-matching
+          // regions directly instead of asserting on an empty cache.
+          regionListProvider.overrideWith(
+            (ref) async => [
+              for (final region in Regions.primary)
+                region.copyWith(storyCount: 2),
+            ],
+          ),
         ],
         child: const GriotAiApp(),
       ),
@@ -97,15 +109,38 @@ void main() {
     // "AI" as separate TextSpans inside a single RichText.
     expect(find.textContaining('Griot', findRichText: true), findsWidgets);
 
-    // Design tokens match the webapp's Cameroonian heritage palette.
-    expect(AppColors.terracotta.toARGB32(), 0xFF1E2B58); // Ndop indigo
-    expect(AppColors.ochre.toARGB32(), 0xFFC68B29); // Foumban bronze
-    expect(AppColors.savannahGreen.toARGB32(), 0xFF1B4332); // Equatorial green
-    expect(AppColors.parchment.toARGB32(), 0xFFFBF9F4); // Raffia ivory
+    // The hero copy is part of the landing screen (English is the default).
+    expect(
+      find.textContaining('living heritage'),
+      findsOneWidget,
+    );
+
+    // Brand primaries match the webapp's heritage palette.
+    expect(AppColors.indigo.toARGB32(), 0xFF1E2B58); // Ndop indigo
+    expect(AppColors.bronze.toARGB32(), 0xFFC68B29); // Foumban bronze
+    expect(
+      AppColors.equatorialGreen.toARGB32(),
+      0xFF1B4332,
+    ); // Equatorial green
+    expect(AppColors.ivory.toARGB32(), 0xFFFBF9F4); // Raffia ivory
     expect(AppColors.charcoal.toARGB32(), 0xFF1C1C1E); // Slate charcoal
 
-    // Region cards from the landing grid render (below the fold in the
-    // 800x600 test viewport, so scroll the outer list to reveal them).
+    // Legacy alias names must resolve to the *same* colours as the webapp's
+    // Tailwind theme (backend/static/web/js/tailwind-theme.js), so a call site
+    // keeps its colour on both platforms: terracotta/ochre → cam-bronze,
+    // savannah → cam-green, sand → cam-ivory, deep-earth → cam-dark.
+    expect(AppColors.terracotta.toARGB32(), 0xFFC68B29);
+    expect(AppColors.terracottaDark.toARGB32(), 0xFFA67420);
+    expect(AppColors.terracottaTint.toARGB32(), 0xFFF5ECD6);
+    expect(AppColors.ochre.toARGB32(), AppColors.bronze.toARGB32());
+    expect(AppColors.ochreTint.toARGB32(), 0xFFF5ECD6);
+    expect(AppColors.savannahGreen.toARGB32(), 0xFF1B4332);
+    expect(AppColors.savannahGreenTint.toARGB32(), 0xFFD8E8E0);
+    expect(AppColors.sand.toARGB32(), 0xFFFBF9F4);
+    expect(AppColors.deepEarth.toARGB32(), 0xFF1C1C1E);
+
+    // Region cards from the Discover Regions strip render (below the fold in
+    // the test viewport, so scroll the outer list to reveal them).
     // The outer vertical scrollable is the first Scrollable inside the
     // keyed home CustomScrollView (the carousels are nested beneath it).
     final verticalScroll = find

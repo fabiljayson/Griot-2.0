@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_components.dart';
 
-/// Animated progress bar showing XP towards next level.
+/// Animated XP progress towards the next level.
 ///
-/// Displays current level, XP progress, and streak info.
+/// Displays the current level, XP progress and streak. Previously this was
+/// painted with a bespoke terracotta→ochre gradient and `parchmentDark` track,
+/// neither of which is part of the webapp's design language and both of which
+/// broke in dark mode (a light wash over a dark surface). It now uses the same
+/// card recipe as every other surface plus the shared [ProgressRow].
 class LevelProgressBar extends StatefulWidget {
   const LevelProgressBar({
     super.key,
@@ -42,7 +47,7 @@ class _LevelProgressBarState extends State<LevelProgressBar>
     );
     _progressAnimation = Tween<double>(
       begin: 0,
-      end: widget.xpProgress,
+      end: widget.xpProgress.clamp(0.0, 1.0),
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
@@ -53,8 +58,8 @@ class _LevelProgressBarState extends State<LevelProgressBar>
     if (oldWidget.xpProgress != widget.xpProgress) {
       _progressAnimation =
           Tween<double>(
-            begin: oldWidget.xpProgress,
-            end: widget.xpProgress,
+            begin: oldWidget.xpProgress.clamp(0.0, 1.0),
+            end: widget.xpProgress.clamp(0.0, 1.0),
           ).animate(
             CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
           );
@@ -71,117 +76,96 @@ class _LevelProgressBarState extends State<LevelProgressBar>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.terracotta.withValues(alpha: 0.05),
-            AppColors.ochreTint.withValues(alpha: 0.3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.1)),
-      ),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Level and XP info
           Row(
             children: [
-              // Level badge
+              // Level pill. Bronze with dark ink reads on both themes because
+              // the pill supplies its own background.
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs + 2,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.terracotta,
-                  borderRadius: BorderRadius.circular(20),
+                  color: scheme.secondary,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(AppIcons.star, color: Colors.white, size: 16),
-                    const SizedBox(width: 4),
+                    FaIcon(
+                      AppIcons.star,
+                      color: scheme.onSecondary,
+                      size: 14,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
                     Text(
                       'Level ${widget.level}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: scheme.onSecondary,
                         fontWeight: FontWeight.w700,
-                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
               const Spacer(),
-
-              // XP display
               Text(
                 '${widget.totalXp} XP',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.ochre,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: scheme.secondary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
-          // Progress bar
           AnimatedBuilder(
             animation: _progressAnimation,
-            builder: (context, child) {
-              return Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: _progressAnimation.value,
-                      backgroundColor: AppColors.parchmentDark,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.terracotta,
-                      ),
-                      minHeight: 8,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${(widget.xpProgress * widget.xpForNextLevel).round()} / ${widget.xpForNextLevel} XP',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.charcoalMuted,
-                        ),
-                      ),
-                      Text(
-                        '${((1 - widget.xpProgress) * widget.xpForNextLevel).round()} XP to Level ${widget.level + 1}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.charcoalMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
+            builder: (context, child) => ProgressRow(
+              fraction: _progressAnimation.value,
+              thickness: 8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${(widget.xpProgress * widget.xpForNextLevel).round()} / '
+                  '${widget.xpForNextLevel} XP',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+              Text(
+                '${((1 - widget.xpProgress.clamp(0.0, 1.0)) * widget.xpForNextLevel).round()} XP '
+                'to Level ${widget.level + 1}',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
           ),
 
-          // Streak
           if (widget.showStreak && widget.currentStreak > 0) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                const FaIcon(AppIcons.bolt_outlined, size: 15),
-                const SizedBox(width: 6),
+                FaIcon(
+                  AppIcons.bolt_outlined,
+                  size: 14,
+                  color: scheme.secondary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   '${widget.currentStreak} day streak',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.ochre,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

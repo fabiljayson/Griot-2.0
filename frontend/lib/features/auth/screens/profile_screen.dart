@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/widgets/griot_loader.dart';
 import '../../admin/admin_feature.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -55,7 +56,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: GriotLoadingState());
     }
 
     return Column(
@@ -244,6 +245,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _ActionTile(
               icon: AppIcons.logout,
               label: 'Sign Out',
+              // Neutral, not destructive: signing out loses no data. Only
+              // "Delete Account" uses the error tone.
+              color: theme.colorScheme.onSurface,
               onTap: () async {
                 final confirmed = await _showConfirmDialog(
                   context,
@@ -448,14 +452,17 @@ class _RoleSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final currentRole = user.role;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.terracottaTint.withValues(alpha: 0.5),
+        color: scheme.secondaryContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: scheme.secondary.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,7 +493,6 @@ class _RoleSwitcher extends StatelessWidget {
             Text(
               'Want to share your own stories? Upgrade to Contributor.',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.charcoalMuted,
                 fontStyle: FontStyle.italic,
               ),
             ),

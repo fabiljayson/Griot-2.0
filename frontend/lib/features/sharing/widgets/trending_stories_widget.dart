@@ -1,10 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/griot_image.dart';
 import '../../stories/models/story_model.dart';
 import '../../stories/screens/story_detail_screen.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Horizontal carousel of trending story cards for the home screen.
 ///
@@ -37,42 +39,32 @@ class TrendingStoriesWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => StoryDetailScreen(slug: story.slug),
-          ),
-        );
-      },
-      child: Container(
-        width: 250,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: scheme.outline),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return SizedBox(
+      width: 250,
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        elevated: true,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => StoryDetailScreen(slug: story.slug),
             ),
-          ],
-        ),
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Cover image with rank badge.
             Stack(
               children: [
-                ClipRRect(
+                GriotCoverImage(
+                  source: story.coverImage,
+                  blurhash: story.coverImageBlurhash,
+                  aspectRatio: 16 / 9,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
+                    top: Radius.circular(AppRadius.card),
                   ),
-                  child: story.coverImage != null
-                      ? _buildCoverImage(context, story.coverImage!)
-                      : _buildPlaceholder(context),
+                  semanticLabel: story.title,
                 ),
                 // Rank badge.
                 Positioned(
@@ -91,7 +83,7 @@ class TrendingStoriesWidget extends StatelessWidget {
                     child: Text(
                       '$rank',
                       style: TextStyle(
-                        color: rank <= 3 ? AppColors.deepEarth : scheme.surface,
+                        color: rank <= 3 ? AppColors.charcoal : scheme.surface,
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),
@@ -149,6 +141,7 @@ class TrendingStoriesWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),
+
                     // FittedBox keeps the meta row from overflowing on
                     // narrow cards / larger font scales.
                     FittedBox(
@@ -190,46 +183,6 @@ class TrendingStoriesWidget extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCoverImage(BuildContext context, String source) {
-    if (source.startsWith('assets/')) {
-      return Image.asset(
-        source,
-        height: 96,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _buildPlaceholder(context),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: source,
-      height: 96,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorWidget: (_, _, _) => _buildPlaceholder(context),
-    );
-  }
-
-  Widget _buildPlaceholder(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 96,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primaryContainer, scheme.secondaryContainer],
-        ),
-      ),
-      child: Center(
-        child: FaIcon(
-          AppIcons.menu_book_outlined,
-          color: scheme.onPrimaryContainer,
-          size: 30,
         ),
       ),
     );

@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/griot_loader.dart';
 import '../providers/gamification_provider.dart';
 import '../services/gamification_api_service.dart';
-import '../../../core/theme/app_icons.dart';
 
-/// Interactive quiz player widget with instant feedback.
+/// Interactive quiz player with instant feedback.
 ///
-/// Features:
 ///   - Progress indicator
 ///   - Animated question transitions
 ///   - Color-coded answer feedback (correct/incorrect)
 ///   - Explanation reveal
 ///   - Score summary at completion
+///
+/// Every colour comes from the active [ColorScheme]. The previous version
+/// painted answer text in `AppColors.charcoal` on `scheme.surface`, which in
+/// dark mode meant near-black text on a dark indigo card — i.e. invisible.
 class QuizPlayerWidget extends ConsumerStatefulWidget {
   const QuizPlayerWidget({super.key, required this.quizId, this.onCompleted});
 
@@ -44,7 +49,7 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
 
-    // Load and start the quiz
+    // Load and start the quiz.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(quizPlayerProvider.notifier).startQuiz(widget.quizId);
     });
@@ -73,7 +78,6 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
       _showFeedback = true;
     });
 
-    // Submit the answer
     ref
         .read(quizPlayerProvider.notifier)
         .submitAnswer(currentQuestion.id, answer);
@@ -90,12 +94,20 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final state = ref.watch(quizPlayerProvider);
 
     if (state.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.terracotta),
+      return const GriotLoadingState(label: 'Loading quiz');
+    }
+
+    if (state.errorMessage != null && state.quiz == null) {
+      return ErrorState(
+        message: state.errorMessage!,
+        title: 'Could not load this quiz',
+        onRetry: () =>
+            ref.read(quizPlayerProvider.notifier).startQuiz(widget.quizId),
       );
     }
 
@@ -104,7 +116,11 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
     }
 
     if (state.quiz == null || state.quiz!.questions.isEmpty) {
-      return const Center(child: Text('No questions available'));
+      return const EmptyState(
+        title: 'No questions available',
+        subtitle: 'This quiz has no questions yet. Please try again later.',
+        icon: AppIcons.quiz_outlined,
+      );
     }
 
     final quiz = state.quiz!;
@@ -114,44 +130,38 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
 
     return Column(
       children: [
-        // Progress bar
         _buildProgressBar(questionIndex, quiz.questions.length),
 
-        // Question
         Expanded(
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Question number
                   Text(
                     'Question ${questionIndex + 1} of ${quiz.questions.length}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.charcoalMuted,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
 
-                  // Question text
                   Text(
                     question.questionText,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xl),
 
-                  // Answer options
                   ...question.options.asMap().entries.map((entry) {
                     final optionIndex = entry.key;
                     final option = entry.value;
-                    final letter = String.fromCharCode(
-                      97 + optionIndex,
-                    ); // a, b, c, d
+                    // a, b, c, d — the letters the API expects.
+                    final letter = String.fromCharCode(97 + optionIndex);
                     final isSelected = _selectedAnswer == letter;
                     final isCorrect =
                         state.lastResult?.isCorrect == true && isSelected;
@@ -159,8 +169,8 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
                         state.lastResult?.isCorrect == false && isSelected;
 
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildAnswerOption(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _AnswerOption(
                         letter: letter.toUpperCase(),
                         text: option,
                         isSelected: isSelected,
@@ -172,9 +182,8 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
                     );
                   }),
 
-                  // Feedback
                   if (_showFeedback && state.lastResult != null) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     _buildFeedback(state.lastResult!),
                   ],
                 ],
@@ -183,41 +192,21 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
           ),
         ),
 
-        // Next / Finish button
         if (_showFeedback)
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: SizedBox(
               width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
+              height: AppSizes.buttonHeight,
+              child: FilledButton(
                 onPressed: state.isSubmitting
                     ? null
                     : isLastQuestion
                     ? () => ref.read(quizPlayerProvider.notifier).finishQuiz()
                     : _nextQuestion,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: isLastQuestion
-                    ? const Text(
-                        'See Results',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      )
-                    : const Text(
-                        'Next Question',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                child: state.isSubmitting
+                    ? const GriotLoader.inline()
+                    : Text(isLastQuestion ? 'See Results' : 'Next Question'),
               ),
             ),
           ),
@@ -226,125 +215,37 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
   }
 
   Widget _buildProgressBar(int current, int total) {
-    final progress = (current + 1) / total;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.parchmentDark,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.terracotta,
-              ),
-              minHeight: 6,
-            ),
-          ),
-        ],
+    final progress = total == 0 ? 0.0 : (current + 1) / total;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.md,
+        AppSpacing.xl,
+        0,
       ),
-    );
-  }
-
-  Widget _buildAnswerOption({
-    required String letter,
-    required String text,
-    required bool isSelected,
-    required bool isCorrect,
-    required bool isWrong,
-    required bool showFeedback,
-    required VoidCallback onTap,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    Color borderColor = scheme.onSurfaceVariant.withValues(alpha: 0.2);
-    Color bgColor = scheme.surface;
-    Color letterColor = AppColors.charcoalMuted;
-
-    if (showFeedback) {
-      if (isCorrect) {
-        borderColor = AppColors.savannahGreen;
-        bgColor = AppColors.savannahGreenTint;
-        letterColor = AppColors.savannahGreen;
-      } else if (isWrong) {
-        borderColor = AppColors.error;
-        bgColor = AppColors.error.withValues(alpha: 0.1);
-        letterColor = AppColors.error;
-      }
-    } else if (isSelected) {
-      borderColor = AppColors.terracotta;
-      bgColor = AppColors.terracottaTint;
-      letterColor = AppColors.terracotta;
-    }
-
-    return GestureDetector(
-      onTap: showFeedback ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: letterColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  letter,
-                  style: TextStyle(
-                    color: letterColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: AppColors.charcoal,
-                ),
-              ),
-            ),
-            if (showFeedback && isCorrect)
-              const FaIcon(
-                AppIcons.check_circle,
-                color: AppColors.savannahGreen,
-                size: 24,
-              )
-            else if (showFeedback && isWrong)
-              const FaIcon(AppIcons.cancel, color: AppColors.error, size: 24),
-          ],
-        ),
-      ),
+      child: ProgressRow(fraction: progress, showValue: false),
     );
   }
 
   Widget _buildFeedback(QuizAttemptResult result) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final isCorrect = result.isCorrect == true;
+
+    final background = isCorrect
+        ? scheme.tertiaryContainer
+        : scheme.errorContainer;
+    final foreground = isCorrect
+        ? scheme.onTertiaryContainer
+        : scheme.onErrorContainer;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isCorrect
-            ? AppColors.savannahGreenTint
-            : AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCorrect ? AppColors.savannahGreen : AppColors.error,
-        ),
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: foreground.withValues(alpha: 0.24)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,29 +254,24 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
             children: [
               FaIcon(
                 isCorrect ? AppIcons.check_circle : AppIcons.info_outline,
-                color: isCorrect ? AppColors.savannahGreen : AppColors.error,
-                size: 20,
+                color: foreground,
+                size: 18,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 isCorrect ? 'Correct!' : 'Incorrect',
-                style: TextStyle(
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: foreground,
                   fontWeight: FontWeight.w700,
-                  color: isCorrect ? AppColors.savannahGreen : AppColors.error,
-                  fontSize: 16,
                 ),
               ),
             ],
           ),
           if (result.explanation.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               result.explanation,
-              style: TextStyle(
-                color: AppColors.charcoal.withValues(alpha: 0.8),
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: foreground),
             ),
           ],
         ],
@@ -384,101 +280,181 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
   }
 
   Widget _buildCompletionView(QuizPlayerState state) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final score = state.score ?? 0;
     final passed = score >= (state.quiz?.passingScore ?? 70);
 
+    final background = passed
+        ? scheme.tertiaryContainer
+        : scheme.secondaryContainer;
+    final foreground = passed
+        ? scheme.onTertiaryContainer
+        : scheme.onSecondaryContainer;
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.section),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Score circle
             Container(
               width: 150,
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: passed
-                    ? AppColors.savannahGreenTint
-                    : AppColors.terracottaTint,
-                border: Border.all(
-                  color: passed
-                      ? AppColors.savannahGreen
-                      : AppColors.terracotta,
-                  width: 4,
-                ),
+                color: background,
+                border: Border.all(color: foreground, width: 4),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     '$score%',
-                    style: TextStyle(
-                      fontSize: 40,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: foreground,
                       fontWeight: FontWeight.w700,
-                      color: passed
-                          ? AppColors.savannahGreen
-                          : AppColors.terracotta,
                     ),
                   ),
                   Text(
                     passed ? 'Passed!' : 'Try Again',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: foreground,
                       fontWeight: FontWeight.w600,
-                      color: passed
-                          ? AppColors.savannahGreen
-                          : AppColors.terracotta,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
 
             Text(
               passed ? 'Congratulations!' : 'Keep Learning!',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
 
             if (passed && state.quiz != null)
               Text(
                 'You earned ${state.quiz!.xpReward} XP',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.ochre,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.secondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.section),
 
-            // Action buttons
             SizedBox(
               width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
+              height: AppSizes.buttonHeight,
+              child: FilledButton(
                 onPressed: () {
                   ref.read(quizPlayerProvider.notifier).reset();
                   widget.onCompleted?.call(score);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                child: const Text('Continue'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One selectable answer.
+///
+/// The option supplies its own background in every state, so its label stays
+/// legible on both themes: unselected options sit on the card surface with
+/// `onSurface` ink, and the selected/correct/incorrect states use the matching
+/// Material container pair.
+class _AnswerOption extends StatelessWidget {
+  const _AnswerOption({
+    required this.letter,
+    required this.text,
+    required this.isSelected,
+    required this.isCorrect,
+    required this.isWrong,
+    required this.showFeedback,
+    required this.onTap,
+  });
+
+  final String letter;
+  final String text;
+  final bool isSelected;
+  final bool isCorrect;
+  final bool isWrong;
+  final bool showFeedback;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    Color background = scheme.surface;
+    Color border = scheme.outline;
+    Color ink = scheme.onSurface;
+
+    if (showFeedback && isCorrect) {
+      background = scheme.tertiaryContainer;
+      border = scheme.tertiary;
+      ink = scheme.onTertiaryContainer;
+    } else if (showFeedback && isWrong) {
+      background = scheme.errorContainer;
+      border = scheme.error;
+      ink = scheme.onErrorContainer;
+    } else if (isSelected) {
+      background = scheme.primaryContainer;
+      border = scheme.primary;
+      ink = scheme.onPrimaryContainer;
+    }
+
+    return GestureDetector(
+      onTap: showFeedback ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          border: Border.all(color: border, width: 2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: ink.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(AppRadius.chip),
+              ),
+              child: Text(
+                letter,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: ink,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: ink,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ),
+            if (showFeedback && isCorrect)
+              FaIcon(AppIcons.check_circle, color: scheme.tertiary, size: 22)
+            else if (showFeedback && isWrong)
+              FaIcon(AppIcons.cancel, color: scheme.error, size: 22),
           ],
         ),
       ),

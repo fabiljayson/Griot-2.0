@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/navigation/app_router.dart';
 import 'core/offline/offline_provider.dart';
 import 'core/providers/settings_providers.dart';
 import 'core/theme/app_theme.dart';
@@ -19,6 +20,9 @@ class GriotAiApp extends ConsumerWidget {
       child: MaterialApp(
         title: AppConstants.appName,
         debugShowCheckedModeBanner: false,
+        // Shared with deep-link handling so an incoming link can route without
+        // a BuildContext (see AppRouter).
+        navigatorKey: AppRouter.navigatorKey,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         // Follow the system light/dark preference (togglable in-app).

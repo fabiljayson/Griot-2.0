@@ -1,106 +1,116 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/griot_image.dart';
+import '../../../core/widgets/griot_loader.dart';
 import '../../audio/models/narration_job_model.dart';
 import '../../audio/providers/audio_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/widgets/sign_in_prompt.dart';
 import '../../stories/models/story_model.dart';
 import '../services/qr_api_service.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Full-screen detail view for a museum artifact.
 ///
-/// Shows artifact information, images, cultural context,
-/// related stories, and QR code for sharing.
+/// Shows the artifact's photograph, catalogue metadata, cultural context,
+/// related stories and its narrated audio guide.
+///
+/// Previously every panel on this screen was hardcoded `Colors.white` /
+/// `AppColors.parchmentDark` with `charcoalMuted` ink and an emoji glyph stood
+/// in for the artifact's category — so on dark themes it was a stack of bright
+/// light-mode panels, and on every theme the category was rendered as emoji
+/// text instead of an icon.
 class ArtifactDetailScreen extends ConsumerWidget {
   const ArtifactDetailScreen({super.key, required this.artifact});
 
   final ArtifactModel artifact;
 
-  static void open(BuildContext context, ArtifactModel artifact) {
-    Navigator.of(context).push(
+  static Future<void> open(BuildContext context, ArtifactModel artifact) {
+    return Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ArtifactDetailScreen(artifact: artifact),
       ),
     );
   }
 
+  /// Icon representing the artifact's category (never an emoji).
+  FaIconData get _categoryIcon =>
+      AppIcons.artifactCategory(artifact.category);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Hero image with app bar
           _buildSliverAppBar(context),
 
-          // Content
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category badge
-                  _buildCategoryBadge(),
-                  const SizedBox(height: 12),
+                  MetadataPill(
+                    label: artifact.categoryLabel,
+                    icon: _categoryIcon,
+                    color: AppColors.bronze,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
 
-                  // Title
                   Text(
                     artifact.title,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: theme.textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 8),
 
-                  // Culture & Region
-                  if (artifact.culture.isNotEmpty || artifact.region.isNotEmpty)
+                  if (artifact.culture.isNotEmpty ||
+                      artifact.region.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
                     _buildMetadataRow(context),
-
-                  const SizedBox(height: 20),
-
-                  // Description
-                  if (artifact.description.isNotEmpty) ...[
-                    Text(
-                      'About This Artifact',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      artifact.description,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(height: 1.6),
-                    ),
-                    const SizedBox(height: 20),
                   ],
 
-                  // Audio guide (text-to-speech narration)
-                  const SizedBox(height: 20),
+                  if (artifact.description.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    const SectionHeader(
+                      title: 'About This Artifact',
+                      icon: AppIcons.info_outline,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      artifact.description,
+                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+                    ),
+                  ],
+
+                  const SizedBox(height: AppSpacing.xl),
                   _buildAudioGuide(context, ref),
 
-                  // Physical details
-                  _buildPhysicalDetails(context),
+                  if (_physicalDetails.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    _buildPhysicalDetails(context),
+                  ],
 
-                  // Museum location
                   if (artifact.museumName.isNotEmpty) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppSpacing.xl),
                     _buildMuseumLocation(context),
                   ],
 
-                  // Related stories
                   if (artifact.stories.isNotEmpty) ...[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.xl),
                     _buildRelatedStories(context, ref),
                   ],
 
-                  // Scan count
                   if (artifact.scanCount > 0) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppSpacing.xl),
                     _buildScanStats(context),
                   ],
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: AppSpacing.sectionLarge),
                 ],
               ),
             ),
@@ -111,53 +121,42 @@ class ArtifactDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
-      backgroundColor: Colors.black,
+      backgroundColor: scheme.surface,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
-            if (artifact.imageUrl.isNotEmpty)
-              CachedNetworkImage(
-                imageUrl: artifact.imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => const Center(
-                  child: CircularProgressIndicator(color: AppColors.terracotta),
-                ),
-                errorWidget: (_, _, _) => Container(
-                  color: AppColors.parchmentDark,
-                  child: Center(
-                    child: Text(
-                      artifact.categoryEmoji,
-                      style: const TextStyle(fontSize: 64),
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(
-                color: AppColors.parchmentDark,
-                child: Center(
-                  child: Text(
-                    artifact.categoryEmoji,
-                    style: const TextStyle(fontSize: 80),
-                  ),
-                ),
-              ),
+            GriotImage(
+              source: artifact.imageUrl,
+              blurhash: artifact.imageBlurhash,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              placeholderIcon: _categoryIcon,
+              semanticLabel: artifact.title,
+            ),
 
-            // Gradient overlay
+            // Legibility scrim for the app bar's back button / title over a
+            // photograph. This is a neutral black scrim, not a brand gradient.
             Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.3),
-                    ],
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.35),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.25),
+                      ],
+                      stops: const [0.0, 0.45, 1.0],
+                    ),
                   ),
                 ),
               ),
@@ -168,71 +167,29 @@ class ArtifactDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.terracottaTint,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(artifact.categoryEmoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(
-            artifact.categoryLabel,
-            style: const TextStyle(
-              color: AppColors.terracotta,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMetadataRow(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Wrap(
-      spacing: 12,
-      runSpacing: 4,
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.xs,
       children: [
         if (artifact.culture.isNotEmpty)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const FaIcon(
-                AppIcons.people_outline,
-                size: 16,
-                color: AppColors.charcoalMuted,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                artifact.culture,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.charcoalMuted,
-                ),
-              ),
-            ],
+          _MetadataEntry(
+            icon: AppIcons.people_outline,
+            label: artifact.culture,
           ),
         if (artifact.region.isNotEmpty)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const FaIcon(
-                AppIcons.place_outlined,
-                size: 16,
-                color: AppColors.charcoalMuted,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                artifact.region,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.charcoalMuted,
-                ),
-              ),
-            ],
+          _MetadataEntry(
+            icon: AppIcons.place_outlined,
+            label: artifact.region,
+          ),
+        if (artifact.isPublished)
+          MetadataPill(
+            label: 'Published',
+            icon: AppIcons.check_circle,
+            color: scheme.tertiary,
           ),
       ],
     );
@@ -241,40 +198,30 @@ class ArtifactDetailScreen extends ConsumerWidget {
   /// Card offering a narrated audio guide for this artifact.
   Widget _buildAudioGuide(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final narrationState = ref.watch(audioNarrationProvider);
     final authState = ref.watch(authProvider);
     final isAuthenticated = authState.value?.isAuthenticated ?? false;
     final isGenerating = narrationState.isGenerating;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.terracotta.withValues(alpha: 0.1),
-            AppColors.ochre.withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.25)),
-      ),
+    return AppCard(
+      color: scheme.secondaryContainer,
+      borderColor: scheme.secondary.withValues(alpha: 0.35),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.sm + 2),
             decoration: BoxDecoration(
-              color: AppColors.terracotta,
-              borderRadius: BorderRadius.circular(12),
+              color: scheme.secondary,
+              borderRadius: BorderRadius.circular(AppRadius.control),
             ),
-            child: const FaIcon(
+            child: FaIcon(
               AppIcons.headphones,
-              color: Colors.white,
-              size: 22,
+              color: scheme.onSecondary,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,6 +229,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
                 Text(
                   'Audio Guide',
                   style: theme.textTheme.titleSmall?.copyWith(
+                    color: scheme.onSecondaryContainer,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -291,33 +239,31 @@ class ArtifactDetailScreen extends ConsumerWidget {
                       ? 'Generating narration…'
                       : 'Listen to the story of this artifact',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.charcoalMuted,
+                    color: scheme.onSecondaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           if (isGenerating)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: AppColors.terracotta,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: const GriotLoader(size: 22),
             )
           else
             IconButton.filled(
               onPressed: isAuthenticated
                   ? () => _generateArtifactNarration(context, ref)
-                  : () => _showLoginPrompt(context),
+                  : () => SignInPrompt.show(
+                      context,
+                      message:
+                          'Sign in to play the narrated audio guide for this '
+                          'artifact.',
+                    ),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.terracotta,
-                foregroundColor: Colors.white,
+                backgroundColor: scheme.secondary,
+                foregroundColor: scheme.onSecondary,
               ),
               icon: const FaIcon(AppIcons.play_arrow_rounded),
               tooltip: 'Play audio guide',
@@ -341,125 +287,100 @@ class ArtifactDetailScreen extends ConsumerWidget {
           job?.errorMessage ??
           'Failed to generate the audio guide.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     } else if (job.isCompleted && job.audioUrl.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Playing “${artifact.title}”'),
-          backgroundColor: AppColors.savannahGreen,
-        ),
+        SnackBar(content: Text('Narration ready: ${artifact.title}')),
       );
     }
   }
 
-  void _showLoginPrompt(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Sign in to listen to audio guides'),
-        action: SnackBarAction(
-          label: 'Sign In',
-          onPressed: () {
-            // Navigation to login is handled by the auth wrapper.
-          },
-        ),
-      ),
-    );
-  }
+  /// Period / materials / dimensions, in the webapp's label-value layout.
+  List<MapEntry<String, String>> get _physicalDetails => [
+    if (artifact.estimatedDate.isNotEmpty)
+      MapEntry('Period', artifact.estimatedDate),
+    if (artifact.materials.isNotEmpty)
+      MapEntry('Materials', artifact.materials),
+    if (artifact.dimensions.isNotEmpty)
+      MapEntry('Dimensions', artifact.dimensions),
+  ];
 
   Widget _buildPhysicalDetails(BuildContext context) {
-    final details = <MapEntry<String, String>>[];
+    final theme = Theme.of(context);
 
-    if (artifact.estimatedDate.isNotEmpty) {
-      details.add(MapEntry('Period', artifact.estimatedDate));
-    }
-    if (artifact.materials.isNotEmpty) {
-      details.add(MapEntry('Materials', artifact.materials));
-    }
-    if (artifact.dimensions.isNotEmpty) {
-      details.add(MapEntry('Dimensions', artifact.dimensions));
-    }
-
-    if (details.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.charcoalMuted.withValues(alpha: 0.1),
-        ),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Physical Details',
-            style: Theme.of(context).textTheme.titleSmall,
+          const SectionHeader(
+            title: 'Physical Details',
+            icon: AppIcons.layerGroup,
           ),
-          const SizedBox(height: 12),
-          ...details.map(
-            (entry) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+          const SizedBox(height: AppSpacing.md),
+          for (final entry in _physicalDetails)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: 80,
+                    width: 96,
                     child: Text(
                       entry.key,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.charcoalMuted,
-                      ),
+                      style: theme.textTheme.bodySmall,
                     ),
                   ),
                   Expanded(
                     child: Text(
                       entry.value,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildMuseumLocation(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.ochreTint,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    final location = [
+      if (artifact.floor.isNotEmpty) 'Floor: ${artifact.floor}',
+      if (artifact.displayCase.isNotEmpty) 'Case: ${artifact.displayCase}',
+    ].join(' • ');
+
+    return AppCard(
+      color: scheme.primaryContainer,
+      borderColor: scheme.primary.withValues(alpha: 0.3),
       child: Row(
         children: [
-          const FaIcon(AppIcons.museum, color: AppColors.ochre, size: 24),
-          const SizedBox(width: 12),
+          FaIcon(AppIcons.museum, color: scheme.primary, size: 22),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   artifact.museumName,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(color: AppColors.charcoal),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: scheme.onPrimaryContainer,
+                  ),
                 ),
-                if (artifact.floor.isNotEmpty ||
-                    artifact.displayCase.isNotEmpty)
+                if (location.isNotEmpty)
                   Text(
-                    [
-                      if (artifact.floor.isNotEmpty) 'Floor: ${artifact.floor}',
-                      if (artifact.displayCase.isNotEmpty)
-                        'Case: ${artifact.displayCase}',
-                    ].join(' • '),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.charcoalMuted,
+                    location,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
                     ),
                   ),
               ],
@@ -477,13 +398,17 @@ class ArtifactDetailScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Related Stories', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
+        const SectionHeader(
+          title: 'Related Stories',
+          icon: AppIcons.auto_stories_outlined,
+        ),
+        const SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 120,
-          child: ListView.builder(
+          height: 132,
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: artifact.stories.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) {
               final story = artifact.stories[index];
               return _RelatedStoryCard(
@@ -491,7 +416,10 @@ class ArtifactDetailScreen extends ConsumerWidget {
                 isAuthenticated: isAuthenticated,
                 onListen: () {
                   if (!isAuthenticated) {
-                    _showLoginPrompt(context);
+                    SignInPrompt.show(
+                      context,
+                      message: 'Sign in to listen to this story.',
+                    );
                     return;
                   }
                   _generateStoryNarration(context, ref, story);
@@ -522,26 +450,53 @@ class ArtifactDetailScreen extends ConsumerWidget {
           job?.errorMessage ??
           'Failed to generate the narration.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
 
   Widget _buildScanStats(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Row(
       children: [
-        const FaIcon(
+        FaIcon(
           AppIcons.qr_code_scanner,
-          size: 16,
-          color: AppColors.charcoalMuted,
+          size: 15,
+          color: scheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           '${artifact.scanCount} scan${artifact.scanCount == 1 ? '' : 's'}',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.charcoalMuted),
+          style: theme.textTheme.bodySmall,
         ),
+      ],
+    );
+  }
+}
+
+/// One icon + text metadata entry (culture, region).
+class _MetadataEntry extends StatelessWidget {
+  const _MetadataEntry({required this.icon, required this.label});
+
+  final FaIconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FaIcon(icon, size: 15, color: scheme.onSurfaceVariant),
+        const SizedBox(width: AppSpacing.xs + 1),
+        Text(label, style: theme.textTheme.bodyMedium),
       ],
     );
   }
@@ -561,57 +516,50 @@ class _RelatedStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 170,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.charcoalMuted.withValues(alpha: 0.1),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return SizedBox(
+      width: 176,
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              story.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall,
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: onListen,
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.bronze.withValues(alpha: 0.12),
+                    foregroundColor: AppColors.bronzeDark,
+                  ),
+                  iconSize: 18,
+                  icon: FaIcon(
+                    isAuthenticated
+                        ? AppIcons.play_arrow_rounded
+                        : AppIcons.lock_outline,
+                  ),
+                  tooltip: isAuthenticated
+                      ? 'Listen to this story'
+                      : 'Sign in to listen',
+                ),
+                const Spacer(),
+                MetadataPill(
+                  label: story.language.toUpperCase(),
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            story.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontSize: 13),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              IconButton(
-                onPressed: onListen,
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.terracotta.withValues(alpha: 0.1),
-                  foregroundColor: AppColors.terracotta,
-                ),
-                iconSize: 18,
-                icon: FaIcon(
-                  isAuthenticated
-                      ? AppIcons.play_arrow_rounded
-                      : AppIcons.lock_outline,
-                ),
-                tooltip: isAuthenticated
-                    ? 'Listen to this story'
-                    : 'Sign in to listen',
-              ),
-              const Spacer(),
-              Text(
-                story.language.toUpperCase(),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: AppColors.terracotta),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

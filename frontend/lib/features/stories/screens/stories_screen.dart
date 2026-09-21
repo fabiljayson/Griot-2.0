@@ -4,12 +4,14 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../core/database/repositories/search_history_repository.dart';
 import '../../../core/providers/database_providers.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/griot_loader.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_card.dart';
 import 'story_detail_screen.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Discovery dashboard for browsing and discovering stories.
 ///
@@ -114,137 +116,112 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
       );
   }
 
-  Widget _buildStoryGrid(StoryListState state, ThemeData theme) {
-    return switch (state) {
-      StoryListInitial() || StoryListLoading(stories: []) =>
-        const Center(child: CircularProgressIndicator()),
+  void _retry() =>
+      ref.read(storyListProvider.notifier).loadStories(refresh: true);
 
-      StoryListFailure(:final message, stories: []) => _ErrorWidget(
-        message: message,
-        onRetry: () {
-          ref.read(storyListProvider.notifier).loadStories(refresh: true);
-        },
-      ),      StoryListReady(stories: []) => _EmptyWidget(
-        message: ref.read(storyListProvider.notifier).searchQuery.isNotEmpty
-            ? 'No stories found for "${ref.read(storyListProvider.notifier).searchQuery}"'
-            : 'No stories yet. Be the first to share!',
-      ),
+  Future<void> _refresh() async {
+    await ref.read(storyListProvider.notifier).loadStories(refresh: true);
+  }
 
-      StoryListReady(:final stories, :final hasMore) => RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(storyListProvider.notifier).loadStories(refresh: true);
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverMasonryGrid.count(
-                crossAxisCount: _getCrossAxisCount(context),
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childCount: stories.length + (hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == stories.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-                  final story = stories[index];
-                  return StoryCard(
-                    story: story,
-                    onTap: () => _navigateToStory(story),
-                    onBookmark: () {
-                      ref.read(storyListProvider.notifier).toggleBookmark(story.slug);
-                    },
-                    onLike: () {
-                      ref.read(storyListProvider.notifier).toggleLike(story.slug);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      // StoryListLoading with existing stories — show spinner below list.
-      StoryListLoading(:final stories) => RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(storyListProvider.notifier).loadStories(refresh: true);
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverMasonryGrid.count(
-                crossAxisCount: _getCrossAxisCount(context),
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childCount: stories.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == stories.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-                  final story = stories[index];
-                  return StoryCard(
-                    story: story,
-                    onTap: () => _navigateToStory(story),
-                    onBookmark: () {
-                      ref.read(storyListProvider.notifier).toggleBookmark(story.slug);
-                    },
-                    onLike: () {
-                      ref.read(storyListProvider.notifier).toggleLike(story.slug);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      // StoryListFailure with existing stories — show error banner above list.
-      StoryListFailure(:final message, :final stories) => Column(
-        children: [
-          MaterialBanner(
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  ref.read(storyListProvider.notifier).loadStories(refresh: true);
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: stories.length,
+  /// Story grid, shared by every state that has stories to show.
+  ///
+  /// Each branch used to carry its own copy of this subtree; the only genuine
+  /// difference between them is whether a footer row (a loading row, or an
+  /// error banner) is appended.
+  Widget _buildGrid({
+    required List<StoryModel> stories,
+    required bool hasMore,
+    Widget? footer,
+  }) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: CustomScrollView(
+        controller: _scrollController,
+        key: const ValueKey('storiesScroll'),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            sliver: SliverMasonryGrid.count(
+              crossAxisCount: _getCrossAxisCount(context),
+              mainAxisSpacing: AppSpacing.lg,
+              crossAxisSpacing: AppSpacing.lg,
+              childCount: stories.length + (hasMore || footer != null ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index == stories.length) {
+                  return footer ??
+                      const Padding(
+                        padding: EdgeInsets.all(AppSpacing.lg),
+                        child: Center(child: GriotLoader(size: 24)),
+                      );
+                }
+
                 final story = stories[index];
                 return StoryCard(
                   story: story,
                   onTap: () => _navigateToStory(story),
-                  onBookmark: () {
-                    ref.read(storyListProvider.notifier).toggleBookmark(story.slug);
-                  },
-                  onLike: () {
-                    ref.read(storyListProvider.notifier).toggleLike(story.slug);
-                  },
+                  onBookmark: () => ref
+                      .read(storyListProvider.notifier)
+                      .toggleBookmark(story.slug),
+                  onLike: () =>
+                      ref.read(storyListProvider.notifier).toggleLike(story.slug),
                 );
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoryGrid(StoryListState state, ThemeData theme) {
+    return switch (state) {
+      StoryListInitial() || StoryListLoading(stories: []) =>
+        const GriotLoadingState(label: 'Loading stories'),
+
+      StoryListFailure(:final message, stories: []) => ErrorState(
+        message: message,
+        title: 'Could not load stories',
+        onRetry: _retry,
+      ),
+
+      StoryListReady(stories: []) => EmptyState(
+        title: ref.read(storyListProvider.notifier).searchQuery.isNotEmpty
+            ? 'No stories found for '
+                  '"${ref.read(storyListProvider.notifier).searchQuery}"'
+            : 'No stories yet',
+        subtitle: ref.read(storyListProvider.notifier).searchQuery.isNotEmpty
+            ? 'Try a different word, or clear the filters.'
+            : 'Stories shared by griots and contributors will appear here.',
+        icon: AppIcons.auto_stories_outlined,
+      ),
+
+      StoryListReady(:final stories, :final hasMore) => _buildGrid(
+        stories: stories,
+        hasMore: hasMore,
+      ),
+
+      // Loading more pages on top of existing results.
+      StoryListLoading(:final stories) => _buildGrid(
+        stories: stories,
+        hasMore: false,
+        footer: const SizedBox.shrink(),
+      ),
+
+      // A failure with results already on screen keeps the list and reports the
+      // failure above it, rather than throwing the content away.
+      StoryListFailure(:final message, :final stories) => Column(
+        children: [
+          MaterialBanner(
+            content: Text(message),
+            leading: FaIcon(
+              AppIcons.warning_amber_rounded,
+              color: theme.colorScheme.error,
+            ),
+            actions: [
+              TextButton(onPressed: _retry, child: const Text('Retry')),
+            ],
+          ),
+          Expanded(child: _buildGrid(stories: stories, hasMore: false)),
         ],
       ),
     };
@@ -335,7 +312,7 @@ class _SearchBar extends StatelessWidget {
           IconButton(
             icon: FaIcon(
               showFilters ? AppIcons.filter_list_off : AppIcons.filter_list,
-              color: showFilters ? AppColors.terracotta : null,
+              color: showFilters ? theme.colorScheme.secondary : null,
             ),
             onPressed: onFilterToggle,
             tooltip: 'Filters',
@@ -407,7 +384,9 @@ class _FilterChips extends StatelessWidget {
               ),
               ...StoryLanguage.values.map((lang) {
                 return FilterChip(
-                  label: Text('${lang.flag} ${lang.label}'),
+                  // Language name instead of the model's flag emoji.
+                  avatar: const FaIcon(AppIcons.language, size: 13),
+                  label: Text(lang.label),
                   selected: selectedLanguage == lang.value,
                   onSelected: (_) {
                     onLanguageChanged(
@@ -444,7 +423,13 @@ class _FilterChips extends StatelessWidget {
                       ),
                       ...cats.map((cat) {
                         return FilterChip(
-                          label: Text('${cat.icon} ${cat.name}'),
+                          // Real icon resolved from the stored glyph, instead of
+                          // rendering the emoji itself.
+                          avatar: FaIcon(
+                            AppIcons.fromEmoji(cat.icon),
+                            size: 13,
+                          ),
+                          label: Text(cat.name),
                           selected: selectedCategory == cat.slug,
                           onSelected: (_) {
                             onCategoryChanged(
@@ -513,81 +498,4 @@ class _FilterChips extends StatelessWidget {
   }
 }
 
-/// Error widget.
-class _ErrorWidget extends StatelessWidget {
-  const _ErrorWidget({
-    required this.message,
-    required this.onRetry,
-  });
 
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FaIcon(
-              AppIcons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Oops!',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const FaIcon(AppIcons.refresh),
-              label: const Text('Try Again'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Empty widget.
-class _EmptyWidget extends StatelessWidget {
-  const _EmptyWidget({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FaIcon(
-              AppIcons.auto_stories,
-              size: 64,
-              color: AppColors.ochre,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

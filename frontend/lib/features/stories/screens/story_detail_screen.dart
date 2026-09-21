@@ -1,12 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/griot_image.dart';
+import '../../../core/widgets/griot_loader.dart';
 import '../../audio/models/narration_job_model.dart';
 import '../../audio/providers/audio_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/widgets/sign_in_prompt.dart';
+import '../../gamification/providers/gamification_provider.dart';
+import '../../gamification/screens/quiz_screen.dart';
+import '../../gamification/widgets/quiz_picker_sheet.dart';
+import '../../sharing/widgets/share_button.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_actions.dart';
@@ -15,11 +26,10 @@ import '../widgets/story_actions.dart';
 ///
 /// Features:
 /// - Full markdown rendering
-/// - Reading progress tracking
-/// - Like/bookmark/flag actions
-/// - Author info
-/// - Cultural context and moral lesson
-/// - "Take Quiz" CTA with guest-locked state
+/// - Reading progress tracking (own layout row — never over the title)
+/// - Like / bookmark / flag / share actions
+/// - Author info, cultural context, moral lesson
+/// - "Take Quiz" CTA wired to the quizzes linked to this story
 class StoryDetailScreen extends ConsumerStatefulWidget {
   const StoryDetailScreen({super.key, required this.slug});
 
@@ -32,6 +42,14 @@ class StoryDetailScreen extends ConsumerStatefulWidget {
 class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   double _scrollProgress = 0;
+  bool _isStartingQuiz = false;
+
+  /// Throttle reading-progress writes: only persist when the percentage moves
+  /// by at least this much. Previously every scroll event triggered a setState
+  /// plus a SQLite write.
+  static const int _progressStep = 2;
+
+  int _lastPersistedPercent = 0;
 
   @override
   void initState() {
@@ -44,29 +62,35 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.position.hasContentDimensions) {
-      final progress =
-          (_scrollController.offset /
-                  _scrollController.position.maxScrollExtent)
-              .clamp(0.0, 1.0);
-      if (progress != _scrollProgress) {
-        setState(() => _scrollProgress = progress);
-        _updateReadingProgress((progress * 100).round());
-      }
-    }
-  }
+    if (!_scrollController.position.hasContentDimensions) return;
 
-  void _updateReadingProgress(int percent) {
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    final progress = maxExtent <= 0
+        ? 0.0
+        : (_scrollController.offset / maxExtent).clamp(0.0, 1.0);
+
+    if ((progress - _scrollProgress).abs() < 0.004) return;
+
+    setState(() => _scrollProgress = progress);
+
+    final percent = (progress * 100).round();
+    if ((percent - _lastPersistedPercent).abs() < _progressStep &&
+        percent < 95) {
+      return;
+    }
+    _lastPersistedPercent = percent;
     ref
         .read(storyDetailProvider.notifier)
         .updateProgress(
           percent: percent,
           lastPosition: _scrollController.offset.round(),
+          completed: percent >= 95,
         );
   }
 
@@ -80,10 +104,12 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
 
     return Scaffold(
       body: switch (storyState) {
-        StoryDetailInitial() || StoryDetailLoading() =>
-          const Center(child: CircularProgressIndicator()),
-        StoryDetailFailure(:final message) => _ErrorWidget(
+        StoryDetailInitial() || StoryDetailLoading() => const GriotLoadingState(
+          label: 'Loading story',
+        ),
+        StoryDetailFailure(:final message) => ErrorState(
           message: message,
+          title: 'Failed to load story',
           onRetry: () {
             ref.read(storyDetailProvider.notifier).loadStory(widget.slug);
           },
@@ -117,121 +143,91 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        // --- App Bar with progress ---
+        // --- App bar ---
         SliverAppBar(
           expandedHeight: 240,
           pinned: true,
           flexibleSpace: FlexibleSpaceBar(
+            titlePadding: const EdgeInsets.only(
+              left: AppSpacing.sectionLarge + AppSpacing.xs,
+              right: AppSpacing.section,
+              bottom: AppSpacing.lg,
+            ),
             title: Text(
               story.title,
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: theme.textTheme.titleSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            background: story.coverImage != null
-                ? Image.network(
-                    story.coverImage!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildCoverPlaceholder(story);
-                    },
-                  )
-                : _buildCoverPlaceholder(story),
+            background: GriotImage(
+              source: story.coverImage,
+              blurhash: story.coverImageBlurhash,
+              fit: BoxFit.cover,
+              semanticLabel: story.title,
+              placeholderIcon: AppIcons.auto_stories_outlined,
+            ),
           ),
-          actions: [
-            if (_scrollProgress > 0)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.terracotta,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${(_scrollProgress * 100).round()}%',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            StoryActionsMenu(story: story),
-          ],
+          // NOTE: the reading percentage deliberately does NOT live in
+          // `actions`. It used to sit here as a pill, where it collided with the
+          // collapsed title. It now has its own row below (see below).
+          actions: [StoryActionsMenu(story: story)],
+        ),
+
+        // --- Reading progress: dedicated row, never over the title ---
+        SliverToBoxAdapter(
+          child: Container(
+            color: scheme.surface,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.md,
+            ),
+            child: ProgressRow(
+              fraction: _scrollProgress,
+              label: _scrollProgress >= 0.95 ? 'Finished' : 'Read',
+              thickness: 5,
+            ),
+          ),
         ),
 
         // --- Story content ---
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- Author & metadata ---
                 _AuthorSection(story: story),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.section),
 
-                // --- Region Badge ---
+                // --- Region badge ---
                 if (story.region.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.ochre.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const FaIcon(
-                          AppIcons.location_on,
-                          size: 16,
-                          color: AppColors.ochre,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          story.region,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.ochre,
-                          ),
-                        ),
-                      ],
-                    ),
+                  MetadataPill(
+                    label: story.region,
+                    icon: AppIcons.location_on,
+                    color: AppColors.bronzeDark,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.section),
                 ],
 
                 // --- Summary ---
                 if (story.summary.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.ochre.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.ochre.withValues(alpha: 0.2),
-                      ),
-                    ),
+                  AppCard(
+                    color: scheme.secondaryContainer,
+                    borderColor: AppColors.bronze.withValues(alpha: 0.35),
                     child: Text(
                       story.summary,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontStyle: FontStyle.italic,
-                        color: AppColors.ochre,
+                        color: scheme.onSecondaryContainer,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.section),
                 ],
 
                 // --- Main content (Markdown) ---
@@ -254,49 +250,44 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.section),
 
-                // --- Cultural Context ---
+                // --- Cultural context ---
                 if (story.culturalContext.isNotEmpty) ...[
-                  _SectionTitle(
+                  const _SectionTitle(
                     title: 'Cultural Context',
                     icon: AppIcons.museum_outlined,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     story.culturalContext,
                     style: theme.textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.section),
                 ],
 
-                // --- Moral Lesson ---
+                // --- Moral lesson ---
                 if (story.moralLesson.isNotEmpty) ...[
-                  _SectionTitle(
+                  const _SectionTitle(
                     title: 'Moral Lesson',
                     icon: AppIcons.lightbulb_outline,
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.savannahGreen.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.savannahGreen.withValues(alpha: 0.3),
-                      ),
-                    ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppCard(
+                    color: scheme.tertiaryContainer,
+                    borderColor: AppColors.savannahGreen.withValues(alpha: 0.3),
                     child: Text(
                       story.moralLesson,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
+                        color: scheme.onTertiaryContainer,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.section),
                 ],
 
-                const SizedBox(height: 40),
+                const SizedBox(height: AppSpacing.lg),
               ],
             ),
           ),
@@ -315,21 +306,15 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     final isNarrating = ref.watch(audioNarrationProvider).isGenerating;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: scheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.charcoal.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        border: Border(top: BorderSide(color: scheme.outline)),
       ),
       child: SafeArea(
         child: Row(
           children: [
-            // Listen button (text-to-speech narration)
+            // Listen (text-to-speech narration).
             IconButton(
               onPressed: isNarrating
                   ? null
@@ -337,81 +322,160 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                         ? _listenToStory(story)
                         : _showLoginPrompt(context),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.terracotta.withValues(alpha: 0.1),
-                foregroundColor: AppColors.terracotta,
+                backgroundColor: AppColors.bronze.withValues(alpha: 0.12),
+                foregroundColor: AppColors.bronzeDark,
               ),
               icon: isNarrating
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: AppColors.terracotta,
+                      child: GriotLoader.inline(
+                        color: AppColors.bronzeDark,
                       ),
                     )
                   : const FaIcon(AppIcons.headphones),
               tooltip: isNarrating ? 'Generating narration…' : 'Listen',
             ),
-            const SizedBox(width: 12),
-            // Like button
+            const SizedBox(width: AppSpacing.md),
+
+            // Like.
             _ActionButton(
               icon: story.isLiked
                   ? AppIcons.favorite
                   : AppIcons.favorite_border,
               label: story.formattedLikeCount,
-              color: story.isLiked ? AppColors.error : null,
+              color: story.isLiked ? scheme.error : null,
               onTap: isAuthenticated
                   ? () => ref.read(storyDetailProvider.notifier).toggleLike()
                   : () => _showLoginPrompt(context),
             ),
-            const SizedBox(width: 16),
-            // Bookmark button
+            const SizedBox(width: AppSpacing.lg),
+
+            // Bookmark.
             _ActionButton(
               icon: story.isBookmarked
                   ? AppIcons.bookmark
                   : AppIcons.bookmark_border,
               label: story.formattedBookmarkCount,
-              color: story.isBookmarked ? AppColors.ochre : null,
+              color: story.isBookmarked ? AppColors.bronzeDark : null,
               onTap: isAuthenticated
                   ? () =>
                         ref.read(storyDetailProvider.notifier).toggleBookmark()
                   : () => _showLoginPrompt(context),
             ),
-            const SizedBox(width: 16),
-            // Share button
+            const SizedBox(width: AppSpacing.lg),
+
+            // Share — previously an empty callback.
             _ActionButton(
               icon: AppIcons.share_outlined,
               label: 'Share',
-              onTap: () {
-                // Share functionality
-              },
+              onTap: () => _shareStory(story),
             ),
+
             const Spacer(),
-            // Take Quiz CTA
+
+            // Take Quiz — previously an empty callback.
             if (isAuthenticated)
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Navigate to quiz
-                },
-                icon: const FaIcon(AppIcons.quiz, size: 18),
+              FilledButton.icon(
+                onPressed: _isStartingQuiz ? null : () => _takeQuiz(story),
+                icon: _isStartingQuiz
+                    ? const GriotLoader.inline(color: Colors.white)
+                    : const FaIcon(AppIcons.quiz, size: 16),
                 label: const Text('Take Quiz'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.terracotta,
-                  foregroundColor: AppColors.surfaceLight,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.bronze,
+                  foregroundColor: AppColors.charcoal,
                 ),
               )
             else
               OutlinedButton.icon(
-                onPressed: () => _showLoginPrompt(context),
-                icon: const FaIcon(AppIcons.lock_outline, size: 18),
+                onPressed: () => _showLoginPrompt(
+                  context,
+                  message:
+                      'Sign in to take the quiz for this story and earn XP.',
+                ),
+                icon: const FaIcon(AppIcons.lock_outline, size: 16),
                 label: const Text('Quiz'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.terracotta,
-                  side: const BorderSide(color: AppColors.terracotta),
+                  foregroundColor: AppColors.bronzeDark,
+                  side: const BorderSide(color: AppColors.bronze),
                 ),
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Take Quiz CTA.
+  ///
+  /// Quizzes are linked to stories by id in the local gamification store
+  /// (`quizzesByStoryProvider`). Resolution order:
+  ///   1 query — open it directly
+  ///   0 quizzes — explain that the quiz is not published yet
+  ///   >1 — let the reader pick (e.g. language variants)
+  Future<void> _takeQuiz(StoryModel story) async {
+    setState(() => _isStartingQuiz = true);
+    try {
+      // Make sure the quiz catalogue is loaded before filtering it.
+      await ref.read(quizzesProvider.future);
+      if (!mounted) return;
+
+      final quizzes = ref.read(quizzesByStoryProvider(story.id));
+      if (quizzes.isEmpty) {
+        setState(() => _isStartingQuiz = false);
+        await _showNoQuizDialog();
+        return;
+      }
+
+      final quiz = quizzes.length == 1
+          ? quizzes.first
+          : await QuizPickerSheet.show(context, quizzes);
+
+      if (!mounted) return;
+      setState(() => _isStartingQuiz = false);
+      if (quiz == null) return;
+      await QuizScreen.open(context, quiz);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isStartingQuiz = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not start the quiz: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showNoQuizDialog() {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const FaIcon(AppIcons.quiz_outlined, size: 40),
+        title: const Text('Quiz coming soon'),
+        content: const Text(
+          'No quiz has been published for this story yet. Keep reading — new '
+          'quizzes and badges are added regularly.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _shareStory(StoryModel story) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ShareSheet(
+        title: story.title,
+        slug: story.slug,
+        summary: story.summary,
       ),
     );
   }
@@ -430,54 +494,21 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
           job?.errorMessage ??
           'Failed to generate the narration.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
 
-  Widget _buildCoverPlaceholder(StoryModel story) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.terracotta.withValues(alpha: 0.9),
-            AppColors.ochre.withValues(alpha: 0.9),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Text(
-          story.categories.isNotEmpty ? story.categories.first.icon : '',
-          style: const TextStyle(fontSize: 64),
-        ),
-      ),
-    );
-  }
-
-  void _showLoginPrompt(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign In Required'),
-        content: const Text(
-          'Please sign in to interact with stories and take quizzes.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Navigation to login
-            },
-            child: const Text('Sign In'),
-          ),
-        ],
-      ),
+  /// Sign-in prompt for gated actions. Delegates to [SignInPrompt] so every
+  /// gate in the app behaves identically and actually opens the login route.
+  void _showLoginPrompt(BuildContext context, {String? message}) {
+    SignInPrompt.show(
+      context,
+      message:
+          message ?? 'Please sign in to interact with stories and take quizzes.',
     );
   }
 }
@@ -490,23 +521,25 @@ class _AuthorSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final language = StoryLanguage.fromString(story.language);
 
     return Row(
       children: [
         CircleAvatar(
           radius: 24,
-          backgroundColor: AppColors.terracotta.withValues(alpha: 0.2),
+          backgroundColor: AppColors.bronze.withValues(alpha: 0.16),
           child: Text(
             story.author.username.isNotEmpty
                 ? story.author.username[0].toUpperCase()
                 : '?',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.terracotta,
-              fontWeight: FontWeight.w600,
+              color: AppColors.bronzeDark,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,16 +554,11 @@ class _AuthorSection extends StatelessWidget {
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.ochre.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '${StoryLanguage.fromString(story.language).flag} ${StoryLanguage.fromString(story.language).label}',
-            style: theme.textTheme.labelSmall,
-          ),
+        // Language shown as a real icon + label instead of a flag emoji.
+        MetadataPill(
+          label: language.label,
+          icon: AppIcons.language,
+          color: scheme.onSurfaceVariant,
         ),
       ],
     );
@@ -545,15 +573,17 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Row(
       children: [
-        FaIcon(icon, color: AppColors.terracotta, size: 17),
-        const SizedBox(width: 8),
+        FaIcon(icon, color: AppColors.bronzeDark, size: 17),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: AppColors.terracotta,
+            color: AppColors.bronzeDark,
           ),
         ),
       ],
@@ -577,54 +607,24 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FaIcon(icon, color: color ?? theme.colorScheme.onSurface, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(color: color),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
-class _ErrorWidget extends StatelessWidget {
-  const _ErrorWidget({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const FaIcon(
-              AppIcons.error_outline,
-              size: 64,
-              color: AppColors.error,
+            FaIcon(
+              icon,
+              color: color ?? theme.colorScheme.onSurface,
+              size: 22,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xs),
             Text(
-              'Failed to load story',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const FaIcon(AppIcons.refresh),
-              label: const Text('Try Again'),
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(color: color),
             ),
           ],
         ),

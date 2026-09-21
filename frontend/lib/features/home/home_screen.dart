@@ -3,25 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/settings_providers.dart';
 import '../../core/theme/app_colors.dart';
-import '../stories/models/story_model.dart';
-import '../stories/screens/story_detail_screen.dart';
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/app_components.dart';
+import '../../core/widgets/griot_image.dart';
+import '../../core/widgets/griot_loader.dart';
+import '../../core/widgets/griot_logo.dart';
 import '../auth/models/user_model.dart';
 import '../auth/providers/auth_provider.dart';
 import '../auth/screens/profile_screen.dart';
 import '../auth/widgets/role_badge.dart';
-import '../sharing/widgets/trending_stories_widget.dart';
-import '../../core/widgets/griot_logo.dart';
+import '../discover/discover_feature.dart';
+import '../library/widgets/continue_reading_widget.dart';
+import '../stories/models/story_model.dart';
+import '../stories/providers/story_provider.dart';
+import '../stories/screens/stories_screen.dart';
+import '../stories/screens/story_detail_screen.dart';
 import 'widgets/connectivity_status_widget.dart';
 import 'widgets/offline_story_counter.dart';
-import '../../core/theme/app_icons.dart';
 
 /// Landing screen — the first impression of the Griot 2.0 app.
 ///
-/// Features:
-/// - Language toggle (EN/FR)
-/// - Curated feeds (Trending, Popular, Discover)
-/// - User role badge
-/// - OfflineStoryCounter
+/// All content is read from the local data layer (previously this screen
+/// carried two hardcoded demo lists that duplicated the story repository and
+/// was the only place covers appeared to work).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -32,101 +37,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isEnglish = true;
 
-  // Placeholder data for the design showcase — wire the stories feed
-  // provider here once discovery (fuzzy search + masonry grid) lands.
-  final List<StoryModel> _trendingStories = [
-    const StoryModel(
-      id: 1,
-      title: 'The Spider\'s Gift: Anansi and the Wisdom Pot',
-      slug: 'anansi-wisdom-pot',
-      summary: 'How Anansi tried to hoard all the world\'s wisdom.',
-      author: UserModel(
-        id: 1,
-        username: 'griot_ama',
-        firstName: 'Ama',
-        lastName: 'Ata',
-      ),
-      region: 'Grassfields',
-      coverImage: 'assets/imagery/stories/anansi-wisdom-pot.jpg',
-      estimatedReadTime: 5,
-      likeCount: 234,
-      viewCount: 1200,
-      categories: [StoryCategory(id: 1, name: 'Folktales')],
-    ),
-    const StoryModel(
-      id: 2,
-      title: 'The Lion\'s Bath: A Tale from the Bamoun Kingdom',
-      slug: 'lions-bath',
-      summary: 'A clever rabbit outsmarts the lion king.',
-      author: UserModel(
-        id: 2,
-        username: 'kofi_duma',
-        firstName: 'Kofi',
-        lastName: 'Duma',
-      ),
-      region: 'Bamoun',
-      coverImage: 'assets/imagery/stories/lions-bath.jpg',
-      estimatedReadTime: 8,
-      likeCount: 189,
-      viewCount: 980,
-      categories: [StoryCategory(id: 2, name: 'Myths')],
-    ),
-    const StoryModel(
-      id: 3,
-      title: 'The Talking Drum of Foumban',
-      slug: 'talking-drum-foumban',
-      summary: 'The drum that spoke the truth to the people.',
-      author: UserModel(
-        id: 3,
-        username: 'nana_yemo',
-        firstName: 'Nana',
-        lastName: 'Yemo',
-      ),
-      region: 'Bamoun',
-      coverImage: 'assets/imagery/stories/talking-drum-foumban.jpg',
-      estimatedReadTime: 12,
-      likeCount: 312,
-      viewCount: 1500,
-      categories: [StoryCategory(id: 3, name: 'Legends')],
-    ),
-  ];
-
-  final List<StoryModel> _popularStories = [
-    const StoryModel(
-      id: 4,
-      title: 'The River Goddess of the Sanaga',
-      slug: 'river-goddess',
-      summary: 'A fisherman\'s encounter with the spirit of the water.',
-      author: UserModel(
-        id: 4,
-        username: 'mami_wata',
-        firstName: 'Sarah',
-        lastName: 'Biya',
-      ),
-      region: 'Coastal',
-      estimatedReadTime: 10,
-      likeCount: 456,
-      viewCount: 2300,
-      categories: [StoryCategory(id: 4, name: 'Legends')],
-    ),
-    const StoryModel(
-      id: 5,
-      title: 'Why the Chameleon Changes Color',
-      slug: 'chameleon-color',
-      summary: 'A cautionary tale about greed and transformation.',
-      author: UserModel(
-        id: 5,
-        username: 'papa_mbei',
-        firstName: 'Papa',
-        lastName: 'Mbei',
-      ),
-      region: 'Adamawa',
-      estimatedReadTime: 4,
-      likeCount: 178,
-      viewCount: 890,
-      categories: [StoryCategory(id: 1, name: 'Folktales')],
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(storyListProvider.notifier).loadStories(refresh: true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,145 +54,233 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       data: (s) => s.user,
       orElse: () => null,
     );
+    final stories = _storiesFrom(ref.watch(storyListProvider));
+    final regionsAsync = ref.watch(regionListProvider);
+    final wide = MediaQuery.sizeOf(context).width >= 900;
 
     return SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            // Refresh is a no-op for local data, but provides UX feedback.
-            await Future.delayed(const Duration(milliseconds: 500));
-          },
-          child: CustomScrollView(
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(storyListProvider.notifier).loadStories(refresh: true);
+          ref.invalidate(regionListProvider);
+        },
+        child: CustomScrollView(
           key: const ValueKey('homeScroll'),
           slivers: [
-            // --- Header ---
             SliverToBoxAdapter(
-              child: _buildHeader(context, theme, scheme, user),
+              child: _buildHeader(context, theme, ref, user),
             ),
-
-            // --- Content ---
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: wide ? AppSpacing.gutterWide : AppSpacing.lg,
+              ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // --- Language Toggle & Offline Counter ---
-                  const SizedBox(height: 24),
-                  _buildLanguageToggle(context, theme, scheme),
-                  const SizedBox(height: 16),
-                  const OfflineStoryCounter(),
-                  const SizedBox(height: 16),
-                  ConnectivityStatusWidget(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.xl),
 
-                  // --- Hero Text ---
+                  // --- Hero text ---
                   Text(
                     _isEnglish
-                        ? 'Journey through Cameroon\'s living heritage'
-                        : 'Voyage à travers l\'héritage vivant du Cameroun',
-                    style: theme.textTheme.headlineMedium,
+                        ? "Journey through Cameroon's living heritage"
+                        : "Voyage à travers l'héritage vivant du Cameroun",
+                    style: theme.textTheme.displaySmall,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     _isEnglish
-                        ? 'Tales carried by griots, preserved for generations. Read, listen, and explore the voices of the motherland.'
-                        : 'Contes transmis par les griots, préservés depuis des générations. Lisez, écoutez et explorez les voix de la mère patrie.',
+                        ? 'Tales carried by griots, preserved for generations. '
+                              'Read, listen, and explore the voices of the '
+                              'motherland.'
+                        : 'Contes transmis par les griots, préservés depuis des '
+                              'générations. Lisez, écoutez et explorez les voix '
+                              'de la mère patrie.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.section),
 
-                  // --- Trending Section ---
-                  _SectionHeader(
-                    title: _isEnglish ? 'Trending Now' : 'Tendances',
-                    icon: AppIcons.trending_up,
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 200,
-                    child: TrendingStoriesWidget(stories: _trendingStories),
-                  ),
-                  const SizedBox(height: 32),
+                  // --- Continue reading (only when there is progress) ---
+                  const ContinueReadingWidget(),
 
-                  // --- Popular Section ---
-                  _SectionHeader(
+                  // --- Trending ---
+                  if (stories.isNotEmpty) ...[
+                    SectionHeader(
+                      title: _isEnglish ? 'Trending Now' : 'Tendances',
+                      icon: AppIcons.trending_up,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      height: 236,
+                      child: _TrendingStrip(
+                        stories: _trending(stories),
+                        onOpen: _openStory,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.section),
+                  ],
+
+                  // --- Category browse ---
+                  const _CategoryStrip(),
+                  const SizedBox(height: AppSpacing.section),
+
+                  // --- Popular stories ---
+                  SectionHeader(
                     title: _isEnglish
                         ? 'Popular Stories'
                         : 'Histoires Populaires',
                     icon: AppIcons.favorite,
                   ),
-                  const SizedBox(height: 12),
-                  ...(_popularStories.map(
-                    (story) => _StoryCard(
-                      story: story,
-                      onTap: () => _navigateToStory(context, story.slug),
-                    ),
-                  )),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.md),
+                  ..._buildStoryList(theme, scheme, stories),
 
-                  // --- Discover Regions ---
-                  _SectionHeader(
+                  const SizedBox(height: AppSpacing.section),
+
+                  // --- Discover regions ---
+                  SectionHeader(
                     title: _isEnglish
                         ? 'Discover Regions'
                         : 'Découvrir les Régions',
                     icon: AppIcons.explore,
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 120,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _RegionChip(
-                          icon: AppIcons.museum_outlined,
-                          label: 'Bamoun',
-                          color: AppColors.terracotta,
+                    trailing: TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const StoriesScreen(),
                         ),
-                        const SizedBox(width: 12),
-                        _RegionChip(
-                          icon: AppIcons.explore,
-                          label: 'Adamawa',
-                          color: AppColors.ochre,
-                        ),
-                        const SizedBox(width: 12),
-                        _RegionChip(
-                          icon: AppIcons.place_outlined,
-                          label: 'Coastal',
-                          color: AppColors.savannahGreen,
-                        ),
-                        const SizedBox(width: 12),
-                        _RegionChip(
-                          icon: AppIcons.location_on,
-                          label: 'Grassfields',
-                          color: AppColors.terracottaDark,
-                        ),
-                      ],
+                      ),
+                      child: const Text('See all'),
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    height: 176,
+                    child: regionsAsync.when(
+                      data: (regions) => regions.isEmpty
+                          ? const EmptyState(
+                              title: 'No regions yet',
+                              icon: AppIcons.explore,
+                            )
+                          : ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: regions.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: AppSpacing.md),
+                              itemBuilder: (context, index) {
+                                final region = regions[index];
+                                return RegionCard(
+                                  region: region,
+                                  onTap: () => _openRegion(region.slug),
+                                );
+                              },
+                            ),
+                      loading: () => const Center(child: GriotLoader()),
+                      error: (error, _) => ErrorState(message: '$error'),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sectionLarge),
+
+                  // --- Offline/library status (secondary, below the fold) ---
+                  const OfflineStoryCounter(),
+                  const SizedBox(height: AppSpacing.md),
+                  const ConnectivityStatusWidget(),
+                  const SizedBox(height: AppSpacing.sectionLarge),
                 ]),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  List<StoryModel> _storiesFrom(StoryListState state) => switch (state) {
+    StoryListReady(:final stories) => stories,
+    StoryListLoading(:final stories) => stories,
+    StoryListFailure(:final stories) => stories,
+    _ => const <StoryModel>[],
+  };
+
+  List<StoryModel> _trending(List<StoryModel> stories) {
+    final sorted = [...stories]
+      ..sort((a, b) => b.viewCount.compareTo(a.viewCount));
+    return sorted.take(5).toList();
+  }
+
+  List<StoryModel> _popular(List<StoryModel> stories) {
+    final sorted = [...stories]
+      ..sort((a, b) => b.likeCount.compareTo(a.likeCount));
+    return sorted.take(4).toList();
+  }
+
+  List<Widget> _buildStoryList(
+    ThemeData theme,
+    ColorScheme scheme,
+    List<StoryModel> stories,
+  ) {
+    if (stories.isEmpty) {
+      return [
+        AppCard(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            children: [
+              FaIcon(
+                AppIcons.auto_stories_outlined,
+                size: 32,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'No stories available yet.',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+          ),
         ),
-      );
+      ];
+    }
+
+    return _popular(stories)
+        .map(
+          (story) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: _CompactStoryRow(
+              story: story,
+              onTap: () => _openStory(story.slug),
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  void _openStory(String slug) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => StoryDetailScreen(slug: slug)),
+    );
+  }
+
+  void _openRegion(String slug) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RegionStoriesScreen(regionSlug: slug)),
+    );
   }
 
   Widget _buildHeader(
     BuildContext context,
     ThemeData theme,
-    ColorScheme scheme,
+    WidgetRef ref,
     UserModel? user,
   ) {
+    final scheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 12, 24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primary, scheme.primary.withValues(alpha: 0.8)],
-        ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.xl,
       ),
+      decoration: const BoxDecoration(gradient: AppColors.brandGradientWide),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -292,90 +297,300 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ).platformBrightness,
                     ),
                 icon: const FaIcon(AppIcons.dark_mode_outlined),
-                color: AppColors.surfaceLight,
+                color: AppColors.ivory,
               ),
               if (user != null)
                 IconButton(
                   tooltip: 'Profile',
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(),
+                      ),
                     );
                   },
                   icon: const FaIcon(AppIcons.account_circle_outlined),
-                  color: AppColors.surfaceLight,
+                  color: AppColors.ivory,
                 ),
             ],
           ),
-          // AuthWrapper gates this screen behind login, so a signed-in
-          // user is always present here.
           if (user != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             RoleBadge(role: user.role),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageToggle(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme scheme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Wrap(
-        spacing: 4,
-        children: [
-          _LanguageChip(
-            label: 'EN',
-            isSelected: _isEnglish,
-            onTap: () => setState(() => _isEnglish = true),
-          ),
-          _LanguageChip(
-            label: 'FR',
-            isSelected: !_isEnglish,
-            onTap: () => setState(() => _isEnglish = false),
+          const SizedBox(height: AppSpacing.lg),
+          _LanguageToggle(
+            isEnglish: _isEnglish,
+            onChanged: (value) => setState(() => _isEnglish = value),
+            scheme: scheme,
           ),
         ],
       ),
     );
-  }
-
-  void _navigateToStory(BuildContext context, String slug) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => StoryDetailScreen(slug: slug)));
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.icon});
+// ═══════════════════════════════════════════════════════════════════════
+//  Trending strip
+// ═══════════════════════════════════════════════════════════════════════
 
-  final String title;
-  final FaIconData icon;
+class _TrendingStrip extends StatelessWidget {
+  const _TrendingStrip({required this.stories, required this.onOpen});
+
+  final List<StoryModel> stories;
+  final void Function(String slug) onOpen;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      children: [
-        FaIcon(icon, color: AppColors.terracotta, size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            style: theme.textTheme.titleLarge,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: stories.length,
+      separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+      itemBuilder: (context, index) {
+        final story = stories[index];
+        return SizedBox(
+          width: 240,
+          child: AppCard(
+            padding: EdgeInsets.zero,
+            elevated: true,
+            onTap: () => onOpen(story.slug),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    GriotCoverImage(
+                      source: story.coverImage,
+                      blurhash: story.coverImageBlurhash,
+                      aspectRatio: 16 / 9,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppRadius.card),
+                      ),
+                      semanticLabel: story.title,
+                    ),
+                    Positioned(
+                      top: AppSpacing.sm,
+                      left: AppSpacing.sm,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: AppColors.bronze,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${index + 1}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.charcoal,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          story.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            FaIcon(
+                              AppIcons.remove_red_eye_outlined,
+                              size: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              story.formattedViewCount,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            FaIcon(
+                              AppIcons.favorite_outline,
+                              size: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              story.formattedLikeCount,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Compact list row (popular stories)
+// ═══════════════════════════════════════════════════════════════════════
+
+class _CompactStoryRow extends StatelessWidget {
+  const _CompactStoryRow({required this.story, required this.onTap});
+
+  final StoryModel story;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap,
+      child: Row(
+        children: [
+          GriotImage(
+            source: story.coverImage,
+            width: 64,
+            height: 64,
+            blurhash: story.coverImageBlurhash,
+            semanticLabel: story.title,
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+            placeholderIcon: AppIcons.auto_stories_outlined,
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  story.title,
+                  style: theme.textTheme.titleSmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${story.author.displayName} • ${story.readTimeDisplay}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          FaIcon(
+            AppIcons.chevron_right,
+            color: theme.colorScheme.onSurfaceVariant,
+            size: 16,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Category strip
+// ═══════════════════════════════════════════════════════════════════════
+
+class _CategoryStrip extends ConsumerWidget {
+  const _CategoryStrip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return categoriesAsync.when(
+      data: (categories) {
+        if (categories.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader(
+              title: 'Browse by Category',
+              icon: AppIcons.layerGroup,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: categories
+                  .map(
+                    (category) => MetadataPill(
+                      // Real icon instead of the stored emoji glyph.
+                      icon: AppIcons.fromEmoji(category.icon),
+                      label: category.name,
+                      color: AppColors.bronze,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const StoriesScreen(),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Language toggle
+// ═══════════════════════════════════════════════════════════════════════
+
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle({
+    required this.isEnglish,
+    required this.onChanged,
+    required this.scheme,
+  });
+
+  final bool isEnglish;
+  final ValueChanged<bool> onChanged;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: scheme.onPrimary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _LanguageChip(
+            label: 'EN',
+            isSelected: isEnglish,
+            onTap: () => onChanged(true),
+          ),
+          _LanguageChip(
+            label: 'FR',
+            isSelected: !isEnglish,
+            onTap: () => onChanged(false),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -394,137 +609,24 @@ class _LanguageChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
-          color: isSelected ? scheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? AppColors.ivory : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.chip),
         ),
         child: Text(
           label,
           style: theme.textTheme.labelLarge?.copyWith(
-            color: isSelected ? scheme.onPrimary : scheme.onSurface,
+            color: isSelected ? AppColors.indigo : AppColors.ivory,
+            fontWeight: FontWeight.w700,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StoryCard extends StatelessWidget {
-  const _StoryCard({required this.story, required this.onTap});
-
-  final StoryModel story;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: scheme.outline),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.terracotta.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    story.categories.isNotEmpty
-                        ? story.categories.first.icon
-                        : '',
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      story.title,
-                      style: theme.textTheme.titleMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${story.author.displayName} • ${story.readTimeDisplay}',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              FaIcon(AppIcons.chevron_right, color: scheme.onSurfaceVariant),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RegionChip extends StatelessWidget {
-  const _RegionChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final FaIconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        // Navigate to region
-      },
-      child: Container(
-        width: 120,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FaIcon(icon, color: color, size: 24),
-            const Spacer(),
-            Text(
-              label,
-              style: theme.textTheme.titleSmall?.copyWith(color: color),
-            ),
-          ],
         ),
       ),
     );

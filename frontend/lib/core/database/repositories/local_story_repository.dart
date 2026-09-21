@@ -108,6 +108,43 @@ class LocalStoryRepository {
     return Future.wait(rows.map(_rowToStory));
   }
 
+  /// Published story counts grouped by the raw `region` value on each story.
+  ///
+  /// Used to enrich the curated region catalogue with real counts (the webapp
+  /// renders `{{ region.count }} stories` on each region card).
+  Future<Map<String, int>> regionCounts() async {
+    final db = await _db;
+    final rows = await db.rawQuery(
+      "SELECT region, COUNT(*) AS total FROM local_stories "
+      "WHERE status = 'published' AND region IS NOT NULL AND region != '' "
+      'GROUP BY region',
+    );
+    return {
+      for (final row in rows)
+        (row['region'] as String): (row['total'] as int? ?? 0),
+    };
+  }
+
+  /// Stories published in any of [regions] (exact, case-insensitive match).
+  Future<List<StoryModel>> getStoriesForRegions(
+    List<String> regions, {
+    int limit = 60,
+    String sort = '-view_count',
+  }) async {
+    if (regions.isEmpty) return const [];
+    final db = await _db;
+
+    final placeholders = List.filled(regions.length, '?').join(', ');
+    final rows = await db.rawQuery(
+      'SELECT s.* FROM local_stories s '
+      "WHERE s.status = 'published' AND LOWER(s.region) IN ($placeholders) "
+      'ORDER BY ${_sortToSql(sort)} LIMIT ?',
+      [...regions.map((r) => r.toLowerCase()), limit],
+    );
+
+    return Future.wait(rows.map(_rowToStory));
+  }
+
   /// Get all categories.
   Future<List<StoryCategory>> getCategories() async {
     final db = await _db;

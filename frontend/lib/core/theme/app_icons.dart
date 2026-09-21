@@ -87,6 +87,8 @@ abstract final class AppIcons {
   static const FaIconData logout = FontAwesomeIcons.rightFromBracket;
   static const FaIconData menu_book_outlined = FontAwesomeIcons.bookOpen;
   static const FaIconData military_tech_outlined = FontAwesomeIcons.medal;
+  static const FaIconData medal = FontAwesomeIcons.medal;
+  static const FaIconData medal_outlined = FontAwesomeIcons.medal;
   static const FaIconData more_horiz = FontAwesomeIcons.ellipsis;
   static const FaIconData more_vert = FontAwesomeIcons.ellipsisVertical;
   static const FaIconData movie_creation_outlined =
@@ -133,6 +135,180 @@ abstract final class AppIcons {
       FontAwesomeIcons.triangleExclamation;
   static const FaIconData wifi = FontAwesomeIcons.wifi;
   static const FaIconData wifi_off = FontAwesomeIcons.wifi;
+
+  // --- Artifact & region icons (parity with web_extras.artifact_category_icon)
+  static const FaIconData monument = FontAwesomeIcons.monument;
+  static const FaIconData gopuram = FontAwesomeIcons.gopuram;
+  static const FaIconData jar = FontAwesomeIcons.jar;
+  static const FaIconData drum = FontAwesomeIcons.drum;
+  static const FaIconData gem = FontAwesomeIcons.gem;
+  static const FaIconData khanda = FontAwesomeIcons.khanda;
+  static const FaIconData hammer = FontAwesomeIcons.hammer;
+  static const FaIconData box_open = FontAwesomeIcons.boxOpen;
+  static const FaIconData landmark = FontAwesomeIcons.landmark;
+  static const FaIconData earth_africa = FontAwesomeIcons.earthAfrica;
+  static const FaIconData fire = FontAwesomeIcons.fireFlameCurved;
+  static const FaIconData masks_theater = FontAwesomeIcons.masksTheater;
+  static const FaIconData scissors = FontAwesomeIcons.scissors;
+  static const FaIconData scroll = FontAwesomeIcons.scroll;
+  static const FaIconData mountain_sun = FontAwesomeIcons.mountainSun;
+  static const FaIconData water = FontAwesomeIcons.water;
+  static const FaIconData layerGroup = FontAwesomeIcons.layerGroup;
+
+  /// Icon for an artifact category slug.
+  ///
+  /// Mirrors `artifact_category_icon` in the webapp.
+  static FaIconData artifactCategory(String category) {
+    switch (category) {
+      case 'sculpture':
+        return monument;
+      case 'textile':
+        return scissors;
+      case 'instrument':
+        return drum;
+      case 'jewelry':
+        return gem;
+      case 'pottery':
+        return jar;
+      case 'mask':
+        return masks_theater;
+      case 'weapon':
+        return khanda;
+      case 'fabric':
+        return scroll;
+      case 'tool':
+        return hammer;
+      default:
+        return box_open;
+    }
+  }
+
+  /// Maps a DB-stored emoji glyph (categories, badges, languages) to a real
+  /// icon, so no screen ever renders a decorative emoji as UI text.
+  ///
+  /// Ports `ICON_MAP` from the webapp's `web_extras.py` and extends it with
+  /// the glyphs the web mapping is missing, so both platforms stay in step.
+  static FaIconData fromEmoji(String emoji) {
+    switch (emoji.trim()) {
+      case '📖':
+        return auto_stories;
+      case '📚':
+        return FontAwesomeIcons.book;
+      case '🏛':
+      case '🏛️':
+        return landmark;
+      case '🗿':
+        return monument;
+      case '🛕':
+        return gopuram;
+      case '🌄':
+        return mountain_sun;
+      case '🌊':
+        return FontAwesomeIcons.water;
+      case '🏆':
+        return FontAwesomeIcons.trophy;
+      case '🔍':
+        return search;
+      case '✍':
+      case '✍️':
+        return FontAwesomeIcons.featherPointed;
+      case '⚡':
+        return bolt_outlined;
+      case '❤':
+      case '❤️':
+        return favorite;
+      case '🤍':
+        return FontAwesomeIcons.heart;
+      case '🔖':
+        return bookmark;
+      case '📑':
+        return bookmark_border;
+      case '👁':
+        return visibility_outlined;
+      case '🌍':
+      case '🌐':
+        return earth_africa;
+      case '🥇':
+        return FontAwesomeIcons.medal;
+      case '🎉':
+        return FontAwesomeIcons.champagneGlasses;
+      case '🎭':
+        return masks_theater;
+      case '🪘':
+      case '🥁':
+        return drum;
+      case '🧭':
+        return explore;
+      case '🗂':
+      case '🗂️':
+        return FontAwesomeIcons.layerGroup;
+      case '🔥':
+        return fire;
+      case '👋':
+      case '🤲':
+        return FontAwesomeIcons.hand;
+      case '📊':
+        return FontAwesomeIcons.chartSimple;
+      case '🗡':
+      case '🗡️':
+      case '⚔':
+      case '⚔️':
+        return khanda;
+      case '🧵':
+        return scissors;
+      case '🏺':
+        return jar;
+      case '💎':
+        return gem;
+      case '🔨':
+      case '🔧':
+        return hammer;
+      case '⚗':
+      case '⚗️':
+        return FontAwesomeIcons.flask;
+      case '📦':
+        return box_open;
+      case '🛖':
+        return FontAwesomeIcons.igloo;
+      // Glyphs absent from the web ICON_MAP; mapped here so the Flutter app
+      // never falls back to rendering emoji text.
+      case '🌌':
+        return FontAwesomeIcons.moon;
+      case '💡':
+        return lightbulb_outline;
+      case '🎵':
+        return FontAwesomeIcons.music;
+      case '👣':
+        return FontAwesomeIcons.shoePrints;
+      case '🐛':
+        return FontAwesomeIcons.bug;
+      case '🛡':
+      case '🛡️':
+        return FontAwesomeIcons.shieldHalved;
+      case '📝':
+        return FontAwesomeIcons.penToSquare;
+      case '🎓':
+        return FontAwesomeIcons.graduationCap;
+      case '💯':
+        return FontAwesomeIcons.star;
+      case '🗺':
+      case '🗺️':
+        return FontAwesomeIcons.map;
+      case '✅':
+        return check_circle;
+      case '❌':
+        return cancel;
+      case '⚙':
+      case '⚙️':
+        return FontAwesomeIcons.gear;
+      case '🇬🇧':
+        return FontAwesomeIcons.earthEurope;
+      case '🇫🇷':
+        return FontAwesomeIcons.earthEurope;
+      default:
+        return auto_stories;
+    }
+  }
 
   static FaIconData role(String value) {
     switch (value) {

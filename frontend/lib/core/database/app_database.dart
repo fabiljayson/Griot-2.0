@@ -3,6 +3,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../constants/app_constants.dart';
+import '../constants/story_assets.dart';
 
 /// Local SQLite database helper for offline caching (Task 1.3).
 ///
@@ -350,6 +351,35 @@ class AppDatabase {
       // Seed quizzes with questions.
       await _seedQuizzes(db);
     }
+
+    if (oldVersion < 6) {
+      // v6 — attach bundled cover art to stories that predate it. Installations
+      // created by v5 or earlier have `cover_image = NULL` for every seeded
+      // story, so their cards rendered placeholders forever.
+      await _backfillCoverImages(db);
+    }
+  }
+
+  /// Attach bundled cover art to any seeded story whose slug has art but no
+  /// stored `cover_image`. Safe to run repeatedly; only touches NULL/empty
+  /// values so user-supplied covers are never overwritten.
+  Future<void> _backfillCoverImages(Database db) async {
+    final rows = await db.query(
+      'local_stories',
+      columns: ['id', 'slug', 'cover_image'],
+    );
+    for (final row in rows) {
+      final existing = row['cover_image'] as String?;
+      if (existing != null && existing.trim().isNotEmpty) continue;
+      final asset = StoryCoverAssets.forSlug(row['slug'] as String);
+      if (asset == null) continue;
+      await db.update(
+        'local_stories',
+        {'cover_image': asset},
+        where: 'id = ?',
+        whereArgs: [row['id']],
+      );
+    }
   }
 
   /// Seed a default local user for immediate offline login.
@@ -665,9 +695,15 @@ class AppDatabase {
       // Look up author_id — use first local_user or null.
       final userRows = await db.query('local_users', limit: 1);
       final authorId = userRows.isNotEmpty ? userRows.first['id'] : null;
+      // Attach the bundled cover art for this slug. Without this the seeded
+      // collection renders with placeholders on every card (see
+      // StoryCoverAssets).
+      final slug = s['slug'] as String;
+      final coverImage = StoryCoverAssets.forSlug(slug);
       final storyId = await db.insert('local_stories', {
         ...s,
         'author_id': authorId,
+        'cover_image': ?coverImage,
       });
       if (categorySlug != null) {
         final catRows = await db.query(

@@ -27,12 +27,22 @@ abstract final class AppTheme {
           ? AppColors.bronzeLight.withValues(alpha: 0.2)
           : AppColors.bronzeTint,
       onSecondaryContainer: isDark ? AppColors.textDark : AppColors.charcoal,
-      tertiary: isDark ? AppColors.equatorialGreenLight : AppColors.equatorialGreen,
+      tertiary: isDark
+          ? AppColors.equatorialGreenLight
+          : AppColors.equatorialGreen,
       onTertiary: Colors.white,
-      tertiaryContainer: AppColors.equatorialGreenTint,
+      // NOTE: the raw `ColorScheme` constructor fills any field left unset
+      // with the *light* Material 3 defaults, regardless of `brightness`.
+      // Every container below therefore has to be given a dark variant
+      // explicitly, or dark mode ends up rendering light-mode chips.
+      tertiaryContainer: isDark
+          ? AppColors.equatorialGreenDark
+          : AppColors.equatorialGreenTint,
       onTertiaryContainer: isDark ? AppColors.textDark : AppColors.charcoal,
       error: isDark ? AppColors.earthLight : AppColors.earth,
       onError: Colors.white,
+      errorContainer: isDark ? AppColors.earthDark : AppColors.earthTint,
+      onErrorContainer: isDark ? AppColors.textDark : AppColors.charcoal,
       surface: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       onSurface: isDark ? AppColors.textDark : AppColors.charcoal,
       onSurfaceVariant: isDark
