@@ -5,13 +5,11 @@
 ///   - Copy link to clipboard
 ///   - Beautiful quote card generator for sharing excerpts
 ///   - Share tracking for analytics
-///   - Trending stories discovery
 library;
 
 // Services
 export 'services/sharing_service.dart';
 
 // Widgets
-export 'widgets/share_button.dart';
+export 'widgets/share_sheet.dart';
 export 'widgets/quote_card.dart';
-export 'widgets/trending_stories_widget.dart';

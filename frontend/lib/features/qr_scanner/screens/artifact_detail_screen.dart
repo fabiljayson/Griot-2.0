@@ -38,8 +38,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
   }
 
   /// Icon representing the artifact's category (never an emoji).
-  FaIconData get _categoryIcon =>
-      AppIcons.artifactCategory(artifact.category);
+  FaIconData get _categoryIcon => AppIcons.artifactCategory(artifact.category);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,14 +58,11 @@ class ArtifactDetailScreen extends ConsumerWidget {
                   MetadataPill(
                     label: artifact.categoryLabel,
                     icon: _categoryIcon,
-                    color: AppColors.bronze,
+                    color: AppColors.accentTextStrong,
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  Text(
-                    artifact.title,
-                    style: theme.textTheme.headlineMedium,
-                  ),
+                  Text(artifact.title, style: theme.textTheme.headlineMedium),
 
                   if (artifact.culture.isNotEmpty ||
                       artifact.region.isNotEmpty) ...[
@@ -181,10 +177,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
             label: artifact.culture,
           ),
         if (artifact.region.isNotEmpty)
-          _MetadataEntry(
-            icon: AppIcons.place_outlined,
-            label: artifact.region,
-          ),
+          _MetadataEntry(icon: AppIcons.place_outlined, label: artifact.region),
         if (artifact.isPublished)
           MetadataPill(
             label: 'Published',
@@ -329,10 +322,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
                 children: [
                   SizedBox(
                     width: 96,
-                    child: Text(
-                      entry.key,
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    child: Text(entry.key, style: theme.textTheme.bodySmall),
                   ),
                   Expanded(
                     child: Text(

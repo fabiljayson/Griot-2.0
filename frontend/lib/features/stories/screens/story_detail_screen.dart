@@ -17,7 +17,7 @@ import '../../auth/widgets/sign_in_prompt.dart';
 import '../../gamification/providers/gamification_provider.dart';
 import '../../gamification/screens/quiz_screen.dart';
 import '../../gamification/widgets/quiz_picker_sheet.dart';
-import '../../sharing/widgets/share_button.dart';
+import '../../sharing/widgets/share_sheet.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_actions.dart';
@@ -104,9 +104,8 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
 
     return Scaffold(
       body: switch (storyState) {
-        StoryDetailInitial() || StoryDetailLoading() => const GriotLoadingState(
-          label: 'Loading story',
-        ),
+        StoryDetailInitial() ||
+        StoryDetailLoading() => const GriotLoadingState(label: 'Loading story'),
         StoryDetailFailure(:final message) => ErrorState(
           message: message,
           title: 'Failed to load story',
@@ -209,7 +208,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                   MetadataPill(
                     label: story.region,
                     icon: AppIcons.location_on,
-                    color: AppColors.bronzeDark,
+                    color: AppColors.accentTextStrong,
                   ),
                   const SizedBox(height: AppSpacing.section),
                 ],
@@ -329,9 +328,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: GriotLoader.inline(
-                        color: AppColors.bronzeDark,
-                      ),
+                      child: GriotLoader.inline(color: AppColors.bronzeDark),
                     )
                   : const FaIcon(AppIcons.headphones),
               tooltip: isNarrating ? 'Generating narration…' : 'Listen',
@@ -508,7 +505,8 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     SignInPrompt.show(
       context,
       message:
-          message ?? 'Please sign in to interact with stories and take quizzes.',
+          message ??
+          'Please sign in to interact with stories and take quizzes.',
     );
   }
 }
@@ -616,11 +614,7 @@ class _ActionButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
-              icon,
-              color: color ?? theme.colorScheme.onSurface,
-              size: 22,
-            ),
+            FaIcon(icon, color: color ?? theme.colorScheme.onSurface, size: 22),
             const SizedBox(height: AppSpacing.xs),
             Text(
               label,

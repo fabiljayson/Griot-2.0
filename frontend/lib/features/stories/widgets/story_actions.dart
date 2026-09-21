@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/connectivity_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/sign_in_prompt.dart';
-import '../../sharing/widgets/share_button.dart';
+import '../../sharing/widgets/quote_card.dart';
+import '../../sharing/widgets/share_sheet.dart';
+import '../../video/widgets/video_generation_sheet.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Story actions menu (bookmark, like, flag, share).
 class StoryActionsMenu extends ConsumerWidget {
@@ -23,6 +26,7 @@ class StoryActionsMenu extends ConsumerWidget {
       loading: () => false,
       error: (_, _) => false,
     );
+    final isOnline = ref.watch(isCurrentlyOnlineProvider);
 
     return PopupMenuButton<String>(
       icon: FaIcon(
@@ -75,7 +79,9 @@ class StoryActionsMenu extends ConsumerWidget {
               const SizedBox(width: 12),
               Text(
                 'Flag Cultural Inaccuracy',
-                style: TextStyle(color: AppColors.error),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: AppColors.error),
               ),
             ],
           ),
@@ -92,6 +98,35 @@ class StoryActionsMenu extends ConsumerWidget {
             ],
           ),
         ),
+
+        // Share as image — rendered on device, so it works offline.
+        PopupMenuItem(
+          value: 'quote',
+          child: Row(
+            children: [
+              const FaIcon(AppIcons.image_outlined),
+              const SizedBox(width: 12),
+              const Text('Share as Image'),
+            ],
+          ),
+        ),
+
+        // AI video — generation is a server-side job, so the entry is only
+        // offered while the backend is reachable. Hiding it beats shipping a
+        // button that can only fail offline.
+        if (isOnline) ...[
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'video',
+            child: Row(
+              children: [
+                const FaIcon(AppIcons.auto_awesome),
+                const SizedBox(width: 12),
+                const Text('Generate AI Video'),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -121,7 +156,42 @@ class StoryActionsMenu extends ConsumerWidget {
       case 'share':
         _shareStory(context);
         break;
+      case 'quote':
+        _shareAsImage(context);
+        break;
+      case 'video':
+        VideoGenerationSheet.show(
+          context,
+          storyId: story.id,
+          storyTitle: story.title,
+        );
+        break;
     }
+  }
+
+  /// Share the line worth keeping as a rendered image card.
+  ///
+  /// The moral lesson is the shareable takeaway, so it becomes the quote and
+  /// the story title the attribution; stories without one fall back to the
+  /// summary attributed to the author, so the entry is never a no-op.
+  void _shareAsImage(BuildContext context) {
+    final hasMoral = story.moralLesson.isNotEmpty;
+    final quote = hasMoral ? story.moralLesson : story.summary;
+
+    if (quote.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This story has nothing to quote yet.')),
+      );
+      return;
+    }
+
+    QuoteCardGenerator.show(
+      context,
+      quote: quote,
+      attribution: hasMoral || story.author.displayName.isEmpty
+          ? story.title
+          : story.author.displayName,
+    );
   }
 
   void _showLoginPrompt(BuildContext context) {

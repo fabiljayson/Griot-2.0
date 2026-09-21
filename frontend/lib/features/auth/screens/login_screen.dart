@@ -288,7 +288,7 @@ class _LoginFormPanel extends StatelessWidget {
                           child: Text(
                             'Your saved stories and progress stay with you.',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.charcoal,
+                              color: scheme.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,

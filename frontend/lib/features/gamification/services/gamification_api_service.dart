@@ -32,7 +32,12 @@ class QuizQuestionModel {
     );
   }
 
-  List<String> get options => [optionA, optionB, optionC, if (optionD.isNotEmpty) optionD];
+  List<String> get options => [
+    optionA,
+    optionB,
+    optionC,
+    if (optionD.isNotEmpty) optionD,
+  ];
 }
 
 /// Quiz model.
@@ -74,8 +79,11 @@ class QuizModel {
       timeLimitMinutes: json['time_limit_minutes'] as int? ?? 0,
       questionCount: json['question_count'] as int? ?? 0,
       xpReward: json['xp_reward'] as int? ?? 0,
-      questions: (json['questions'] as List<dynamic>?)
-              ?.map((q) => QuizQuestionModel.fromJson(q as Map<String, dynamic>))
+      questions:
+          (json['questions'] as List<dynamic>?)
+              ?.map(
+                (q) => QuizQuestionModel.fromJson(q as Map<String, dynamic>),
+              )
               .toList() ??
           [],
       bestScore: json['best_score'] as int?,
@@ -203,7 +211,7 @@ class QuizAttemptResult {
 /// Service for gamification operations — delegates entirely to local SQLite.
 class GamificationApiService {
   GamificationApiService._({LocalGamificationRepository? local})
-      : _local = local ?? LocalGamificationRepository();
+    : _local = local ?? LocalGamificationRepository();
 
   final LocalGamificationRepository _local;
 
@@ -224,16 +232,17 @@ class GamificationApiService {
     required int quizId,
     required int questionId,
     required String selectedAnswer,
-  }) =>
-      _local.submitAnswer(
-        quizId: quizId,
-        questionId: questionId,
-        selectedAnswer: selectedAnswer,
-      );
+  }) => _local.submitAnswer(
+    quizId: quizId,
+    questionId: questionId,
+    selectedAnswer: selectedAnswer,
+  );
 
   /// Finish a quiz attempt.
-  Future<Map<String, dynamic>> finishQuiz(int quizId) =>
-      _local.finishQuiz(quizId);
+  Future<Map<String, dynamic>> finishQuiz(
+    int quizId, {
+    Map<int, String> answers = const {},
+  }) => _local.finishQuiz(quizId, answers: answers);
 
   /// List all badges.
   Future<List<BadgeModel>> listBadges() => _local.listBadges();

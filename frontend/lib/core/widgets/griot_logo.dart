@@ -8,11 +8,7 @@ import '../theme/app_colors.dart';
 /// The logo features a circular design with an African face/mask,
 /// golden crown points, glowing eyes, and warm earthy tones.
 class GriotMark extends StatelessWidget {
-  const GriotMark({
-    super.key,
-    this.size = 48,
-    this.borderRadius,
-  });
+  const GriotMark({super.key, this.size = 48, this.borderRadius});
 
   final double size;
 
@@ -47,14 +43,7 @@ class GriotMark extends StatelessWidget {
           return Container(
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.indigoDark,
-                  AppColors.indigo,
-                ],
-              ),
+              color: AppColors.indigoDark,
             ),
             child: Center(
               child: Text.rich(
@@ -131,7 +120,10 @@ class GriotLogo extends StatelessWidget {
                   letterSpacing: -0.3,
                 ),
                 children: [
-                  TextSpan(text: 'Griot ', style: TextStyle(color: baseColor)),
+                  TextSpan(
+                    text: 'Griot ',
+                    style: TextStyle(color: baseColor),
+                  ),
                   TextSpan(
                     text: 'AI',
                     style: TextStyle(

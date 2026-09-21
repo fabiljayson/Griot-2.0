@@ -124,20 +124,13 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
               // Video.
               VideoPlayer(_controller),
 
-              // Gradient overlay for controls.
+              // Flat neutral scrim behind the controls. A gradient is not part
+              // of the design system, so the overlay is a single solid wash.
               if (_showControls)
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.5),
-                        ],
-                      ),
+                      color: Colors.black.withValues(alpha: 0.28),
                     ),
                   ),
                 ),
@@ -322,7 +315,11 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const FaIcon(AppIcons.error_outline, color: AppColors.error, size: 48),
+              const FaIcon(
+                AppIcons.error_outline,
+                color: AppColors.error,
+                size: 48,
+              ),
               const SizedBox(height: 12),
               Text(
                 _errorMessage ?? 'Video unavailable',

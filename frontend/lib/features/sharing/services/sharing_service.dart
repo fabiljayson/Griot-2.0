@@ -51,9 +51,13 @@ class SharingService {
     await Clipboard.setData(ClipboardData(text: shareUrl));
   }
 
+  /// Shared copy.
+  ///
+  /// Plain text only — a shared message goes to other people's apps, so it
+  /// carries real typography rather than decorative emoji.
   String _buildShareText(String title, String summary, String url) {
     final buffer = StringBuffer();
-    buffer.writeln('🌍📖 $title');
+    buffer.writeln(title);
     buffer.writeln();
     if (summary.isNotEmpty) {
       buffer.writeln(summary);

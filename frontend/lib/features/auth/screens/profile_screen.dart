@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/widgets/griot_loader.dart';
 import '../../admin/admin_feature.dart';
+import '../../stories/screens/story_form_screen.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 
@@ -31,10 +32,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authProvider).maybeWhen(
-          data: (s) => s.user,
-          orElse: () => null,
-        );
+    final user = ref
+        .read(authProvider)
+        .maybeWhen(data: (s) => s.user, orElse: () => null);
     _firstNameController = TextEditingController(text: user?.firstName ?? '');
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
   }
@@ -50,10 +50,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = ref.watch(authProvider);
-    final user = authState.maybeWhen(
-      data: (s) => s.user,
-      orElse: () => null,
-    );
+    final user = authState.maybeWhen(data: (s) => s.user, orElse: () => null);
 
     if (user == null) {
       return const Scaffold(body: GriotLoadingState());
@@ -66,14 +63,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Row(
             children: [
-              const Expanded(
-                child: Text(
-                  'Profile',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                ),
+              Expanded(
+                child: Text('Profile', style: theme.textTheme.headlineSmall),
               ),
               IconButton(
-                icon: FaIcon(_isEditing ? AppIcons.close : AppIcons.edit_outlined),
+                icon: FaIcon(
+                  _isEditing ? AppIcons.close : AppIcons.edit_outlined,
+                ),
                 onPressed: () {
                   setState(() {
                     _isEditing = !_isEditing;
@@ -93,188 +89,215 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // --- Profile header ---
-            Center(
-              child: Column(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: AppColors.terracotta.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.terracotta.withValues(alpha: 0.3),
-                        width: 3,
-                      ),
-                    ),
-                    child: Center(
-                      child: FaIcon(AppIcons.role(user.role.value), size: 42),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(user.displayName, style: theme.textTheme.headlineSmall),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.terracotta.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FaIcon(AppIcons.role(user.role.value), size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          user.role.modeName,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: AppColors.terracotta,
+                // --- Profile header ---
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: AppColors.terracotta.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.terracotta.withValues(alpha: 0.3),
+                            width: 3,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // --- Edit profile section ---
-            if (_isEditing) ...[
-              _SectionTitle(title: 'Edit Profile'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _firstNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'First Name',
+                        child: Center(
+                          child: FaIcon(
+                            AppIcons.role(user.role.value),
+                            size: 42,
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 16),
+                      Text(
+                        user.displayName,
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.terracotta.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FaIcon(AppIcons.role(user.role.value), size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              user.role.modeName,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: AppColors.accentTextStrong,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // --- Edit profile section ---
+                if (_isEditing) ...[
+                  _SectionTitle(title: 'Edit Profile'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _firstNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'First Name',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _lastNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Last Name',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        await ref
+                            .read(authProvider.notifier)
+                            .updateProfile(
+                              firstName: _firstNameController.text.trim(),
+                              lastName: _lastNameController.text.trim(),
+                            );
+                        if (mounted) {
+                          setState(() => _isEditing = false);
+                        }
+                      },
+                      child: const Text('Save Changes'),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _lastNameController,
-                      decoration: const InputDecoration(labelText: 'Last Name'),
-                    ),
-                  ),
+                  const SizedBox(height: 24),
                 ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () async {
-                    await ref
-                        .read(authProvider.notifier)
-                        .updateProfile(
-                          firstName: _firstNameController.text.trim(),
-                          lastName: _lastNameController.text.trim(),
-                        );
-                    if (mounted) {
-                      setState(() => _isEditing = false);
+
+                // --- Account info ---
+                _SectionTitle(title: 'Account Information'),
+                const SizedBox(height: 12),
+                _InfoTile(
+                  icon: AppIcons.person_outline,
+                  label: 'Username',
+                  value: user.username,
+                ),
+                _InfoTile(
+                  icon: AppIcons.email_outlined,
+                  label: 'Email',
+                  value: user.email,
+                ),
+                if (user.institution.isNotEmpty)
+                  _InfoTile(
+                    icon: AppIcons.business_outlined,
+                    label: 'Institution',
+                    value: user.institution,
+                  ),
+                _InfoTile(
+                  icon: AppIcons.calendar_today,
+                  label: 'Member Since',
+                  value: _formatDate(user.dateJoined),
+                ),
+                const SizedBox(height: 32),
+
+                // --- Role switcher ---
+                _SectionTitle(title: 'Current Mode'),
+                const SizedBox(height: 12),
+                _RoleSwitcher(user: user),
+                const SizedBox(height: 32),
+
+                // --- Contributor studio ---
+                if (user.role != UserRole.visitor) ...[
+                  _SectionTitle(title: 'Contributor Studio'),
+                  const SizedBox(height: 12),
+                  _ActionTile(
+                    icon: AppIcons.edit_outlined,
+                    label: 'Write a Story',
+                    color: AppColors.terracotta,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const StoryFormScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                ],
+
+                // --- Admin dashboard (admins & institution managers) ---
+                if (user.role == UserRole.admin ||
+                    user.role == UserRole.institutionManager) ...[
+                  _SectionTitle(title: 'Administration'),
+                  const SizedBox(height: 12),
+                  _ActionTile(
+                    icon: AppIcons.insights_outlined,
+                    label: 'Admin Dashboard',
+                    color: AppColors.savannahGreen,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AdminDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                ],
+
+                // --- Danger zone ---
+                _SectionTitle(title: 'Danger Zone'),
+                const SizedBox(height: 12),
+                _ActionTile(
+                  icon: AppIcons.logout,
+                  label: 'Sign Out',
+                  // Neutral, not destructive: signing out loses no data. Only
+                  // "Delete Account" uses the error tone.
+                  color: theme.colorScheme.onSurface,
+                  onTap: () async {
+                    final confirmed = await _showConfirmDialog(
+                      context,
+                      title: 'Sign Out',
+                      message: 'Are you sure you want to sign out?',
+                      confirmLabel: 'Sign Out',
+                    );
+                    if (confirmed && context.mounted) {
+                      await ref.read(authProvider.notifier).logout();
                     }
                   },
-                  child: const Text('Save Changes'),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // --- Account info ---
-            _SectionTitle(title: 'Account Information'),
-            const SizedBox(height: 12),
-            _InfoTile(
-              icon: AppIcons.person_outline,
-              label: 'Username',
-              value: user.username,
+                const SizedBox(height: 8),
+                _ActionTile(
+                  icon: AppIcons.delete_forever,
+                  label: 'Delete Account & Data',
+                  color: AppColors.error,
+                  onTap: () => _showDeleteAccountDialog(context, user),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
-            _InfoTile(
-              icon: AppIcons.email_outlined,
-              label: 'Email',
-              value: user.email,
-            ),
-            if (user.institution.isNotEmpty)
-              _InfoTile(
-                icon: AppIcons.business_outlined,
-                label: 'Institution',
-                value: user.institution,
-              ),
-            _InfoTile(
-              icon: AppIcons.calendar_today,
-              label: 'Member Since',
-              value: _formatDate(user.dateJoined),
-            ),
-            const SizedBox(height: 32),
-
-            // --- Role switcher ---
-            _SectionTitle(title: 'Current Mode'),
-            const SizedBox(height: 12),
-            _RoleSwitcher(user: user),
-            const SizedBox(height: 32),
-
-            // --- Admin dashboard (admins & institution managers) ---
-            if (user.role == UserRole.admin ||
-                user.role == UserRole.institutionManager) ...[
-              _SectionTitle(title: 'Administration'),
-              const SizedBox(height: 12),
-              _ActionTile(
-                icon: AppIcons.insights_outlined,
-                label: 'Admin Dashboard',
-                color: AppColors.savannahGreen,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const AdminDashboardScreen(),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
-            ],
-
-            // --- Danger zone ---
-            _SectionTitle(title: 'Danger Zone'),
-            const SizedBox(height: 12),
-            _ActionTile(
-              icon: AppIcons.logout,
-              label: 'Sign Out',
-              // Neutral, not destructive: signing out loses no data. Only
-              // "Delete Account" uses the error tone.
-              color: theme.colorScheme.onSurface,
-              onTap: () async {
-                final confirmed = await _showConfirmDialog(
-                  context,
-                  title: 'Sign Out',
-                  message: 'Are you sure you want to sign out?',
-                  confirmLabel: 'Sign Out',
-                );
-                if (confirmed && context.mounted) {
-                  await ref.read(authProvider.notifier).logout();
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-            _ActionTile(
-              icon: AppIcons.delete_forever,
-              label: 'Delete Account & Data',
-              color: AppColors.error,
-              onTap: () => _showDeleteAccountDialog(context, user),
-            ),            const SizedBox(height: 32),
-          ],
+          ),
         ),
-      ),
-    ),
       ],
     );
   }
-
 
   void _showDeleteAccountDialog(BuildContext context, UserModel user) {
     final theme = Theme.of(context);
@@ -460,9 +483,7 @@ class _RoleSwitcher extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.secondaryContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: scheme.secondary.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: scheme.secondary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

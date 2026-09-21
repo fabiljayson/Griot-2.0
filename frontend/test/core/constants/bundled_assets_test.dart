@@ -57,6 +57,10 @@ void main() {
   });
 
   group('referenced assets exist', () {
+    test('the app logo is on disk and bundled', () {
+      _expectBundled('assets/logo/griot_ai_logo.png', declaredDirs);
+    });
+
     test('every bundled story cover is on disk and declared', () {
       expect(StoryCoverAssets.all, isNotEmpty);
 
@@ -107,7 +111,9 @@ Set<String> _declaredAssetDirs(String pubspec) {
     if (!inAssets) continue;
 
     // The section ends at the next top-level key (e.g. `  fonts:`).
-    if (line.isNotEmpty && !line.startsWith('    ') && !line.startsWith('  - ')) {
+    if (line.isNotEmpty &&
+        !line.startsWith('    ') &&
+        !line.startsWith('  - ')) {
       if (!line.startsWith('  #')) inAssets = false;
       continue;
     }

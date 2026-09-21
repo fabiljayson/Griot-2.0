@@ -245,6 +245,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             hintText:
                 'e.g. "Aerial view of a lush African savanna at golden hour, with warm light filtering through acacia trees..."',
             hintStyle: TextStyle(
+              fontFamily: 'PlusJakartaSans',
               color: AppColors.charcoalMuted.withValues(alpha: 0.5),
               fontSize: 14,
             ),
@@ -271,7 +272,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             ),
             contentPadding: const EdgeInsets.all(16),
           ),
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 14),
         ),
         const SizedBox(height: 12),
         // Prompt suggestions.
@@ -284,7 +285,10 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             return ActionChip(
               label: Text(
                 suggestion,
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 12,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -347,6 +351,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                         Text(
                           '${duration}s',
                           style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: isSelected
@@ -362,6 +367,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                               ? 'Medium'
                               : 'Long',
                           style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
                             fontSize: 10,
                             color: isSelected
                                 ? Colors.white70
@@ -432,6 +438,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                         Text(
                           ratio['label'] as String,
                           style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: isSelected
@@ -442,6 +449,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                         Text(
                           ratio['value'] as String,
                           style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
                             fontSize: 10,
                             color: isSelected
                                 ? Colors.white70

@@ -23,10 +23,7 @@ import '../screens/onboarding_screen.dart';
 /// )
 /// ```
 class AuthWrapper extends ConsumerWidget {
-  const AuthWrapper({
-    super.key,
-    required this.child,
-  });
+  const AuthWrapper({super.key, required this.child});
 
   final Widget child;
 
@@ -34,6 +31,12 @@ class AuthWrapper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final onboardingCompleted = ref.watch(onboardingProvider);
+
+    // Wait until the stored onboarding status has been read so a first-launch
+    // user never sees the main shell flash before the onboarding is shown.
+    if (onboardingCompleted == null) {
+      return const _AuthLoadingScreen();
+    }
 
     // Show onboarding on first launch
     if (!onboardingCompleted) {

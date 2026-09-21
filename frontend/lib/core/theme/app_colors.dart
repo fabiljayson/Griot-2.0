@@ -94,32 +94,6 @@ abstract final class AppColors {
   /// Border color.
   static const Color border = webBorder;
 
-  // --- Brand gradients -----------------------------------------------------
-
-  /// Wide branding panel gradient (top-left → bottom-right, 3 stops).
-  /// Mirrors the web header `bg-gradient-to-br from-cam-indigo
-  /// to-cam-indigo-dark`.
-  static const LinearGradient brandGradientWide = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF1E2B58), // Ndop indigo
-      Color(0xFF2A3B73), // indigo light
-      Color(0xFF151F42), // Ndop indigo dark
-    ],
-    stops: [0.0, 0.5, 1.0],
-  );
-
-  /// Compact branding header gradient (top → bottom, 2 stops).
-  static const LinearGradient brandGradientCompact = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [
-      Color(0xFF1E2B58), // Ndop indigo
-      Color(0xFF151F42), // Ndop indigo dark
-    ],
-  );
-
   // --- Semantic ------------------------------------------------------------
   /// Error — Highland earth red (web: `cam-earth` / `cam-error` fallback).
   static const Color error = Color(0xFFA0382B);

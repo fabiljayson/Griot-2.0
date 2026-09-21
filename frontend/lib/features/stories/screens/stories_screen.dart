@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-import '../../../core/database/repositories/search_history_repository.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -67,53 +68,65 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
     final storyState = ref.watch(storyListProvider);
     final categories = ref.watch(categoriesProvider);
 
-    return Column(
-        children: [
-          // --- Search bar ---
-          _SearchBar(
-            controller: _searchController,
-            onSearch: (query) {
-              ref.read(storyListProvider.notifier).search(query);
-              if (query.trim().isNotEmpty) {
-                SearchHistoryRepository().addQuery(query.trim());
-                ref.invalidate(recentSearchQueriesProvider);
-              }
-            },
-            onFilterToggle: () {
-              setState(() => _showFilters = !_showFilters);
-            },
-            showFilters: _showFilters,
-          ),
-
-          // --- Filters ---
-          if (_showFilters)
-            _FilterChips(
-              selectedLanguage: ref.read(storyListProvider.notifier).selectedLanguage,
-              selectedCategory: ref.read(storyListProvider.notifier).selectedCategory,
-              selectedRegion: ref.read(storyListProvider.notifier).selectedRegion,
-              sortBy: ref.read(storyListProvider.notifier).currentSortBy,
-              categories: categories,
-              onLanguageChanged: (lang) {
-                ref.read(storyListProvider.notifier).filterByLanguage(lang);
+    // This screen is reached two ways: as a bottom-bar tab (inside MainShell,
+    // which supplies the Scaffold) and as a pushed route from Home's "See all"
+    // button and category pills. A pushed route has no background and no safe
+    // insets of its own, so the screen carries its own Scaffold + SafeArea —
+    // matching the sibling Artifacts screen. Nesting is harmless in the shell.
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // --- Search bar ---
+            _SearchBar(
+              controller: _searchController,
+              onSearch: (query) {
+                ref.read(storyListProvider.notifier).search(query);
+                if (query.trim().isNotEmpty) {
+                  ref
+                      .read(searchHistoryRepositoryProvider)
+                      .addQuery(query.trim());
+                  ref.invalidate(recentSearchQueriesProvider);
+                }
               },
-              onCategoryChanged: (cat) {
-                ref.read(storyListProvider.notifier).filterByCategory(cat);
+              onFilterToggle: () {
+                setState(() => _showFilters = !_showFilters);
               },
-              onSortChanged: (sort) {
-                ref.read(storyListProvider.notifier).sortStories(sort);
-              },
-              onClearFilters: () {
-                ref.read(storyListProvider.notifier).clearFilters();
-                _searchController.clear();
-              },
+              showFilters: _showFilters,
             ),
 
-          // --- Story grid ---
-          Expanded(
-            child: _buildStoryGrid(storyState, theme),
-          ),
-        ],
-      );
+            // --- Filters ---
+            if (_showFilters)
+              _FilterChips(
+                selectedLanguage: ref
+                    .read(storyListProvider.notifier)
+                    .selectedLanguage,
+                selectedCategory: ref
+                    .read(storyListProvider.notifier)
+                    .selectedCategory,
+                sortBy: ref.read(storyListProvider.notifier).currentSortBy,
+                categories: categories,
+                onLanguageChanged: (lang) {
+                  ref.read(storyListProvider.notifier).filterByLanguage(lang);
+                },
+                onCategoryChanged: (cat) {
+                  ref.read(storyListProvider.notifier).filterByCategory(cat);
+                },
+                onSortChanged: (sort) {
+                  ref.read(storyListProvider.notifier).sortStories(sort);
+                },
+                onClearFilters: () {
+                  ref.read(storyListProvider.notifier).clearFilters();
+                  _searchController.clear();
+                },
+              ),
+
+            // --- Story grid ---
+            Expanded(child: _buildStoryGrid(storyState, theme)),
+          ],
+        ),
+      ),
+    );
   }
 
   void _retry() =>
@@ -162,8 +175,9 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
                   onBookmark: () => ref
                       .read(storyListProvider.notifier)
                       .toggleBookmark(story.slug),
-                  onLike: () =>
-                      ref.read(storyListProvider.notifier).toggleLike(story.slug),
+                  onLike: () => ref
+                      .read(storyListProvider.notifier)
+                      .toggleLike(story.slug),
                 );
               },
             ),
@@ -237,15 +251,13 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
 
   void _navigateToStory(StoryModel story) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => StoryDetailScreen(slug: story.slug),
-      ),
+      MaterialPageRoute(builder: (_) => StoryDetailScreen(slug: story.slug)),
     );
   }
 }
 
 /// Search bar widget.
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends StatefulWidget {
   const _SearchBar({
     required this.controller,
     required this.onSearch,
@@ -259,11 +271,37 @@ class _SearchBar extends StatelessWidget {
   final bool showFilters;
 
   @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    setState(() {}); // Refresh the clear button visibility.
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      widget.onSearch(value);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
@@ -278,43 +316,44 @@ class _SearchBar extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: widget.controller,
               decoration: InputDecoration(
                 hintText: 'Search stories...',
                 prefixIcon: const FaIcon(AppIcons.search),
-                suffixIcon: controller.text.isNotEmpty
+                suffixIcon: widget.controller.text.isNotEmpty
                     ? IconButton(
                         icon: const FaIcon(AppIcons.clear),
                         onPressed: () {
-                          controller.clear();
-                          onSearch('');
+                          widget.controller.clear();
+                          widget.onSearch('');
+                          setState(() {});
                         },
                       )
                     : null,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.control),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: theme.colorScheme.surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
                 ),
               ),
-              onSubmitted: onSearch,
-              onChanged: (value) {
-                // Debounce search could be added here
-              },
+              onSubmitted: widget.onSearch,
+              onChanged: _onChanged,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           IconButton(
             icon: FaIcon(
-              showFilters ? AppIcons.filter_list_off : AppIcons.filter_list,
-              color: showFilters ? theme.colorScheme.secondary : null,
+              widget.showFilters
+                  ? AppIcons.filter_list_off
+                  : AppIcons.filter_list,
+              color: widget.showFilters ? theme.colorScheme.secondary : null,
             ),
-            onPressed: onFilterToggle,
+            onPressed: widget.onFilterToggle,
             tooltip: 'Filters',
           ),
         ],
@@ -328,7 +367,6 @@ class _FilterChips extends StatelessWidget {
   const _FilterChips({
     required this.selectedLanguage,
     required this.selectedCategory,
-    required this.selectedRegion,
     required this.sortBy,
     required this.categories,
     required this.onLanguageChanged,
@@ -339,7 +377,6 @@ class _FilterChips extends StatelessWidget {
 
   final String? selectedLanguage;
   final String? selectedCategory;
-  final String? selectedRegion;
   final String sortBy;
   final AsyncValue<List<StoryCategory>> categories;
   final ValueChanged<String?> onLanguageChanged;
@@ -350,12 +387,13 @@ class _FilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasFilters = selectedLanguage != null ||
-        selectedCategory != null ||
-        selectedRegion != null;
+    final hasFilters = selectedLanguage != null || selectedCategory != null;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
@@ -369,13 +407,10 @@ class _FilterChips extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Language filter
-          Text(
-            'Language',
-            style: theme.textTheme.labelMedium,
-          ),
-          const SizedBox(height: 8),
+          Text('Language', style: theme.textTheme.labelMedium),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
-            spacing: 8,
+            spacing: AppSpacing.sm,
             children: [
               FilterChip(
                 label: const Text('All'),
@@ -390,16 +425,14 @@ class _FilterChips extends StatelessWidget {
                   selected: selectedLanguage == lang.value,
                   onSelected: (_) {
                     onLanguageChanged(
-                      selectedLanguage == lang.value
-                          ? null
-                          : lang.value,
+                      selectedLanguage == lang.value ? null : lang.value,
                     );
                   },
                 );
               }),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Category filter
           categories.when(
@@ -408,13 +441,10 @@ class _FilterChips extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Category',
-                    style: theme.textTheme.labelMedium,
-                  ),
-                  const SizedBox(height: 8),
+                  Text('Category', style: theme.textTheme.labelMedium),
+                  const SizedBox(height: AppSpacing.sm),
                   Wrap(
-                    spacing: 8,
+                    spacing: AppSpacing.sm,
                     children: [
                       FilterChip(
                         label: const Text('All'),
@@ -433,9 +463,7 @@ class _FilterChips extends StatelessWidget {
                           selected: selectedCategory == cat.slug,
                           onSelected: (_) {
                             onCategoryChanged(
-                              selectedCategory == cat.slug
-                                  ? null
-                                  : cat.slug,
+                              selectedCategory == cat.slug ? null : cat.slug,
                             );
                           },
                         );
@@ -448,28 +476,19 @@ class _FilterChips extends StatelessWidget {
             loading: () => const SizedBox.shrink(),
             error: (error, stack) => const SizedBox.shrink(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           // Sort & clear
           Row(
             children: [
-              Text(
-                'Sort by',
-                style: theme.textTheme.labelMedium,
-              ),
-              const SizedBox(width: 8),
+              Text('Sort by', style: theme.textTheme.labelMedium),
+              const SizedBox(width: AppSpacing.sm),
               DropdownButton<String>(
                 value: sortBy,
                 underline: const SizedBox.shrink(),
                 items: const [
-                  DropdownMenuItem(
-                    value: '-created_at',
-                    child: Text('Newest'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'created_at',
-                    child: Text('Oldest'),
-                  ),
+                  DropdownMenuItem(value: '-created_at', child: Text('Newest')),
+                  DropdownMenuItem(value: 'created_at', child: Text('Oldest')),
                   DropdownMenuItem(
                     value: '-view_count',
                     child: Text('Most Viewed'),
@@ -497,5 +516,3 @@ class _FilterChips extends StatelessWidget {
     );
   }
 }
-
-

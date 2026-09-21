@@ -145,9 +145,12 @@ class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
   Future<void> finishQuiz() async {
     if (state.quiz == null) return;
 
-    state = state.copyWith(isSubmitting: true);
+    state = state.copyWith(isSubmitting: true, clearResult: true);
     try {
-      final result = await _apiService.finishQuiz(state.quiz!.id);
+      final result = await _apiService.finishQuiz(
+        state.quiz!.id,
+        answers: state.answers,
+      );
       state = state.copyWith(
         isSubmitting: false,
         isCompleted: true,

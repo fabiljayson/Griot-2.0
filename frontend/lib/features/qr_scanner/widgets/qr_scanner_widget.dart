@@ -168,20 +168,19 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
 
           // Processing indicator
           if (_isProcessing || scannerState.isScanning)
-            const Center(
+            Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(
+                  const CircularProgressIndicator(
                     color: AppColors.terracotta,
                     strokeWidth: 3,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     'Looking up artifact...',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.white,
-                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -204,7 +203,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                 child: Text(
                   scannerState.errorMessage!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -224,9 +225,11 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                   color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
+                child: Text(
                   'Point camera at museum artifact QR code',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                 ),
               ),
             ),

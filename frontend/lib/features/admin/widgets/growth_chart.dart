@@ -96,11 +96,7 @@ class GrowthChart extends StatelessWidget {
                           ? 2
                           : (p.count / safeMax) * chartHeight,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [color.withValues(alpha: 0.5), color],
-                        ),
+                        color: color,
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(4),
                         ),

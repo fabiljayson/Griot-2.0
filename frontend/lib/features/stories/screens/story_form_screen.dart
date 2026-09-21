@@ -17,10 +17,7 @@ import '../../../core/theme/app_icons.dart';
 /// - Tags input
 /// - Save as draft or submit for review
 class StoryFormScreen extends ConsumerStatefulWidget {
-  const StoryFormScreen({
-    super.key,
-    this.existingStory,
-  });
+  const StoryFormScreen({super.key, this.existingStory});
 
   final StoryModel? existingStory;
 
@@ -54,10 +51,12 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
     _summaryController = TextEditingController(text: story?.summary ?? '');
     _tagsController = TextEditingController(text: story?.tags ?? '');
     _regionController = TextEditingController(text: story?.region ?? '');
-    _culturalContextController =
-        TextEditingController(text: story?.culturalContext ?? '');
-    _moralLessonController =
-        TextEditingController(text: story?.moralLesson ?? '');
+    _culturalContextController = TextEditingController(
+      text: story?.culturalContext ?? '',
+    );
+    _moralLessonController = TextEditingController(
+      text: story?.moralLesson ?? '',
+    );
     _sourceController = TextEditingController(text: story?.source ?? '');
 
     if (story != null) {
@@ -118,7 +117,10 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
     );
   }
 
-  Widget _buildForm(ThemeData theme, AsyncValue<List<StoryCategory>> categories) {
+  Widget _buildForm(
+    ThemeData theme,
+    AsyncValue<List<StoryCategory>> categories,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Form(
@@ -174,7 +176,8 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
               maxLines: null,
               minLines: 15,
               decoration: const InputDecoration(
-                hintText: 'Write your story here...\n\nUse Markdown for formatting:\n# Heading\n## Subheading\n**bold** *italic*\n\n> Blockquote\n\n- List item',
+                hintText:
+                    'Write your story here...\n\nUse Markdown for formatting:\n# Heading\n## Subheading\n**bold** *italic*\n\n> Blockquote\n\n- List item',
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -193,13 +196,22 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
             // --- Language ---
             DropdownButtonFormField<String>(
               initialValue: _selectedLanguage,
-              decoration: const InputDecoration(
-                labelText: 'Language',
-              ),
+              decoration: const InputDecoration(labelText: 'Language'),
               items: StoryLanguage.values.map((lang) {
                 return DropdownMenuItem(
                   value: lang.value,
-                  child: Text('${lang.flag} ${lang.label}'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FaIcon(
+                        AppIcons.fromEmoji(lang.flag),
+                        size: 16,
+                        color: AppColors.bronze,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(lang.label),
+                    ],
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -211,10 +223,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
             const SizedBox(height: 20),
 
             // --- Categories ---
-            Text(
-              'Categories',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Categories', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             categories.when(
               data: (cats) {
@@ -227,7 +236,18 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
                   children: cats.map((cat) {
                     final isSelected = _selectedCategoryIds.contains(cat.id);
                     return FilterChip(
-                      label: Text('${cat.icon} ${cat.name}'),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FaIcon(
+                            AppIcons.fromEmoji(cat.icon),
+                            size: 14,
+                            color: AppColors.bronze,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(cat.name),
+                        ],
+                      ),
                       selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
@@ -262,7 +282,8 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
               controller: _tagsController,
               decoration: const InputDecoration(
                 labelText: 'Tags',
-                hintText: 'Comma-separated tags (e.g., folktale, moral, wisdom)',
+                hintText:
+                    'Comma-separated tags (e.g., folktale, moral, wisdom)',
               ),
             ),
             const SizedBox(height: 20),
@@ -368,11 +389,14 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
                     .map((tag) => tag.trim())
                     .where((tag) => tag.isNotEmpty)
                     .map((tag) {
-                  return Chip(
-                    label: Text(tag),
-                    backgroundColor: AppColors.bronze.withValues(alpha: 0.1),
-                  );
-                }).toList(),
+                      return Chip(
+                        label: Text(tag),
+                        backgroundColor: AppColors.bronze.withValues(
+                          alpha: 0.1,
+                        ),
+                      );
+                    })
+                    .toList(),
               ),
             ],
           ],

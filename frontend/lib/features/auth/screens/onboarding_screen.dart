@@ -148,16 +148,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   // ─── Side panel (wide layout) ──────────────────────────────────────
   Widget _buildSidePanel(double screenWidth) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1E2B58), // Ndop indigo
-            Color(0xFF151F42), // Ndop indigo dark
-          ],
-        ),
-      ),
+      decoration: const BoxDecoration(color: AppColors.indigo),
       child: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -303,38 +294,12 @@ class _OnboardingSlide extends StatelessWidget {
     final slideData = _slides[pageIndex];
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF151F42), // Ndop indigo dark
-            Color(0xFF1E2B58), // Ndop indigo
-            Color(0xFF2A3B73), // Indigo light
-          ],
-          stops: [0.0, 0.5, 1.0],
-        ),
-      ),
+      decoration: const BoxDecoration(color: AppColors.indigoDark),
       child: Stack(
         children: [
           // Decorative pattern
           Positioned.fill(
             child: CustomPaint(painter: _AfricanPatternPainter()),
-          ),
-          // Warm glow
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.3 + pageIndex * 0.3, -0.2),
-                  radius: 1.2,
-                  colors: [
-                    slideData.accentColor.withValues(alpha: 0.15),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
           ),
           // Content
           Center(
@@ -376,20 +341,6 @@ class _OnboardingSlide extends StatelessWidget {
                               Image.asset(
                                 slideData.imageAsset,
                                 fit: BoxFit.cover,
-                              ),
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      AppColors.indigoDark.withValues(
-                                        alpha: 0.82,
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                               Positioned(
                                 left: 16,

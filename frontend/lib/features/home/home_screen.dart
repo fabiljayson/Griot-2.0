@@ -50,10 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final authState = ref.watch(authProvider);
-    final user = authState.maybeWhen(
-      data: (s) => s.user,
-      orElse: () => null,
-    );
+    final user = authState.maybeWhen(data: (s) => s.user, orElse: () => null);
     final stories = _storiesFrom(ref.watch(storyListProvider));
     final regionsAsync = ref.watch(regionListProvider);
     final wide = MediaQuery.sizeOf(context).width >= 900;
@@ -67,9 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: CustomScrollView(
           key: const ValueKey('homeScroll'),
           slivers: [
-            SliverToBoxAdapter(
-              child: _buildHeader(context, theme, ref, user),
-            ),
+            SliverToBoxAdapter(child: _buildHeader(context, theme, ref, user)),
             SliverPadding(
               padding: EdgeInsets.symmetric(
                 horizontal: wide ? AppSpacing.gutterWide : AppSpacing.lg,
@@ -254,9 +249,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _openStory(String slug) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => StoryDetailScreen(slug: slug)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => StoryDetailScreen(slug: slug)));
   }
 
   void _openRegion(String slug) {
@@ -280,7 +275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         AppSpacing.md,
         AppSpacing.xl,
       ),
-      decoration: const BoxDecoration(gradient: AppColors.brandGradientWide),
+      decoration: const BoxDecoration(color: AppColors.indigo),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -304,9 +299,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   tooltip: 'Profile',
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
                     );
                   },
                   icon: const FaIcon(AppIcons.account_circle_outlined),
@@ -534,7 +527,7 @@ class _CategoryStrip extends ConsumerWidget {
                       // Real icon instead of the stored emoji glyph.
                       icon: AppIcons.fromEmoji(category.icon),
                       label: category.name,
-                      color: AppColors.bronze,
+                      color: AppColors.accentTextStrong,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const StoriesScreen(),

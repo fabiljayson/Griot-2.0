@@ -111,13 +111,16 @@ class QuoteCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    FaIcon(AppIcons.lightbulb_outline, size: 18, color: accentColor),
+                    FaIcon(
+                      AppIcons.lightbulb_outline,
+                      size: 18,
+                      color: accentColor,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         moralLesson!,
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: textColor.withValues(alpha: 0.8),
                           fontStyle: FontStyle.italic,
                         ),
@@ -142,9 +145,9 @@ class QuoteCard extends StatelessWidget {
                     color: accentColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
+                  child: Text(
                     'GRIOT AI',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -155,7 +158,7 @@ class QuoteCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'griot-ai.org',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontSize: 11,
                     color: textColor.withValues(alpha: 0.5),
                   ),
@@ -259,9 +262,11 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'Create Share Card',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontSize: 18),
                 ),
                 const Spacer(),
                 IconButton(
@@ -334,9 +339,9 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
               child: ElevatedButton.icon(
                 onPressed: () => _shareCard(),
                 icon: const FaIcon(AppIcons.share),
-                label: const Text(
+                label: Text(
                   'Share Quote Card',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _selectedAccent,

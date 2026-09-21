@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -12,8 +13,8 @@ class LocalGamificationRepository {
   LocalGamificationRepository({
     AppDatabase? database,
     FlutterSecureStorage? secureStorage,
-  })  : _database = database ?? AppDatabase.instance,
-        _storage = secureStorage ?? const FlutterSecureStorage();
+  }) : _database = database ?? AppDatabase.instance,
+       _storage = secureStorage ?? const FlutterSecureStorage();
 
   final AppDatabase _database;
   final FlutterSecureStorage _storage;
@@ -64,19 +65,21 @@ class LocalGamificationRepository {
         }
       }
 
-      quizzes.add(QuizModel(
-        id: quizId,
-        title: row['title'] as String,
-        description: (row['description'] as String?) ?? '',
-        storyId: (row['story_id'] as int?) ?? 0,
-        storyTitle: storyTitle,
-        passingScore: (row['passing_score'] as int?) ?? 70,
-        timeLimitMinutes: (row['time_limit_minutes'] as int?) ?? 0,
-        questionCount: questions.length,
-        xpReward: (row['xp_reward'] as int?) ?? 0,
-        questions: questions,
-        bestScore: bestScore,
-      ));
+      quizzes.add(
+        QuizModel(
+          id: quizId,
+          title: row['title'] as String,
+          description: (row['description'] as String?) ?? '',
+          storyId: (row['story_id'] as int?) ?? 0,
+          storyTitle: storyTitle,
+          passingScore: (row['passing_score'] as int?) ?? 70,
+          timeLimitMinutes: (row['time_limit_minutes'] as int?) ?? 0,
+          questionCount: questions.length,
+          xpReward: (row['xp_reward'] as int?) ?? 0,
+          questions: questions,
+          bestScore: bestScore,
+        ),
+      );
     }
     return quizzes;
   }
@@ -156,7 +159,8 @@ class LocalGamificationRepository {
     final row = rows.first;
     final correctAnswer = row['correct_answer'] as String;
     final explanation = (row['explanation'] as String?) ?? '';
-    final isCorrect = selectedAnswer.toLowerCase() == correctAnswer.toLowerCase();
+    final isCorrect =
+        selectedAnswer.toLowerCase() == correctAnswer.toLowerCase();
 
     return QuizAttemptResult(
       isCorrect: isCorrect,
@@ -165,15 +169,16 @@ class LocalGamificationRepository {
     );
   }
 
-  /// Finish a quiz — calculate score and record it.
-  Future<Map<String, dynamic>> finishQuiz(int quizId) async {
-    // For local mode, we just return a success score.
-    // The actual score tracking would need answer history which is
-    // simplified here — return the quiz's passing score as a "passed" indicator.
+  /// Finish a quiz — calculate the score from the submitted answers and
+  /// record it.
+  Future<Map<String, dynamic>> finishQuiz(
+    int quizId, {
+    Map<int, String> answers = const {},
+  }) async {
     final db = await _db;
     final userId = await _currentUserId ?? 0;
 
-    // Get quiz info for XP reward.
+    // Get quiz info for XP reward and passing score.
     final quizRows = await db.query(
       'local_quizzes',
       columns: ['xp_reward', 'passing_score'],
@@ -181,12 +186,41 @@ class LocalGamificationRepository {
       whereArgs: [quizId],
       limit: 1,
     );
-
     final xpReward = quizRows.isNotEmpty
         ? (quizRows.first['xp_reward'] as int?) ?? 0
         : 0;
+    final passingScore = quizRows.isNotEmpty
+        ? (quizRows.first['passing_score'] as int?) ?? 70
+        : 70;
 
-    // Mark the latest attempt as finished with a passing score.
+    // Count correct answers against the stored correct_answer values.
+    var correct = 0;
+    for (final entry in answers.entries) {
+      final questionRows = await db.query(
+        'local_quiz_questions',
+        columns: ['correct_answer'],
+        where: 'id = ? AND quiz_id = ?',
+        whereArgs: [entry.key, quizId],
+        limit: 1,
+      );
+      if (questionRows.isEmpty) continue;
+      final correctAnswer = (questionRows.first['correct_answer'] as String?)
+          ?.trim();
+      if (correctAnswer == null || correctAnswer.isEmpty) continue;
+      if (entry.value.trim().toLowerCase() == correctAnswer.toLowerCase()) {
+        correct++;
+      }
+    }
+
+    final computed = LocalGamificationRepository.computeScore(
+      correctAnswers: correct,
+      totalQuestions: answers.length,
+      passingScore: passingScore,
+    );
+    final score = computed['score'] as int;
+    final passed = computed['passed'] ? 1 : 0;
+
+    // Mark the latest attempt as finished with the computed score.
     final attemptRows = await db.rawQuery(
       'SELECT id FROM local_quiz_attempts WHERE quiz_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1',
       [quizId, userId],
@@ -195,8 +229,8 @@ class LocalGamificationRepository {
       await db.update(
         'local_quiz_attempts',
         {
-          'score': 100,
-          'passed': 1,
+          'score': score,
+          'passed': passed,
           'finished_at': DateTime.now().toIso8601String(),
         },
         where: 'id = ?',
@@ -204,8 +238,8 @@ class LocalGamificationRepository {
       );
     }
 
-    // Update user gamification profile.
-    if (userId > 0) {
+    // Only grant XP and count a pass when the quiz was actually passed.
+    if (userId > 0 && passed == 1) {
       await _ensureGamificationProfile(userId);
       await db.rawUpdate(
         'UPDATE local_user_gamification SET total_xp = total_xp + ?, quizzes_passed = quizzes_passed + 1 WHERE user_id = ?',
@@ -215,9 +249,9 @@ class LocalGamificationRepository {
     }
 
     return {
-      'score': 100,
-      'passed': true,
-      'xp_earned': xpReward,
+      'score': score,
+      'passed': passed == 1,
+      'xp_earned': passed == 1 ? xpReward : 0,
     };
   }
 
@@ -227,18 +261,22 @@ class LocalGamificationRepository {
   Future<List<BadgeModel>> listBadges() async {
     final db = await _db;
     final rows = await db.query('local_badges', orderBy: 'xp_required ASC');
-    return rows.map((row) => BadgeModel(
-      id: row['id'] as int,
-      name: row['name'] as String,
-      slug: row['slug'] as String,
-      description: (row['description'] as String?) ?? '',
-      emoji: (row['emoji'] as String?) ?? '🏆',
-      category: (row['category'] as String?) ?? 'reading',
-      xpRequired: (row['xp_required'] as int?) ?? 0,
-      color: (row['color'] as String?) ?? '#C85A32',
-      isSecret: (row['is_secret'] as int?) == 1,
-      earned: (row['earned'] as int?) == 1,
-    )).toList();
+    return rows
+        .map(
+          (row) => BadgeModel(
+            id: row['id'] as int,
+            name: row['name'] as String,
+            slug: row['slug'] as String,
+            description: (row['description'] as String?) ?? '',
+            emoji: (row['emoji'] as String?) ?? '🏆',
+            category: (row['category'] as String?) ?? 'reading',
+            xpRequired: (row['xp_required'] as int?) ?? 0,
+            color: (row['color'] as String?) ?? '#C85A32',
+            isSecret: (row['is_secret'] as int?) == 1,
+            earned: (row['earned'] as int?) == 1,
+          ),
+        )
+        .toList();
   }
 
   // ── Profile ──
@@ -290,6 +328,23 @@ class LocalGamificationRepository {
 
   // ── Helpers ──
 
+  /// Pure quiz-scoring calculation.
+  ///
+  /// Score is the percentage of correct answers rounded to the nearest whole
+  /// number; a quiz passes when the score meets or exceeds [passingScore].
+  /// Extracted so scoring rules are unit-testable without a database.
+  @visibleForTesting
+  static Map<String, dynamic> computeScore({
+    required int correctAnswers,
+    required int totalQuestions,
+    required int passingScore,
+  }) {
+    final score = totalQuestions > 0
+        ? ((correctAnswers / totalQuestions) * 100).round()
+        : 0;
+    return {'score': score, 'passed': score >= passingScore};
+  }
+
   Future<List<QuizQuestionModel>> _getQuizQuestions(int quizId) async {
     final db = await _db;
     final rows = await db.query(
@@ -298,15 +353,19 @@ class LocalGamificationRepository {
       whereArgs: [quizId],
       orderBy: 'id ASC',
     );
-    return rows.map((row) => QuizQuestionModel(
-      id: row['id'] as int,
-      questionText: row['question_text'] as String,
-      optionA: row['option_a'] as String,
-      optionB: row['option_b'] as String,
-      optionC: row['option_c'] as String,
-      optionD: (row['option_d'] as String?) ?? '',
-      difficulty: (row['difficulty'] as String?) ?? 'medium',
-    )).toList();
+    return rows
+        .map(
+          (row) => QuizQuestionModel(
+            id: row['id'] as int,
+            questionText: row['question_text'] as String,
+            optionA: row['option_a'] as String,
+            optionB: row['option_b'] as String,
+            optionC: row['option_c'] as String,
+            optionD: (row['option_d'] as String?) ?? '',
+            difficulty: (row['difficulty'] as String?) ?? 'medium',
+          ),
+        )
+        .toList();
   }
 
   Future<int?> _getBestScore(int quizId) async {
@@ -323,11 +382,9 @@ class LocalGamificationRepository {
 
   Future<void> _ensureGamificationProfile(int userId) async {
     final db = await _db;
-    await db.insert(
-      'local_user_gamification',
-      {'user_id': userId},
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
+    await db.insert('local_user_gamification', {
+      'user_id': userId,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   Future<void> _recalculateLevel(int userId) async {

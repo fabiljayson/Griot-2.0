@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/app_error.dart';
 import '../services/qr_api_service.dart';
 
 /// State for QR scanner operations.
@@ -78,7 +80,12 @@ class QrScannerNotifier extends StateNotifier<QrScannerState> {
     } catch (e) {
       state = state.copyWith(
         isScanning: false,
-        errorMessage: 'Failed to process QR code: $e',
+        errorMessage: _messageFor(
+          e,
+          fallback:
+              'This QR code could not be recognised. '
+              'It may not be a Griot AI code.',
+        ),
       );
     }
   }
@@ -93,7 +100,10 @@ class QrScannerNotifier extends StateNotifier<QrScannerState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Artifact not found: $e',
+        errorMessage: _messageFor(
+          e,
+          fallback: 'This artefact could not be found.',
+        ),
       );
     }
   }
@@ -106,6 +116,16 @@ class QrScannerNotifier extends StateNotifier<QrScannerState> {
   /// Clear error message.
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  /// Map an exception to a short, user-friendly message. Network failures get
+  /// the standard copy; everything else falls back to an action-specific line
+  /// instead of leaking the raw exception string.
+  static String _messageFor(Object e, {required String fallback}) {
+    if (e is DioException) {
+      return AppErrorMapper.fromDio(e).message;
+    }
+    return fallback;
   }
 }
 

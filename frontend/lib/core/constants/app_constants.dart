@@ -58,6 +58,9 @@ abstract final class AppConstants {
   /// Local database name — sqflite on mobile, IndexedDB-backed on web via
   /// the sqflite_common_ffi_web factory (set in `main()`).
   static const String databaseName = 'griot_ai.db';
+
   /// v6 added the cover-image backfill for seeded stories.
-  static const int databaseVersion = 6;
+  /// v7 repairs installs that were created without the `local_*` content
+  /// schema and links seeded quizzes to their story.
+  static const int databaseVersion = 7;
 }

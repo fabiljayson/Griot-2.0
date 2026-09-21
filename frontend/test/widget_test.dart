@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:griot_ai/app.dart';
 import 'package:griot_ai/core/network/connectivity_service.dart';
 import 'package:griot_ai/core/network/offline_sync_manager.dart';
+import 'package:griot_ai/core/providers/onboarding_provider.dart';
 import 'package:griot_ai/core/theme/app_colors.dart';
 import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/auth/providers/auth_provider.dart';
@@ -87,6 +88,12 @@ void main() {
           offlineSyncManagerProvider.overrideWithValue(
             _FakeOfflineSyncManager(),
           ),
+          // Onboarding completion lives in secure storage, which is not
+          // backed in the widget-test environment. Treat onboarding as done so
+          // the shell renders immediately (matching the pre-flash behaviour).
+          onboardingProvider.overrideWith(
+            (ref) => OnboardingNotifier(initialCompleted: true),
+          ),
           // Home's region strip is data-driven: it lists the curated regions
           // that resolve to at least one story in the local database. This
           // test runs with no database, so feed it the four web-matching
@@ -110,10 +117,7 @@ void main() {
     expect(find.textContaining('Griot', findRichText: true), findsWidgets);
 
     // The hero copy is part of the landing screen (English is the default).
-    expect(
-      find.textContaining('living heritage'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('living heritage'), findsOneWidget);
 
     // Brand primaries match the webapp's heritage palette.
     expect(AppColors.indigo.toARGB32(), 0xFF1E2B58); // Ndop indigo

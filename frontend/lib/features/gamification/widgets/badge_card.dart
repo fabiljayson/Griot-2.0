@@ -59,9 +59,7 @@ class BadgeCard extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: badge.earned
-            ? scheme.surface
-            : scheme.surfaceContainerHighest,
+        color: badge.earned ? scheme.surface : scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: badge.earned
@@ -109,12 +107,9 @@ class BadgeCard extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: badge.earned
-                  ? scheme.onSurface
-                  : scheme.onSurfaceVariant,
+              color: badge.earned ? scheme.onSurface : scheme.onSurfaceVariant,
             ),
           ),
 

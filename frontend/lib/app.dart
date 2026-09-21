@@ -7,7 +7,8 @@ import 'core/navigation/app_router.dart';
 import 'core/offline/offline_provider.dart';
 import 'core/providers/settings_providers.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/auth_feature.dart';
+import 'features/auth/widgets/auth_wrapper.dart';
+import 'features/audio/widgets/audio_player_sheet.dart';
 import 'core/navigation/main_shell.dart';
 
 /// Root of the Griot AI application.
@@ -35,6 +36,11 @@ class GriotAiApp extends ConsumerWidget {
         supportedLocales: const [Locale('en'), Locale('fr')],
         // Auth-aware home: shows login if unauthenticated, otherwise main shell with bottom nav.
         home: const AuthWrapper(child: MainShell()),
+        // Persistent sticky audio player overlays every screen while a
+        // narration is generating/playing. It renders a zero-size box when
+        // idle, so this stack stays visually transparent otherwise.
+        builder: (context, child) =>
+            Stack(children: [?child, const AudioPlayerSheet()]),
       ),
     );
   }

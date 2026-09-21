@@ -123,26 +123,11 @@ class BrandPanel extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Container(
-      decoration: const BoxDecoration(gradient: AppColors.brandGradientWide),
+      decoration: const BoxDecoration(color: AppColors.indigo),
       child: Stack(
         children: [
           // Decorative pattern overlay
           Positioned.fill(child: CustomPaint(painter: BrandPatternPainter())),
-          // Warm glow
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(-0.3, 0.2),
-                  radius: 1.2,
-                  colors: [
-                    AppColors.terracotta.withValues(alpha: 0.12),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
           // Content
           Center(
             child: SingleChildScrollView(
@@ -251,7 +236,7 @@ class BrandHeader extends StatelessWidget {
     Widget content = Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
-      decoration: const BoxDecoration(gradient: AppColors.brandGradientCompact),
+      decoration: const BoxDecoration(color: AppColors.indigo),
       child: Column(
         children: [
           const GriotLogo(size: 58, light: true, tagline: kBrandTagline),

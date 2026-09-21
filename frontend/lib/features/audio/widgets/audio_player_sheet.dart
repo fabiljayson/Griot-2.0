@@ -60,9 +60,7 @@ class _MiniPlayer extends ConsumerWidget {
             LinearProgressIndicator(
               value: audioState.progress,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.bronze,
-              ),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.bronze),
               minHeight: 2,
             ),
             Expanded(
@@ -318,9 +316,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.bronze.withValues(
-                                alpha: 0.3,
-                              ),
+                              color: AppColors.bronze.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -409,11 +405,11 @@ class _FullPlayerSheet extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(
                   'Playback Speed',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
               ...PlaybackSpeed.values.map((speed) {
@@ -421,10 +417,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                   title: Text(speed.label),
                   trailing:
                       ref.read(audioPlayerProvider).playbackSpeed == speed.value
-                      ? const FaIcon(
-                          AppIcons.check,
-                          color: AppColors.bronze,
-                        )
+                      ? const FaIcon(AppIcons.check, color: AppColors.bronze)
                       : null,
                   onTap: () {
                     ref
@@ -449,21 +442,18 @@ class _FullPlayerSheet extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(
                   'Sleep Timer',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
               ...SleepTimer.values.map((timer) {
                 return ListTile(
                   title: Text(timer.label),
                   trailing: ref.read(audioPlayerProvider).sleepTimer == timer
-                      ? const FaIcon(
-                          AppIcons.check,
-                          color: AppColors.bronze,
-                        )
+                      ? const FaIcon(AppIcons.check, color: AppColors.bronze)
                       : null,
                   onTap: () {
                     ref.read(audioPlayerProvider.notifier).setSleepTimer(timer);
@@ -489,11 +479,11 @@ class _FullPlayerSheet extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
                     'Volume',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
                 Consumer(

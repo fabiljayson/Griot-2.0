@@ -65,10 +65,6 @@ class VideoStatusBadge extends StatelessWidget {
               color: color,
             ),
           ),
-          if (status.emoji.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Text(status.emoji, style: const TextStyle(fontSize: 12)),
-          ],
         ],
       ),
     );
