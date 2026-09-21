@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Provider to check and manage onboarding completion status.

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/app_database.dart';
 import '../database/repositories/local_auth_repository.dart';
 import '../database/repositories/local_gamification_repository.dart';
+import '../database/repositories/local_library_repository.dart';
 import '../database/repositories/local_story_repository.dart';
 import '../database/repositories/offline_request_repository.dart';
 import '../database/repositories/offline_user_repository.dart';
@@ -70,4 +71,14 @@ final localStoryRepositoryProvider = Provider<LocalStoryRepository>((ref) {
 /// Local gamification repository for offline quizzes, badges, and profile.
 final localGamificationRepositoryProvider = Provider<LocalGamificationRepository>((ref) {
   return LocalGamificationRepository();
+});
+
+/// Local library repository for offline library operations.
+final localLibraryRepositoryProvider = Provider<LocalLibraryRepository>((ref) {
+  return LocalLibraryRepository();
+});
+
+/// Recent search queries from local history.
+final recentSearchQueriesProvider = FutureProvider<List<String>>((ref) async {
+  return SearchHistoryRepository().recentQueries();
 });

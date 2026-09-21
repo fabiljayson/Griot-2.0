@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
+import '../../../core/database/repositories/search_history_repository.dart';
+import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
@@ -63,14 +65,17 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
     final storyState = ref.watch(storyListProvider);
     final categories = ref.watch(categoriesProvider);
 
-    return Scaffold(
-      body: Column(
+    return Column(
         children: [
           // --- Search bar ---
           _SearchBar(
             controller: _searchController,
             onSearch: (query) {
               ref.read(storyListProvider.notifier).search(query);
+              if (query.trim().isNotEmpty) {
+                SearchHistoryRepository().addQuery(query.trim());
+                ref.invalidate(recentSearchQueriesProvider);
+              }
             },
             onFilterToggle: () {
               setState(() => _showFilters = !_showFilters);
@@ -106,8 +111,7 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
             child: _buildStoryGrid(storyState, theme),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildStoryGrid(StoryListState state, ThemeData theme) {

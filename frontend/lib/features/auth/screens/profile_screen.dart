@@ -58,29 +58,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: FaIcon(_isEditing ? AppIcons.close : AppIcons.edit_outlined),
-            onPressed: () {
-              setState(() {
-                _isEditing = !_isEditing;
-                if (!_isEditing) {
-                  _firstNameController.text = user.firstName;
-                  _lastNameController.text = user.lastName;
-                }
-              });
-            },
+    return Column(
+      children: [
+        // --- Header ---
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Profile',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                ),
+              ),
+              IconButton(
+                icon: FaIcon(_isEditing ? AppIcons.close : AppIcons.edit_outlined),
+                onPressed: () {
+                  setState(() {
+                    _isEditing = !_isEditing;
+                    if (!_isEditing) {
+                      _firstNameController.text = user.firstName;
+                      _lastNameController.text = user.lastName;
+                    }
+                  });
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // --- Profile header ---
             Center(
               child: Column(
@@ -251,13 +262,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               label: 'Delete Account & Data',
               color: AppColors.error,
               onTap: () => _showDeleteAccountDialog(context, user),
-            ),
-            const SizedBox(height: 32),
+            ),            const SizedBox(height: 32),
           ],
         ),
       ),
+    ),
+      ],
     );
   }
+
 
   void _showDeleteAccountDialog(BuildContext context, UserModel user) {
     final theme = Theme.of(context);

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
 
 import '../../../core/database/repositories/story_cache_repository.dart';
 import '../../../core/network/app_error.dart';
@@ -72,8 +71,8 @@ final class StoryListFailure extends StoryListState {
 /// Notifier managing story list state with filter persistence.
 class StoryListNotifier extends StateNotifier<StoryListState> {
   StoryListNotifier(this._repository, {StoryCacheRepository? cacheRepository})
-      : _cacheRepository = cacheRepository ?? StoryCacheRepository(),
-        super(const StoryListInitial());
+    : _cacheRepository = cacheRepository ?? StoryCacheRepository(),
+      super(const StoryListInitial());
 
   final StoryRepository _repository;
   final StoryCacheRepository _cacheRepository;
@@ -169,10 +168,7 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
           )
           .toList();
 
-      state = StoryListReady(
-        stories: storyModels,
-        hasMore: false,
-      );
+      state = StoryListReady(stories: storyModels, hasMore: false);
     } catch (e) {
       state = const StoryListFailure(
         message: 'No cached stories available offline',
@@ -237,8 +233,9 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
             if (s.slug == slug) {
               return s.copyWith(
                 isBookmarked: isBookmarked,
-                bookmarkCount:
-                    isBookmarked ? s.bookmarkCount + 1 : s.bookmarkCount - 1,
+                bookmarkCount: isBookmarked
+                    ? s.bookmarkCount + 1
+                    : s.bookmarkCount - 1,
               );
             }
             return s;
@@ -332,8 +329,9 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
       state = StoryDetailReady(
         story: current.story.copyWith(
           isBookmarked: isBookmarked,
-          bookmarkCount:
-              isBookmarked ? current.story.bookmarkCount + 1 : current.story.bookmarkCount - 1,
+          bookmarkCount: isBookmarked
+              ? current.story.bookmarkCount + 1
+              : current.story.bookmarkCount - 1,
         ),
       );
     } catch (e) {
@@ -350,7 +348,9 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
       state = StoryDetailReady(
         story: current.story.copyWith(
           isLiked: isLiked,
-          likeCount: isLiked ? current.story.likeCount + 1 : current.story.likeCount - 1,
+          likeCount: isLiked
+              ? current.story.likeCount + 1
+              : current.story.likeCount - 1,
         ),
       );
     } catch (e) {
@@ -378,7 +378,9 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
           readingProgress: ReadingProgressData(
             percent: percent,
             lastPosition:
-                lastPosition ?? current.story.readingProgress?.lastPosition ?? 0,
+                lastPosition ??
+                current.story.readingProgress?.lastPosition ??
+                0,
             completed: completed ?? false,
           ),
         ),

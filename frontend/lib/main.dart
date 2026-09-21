@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +40,9 @@ Future<void> main() async {
   // Note: Offline auth sync is handled by OfflineSyncManager
   // which is initialized in the OfflineProvider widget.
 
+  // Initialize deep linking.
+  _initDeepLinks();
+
   // Sentry monitoring (Phase 10.1) — only when a DSN is provided.
   //   flutter run --dart-define=SENTRY_DSN=https://xxx@sentry.io/yyy
   if (AppConstants.sentryDsn.isNotEmpty) {
@@ -51,4 +58,40 @@ Future<void> main() async {
   }
 
   runApp(const ProviderScope(child: GriotAiApp()));
+}
+
+/// Initialize deep linking via app_links.
+///
+/// Handles both initial link (app opened from link) and subsequent links
+/// (app already running when link is tapped).
+void _initDeepLinks() {
+  final appLinks = AppLinks();
+
+  // Handle initial link (app opened from a deep link).
+  appLinks.getInitialLink().then((link) {
+    if (link != null) {
+      _handleDeepLink(link);
+    }
+  }).catchError((e) {
+    developer.log('Failed to get initial link: $e', name: 'DeepLink');
+  });
+
+  // Handle subsequent links (app already running).
+  appLinks.uriLinkStream.listen((uri) {
+    _handleDeepLink(uri);
+  }).onError((e) {
+    developer.log('Deep link stream error: $e', name: 'DeepLink');
+  });
+}
+
+/// Handle a deep link URI.
+///
+/// Supports:
+/// - griot-ai://story/{slug} — opens a story
+/// - https://griot-ai.org/story/{slug} — opens a story
+void _handleDeepLink(Uri uri) {
+  developer.log('Deep link received: $uri', name: 'DeepLink');
+  // Deep link navigation is handled by the app's router.
+  // For now, log the link for future implementation.
+  // TODO: Wire to Navigator once a proper router is set up.
 }

@@ -7,7 +7,7 @@ import 'core/offline/offline_provider.dart';
 import 'core/providers/settings_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_feature.dart';
-import 'features/home/home_screen.dart';
+import 'core/navigation/main_shell.dart';
 
 /// Root of the Griot AI application.
 class GriotAiApp extends ConsumerWidget {
@@ -29,8 +29,8 @@ class GriotAiApp extends ConsumerWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [Locale('en'), Locale('fr')],
-        // Auth-aware home: shows login if unauthenticated, otherwise home screen.
-        home: const AuthWrapper(child: HomeScreen()),
+        // Auth-aware home: shows login if unauthenticated, otherwise main shell with bottom nav.
+        home: const AuthWrapper(child: MainShell()),
       ),
     );
   }

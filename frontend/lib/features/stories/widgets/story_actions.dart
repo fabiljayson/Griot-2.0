@@ -10,10 +10,7 @@ import '../../../core/theme/app_icons.dart';
 
 /// Story actions menu (bookmark, like, flag, share).
 class StoryActionsMenu extends ConsumerWidget {
-  const StoryActionsMenu({
-    super.key,
-    required this.story,
-  });
+  const StoryActionsMenu({super.key, required this.story});
 
   final StoryModel story;
 
@@ -23,7 +20,7 @@ class StoryActionsMenu extends ConsumerWidget {
     final isAuthenticated = authState.when(
       data: (s) => s.isAuthenticated,
       loading: () => false,
-      error: (_, __) => false,
+      error: (_, _) => false,
     );
 
     return PopupMenuButton<String>(
@@ -31,7 +28,8 @@ class StoryActionsMenu extends ConsumerWidget {
         AppIcons.more_vert,
         color: Theme.of(context).colorScheme.onPrimary,
       ),
-      onSelected: (value) => _handleAction(context, ref, value, isAuthenticated),
+      onSelected: (value) =>
+          _handleAction(context, ref, value, isAuthenticated),
       itemBuilder: (context) => [
         // Bookmark
         PopupMenuItem(
@@ -39,7 +37,9 @@ class StoryActionsMenu extends ConsumerWidget {
           child: Row(
             children: [
               FaIcon(
-                story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
+                story.isBookmarked
+                    ? AppIcons.bookmark
+                    : AppIcons.bookmark_border,
                 color: story.isBookmarked ? AppColors.accentTextStrong : null,
               ),
               const SizedBox(width: 12),
@@ -101,7 +101,8 @@ class StoryActionsMenu extends ConsumerWidget {
     String action,
     bool isAuthenticated,
   ) {
-    if (!isAuthenticated && (action == 'bookmark' || action == 'like' || action == 'flag')) {
+    if (!isAuthenticated &&
+        (action == 'bookmark' || action == 'like' || action == 'flag')) {
       _showLoginPrompt(context);
       return;
     }
@@ -191,10 +192,7 @@ class StoryActionsMenu extends ConsumerWidget {
                     value: 'wrong_category',
                     child: Text('Wrong Category'),
                   ),
-                  DropdownMenuItem(
-                    value: 'other',
-                    child: Text('Other'),
-                  ),
+                  DropdownMenuItem(value: 'other', child: Text('Other')),
                 ],
                 onChanged: (value) {
                   setState(() => selectedReason = value);
@@ -221,14 +219,14 @@ class StoryActionsMenu extends ConsumerWidget {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.error),
               onPressed: selectedReason == null
                   ? null
                   : () async {
                       try {
-                        await ref.read(storyDetailProvider.notifier).flagStory(
+                        await ref
+                            .read(storyDetailProvider.notifier)
+                            .flagStory(
                               reason: selectedReason!,
                               details: detailsController.text.isNotEmpty
                                   ? detailsController.text
@@ -239,7 +237,9 @@ class StoryActionsMenu extends ConsumerWidget {
                           Navigator.of(context).pop();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Thank you for your report. We will review it shortly.'),
+                              content: Text(
+                                'Thank you for your report. We will review it shortly.',
+                              ),
                             ),
                           );
                         }
@@ -277,10 +277,7 @@ class StoryActionsMenu extends ConsumerWidget {
 
 /// Quick action buttons row for story cards.
 class StoryQuickActions extends ConsumerWidget {
-  const StoryQuickActions({
-    super.key,
-    required this.story,
-  });
+  const StoryQuickActions({super.key, required this.story});
 
   final StoryModel story;
 
@@ -290,7 +287,7 @@ class StoryQuickActions extends ConsumerWidget {
     final isAuthenticated = authState.when(
       data: (s) => s.isAuthenticated,
       loading: () => false,
-      error: (_, __) => false,
+      error: (_, _) => false,
     );
 
     return Row(

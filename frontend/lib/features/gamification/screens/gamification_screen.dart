@@ -19,23 +19,34 @@ class GamificationScreen extends ConsumerWidget {
     final badgesAsync = ref.watch(badgesProvider);
     final quizzesAsync = ref.watch(quizzesProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.parchment,
-      appBar: AppBar(
-        title: const Text('Achievements'),
-        backgroundColor: AppColors.parchment,
-        elevation: 0,
-        foregroundColor: AppColors.charcoal,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(gamificationProfileProvider);
-          ref.invalidate(badgesProvider);
-          ref.invalidate(quizzesProvider);
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+    return Column(
+      children: [
+        // --- Header ---
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          color: AppColors.parchment,
+          child: const Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Achievements',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(gamificationProfileProvider);
+              ref.invalidate(badgesProvider);
+              ref.invalidate(quizzesProvider);
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
             // Profile & Level Progress
             profileAsync.when(
               data: (profile) => LevelProgressBar(
@@ -83,6 +94,8 @@ class GamificationScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ),
+      ],
     );
   }
 

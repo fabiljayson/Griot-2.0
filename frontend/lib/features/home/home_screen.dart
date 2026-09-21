@@ -138,9 +138,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       orElse: () => null,
     );
 
-    return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
+    return SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh is a no-op for local data, but provides UX feedback.
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: CustomScrollView(
           key: const ValueKey('homeScroll'),
           slivers: [
             // --- Header ---
@@ -253,8 +257,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-      ),
-    );
+        ),
+      );
   }
 
   Widget _buildHeader(

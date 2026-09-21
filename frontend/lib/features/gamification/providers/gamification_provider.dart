@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
 
 import '../services/gamification_api_service.dart';
 
@@ -64,7 +63,9 @@ class QuizPlayerState {
 
 /// Notifier for quiz player.
 class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
-  QuizPlayerNotifier() : _apiService = GamificationApiService.instance, super(const QuizPlayerState());
+  QuizPlayerNotifier()
+    : _apiService = GamificationApiService.instance,
+      super(const QuizPlayerState());
 
   final GamificationApiService _apiService;
 
@@ -75,7 +76,10 @@ class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
       final quiz = await _apiService.getQuiz(quizId);
       state = state.copyWith(quiz: quiz, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to load quiz: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load quiz: $e',
+      );
     }
   }
 
@@ -92,7 +96,10 @@ class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
         answers: {},
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Failed to start quiz: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to start quiz: $e',
+      );
     }
   }
 
@@ -163,11 +170,13 @@ class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
 /// Quiz player provider.
 final quizPlayerProvider =
     StateNotifierProvider<QuizPlayerNotifier, QuizPlayerState>((ref) {
-  return QuizPlayerNotifier();
-});
+      return QuizPlayerNotifier();
+    });
 
 /// Gamification profile provider.
-final gamificationProfileProvider = FutureProvider<GamificationProfileModel>((ref) async {
+final gamificationProfileProvider = FutureProvider<GamificationProfileModel>((
+  ref,
+) async {
   final apiService = GamificationApiService.instance;
   return apiService.getProfile();
 });
@@ -187,10 +196,8 @@ final quizzesProvider = FutureProvider<List<QuizModel>>((ref) async {
 /// Quizzes filtered to a specific story, used by the story-reader "Take Quiz"
 /// CTA. Derived from [quizzesProvider] so it stays in sync without a new
 /// endpoint.
-final quizzesByStoryProvider =
-    Provider.autoDispose.family<List<QuizModel>, int>((ref, storyId) {
-  final quizzes = ref.watch(quizzesProvider).value ?? const <QuizModel>[];
-  return quizzes
-      .where((quiz) => quiz.storyId == storyId)
-      .toList();
-});
+final quizzesByStoryProvider = Provider.autoDispose
+    .family<List<QuizModel>, int>((ref, storyId) {
+      final quizzes = ref.watch(quizzesProvider).value ?? const <QuizModel>[];
+      return quizzes.where((quiz) => quiz.storyId == storyId).toList();
+    });

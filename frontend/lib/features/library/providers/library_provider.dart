@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
 
 import '../services/library_api_service.dart';
 
@@ -39,7 +38,9 @@ class LibraryState {
 
 /// Notifier for library state.
 class LibraryNotifier extends StateNotifier<LibraryState> {
-  LibraryNotifier() : _apiService = LibraryApiService.instance, super(const LibraryState());
+  LibraryNotifier()
+    : _apiService = LibraryApiService.instance,
+      super(const LibraryState());
 
   final LibraryApiService _apiService;
 
@@ -84,7 +85,9 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       final stories = await _apiService.getContinueReading();
       state = state.copyWith(continueReading: stories);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to load continue reading: $e');
+      state = state.copyWith(
+        errorMessage: 'Failed to load continue reading: $e',
+      );
     }
   }
 
@@ -100,6 +103,8 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
 }
 
 /// Library provider.
-final libraryProvider = StateNotifierProvider<LibraryNotifier, LibraryState>((ref) {
+final libraryProvider = StateNotifierProvider<LibraryNotifier, LibraryState>((
+  ref,
+) {
   return LibraryNotifier();
 });

@@ -1,6 +1,4 @@
-import 'package:dio/dio.dart';
-
-import '../../../core/network/api_client.dart';
+import '../../../core/database/repositories/local_library_repository.dart';
 
 /// Model for a story in the library (recently read, bookmarks, etc.).
 class LibraryStoryModel {
@@ -56,36 +54,23 @@ class LibraryStoryModel {
   double get progressFraction => progressPercent / 100.0;
 }
 
-/// API service for library endpoints.
+/// Service for library operations — delegates entirely to local SQLite.
 class LibraryApiService {
-  LibraryApiService._({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
+  LibraryApiService._({LocalLibraryRepository? local})
+      : _local = local ?? LocalLibraryRepository();
 
-  final Dio _dio;
+  final LocalLibraryRepository _local;
 
   static final LibraryApiService instance = LibraryApiService._();
 
   /// Get recently read stories.
-  Future<List<LibraryStoryModel>> getRecentlyRead() async {
-    final response = await _dio.get('/api/stories/recently-read/');
-    return (response.data as List<dynamic>)
-        .map((json) => LibraryStoryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<LibraryStoryModel>> getRecentlyRead() =>
+      _local.getRecentlyRead();
 
   /// Get stories in progress (not completed).
-  Future<List<LibraryStoryModel>> getContinueReading() async {
-    final response = await _dio.get('/api/stories/continue-reading/');
-    return (response.data as List<dynamic>)
-        .map((json) => LibraryStoryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<LibraryStoryModel>> getContinueReading() =>
+      _local.getContinueReading();
 
   /// Get bookmarked stories.
-  Future<List<LibraryStoryModel>> getBookmarks() async {
-    final response = await _dio.get('/api/stories/bookmarks/');
-    final results = response.data['results'] as List<dynamic>? ?? response.data as List<dynamic>;
-    return results
-        .map((json) => LibraryStoryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<LibraryStoryModel>> getBookmarks() => _local.getBookmarks();
 }

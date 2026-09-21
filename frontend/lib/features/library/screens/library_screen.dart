@@ -43,13 +43,30 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     final state = ref.watch(libraryProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(
-        title: const Text('My Library'),
-        backgroundColor: scheme.surface,
-        elevation: 0,
-        bottom: TabBar(
+    return Column(
+      children: [
+        // --- Header ---
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          color: scheme.surface,
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'My Library',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+        TabBar(
           controller: _tabController,
           labelColor: scheme.primary,
           unselectedLabelColor: scheme.onSurfaceVariant,
@@ -60,19 +77,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             Tab(text: 'Saved', icon: FaIcon(AppIcons.bookmark_outline)),
           ],
         ),
-      ),
-      body: state.isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: scheme.primary),
-            )
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildContinueReading(state.continueReading),
-                _buildRecentlyRead(state.recentlyRead),
-                _buildBookmarks(state.bookmarks),
-              ],
-            ),
+        Expanded(
+          child: state.isLoading
+              ? Center(
+                  child: CircularProgressIndicator(color: scheme.primary),
+                )
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildContinueReading(state.continueReading),
+                    _buildRecentlyRead(state.recentlyRead),
+                    _buildBookmarks(state.bookmarks),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 
