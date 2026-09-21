@@ -1,15 +1,17 @@
-import '../../../core/network/api_client.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../../core/database/repositories/local_story_repository.dart';
 import '../models/story_model.dart';
 
-/// Repository handling Story API calls.
+/// Repository handling local story operations against SQLite.
 ///
-/// Provides methods for CRUD operations, search, filtering,
-/// and story interactions (bookmark, like, flag, progress).
+/// All story CRUD, search, filtering, and interactions happen locally —
+/// no network requests are made.
 class StoryRepository {
-  StoryRepository({ApiClient? apiClient})
-      : _api = apiClient ?? ApiClient.instance;
+  StoryRepository({LocalStoryRepository? localStory})
+      : _local = localStory ?? LocalStoryRepository();
 
-  final ApiClient _api;
+  final LocalStoryRepository _local;
 
   // --- Stories ---
 
@@ -22,31 +24,18 @@ class StoryRepository {
     String sort = '-created_at',
     int page = 1,
   }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'sort': sort,
-    };
-    if (search != null && search.isNotEmpty) queryParams['search'] = search;
-    if (language != null && language.isNotEmpty) queryParams['language'] = language;
-    if (category != null && category.isNotEmpty) queryParams['category'] = category;
-    if (region != null && region.isNotEmpty) queryParams['region'] = region;
-
-    final response = await _api.dio.get(
-      '/api/stories/',
-      queryParameters: queryParams,
+    return _local.getStories(
+      search: search,
+      language: language,
+      category: category,
+      region: region,
+      sort: sort,
+      page: page,
     );
-
-    final results = response.data['results'] as List<dynamic>? ?? [];
-    return results
-        .map((json) => StoryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
   }
 
   /// Get story by slug.
-  Future<StoryModel> getStory(String slug) async {
-    final response = await _api.dio.get('/api/stories/$slug/');
-    return StoryModel.fromJson(response.data as Map<String, dynamic>);
-  }
+  Future<StoryModel> getStory(String slug) => _local.getStory(slug);
 
   /// Create a new story.
   Future<StoryModel> createStory({
@@ -64,23 +53,27 @@ class StoryRepository {
     String? moralLesson,
     String? source,
   }) async {
-    final data = <String, dynamic>{
-      'title': title,
-      'content': content,
-      'language': language,
-    };
-    if (summary != null) data['summary'] = summary;
-    if (categoryIds != null) data['category_ids'] = categoryIds;
-    if (region != null) data['region'] = region;
-    if (tags != null) data['tags'] = tags;
-    if (audioUrl != null) data['audio_url'] = audioUrl;
-    if (videoUrl != null) data['video_url'] = videoUrl;
-    if (culturalContext != null) data['cultural_context'] = culturalContext;
-    if (moralLesson != null) data['moral_lesson'] = moralLesson;
-    if (source != null) data['source'] = source;
+    // Try to get current user id from secure storage.
+    int? authorId;
+    final userIdStr = await const FlutterSecureStorage().read(key: 'current_user_id');
+    if (userIdStr != null) authorId = int.tryParse(userIdStr);
 
-    final response = await _api.dio.post('/api/stories/', data: data);
-    return StoryModel.fromJson(response.data as Map<String, dynamic>);
+    return _local.createStory(
+      title: title,
+      content: content,
+      summary: summary,
+      categoryIds: categoryIds,
+      language: language,
+      region: region,
+      tags: tags,
+      coverImage: coverImage,
+      audioUrl: audioUrl,
+      videoUrl: videoUrl,
+      culturalContext: culturalContext,
+      moralLesson: moralLesson,
+      source: source,
+      authorId: authorId,
+    );
   }
 
   /// Update an existing story.
@@ -94,69 +87,48 @@ class StoryRepository {
     String? region,
     String? tags,
     String? status,
-  }) async {
-    final data = <String, dynamic>{};
-    if (title != null) data['title'] = title;
-    if (content != null) data['content'] = content;
-    if (summary != null) data['summary'] = summary;
-    if (categoryIds != null) data['category_ids'] = categoryIds;
-    if (language != null) data['language'] = language;
-    if (region != null) data['region'] = region;
-    if (tags != null) data['tags'] = tags;
-    if (status != null) data['status'] = status;
-
-    final response = await _api.dio.patch('/api/stories/$slug/', data: data);
-    return StoryModel.fromJson(response.data as Map<String, dynamic>);
+  }) {
+    return _local.updateStory(
+      slug,
+      title: title,
+      content: content,
+      summary: summary,
+      categoryIds: categoryIds,
+      language: language,
+      region: region,
+      tags: tags,
+      status: status,
+    );
   }
 
   /// Delete a story.
-  Future<void> deleteStory(String slug) async {
-    await _api.dio.delete('/api/stories/$slug/');
-  }
+  Future<void> deleteStory(String slug) => _local.deleteStory(slug);
 
   /// Get current user's stories.
   Future<List<StoryModel>> getMyStories() async {
-    final response = await _api.dio.get('/api/stories/my/');
-    final results = response.data as List<dynamic>? ?? [];
-    return results
-        .map((json) => StoryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
+    final userIdStr = await const FlutterSecureStorage().read(key: 'current_user_id');
+    final userId = int.tryParse(userIdStr ?? '') ?? 0;
+    return _local.getMyStories(userId);
   }
 
   /// Get current user's bookmarked stories.
-  Future<List<StoryModel>> getBookmarks() async {
-    final response = await _api.dio.get('/api/stories/bookmarks/');
-    final results = response.data as List<dynamic>? ?? [];
-    return results
-        .map((json) => StoryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<StoryModel>> getBookmarks() => _local.getBookmarks();
 
   // --- Interactions ---
 
   /// Toggle bookmark on a story.
-  Future<bool> toggleBookmark(String slug) async {
-    final response = await _api.dio.post('/api/stories/$slug/bookmark/');
-    return response.data['bookmarked'] as bool? ?? false;
-  }
+  Future<bool> toggleBookmark(String slug) => _local.toggleBookmark(slug);
 
   /// Toggle like on a story.
-  Future<bool> toggleLike(String slug) async {
-    final response = await _api.dio.post('/api/stories/$slug/like/');
-    return response.data['liked'] as bool? ?? false;
-  }
+  Future<bool> toggleLike(String slug) => _local.toggleLike(slug);
 
-  /// Flag a story for cultural inaccuracy or other issues.
+  /// Flag a story (local no-op, stored as-is).
   Future<void> flagStory(
     String slug, {
     required String reason,
     String? details,
   }) async {
-    final data = <String, dynamic>{
-      'reason': reason,
-    };
-    if (details != null) data['details'] = details;
-    await _api.dio.post('/api/stories/$slug/flag/', data: data);
+    // Local-only: flagging is not persisted for offline-only mode.
   }
 
   /// Update reading progress for a story.
@@ -165,23 +137,17 @@ class StoryRepository {
     required int percent,
     int? lastPosition,
     bool? completed,
-  }) async {
-    final data = <String, dynamic>{
-      'progress_percent': percent,
-    };
-    if (lastPosition != null) data['last_read_position'] = lastPosition;
-    if (completed != null) data['completed'] = completed;
-    await _api.dio.post('/api/stories/$slug/progress/', data: data);
+  }) {
+    return _local.updateReadingProgress(
+      slug,
+      percent: percent,
+      lastPosition: lastPosition,
+      completed: completed,
+    );
   }
 
   // --- Categories ---
 
   /// Get all story categories.
-  Future<List<StoryCategory>> getCategories() async {
-    final response = await _api.dio.get('/api/stories/categories/');
-    final results = response.data as List<dynamic>? ?? [];
-    return results
-        .map((json) => StoryCategory.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<StoryCategory>> getCategories() => _local.getCategories();
 }

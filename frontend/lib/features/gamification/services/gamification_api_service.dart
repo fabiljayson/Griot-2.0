@@ -1,6 +1,4 @@
-import 'package:dio/dio.dart';
-
-import '../../../core/network/api_client.dart';
+import '../../../core/database/repositories/local_gamification_repository.dart';
 
 /// Quiz question model.
 class QuizQuestionModel {
@@ -202,79 +200,47 @@ class QuizAttemptResult {
   }
 }
 
-/// API service for gamification endpoints.
+/// Service for gamification operations — delegates entirely to local SQLite.
 class GamificationApiService {
-  GamificationApiService._({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
+  GamificationApiService._({LocalGamificationRepository? local})
+      : _local = local ?? LocalGamificationRepository();
 
-  final Dio _dio;
+  final LocalGamificationRepository _local;
 
   static final GamificationApiService instance = GamificationApiService._();
 
-  static const _basePath = '/api/gamification';
-
   /// List all quizzes.
-  Future<List<QuizModel>> listQuizzes() async {
-    final response = await _dio.get('$_basePath/quizzes/');
-    final results = response.data['results'] as List<dynamic>;
-    return results
-        .map((json) => QuizModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<QuizModel>> listQuizzes() => _local.listQuizzes();
 
   /// Get quiz detail with questions.
-  Future<QuizModel> getQuiz(int quizId) async {
-    final response = await _dio.get('$_basePath/quizzes/$quizId/');
-    return QuizModel.fromJson(response.data as Map<String, dynamic>);
-  }
+  Future<QuizModel> getQuiz(int quizId) => _local.getQuiz(quizId);
 
   /// Start a quiz attempt.
-  Future<Map<String, dynamic>> startQuiz(int quizId) async {
-    final response = await _dio.post('$_basePath/quizzes/$quizId/start/');
-    return response.data as Map<String, dynamic>;
-  }
+  Future<Map<String, dynamic>> startQuiz(int quizId) =>
+      _local.startQuiz(quizId);
 
   /// Submit an answer.
   Future<QuizAttemptResult> submitAnswer({
     required int quizId,
     required int questionId,
     required String selectedAnswer,
-  }) async {
-    final response = await _dio.post(
-      '$_basePath/quizzes/$quizId/submit_answer/',
-      data: {
-        'question_id': questionId,
-        'selected_answer': selectedAnswer,
-      },
-    );
-    return QuizAttemptResult.fromJson(response.data as Map<String, dynamic>);
-  }
+  }) =>
+      _local.submitAnswer(
+        quizId: quizId,
+        questionId: questionId,
+        selectedAnswer: selectedAnswer,
+      );
 
   /// Finish a quiz attempt.
-  Future<Map<String, dynamic>> finishQuiz(int quizId) async {
-    final response = await _dio.post('$_basePath/quizzes/$quizId/finish/');
-    return response.data as Map<String, dynamic>;
-  }
+  Future<Map<String, dynamic>> finishQuiz(int quizId) =>
+      _local.finishQuiz(quizId);
 
   /// List all badges.
-  Future<List<BadgeModel>> listBadges() async {
-    final response = await _dio.get('$_basePath/badges/');
-    final results = response.data['results'] as List<dynamic>;
-    return results
-        .map((json) => BadgeModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
+  Future<List<BadgeModel>> listBadges() => _local.listBadges();
 
   /// Get user's gamification profile.
-  Future<GamificationProfileModel> getProfile() async {
-    final response = await _dio.get('$_basePath/profile/');
-    return GamificationProfileModel.fromJson(response.data as Map<String, dynamic>);
-  }
+  Future<GamificationProfileModel> getProfile() => _local.getProfile();
 
-  /// Get leaderboard.
-  Future<List<Map<String, dynamic>>> getLeaderboard() async {
-    final response = await _dio.get('$_basePath/leaderboard/');
-    return (response.data as List<dynamic>)
-        .map((e) => e as Map<String, dynamic>)
-        .toList();
-  }
+  /// Get leaderboard (simplified — returns empty for local mode).
+  Future<List<Map<String, dynamic>>> getLeaderboard() async => [];
 }

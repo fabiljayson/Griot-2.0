@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
+import '../database/repositories/local_auth_repository.dart';
+import '../database/repositories/local_gamification_repository.dart';
+import '../database/repositories/local_story_repository.dart';
 import '../database/repositories/offline_request_repository.dart';
 import '../database/repositories/offline_user_repository.dart';
 import '../database/repositories/reading_progress_repository.dart';
@@ -53,3 +56,18 @@ final pendingOfflineRequestsProvider = FutureProvider<int>(
 final pendingOfflineUsersProvider = FutureProvider<int>(
   (ref) => ref.watch(offlineUserRepositoryProvider).getPendingCount(),
 );
+
+/// Local auth repository for offline-only authentication.
+final localAuthRepositoryProvider = Provider<LocalAuthRepository>((ref) {
+  return LocalAuthRepository();
+});
+
+/// Local story repository for offline-only story management.
+final localStoryRepositoryProvider = Provider<LocalStoryRepository>((ref) {
+  return LocalStoryRepository();
+});
+
+/// Local gamification repository for offline quizzes, badges, and profile.
+final localGamificationRepositoryProvider = Provider<LocalGamificationRepository>((ref) {
+  return LocalGamificationRepository();
+});

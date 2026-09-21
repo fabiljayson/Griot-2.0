@@ -29,9 +29,6 @@ class ApiClient {
         receiveTimeout: const Duration(seconds: 30),
         headers: {
           'Accept': 'application/json',
-          // Bypasses the Ngrok interstitial landing page so DRF returns JSON
-          // directly, but only when tunneling through ngrok.
-          if (AppConstants.useNgrok) 'ngrok-skip-browser-warning': 'true',
         },
       ),
     );
