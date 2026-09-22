@@ -32,8 +32,175 @@
 
   <title>Griot AI</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ── Griot AI branded loading screen (self-contained, no external deps) ──
+       Palette mirrors the app: Ndop indigo #1E2B58, Foumban bronze #C68B29,
+       Highland earth #A0382B, Raffia ivory #FBF9F4. Kente-drum orbit loader. */
+    #griot-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 24px;
+      background: radial-gradient(120% 120% at 50% 0%, #FFFFFF 0%, #FBF9F4 55%, #F3EAD4 100%);
+      font-family: Georgia, 'Times New Roman', serif;
+      transition: opacity .45s ease;
+      opacity: 1;
+    }
+    #griot-splash[hidden] { display: none; }
+
+    /* ── Orbit loader ── */
+    #griot-splash .loader {
+      position: relative;
+      width: 190px;
+      height: 190px;
+    }
+    #griot-splash .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    #griot-splash .ring-orbit {
+      border: 2px dashed rgba(198, 139, 41, .30);
+      animation: gs-spin 9s linear infinite;
+    }
+    #griot-splash .ring-dash {
+      border: 2px dashed rgba(160, 56, 43, .28);
+      inset: 14px;
+      animation: gs-spin-rev 11s linear infinite;
+    }
+    #griot-splash .ring-progress {
+      inset: 28px;
+      border: 3px solid rgba(198, 139, 41, .18);
+      border-top-color: #C68B29;
+      animation: gs-spin 1.05s cubic-bezier(.42, .0, .58, 1) infinite;
+    }
+    /* Kente "beads" orbiting on the outer ring */
+    #griot-splash .bead {
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      margin-left: -6px;
+      border-radius: 50%;
+      background: #A0382B;
+      border: 2px solid #FBF9F4;
+      box-shadow: 0 2px 6px rgba(160, 56, 43, .45);
+    }
+    #griot-splash .bead.gold {
+      width: 9px;
+      height: 9px;
+      margin-left: -4.5px;
+      top: -4.5px;
+      background: #C68B29;
+      box-shadow: 0 2px 6px rgba(198, 139, 41, .5);
+    }
+    @keyframes gs-spin { to { transform: rotate(360deg); } }
+    @keyframes gs-spin-rev { to { transform: rotate(-360deg); } }
+    @keyframes gs-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    /* ── Logo emblem ── */
+    #griot-splash .logo {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 5px rgba(255, 255, 255, .9),
+                  0 10px 30px rgba(30, 43, 88, .22);
+      animation: gs-pulse 2.4s ease-in-out infinite;
+    }
+
+    /* ── Wordmark ── */
+    #griot-splash .wordmark {
+      margin-top: 34px;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #1E2B58;
+      line-height: 1;
+    }
+    #griot-splash .wordmark em {
+      font-style: normal;
+      color: #C68B29;
+    }
+    #griot-splash .tagline {
+      margin-top: 8px;
+      font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      color: #8A5D13;
+    }
+
+    /* ── Progress bar ── */
+    #griot-splash .track {
+      position: relative;
+      margin-top: 26px;
+      width: 176px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(198, 139, 41, .16);
+      overflow: hidden;
+    }
+    #griot-splash .fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 38%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #C68B29, #A0382B);
+      animation: gs-slide 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes gs-slide {
+      from { transform: translateX(-12%); }
+      to { transform: translateX(185%); }
+    }
+
+    #griot-splash .caption {
+      margin-top: 14px;
+      font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #6B7280;
+    }
+    #griot-splash .caption .dot { animation: gs-blink 1.2s steps(2, start) infinite; }
+    #griot-splash .caption .dot:nth-child(2) { animation-delay: .2s; }
+    #griot-splash .caption .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes gs-blink { to { visibility: hidden; } }
+  </style>
 </head>
 <body>
+  <!-- Branded splash: visible from first byte until Flutter draws its first frame
+       (and for at least 5 seconds). Hidden by the script at the end of <body>. -->
+  <div id="griot-splash">
+    <div class="loader" aria-hidden="true">
+      <div class="ring ring-orbit"><span class="bead"></span><span class="bead gold"></span></div>
+      <div class="ring ring-dash"></div>
+      <div class="ring ring-progress"></div>
+      <img class="logo" src="icons/Icon-512.png" alt="Griot AI">
+    </div>
+    <p class="wordmark">Griot <em>AI</em></p>
+    <p class="tagline">A digital heritage platform</p>
+    <div class="track"><div class="fill"></div></div>
+    <p class="caption">Preserving Cameroon's living heritage<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></p>
+  </div>
+
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
@@ -43,5 +210,29 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    // Keep the branded splash on screen for at least 5 seconds, then fade it
+    // away once Flutter has drawn its first frame. A safety timeout guarantees
+    // the page is never hidden behind the splash even if the app stalls.
+    (function () {
+      var MIN_MS = 5000;
+      var FADE_MS = 450;
+      var startedAt = Date.now();
+      var el = document.getElementById('griot-splash');
+      if (!el) return;
+
+      function hide() {
+        var wait = Math.max(0, MIN_MS - (Date.now() - startedAt));
+        setTimeout(function () {
+          el.style.opacity = '0';
+          setTimeout(function () { el.hidden = true; }, FADE_MS);
+        }, wait);
+      }
+
+      window.addEventListener('flutter-first-frame', hide);
+      setTimeout(hide, 20000); // safety: never trap the user
+    })();
+  </script>
 </body>
 </html>
