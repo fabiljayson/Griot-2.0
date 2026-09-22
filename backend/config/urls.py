@@ -15,10 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
+from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,7 +36,15 @@ urlpatterns = [
     ),
 ]
 
-# Serve uploaded media. Enabled in production too: Render runs gunicorn with
-# no separate media server and the free tier has no persistent disk, so media
-# baked into the container must be served by Django itself.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files directly. Django's static() helper no-ops when DEBUG is
+# False, and Render runs gunicorn with no separate media server (the free tier
+# has no persistent disk), so the route is registered explicitly — media is
+# baked into the container from this repo's media/ directory.
+urlpatterns += [
+    path(
+        f'{settings.MEDIA_URL.strip("/")}/<path:path>',
+        serve,
+        {'document_root': settings.MEDIA_ROOT},
+        name='media',
+    ),
+]
