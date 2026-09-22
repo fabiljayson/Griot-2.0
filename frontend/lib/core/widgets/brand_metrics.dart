@@ -59,7 +59,7 @@ class BrandMetricItem extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: AppColors.ochreDark.withValues(alpha: 0.7),
+            color: AppColors.bronzeDark,
             size: 20,
           ),
           const SizedBox(height: 8),
@@ -69,7 +69,7 @@ class BrandMetricItem extends StatelessWidget {
               fontFamily: 'Fraunces',
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppColors.sand,
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 2),
@@ -79,7 +79,7 @@ class BrandMetricItem extends StatelessWidget {
               fontFamily: 'PlusJakartaSans',
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: AppColors.ochreTint.withValues(alpha: 0.6),
+              color: AppColors.muted,
               letterSpacing: 0.5,
             ),
           ),

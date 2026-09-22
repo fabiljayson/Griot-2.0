@@ -45,9 +45,8 @@ class BrandScaffold extends StatelessWidget {
   /// If null, the branding renders without animation.
   final AnimationController? animController;
 
-  /// Background color for the scaffold. Defaults to
-  /// [AppColors.mudCharcoal] on wide screens and the theme surface on
-  /// compact screens.
+  /// Background color for the scaffold. Defaults to [AppColors.ivory] on
+  /// wide screens and the theme surface on compact screens.
   final Color? backgroundColor;
 
   @override
@@ -57,7 +56,7 @@ class BrandScaffold extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: isWide
-          ? (backgroundColor ?? AppColors.mudCharcoal)
+          ? (backgroundColor ?? AppColors.ivory)
           : Theme.of(context).colorScheme.surface,
       body: isWide
           ? _WideLayout(animController: animController, child: child)
@@ -110,7 +109,7 @@ class _CompactLayout extends StatelessWidget {
 //  BrandPanel — full-height branding panel (left side on wide screens)
 // ═══════════════════════════════════════════════════════════════════════
 
-/// Full-height dark branding panel shown on the left side of wide screens.
+/// Full-height branding panel shown on the left side of wide screens.
 ///
 /// Contains the logo, brand name, tagline, proverb, and metrics row.
 class BrandPanel extends StatelessWidget {
@@ -123,7 +122,13 @@ class BrandPanel extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return Container(
-      decoration: const BoxDecoration(color: AppColors.indigo),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.ivory, AppColors.bronzeTint],
+        ),
+      ),
       child: Stack(
         children: [
           // Decorative pattern overlay
@@ -146,7 +151,7 @@ class BrandPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const GriotLogo(size: 80, light: true, tagline: kBrandTagline),
+          const GriotLogo(size: 80, tagline: kBrandTagline),
           const SizedBox(height: 40),
           _buildProverbCard(),
           const SizedBox(height: 40),
@@ -179,7 +184,7 @@ class BrandPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.terracotta.withValues(alpha: 0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.terracotta.withValues(alpha: 0.2)),
       ),
@@ -187,7 +192,7 @@ class BrandPanel extends StatelessWidget {
         children: [
           Icon(
             AppIcons.auto_stories_outlined,
-            color: AppColors.ochreDark.withValues(alpha: 0.8),
+            color: AppColors.bronzeDark,
             size: 28,
           ),
           const SizedBox(height: 12),
@@ -198,7 +203,7 @@ class BrandPanel extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w500,
               fontStyle: FontStyle.italic,
-              color: AppColors.sand.withValues(alpha: 0.9),
+              color: AppColors.charcoal,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -210,7 +215,7 @@ class BrandPanel extends StatelessWidget {
               fontFamily: 'PlusJakartaSans',
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: AppColors.ochreDark.withValues(alpha: 0.6),
+              color: AppColors.bronzeDark,
             ),
           ),
         ],
@@ -236,10 +241,13 @@ class BrandHeader extends StatelessWidget {
     Widget content = Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
-      decoration: const BoxDecoration(color: AppColors.indigo),
+      decoration: const BoxDecoration(
+        color: AppColors.ivory,
+        border: Border(bottom: BorderSide(color: AppColors.webBorder)),
+      ),
       child: Column(
         children: [
-          const GriotLogo(size: 58, light: true, tagline: kBrandTagline),
+          const GriotLogo(size: 58, tagline: kBrandTagline),
         ],
       ),
     );
