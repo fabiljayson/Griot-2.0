@@ -8,7 +8,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
-API_BASE_URL="${API_BASE_URL:-https://griot-backend.onrender.com}"
+API_BASE_URL="${API_BASE_URL:-https://griot-backend-7ie7.onrender.com}"
 
 log_info() {
   printf '[%s] INFO: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
