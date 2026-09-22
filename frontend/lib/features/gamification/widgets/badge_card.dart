@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../services/gamification_api_service.dart';
 
 /// Card widget displaying a badge with unlock state.
 ///
 /// Shows earned badges with full color, and locked badges as greyed out.
-/// Includes hover animation and unlock celebration.
+///
+/// The cell is sized by the rewards grid (`childAspectRatio: 0.85`, so the
+/// height depends on screen width), which previously overflowed on small
+/// phones: the icon circle was a fixed 64px and the fixed paddings left less
+/// room than the name + XP rows need. The layout is now adaptive — the icon
+/// circle takes whatever height is left after the fixed text lines, and the
+/// paddings come from the design tokens — so the cell renders without
+/// overflow at any grid width or text scale.
 class BadgeCard extends StatelessWidget {
   const BadgeCard({super.key, required this.badge, this.compact = false});
 
@@ -32,7 +40,7 @@ class BadgeCard extends StatelessWidget {
           color: badge.earned
               ? _parseColor(badge.color).withValues(alpha: 0.1)
               : scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           border: Border.all(
             color: badge.earned
                 ? _parseColor(badge.color).withValues(alpha: 0.3)
@@ -53,23 +61,23 @@ class BadgeCard extends StatelessWidget {
   }
 
   Widget _buildFull(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final accent = _parseColor(badge.color);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: badge.earned ? scheme.surface : scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
-          color: badge.earned
-              ? _parseColor(badge.color).withValues(alpha: 0.3)
-              : scheme.outline,
+          color: badge.earned ? accent.withValues(alpha: 0.3) : scheme.outline,
         ),
         boxShadow: badge.earned
             ? [
                 BoxShadow(
-                  color: _parseColor(badge.color).withValues(alpha: 0.1),
+                  color: accent.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -79,47 +87,60 @@ class BadgeCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Badge icon
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: badge.earned
-                  ? _parseColor(badge.color).withValues(alpha: 0.1)
-                  : scheme.surfaceContainerHighest,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Icon(
-                badge.earned ? AppIcons.star : AppIcons.lock_outline,
-                size: 30,
-                color: badge.earned
-                    ? _parseColor(badge.color)
-                    : scheme.onSurfaceVariant,
-              ),
+          // Badge icon — takes the remaining height so the fixed text below
+          // can never be pushed out of the cell (the old fixed 64px circle
+          // overflowed narrow grid tiles).
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final diameter = constraints.biggest.shortestSide;
+                return Center(
+                  child: Container(
+                    width: diameter,
+                    height: diameter,
+                    decoration: BoxDecoration(
+                      color: badge.earned
+                          ? accent.withValues(alpha: 0.1)
+                          : scheme.surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        badge.earned ? AppIcons.star : AppIcons.lock_outline,
+                        size: (diameter * 0.47).clamp(16.0, 30.0),
+                        color: badge.earned ? accent : scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
 
-          // Badge name
+          // Badge name — fixed two lines so every cell has the same rhythm.
           Text(
             badge.name,
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: theme.textTheme.titleSmall?.copyWith(
               fontSize: 13,
+              height: 1.15,
               color: badge.earned ? scheme.onSurface : scheme.onSurfaceVariant,
             ),
           ),
 
+          // XP requirement — fixed single line, ellipsised.
           if (!badge.earned && badge.xpRequired > 0) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               '${badge.xpRequired} XP needed',
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],

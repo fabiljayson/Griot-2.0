@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/repositories/story_cache_repository.dart';
 import '../../../core/network/app_error.dart';
+import '../../../core/network/connectivity_service.dart';
 import '../../auth/models/user_model.dart';
 import '../models/story_model.dart';
 import '../repositories/story_repository.dart';
@@ -410,7 +411,11 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
 
 /// Repository provider.
 final storyRepositoryProvider = Provider<StoryRepository>((ref) {
-  return StoryRepository();
+  return StoryRepository(
+    // The repository skips the network entirely while the device is known
+    // offline and serves the SQLite mirror instead.
+    connectivityService: ref.watch(connectivityServiceProvider),
+  );
 });
 
 /// Story list provider.

@@ -1,7 +1,16 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Global constants for the Griot AI app.
 abstract final class AppConstants {
   static const String appName = 'Griot AI';
   static const String appTagline = 'Digital Heritage Platform';
+
+  /// Default backend base URL inside the Android emulator.
+  static const String _defaultApiBaseUrl = 'http://10.0.2.2:8000';
+
+  /// Backend base URL when running on Flutter web (the emulator loopback is
+  /// unreachable from a browser).
+  static const String _webApiBaseUrl = 'http://localhost:8000';
 
   /// Backend base URL.
   ///
@@ -9,11 +18,16 @@ abstract final class AppConstants {
   ///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000',
+    defaultValue: _defaultApiBaseUrl,
   );
 
-  /// Effective base URL — always the local API base URL.
-  static String get effectiveBaseUrl => apiBaseUrl;
+  /// Effective base URL.
+  ///
+  /// `10.0.2.2` only resolves inside the Android emulator; a browser cannot
+  /// reach it, so web falls back to localhost unless an explicit base URL was
+  /// compiled in via --dart-define.
+  static String get effectiveBaseUrl =>
+      kIsWeb && apiBaseUrl == _defaultApiBaseUrl ? _webApiBaseUrl : apiBaseUrl;
 
   /// Django `MEDIA_URL`.
   static const String mediaPath = '/media/';

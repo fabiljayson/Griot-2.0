@@ -55,11 +55,18 @@ class ShareSheet extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
 
           GridView.count(
+            // Five tiles (no logo exists for X in Material's icon set and a
+            // "More" tile duplicated the system share sheet), so the row
+            // shows 4 + 1 instead of a padded 4 + 2.
             crossAxisCount: 4,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: AppSpacing.lg,
             crossAxisSpacing: AppSpacing.lg,
+            // Icon circle (48) + gap + label needs ~68px; 0.8 keeps the
+            // tile tall enough on ~320dp phones where each cell is ~58px
+            // wide. (Aspect 1.0 overflowed tiles by ~10px there.)
+            childAspectRatio: 0.8,
             children: [
               _PlatformButton(
                 icon: AppIcons.language,
@@ -86,14 +93,9 @@ class ShareSheet extends StatelessWidget {
                 onTap: () => _share(context, 'facebook'),
               ),
               _PlatformButton(
-                icon: AppIcons.alternate_email,
-                label: 'X',
-                color: scheme.onSurface,
-                onTap: () => _share(context, 'twitter'),
-              ),
-              _PlatformButton(
-                icon: AppIcons.more_horiz,
-                label: 'More',
+                icon: AppIcons.share_outlined,
+                label: 'Share',
+                semanticLabel: 'Share via other apps',
                 color: scheme.onSurfaceVariant,
                 onTap: () => _share(context, 'other'),
               ),
@@ -133,12 +135,16 @@ class _PlatformButton extends StatelessWidget {
     required this.label,
     required this.color,
     required this.onTap,
-  });
+    String? semanticLabel,
+  }) : _semanticLabel = semanticLabel;
 
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
+
+  /// Screen-reader label; defaults to "Share to [label]".
+  final String? _semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +152,7 @@ class _PlatformButton extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Share to $label',
+      label: _semanticLabel ?? 'Share to $label',
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.control),

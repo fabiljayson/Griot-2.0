@@ -82,10 +82,15 @@ class GamificationScreen extends ConsumerWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 130,
+                            maxCrossAxisExtent: 120,
                             mainAxisSpacing: AppSpacing.sm,
                             crossAxisSpacing: AppSpacing.sm,
-                            childAspectRatio: 0.85,
+                            // Taller-than-wide cells: icon + 2-line name +
+                            // XP line with the card padding needs ~1.28× the
+                            // width; 0.78 leaves headroom on small phones so
+                            // the tile never overflows (BadgeCard flexes the
+                            // icon to whatever height remains).
+                            childAspectRatio: 0.78,
                           ),
                       itemCount: badges.length,
                       itemBuilder: (context, index) =>

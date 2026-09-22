@@ -1,39 +1,62 @@
-# --- Core web framework -------------------------------------------------
+asgiref==3.12.1
+attrs==26.1.0
+blurhash-python==1.2.2
+CacheControl==0.14.4
+certifi==2026.7.22
+cffi==2.1.1
+charset-normalizer==3.5.1
+click==8.1.8
+cryptography==50.0.1
+dj-database-url==3.1.2
 Django==5.2.4
-python-dotenv==1.1.0                       # Load backend/.env in settings
-dj-database-url==3.1.2                     # Parse DATABASE_URL (prod Postgres)
-
-# --- Database (prod Postgres) ---------------------------------------------
-psycopg[binary]==3.3.4                        # PostgreSQL driver for prod
-
-# --- Production WSGI server -------------------------------------------------
-# Unix-only: skipped on Windows dev machines via the platform marker.
-gunicorn==26.0.0; sys_platform != 'win32'      # WSGI server (Procfile/render)
-
-# --- REST API (Phase 1) -------------------------------------------------
+django-cors-headers==4.7.0
 djangorestframework==3.16.0
-djangorestframework-simplejwt==5.5.0          # JWT auth (Phase 2)
-django-cors-headers==4.7.0                    # CORS for Flutter web/PWA
-drf-spectacular==0.30.0                       # OpenAPI 3.0 schema & Swagger UI
-
-# --- Media & images (Phase 1/3) ------------------------------------------
-Pillow==11.2.1                                # ImageField support
-blurhash-python==1.2.2                        # BlurHash on image upload
-
-# --- QR codes & artifacts (Phase 5) ---------------------------------------
-qrcode[pil]==8.0                              # QR code generation
-segno==1.6.1                                  # High-quality QR SVG output
-
-# --- AI & notifications (Phase 4) -----------------------------------------
-firebase-admin==6.7.0                         # FCM push notifications
-requests==2.32.4                              # Outbound calls (Luma AI, etc.)
-
-# --- Text-to-Speech (Phase 4) ---------------------------------------------
-gTTS==2.5.1                                   # Google Text-to-Speech
-
-# --- PDF generation (certificates) ---------------------------------------
-reportlab==5.0.1                               # Heritage certificate PDFs
-
-# --- Observability (Phase 10) ---------------------------------------------
+djangorestframework_simplejwt==5.5.0
+drf-spectacular==0.30.0
+firebase-admin==6.7.0
+google-api-core==2.30.3
+google-api-python-client==2.200.0
+google-auth==2.58.0
+google-auth-httplib2==0.4.2
+google-cloud-core==2.7.0
+google-cloud-firestore==2.31.0
+google-cloud-storage==3.14.1
+google-crc32c==1.8.0
+google-resumable-media==2.10.2
+googleapis-common-protos==1.75.3
+grpcio==1.84.0
+grpcio-status==1.84.0
+gTTS==2.5.1
+gunicorn==26.0.0
+httplib2==0.32.0
+idna==3.20
+inflection==0.5.1
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+msgpack==1.2.2
+packaging==26.3
+pillow==11.2.1
+proto-plus==1.28.4
+protobuf==7.36.2
+psycopg==3.3.4
+psycopg-binary==3.3.4
+pyasn1==0.6.4
+pyasn1_modules==0.4.2
+pycparser==3.0
+PyJWT==2.9.0
+pyparsing==3.3.2
+python-dotenv==1.1.0
+PyYAML==6.0.3
+qrcode==8.0
+referencing==0.37.0
+reportlab==5.0.1
+requests==2.32.4
+rpds-py==2026.6.3
+segno==1.6.1
 sentry-sdk==2.28.0
+six==1.17.0
+sqlparse==0.6.0
+typing_extensions==4.16.0
+uritemplate==4.2.0
+urllib3==2.8.0
 whitenoise==6.11.0

@@ -363,6 +363,186 @@ class LocalStoryRepository {
     );
   }
 
+  /// Force the stored bookmark state for a slug mirrored from the API.
+  ///
+  /// Created on demand when the story is not stored locally yet (a guest can
+  /// bookmark an API-sourced story before it was ever mirrored).
+  Future<void> setBookmarked(String slug, bool value) async {
+    final db = await _db;
+    final rows = await db.query(
+      'local_stories',
+      columns: ['id'],
+      where: 'slug = ?',
+      whereArgs: [slug],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      await db.insert('local_stories', {
+        'title': slug,
+        'slug': slug,
+        'status': 'published',
+        'is_bookmarked': value ? 1 : 0,
+      });
+      return;
+    }
+    await db.update(
+      'local_stories',
+      {'is_bookmarked': value ? 1 : 0},
+      where: 'slug = ?',
+      whereArgs: [slug],
+    );
+  }
+
+  /// Force the stored like state for a slug mirrored from the API.
+  Future<void> setLiked(String slug, bool value) async {
+    final db = await _db;
+    final rows = await db.query(
+      'local_stories',
+      columns: ['id'],
+      where: 'slug = ?',
+      whereArgs: [slug],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      await db.insert('local_stories', {
+        'title': slug,
+        'slug': slug,
+        'status': 'published',
+        'is_liked': value ? 1 : 0,
+      });
+      return;
+    }
+    await db.update(
+      'local_stories',
+      {'is_liked': value ? 1 : 0},
+      where: 'slug = ?',
+      whereArgs: [slug],
+    );
+  }
+
+  // ── API mirror ──
+
+  /// Upsert API-sourced stories into `local_stories` (slug is the stable key).
+  ///
+  /// Used by the offline mirror in [StoryRepository]: after a successful API
+  /// fetch the payload is copied here so a later offline launch still shows
+  /// the backend collection — with its real `cover_image` paths — instead of
+  /// an empty screen.
+  ///
+  /// Conflict updates refresh content fields but deliberately preserve the
+  /// locally-owned interaction columns (`is_bookmarked`, `is_liked`) and the
+  /// local `author_id`, and never overwrite a stored cover with an empty
+  /// value. Local ids are left to AUTOINCREMENT so they cannot collide with
+  /// backend story ids; the slug is the identity everywhere in the app.
+  Future<void> mirrorStories(List<StoryModel> stories) async {
+    if (stories.isEmpty) return;
+    final db = await _db;
+
+    await db.transaction((txn) async {
+      for (final s in stories) {
+        await txn.rawInsert(
+          '''
+          INSERT INTO local_stories (
+            title, slug, content, summary, author_id, language, region, tags,
+            cover_image, audio_url, video_url, cultural_context, moral_lesson,
+            source, estimated_read_time, status, view_count, like_count,
+            bookmark_count, is_bookmarked, is_liked, created_at, published_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(slug) DO UPDATE SET
+            title = excluded.title,
+            content = CASE WHEN excluded.content != '' THEN excluded.content ELSE local_stories.content END,
+            summary = excluded.summary,
+            language = excluded.language,
+            region = excluded.region,
+            tags = excluded.tags,
+            cover_image = COALESCE(NULLIF(excluded.cover_image, ''), local_stories.cover_image),
+            audio_url = excluded.audio_url,
+            video_url = excluded.video_url,
+            cultural_context = excluded.cultural_context,
+            moral_lesson = excluded.moral_lesson,
+            source = excluded.source,
+            estimated_read_time = excluded.estimated_read_time,
+            status = excluded.status,
+            view_count = excluded.view_count,
+            like_count = excluded.like_count,
+            bookmark_count = excluded.bookmark_count,
+            created_at = excluded.created_at,
+            published_at = excluded.published_at
+          ''',
+          [
+            s.title,
+            s.slug,
+            s.content,
+            s.summary,
+            null, // author_id stays local — backend authors are not mirrored.
+            s.language,
+            s.region,
+            s.tags,
+            s.coverImage,
+            s.audioUrl,
+            s.videoUrl,
+            s.culturalContext,
+            s.moralLesson,
+            s.source,
+            s.estimatedReadTime,
+            s.status,
+            s.viewCount,
+            s.likeCount,
+            s.bookmarkCount,
+            s.isBookmarked ? 1 : 0,
+            s.isLiked ? 1 : 0,
+            s.createdAt.isNotEmpty
+                ? s.createdAt
+                : DateTime.now().toIso8601String(),
+            s.publishedAt,
+          ],
+        );
+      }
+    });
+  }
+
+  /// Make sure [story] exists locally so per-story interaction columns can be
+  /// toggled offline (guest bookmark/like on an API-sourced story).
+  ///
+  /// A no-op when the slug is already mirrored. Content is stored as-is; the
+  /// cover image is kept so the card still renders its art offline.
+  Future<void> ensureStory(StoryModel story) async {
+    final db = await _db;
+    final rows = await db.query(
+      'local_stories',
+      columns: ['id'],
+      where: 'slug = ?',
+      whereArgs: [story.slug],
+      limit: 1,
+    );
+    if (rows.isNotEmpty) return;
+
+    await db.insert('local_stories', {
+      'title': story.title,
+      'slug': story.slug,
+      'content': story.content,
+      'summary': story.summary,
+      'language': story.language,
+      'region': story.region,
+      'tags': story.tags,
+      'cover_image': story.coverImage,
+      'audio_url': story.audioUrl,
+      'video_url': story.videoUrl,
+      'cultural_context': story.culturalContext,
+      'moral_lesson': story.moralLesson,
+      'source': story.source,
+      'estimated_read_time': story.estimatedReadTime,
+      'status': story.status,
+      'view_count': story.viewCount,
+      'like_count': story.likeCount,
+      'bookmark_count': story.bookmarkCount,
+      'created_at': story.createdAt.isNotEmpty
+          ? story.createdAt
+          : DateTime.now().toIso8601String(),
+      'published_at': story.publishedAt,
+    });
+  }
+
   // ── Helpers ──
 
   Future<StoryModel> _rowToStory(Map<String, dynamic> row) async {

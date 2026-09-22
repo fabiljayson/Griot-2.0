@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/story_assets.dart';
 import '../../auth/models/user_model.dart';
 
 /// Story model representing a cultural story or oral tradition.
@@ -77,7 +78,8 @@ class StoryModel {
       language: json['language'] as String? ?? 'en',
       region: json['region'] as String? ?? '',
       tags: json['tags'] as String? ?? '',
-      coverImage: json['cover_image'] as String?,
+      coverImage: StoryCoverAssets.forSlug(json['slug'] as String? ?? '') ??
+          json['cover_image'] as String?,
       coverImageBlurhash: json['cover_image_blurhash'] as String? ?? '',
       audioUrl: json['audio_url'] as String? ?? '',
       videoUrl: json['video_url'] as String? ?? '',

@@ -12,7 +12,6 @@ build/
 *.sqlite3
 db.sqlite3
 db.sqlite3-journal
-media/
 staticfiles/
 .env
 .venv/
@@ -55,7 +54,11 @@ Thumbs.db
 
 # Media referenced by production data — keep the Render build self-contained
 # (free tier has no persistent disk, so these are baked into the image).
-!media/
-!media/stories/
-!media/stories/covers/
-!media/stories/covers/*.jpg
+# Only the story cover JPGs are un-ignored; everything else under
+# backend/media/ (artefacts, audio, qr_codes) stays out of the repo.
+backend/media/*
+!backend/media/stories/
+backend/media/stories/*
+!backend/media/stories/covers/
+backend/media/stories/covers/*
+!backend/media/stories/covers/*.jpg
