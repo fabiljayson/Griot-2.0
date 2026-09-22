@@ -182,7 +182,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                 color: AppColors.terracotta.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const FaIcon(
+              child: const Icon(
                 AppIcons.movie_creation_outlined,
                 color: AppColors.terracotta,
                 size: 24,
@@ -211,7 +211,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             ),
             IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const FaIcon(
+              icon: const Icon(
                 AppIcons.close,
                 color: AppColors.charcoalMuted,
               ),
@@ -427,8 +427,8 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                     ),
                     child: Column(
                       children: [
-                        FaIcon(
-                          ratio['icon'] as FaIconData,
+                        Icon(
+                          ratio['icon'] as IconData,
                           color: isSelected
                               ? Colors.white
                               : AppColors.charcoalMuted,
@@ -506,7 +506,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FaIcon(AppIcons.auto_awesome, size: 20),
+                  Icon(AppIcons.auto_awesome, size: 20),
                   SizedBox(width: 8),
                   Text(
                     'Generate Video',

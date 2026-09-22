@@ -130,7 +130,7 @@ class StoryCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    FaIcon(
+                    Icon(
                       AppIcons.schedule,
                       size: 11,
                       color: scheme.onSurfaceVariant,
@@ -202,7 +202,7 @@ class _OverlayPill extends StatelessWidget {
     this.emphasized = false,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final bool emphasized;
 
@@ -223,7 +223,7 @@ class _OverlayPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(
+          Icon(
             icon,
             size: 10,
             color: emphasized ? Colors.white : AppColors.indigo,
@@ -252,7 +252,7 @@ class _OverlayPill extends StatelessWidget {
 class _Stat extends StatelessWidget {
   const _Stat({required this.icon, required this.label});
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
 
   @override
@@ -262,7 +262,7 @@ class _Stat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FaIcon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 3),
         Text(label, style: theme.textTheme.labelSmall),
       ],
@@ -279,7 +279,7 @@ class _IconAction extends StatelessWidget {
     this.color,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
   final Color? color;
@@ -292,7 +292,7 @@ class _IconAction extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      icon: FaIcon(
+      icon: Icon(
         icon,
         size: 17,
         color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,

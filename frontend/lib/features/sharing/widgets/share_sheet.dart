@@ -135,7 +135,7 @@ class _PlatformButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -160,7 +160,7 @@ class _PlatformButton extends StatelessWidget {
                 color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: FaIcon(icon, color: color, size: 22),
+              child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(

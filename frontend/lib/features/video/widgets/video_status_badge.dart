@@ -34,7 +34,7 @@ class VideoStatusBadge extends StatelessWidget {
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: FaIcon(icon, size: 16, color: color),
+        child: Icon(icon, size: 16, color: color),
       );
     }
 
@@ -55,7 +55,7 @@ class VideoStatusBadge extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2, color: color),
             )
           else
-            FaIcon(icon, size: 14, color: color),
+            Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Text(
             status.label,

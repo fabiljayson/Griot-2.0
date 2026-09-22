@@ -92,7 +92,7 @@ class _SignInScaffold extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'Close',
-          icon: const FaIcon(AppIcons.close),
+          icon: const Icon(AppIcons.close),
           onPressed: () => Navigator.of(context).pop(false),
         ),
         title: const Text('Sign In'),

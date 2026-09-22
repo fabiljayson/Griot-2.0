@@ -34,11 +34,11 @@ package "Users" {
     +bool is_staff
     +bool is_superuser
     +DateTime date_joined
-    +is_visitor() bool
-    +is_contributor() bool
-    +is_institution_manager() bool
-    +is_admin_role() bool
-    +role_display() String
+    +is_visitor bool
+    +is_contributor bool
+    +is_institution_manager bool
+    +is_admin_role bool
+    +role_display String
   }
 }
 
@@ -88,8 +88,8 @@ package "Stories" {
     +DateTime created_at
     +DateTime updated_at
     +DateTime published_at
-    +is_published() bool
-    +tag_list() List
+    +is_published bool
+    +tag_list List
   }
 
   class StoryCategory {
@@ -146,7 +146,7 @@ package "Stories" {
     +bool completed
     +DateTime created_at
     +DateTime updated_at
-    +is_complete() bool
+    +is_complete bool
   }
 }
 
@@ -202,7 +202,7 @@ package "QR Codes & Artifacts" {
     +bool is_published
     +DateTime created_at
     +DateTime updated_at
-    +qr_deep_link() String
+    +qr_deep_link String
   }
 
   class QRCodeScan {
@@ -235,8 +235,8 @@ package "Gamification" {
     +bool is_published
     +DateTime created_at
     +DateTime updated_at
-    +question_count() int
-    +xp_reward() int
+    +question_count int
+    +xp_reward int
   }
 
   class QuizQuestion {
@@ -308,8 +308,8 @@ package "Gamification" {
     +Date last_active_date
     +DateTime created_at
     +DateTime updated_at
-    +xp_for_next_level() int
-    +xp_progress() float
+    +xp_for_next_level int
+    +xp_progress float
     +add_xp(amount) void
     +update_streak() void
   }
@@ -364,8 +364,8 @@ package "Media" {
     +DateTime updated_at
     +DateTime started_at
     +DateTime completed_at
-    +is_ready() bool
-    +is_processing() bool
+    +is_ready bool
+    +is_processing bool
   }
 
   class AudioNarrationJob {
@@ -386,7 +386,7 @@ package "Media" {
     +DateTime created_at
     +DateTime updated_at
     +DateTime completed_at
-    +is_ready() bool
+    +is_ready bool
   }
 }
 
@@ -395,5 +395,57 @@ Story "1" --> "*" VideoGenerationJob : has
 User "1" --> "*" AudioNarrationJob : creates
 Story "1" --> "*" AudioNarrationJob : has
 Artifact "1" --> "*" AudioNarrationJob : has
+
+' ─── Authorization classes ─────────────────────────────
+' Every gate in the system is one of these. Role checks are hierarchical
+' (membership in the documented role strings); ownership is object-level.
+package "Authorization (DRF permission classes)" {
+  class IsAuthenticated {
+    <<DRF builtin>>
+    +has_permission bool
+  }
+
+  class IsContributorOrAbove {
+    +has_permission bool
+    ' role in (contributor, institution_manager, admin)
+  }
+
+  class IsInstitutionManagerOrAbove {
+    +has_permission bool
+    ' role in (institution_manager, admin)
+  }
+
+  class IsAdminOrManager {
+    +has_permission bool
+    ' role in (institution_manager, admin)
+    ' gates ALL six analytics endpoints
+  }
+
+  class IsStoryOwnerOrReadOnly {
+    +has_object_permission bool
+    ' SAFE_METHODS OR obj.author == user OR manager/admin
+  }
+
+  class IsOwnerOrReadOnly {
+    +has_object_permission bool
+    ' SAFE_METHODS OR obj.user == user
+  }
+}
+
+IsContributorOrAbove --|> IsAuthenticated
+IsInstitutionManagerOrAbove --|> IsAuthenticated
+IsAdminOrManager --|> IsAuthenticated
+IsStoryOwnerOrReadOnly --|> IsAuthenticated
+IsOwnerOrReadOnly --|> IsAuthenticated
+
+note right of IsAdminOrManager
+  Implemented gate is WIDER than the
+  documented Admin-only rule for analytics.
+end note
+
+note bottom of Story
+  co_authors is declared on the model but is
+  read by NO authorization check anywhere.
+end note
 
 @enduml

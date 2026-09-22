@@ -91,7 +91,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
         actions: [
           // Preview toggle
           IconButton(
-            icon: FaIcon(_isPreviewMode ? AppIcons.edit : AppIcons.preview),
+            icon: Icon(_isPreviewMode ? AppIcons.edit : AppIcons.preview),
             onPressed: () {
               setState(() => _isPreviewMode = !_isPreviewMode);
             },
@@ -203,7 +203,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      FaIcon(
+                      Icon(
                         AppIcons.fromEmoji(lang.flag),
                         size: 16,
                         color: AppColors.bronze,
@@ -239,7 +239,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          FaIcon(
+                          Icon(
                             AppIcons.fromEmoji(cat.icon),
                             size: 14,
                             color: AppColors.bronze,

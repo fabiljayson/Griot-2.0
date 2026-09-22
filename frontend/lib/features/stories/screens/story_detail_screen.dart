@@ -330,7 +330,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                       height: 20,
                       child: GriotLoader.inline(color: AppColors.bronzeDark),
                     )
-                  : const FaIcon(AppIcons.headphones),
+                  : const Icon(AppIcons.headphones),
               tooltip: isNarrating ? 'Generating narration…' : 'Listen',
             ),
             const SizedBox(width: AppSpacing.md),
@@ -377,7 +377,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                 onPressed: _isStartingQuiz ? null : () => _takeQuiz(story),
                 icon: _isStartingQuiz
                     ? const GriotLoader.inline(color: Colors.white)
-                    : const FaIcon(AppIcons.quiz, size: 16),
+                    : const Icon(AppIcons.quiz, size: 16),
                 label: const Text('Take Quiz'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.bronze,
@@ -391,7 +391,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                   message:
                       'Sign in to take the quiz for this story and earn XP.',
                 ),
-                icon: const FaIcon(AppIcons.lock_outline, size: 16),
+                icon: const Icon(AppIcons.lock_outline, size: 16),
                 label: const Text('Quiz'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.bronzeDark,
@@ -449,7 +449,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const FaIcon(AppIcons.quiz_outlined, size: 40),
+        icon: const Icon(AppIcons.quiz_outlined, size: 40),
         title: const Text('Quiz coming soon'),
         content: const Text(
           'No quiz has been published for this story yet. Keep reading — new '
@@ -567,7 +567,7 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title, required this.icon});
 
   final String title;
-  final FaIconData icon;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -575,7 +575,7 @@ class _SectionTitle extends StatelessWidget {
 
     return Row(
       children: [
-        FaIcon(icon, color: AppColors.bronzeDark, size: 17),
+        Icon(icon, color: AppColors.bronzeDark, size: 17),
         const SizedBox(width: AppSpacing.sm),
         Text(
           title,
@@ -597,7 +597,7 @@ class _ActionButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final Color? color;
   final VoidCallback onTap;
@@ -614,7 +614,7 @@ class _ActionButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(icon, color: color ?? theme.colorScheme.onSurface, size: 22),
+            Icon(icon, color: color ?? theme.colorScheme.onSurface, size: 22),
             const SizedBox(height: AppSpacing.xs),
             Text(
               label,

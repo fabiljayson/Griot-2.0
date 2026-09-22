@@ -18,7 +18,7 @@ class _Destination {
     required this.builder,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final WidgetBuilder builder;
 }
@@ -234,7 +234,7 @@ class _NavSlot extends StatelessWidget {
     required this.onTap,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final bool isSelected;
   final Color accent;
@@ -255,7 +255,7 @@ class _NavSlot extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(icon, size: 20, color: isSelected ? accent : inactive),
+            Icon(icon, size: 20, color: isSelected ? accent : inactive),
             const SizedBox(height: 3),
             Text(
               label,
@@ -287,7 +287,7 @@ class _RaisedNavAction extends StatelessWidget {
     required this.onTap,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final bool isSelected;
   final double size;
@@ -330,7 +330,7 @@ class _RaisedNavAction extends StatelessWidget {
                 ],
               ),
               child: Center(
-                child: FaIcon(icon, size: 22, color: foreground),
+                child: Icon(icon, size: 22, color: foreground),
               ),
             ),
           ),

@@ -48,8 +48,20 @@ class ArtifactViewSet(viewsets.ModelViewSet):
             return ArtifactCreateUpdateSerializer
         return ArtifactDetailSerializer
 
+    # Actions that mutate artifact data and therefore require a manager.
+    # `generate_qr` belongs here because the SVG format persists the generated
+    # code onto the artifact (`qr_code_svg`); it must not be reachable without
+    # authentication. Read/scan actions stay public.
+    _MANAGER_ACTIONS = (
+        'create',
+        'update',
+        'partial_update',
+        'destroy',
+        'generate_qr',
+    )
+
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+        if self.action in self._MANAGER_ACTIONS:
             return [IsInstitutionManagerOrAbove()]
         return [permissions.AllowAny()]
 

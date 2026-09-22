@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_icons.dart';
 
 /// Hero statistic card: colored icon chip, large value, and label.
 class StatCard extends StatelessWidget {
@@ -16,7 +15,7 @@ class StatCard extends StatelessWidget {
 
   final String label;
   final String value;
-  final FaIconData icon;
+  final IconData icon;
   final Color color;
   final String? subtitle;
 
@@ -41,7 +40,7 @@ class StatCard extends StatelessWidget {
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: FaIcon(icon, size: 20, color: color),
+            child: Icon(icon, size: 20, color: color),
           ),
           const SizedBox(height: 10),
           Text(
@@ -82,7 +81,7 @@ class MiniStat extends StatelessWidget {
     this.color = AppColors.terracotta,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final String value;
   final Color color;
@@ -101,7 +100,7 @@ class MiniStat extends StatelessWidget {
       ),
       child: Row(
         children: [
-          FaIcon(icon, size: 18, color: color),
+          Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

@@ -77,7 +77,7 @@ class _MiniPlayer extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(
-                        child: FaIcon(AppIcons.headphones, size: 22),
+                        child: Icon(AppIcons.headphones, size: 22),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -121,7 +121,7 @@ class _MiniPlayer extends ConsumerWidget {
 
                     // Skip backward
                     IconButton(
-                      icon: const FaIcon(AppIcons.replay_10, size: 24),
+                      icon: const Icon(AppIcons.replay_10, size: 24),
                       onPressed: () =>
                           ref.read(audioPlayerProvider.notifier).skipBackward(),
                       tooltip: 'Rewind 10s',
@@ -129,7 +129,7 @@ class _MiniPlayer extends ConsumerWidget {
 
                     // Play/Pause
                     IconButton(
-                      icon: FaIcon(
+                      icon: Icon(
                         audioState.isPlaying
                             ? AppIcons.pause_circle_filled
                             : AppIcons.play_circle_filled,
@@ -143,7 +143,7 @@ class _MiniPlayer extends ConsumerWidget {
 
                     // Skip forward
                     IconButton(
-                      icon: const FaIcon(AppIcons.forward_10, size: 24),
+                      icon: const Icon(AppIcons.forward_10, size: 24),
                       onPressed: () =>
                           ref.read(audioPlayerProvider.notifier).skipForward(),
                       tooltip: 'Forward 10s',
@@ -222,7 +222,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                       ],
                     ),
                     child: const Center(
-                      child: FaIcon(AppIcons.headphones, size: 72),
+                      child: Icon(AppIcons.headphones, size: 72),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -300,7 +300,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                     children: [
                       // Skip backward
                       IconButton(
-                        icon: const FaIcon(AppIcons.replay_10, size: 32),
+                        icon: const Icon(AppIcons.replay_10, size: 32),
                         onPressed: () => ref
                             .read(audioPlayerProvider.notifier)
                             .skipBackward(),
@@ -323,7 +323,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                           ],
                         ),
                         child: IconButton(
-                          icon: FaIcon(
+                          icon: Icon(
                             audioState.isPlaying
                                 ? AppIcons.pause
                                 : AppIcons.play_arrow,
@@ -339,7 +339,7 @@ class _FullPlayerSheet extends ConsumerWidget {
 
                       // Skip forward
                       IconButton(
-                        icon: const FaIcon(AppIcons.forward_10, size: 32),
+                        icon: const Icon(AppIcons.forward_10, size: 32),
                         onPressed: () => ref
                             .read(audioPlayerProvider.notifier)
                             .skipForward(),
@@ -348,7 +348,7 @@ class _FullPlayerSheet extends ConsumerWidget {
 
                       // Repeat
                       IconButton(
-                        icon: const FaIcon(AppIcons.repeat, size: 24),
+                        icon: const Icon(AppIcons.repeat, size: 24),
                         onPressed: () => ref
                             .read(audioPlayerProvider.notifier)
                             .toggleRepeat(),
@@ -417,7 +417,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                   title: Text(speed.label),
                   trailing:
                       ref.read(audioPlayerProvider).playbackSpeed == speed.value
-                      ? const FaIcon(AppIcons.check, color: AppColors.bronze)
+                      ? const Icon(AppIcons.check, color: AppColors.bronze)
                       : null,
                   onTap: () {
                     ref
@@ -453,7 +453,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                 return ListTile(
                   title: Text(timer.label),
                   trailing: ref.read(audioPlayerProvider).sleepTimer == timer
-                      ? const FaIcon(AppIcons.check, color: AppColors.bronze)
+                      ? const Icon(AppIcons.check, color: AppColors.bronze)
                       : null,
                   onTap: () {
                     ref.read(audioPlayerProvider.notifier).setSleepTimer(timer);
@@ -492,7 +492,7 @@ class _FullPlayerSheet extends ConsumerWidget {
                     return Row(
                       children: [
                         IconButton(
-                          icon: FaIcon(
+                          icon: Icon(
                             volume == 0
                                 ? AppIcons.volume_off
                                 : AppIcons.volume_up,
@@ -543,7 +543,7 @@ class _ControlButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
   final VoidCallback onTap;
 
@@ -559,7 +559,7 @@ class _ControlButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(icon, color: theme.colorScheme.onSurfaceVariant),
+            Icon(icon, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(height: 4),
             Text(
               label,

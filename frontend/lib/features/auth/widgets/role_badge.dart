@@ -27,7 +27,7 @@ class RoleBadge extends StatelessWidget {
         child: Wrap(
           spacing: 4,
           children: [
-            FaIcon(
+            Icon(
               AppIcons.role(role.value),
               size: 12,
               color: _getRoleColor(role),
@@ -55,7 +55,7 @@ class RoleBadge extends StatelessWidget {
         spacing: 8,
         runSpacing: 2,
         children: [
-          FaIcon(
+          Icon(
             AppIcons.role(role.value),
             size: 18,
             color: _getRoleColor(role),

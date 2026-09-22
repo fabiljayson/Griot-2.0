@@ -41,7 +41,7 @@ class OfflineStoryCounter extends ConsumerWidget {
               color: AppColors.savannahGreen,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const FaIcon(
+            child: const Icon(
               AppIcons.download_done_rounded,
               color: AppColors.parchment,
               size: 22,

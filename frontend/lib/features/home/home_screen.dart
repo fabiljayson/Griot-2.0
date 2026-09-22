@@ -219,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             children: [
-              FaIcon(
+              Icon(
                 AppIcons.auto_stories_outlined,
                 size: 32,
                 color: scheme.onSurfaceVariant,
@@ -291,7 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         context,
                       ).platformBrightness,
                     ),
-                icon: const FaIcon(AppIcons.dark_mode_outlined),
+                icon: const Icon(AppIcons.dark_mode_outlined),
                 color: AppColors.ivory,
               ),
               if (user != null)
@@ -302,7 +302,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       MaterialPageRoute(builder: (_) => const ProfileScreen()),
                     );
                   },
-                  icon: const FaIcon(AppIcons.account_circle_outlined),
+                  icon: const Icon(AppIcons.account_circle_outlined),
                   color: AppColors.ivory,
                 ),
             ],
@@ -400,7 +400,7 @@ class _TrendingStrip extends StatelessWidget {
                         const Spacer(),
                         Row(
                           children: [
-                            FaIcon(
+                            Icon(
                               AppIcons.remove_red_eye_outlined,
                               size: 13,
                               color: theme.colorScheme.onSurfaceVariant,
@@ -411,7 +411,7 @@ class _TrendingStrip extends StatelessWidget {
                               style: theme.textTheme.bodySmall,
                             ),
                             const SizedBox(width: AppSpacing.md),
-                            FaIcon(
+                            Icon(
                               AppIcons.favorite_outline,
                               size: 13,
                               color: theme.colorScheme.onSurfaceVariant,
@@ -485,7 +485,7 @@ class _CompactStoryRow extends StatelessWidget {
               ],
             ),
           ),
-          FaIcon(
+          Icon(
             AppIcons.chevron_right,
             color: theme.colorScheme.onSurfaceVariant,
             size: 16,

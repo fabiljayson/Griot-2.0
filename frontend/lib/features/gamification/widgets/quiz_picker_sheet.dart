@@ -48,12 +48,12 @@ class QuizPickerSheet extends StatelessWidget {
               itemBuilder: (context, index) {
                 final quiz = quizzes[index];
                 return ListTile(
-                  leading: const FaIcon(AppIcons.quiz_outlined),
+                  leading: const Icon(AppIcons.quiz_outlined),
                   title: Text(quiz.title),
                   subtitle: Text(
                     '${quiz.questionCount} questions • ${quiz.xpReward} XP',
                   ),
-                  trailing: const FaIcon(AppIcons.chevron_right, size: 14),
+                  trailing: const Icon(AppIcons.chevron_right, size: 14),
                   onTap: () => Navigator.of(context).pop(quiz),
                 );
               },

@@ -30,7 +30,7 @@ class RegionModel {
   final String label;
 
   /// Real icon replacing the web's `HOME_REGIONS` emoji glyph.
-  final FaIconData icon;
+  final IconData icon;
 
   /// Bundled, region-specific photograph.
   final String imageAsset;

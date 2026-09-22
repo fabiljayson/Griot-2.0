@@ -36,15 +36,15 @@ class UserModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'username': username,
-        'email': email,
-        'first_name': firstName,
-        'last_name': lastName,
-        'role': role.value,
-        'institution': institution,
-        'date_joined': dateJoined,
-      };
+    'id': id,
+    'username': username,
+    'email': email,
+    'first_name': firstName,
+    'last_name': lastName,
+    'role': role.value,
+    'institution': institution,
+    'date_joined': dateJoined,
+  };
 
   /// Display name for the user.
   String get displayName {
@@ -60,6 +60,20 @@ class UserModel {
       role == UserRole.contributor ||
       role == UserRole.institutionManager ||
       role == UserRole.admin;
+
+  /// Whether this user may request narration / AI video for a story authored
+  /// by [authorId].
+  ///
+  /// Mirrors the backend's `can_generate_media` gate
+  /// (`web/views.py::story_detail_view`) and `IsStoryOwnerOrReadOnly`:
+  /// Contributor or above, *and* either the author or a manager/admin. Role
+  /// alone is not sufficient — the API also requires ownership, so a
+  /// Contributor on someone else's story must not see the entry.
+  bool canGenerateMediaFor({required int authorId}) =>
+      canContribute &&
+      (role == UserRole.institutionManager ||
+          role == UserRole.admin ||
+          id == authorId);
 
   UserModel copyWith({
     int? id,
@@ -88,7 +102,12 @@ class UserModel {
 enum UserRole {
   visitor('visitor', 'Visitor', 'Explorer Mode', '🗺️'),
   contributor('contributor', 'Contributor', 'Storyteller', '✍️'),
-  institutionManager('institution_manager', 'Institution Manager', 'Curator', '🏛️'),
+  institutionManager(
+    'institution_manager',
+    'Institution Manager',
+    'Curator',
+    '🏛️',
+  ),
   admin('admin', 'Admin', 'Administrator', '👑');
 
   const UserRole(this.value, this.label, this.modeName, this.emoji);
@@ -108,10 +127,7 @@ enum UserRole {
 
 /// JWT token pair returned by the backend.
 class TokenPair {
-  const TokenPair({
-    required this.accessToken,
-    required this.refreshToken,
-  });
+  const TokenPair({required this.accessToken, required this.refreshToken});
 
   final String accessToken;
   final String refreshToken;

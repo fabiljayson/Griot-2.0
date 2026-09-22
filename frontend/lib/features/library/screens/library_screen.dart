@@ -69,9 +69,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             unselectedLabelColor: scheme.onSurfaceVariant,
             indicatorColor: scheme.primary,
             tabs: const [
-              Tab(text: 'Continue', icon: FaIcon(AppIcons.play_circle_outline)),
-              Tab(text: 'Recent', icon: FaIcon(AppIcons.history)),
-              Tab(text: 'Saved', icon: FaIcon(AppIcons.bookmark_outline)),
+              Tab(text: 'Continue', icon: Icon(AppIcons.play_circle_outline)),
+              Tab(text: 'Recent', icon: Icon(AppIcons.history)),
+              Tab(text: 'Saved', icon: Icon(AppIcons.bookmark_outline)),
             ],
           ),
           Expanded(
@@ -121,7 +121,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     required String? error,
     required String emptyTitle,
     required String emptySubtitle,
-    required FaIconData icon,
+    required IconData icon,
     required Widget Function(LibraryStoryModel) cardBuilder,
   }) {
     if (stories.isEmpty && error != null) {
@@ -268,7 +268,7 @@ class _StoryListTile extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              FaIcon(
+                              Icon(
                                 AppIcons.place_outlined,
                                 size: 11,
                                 color: scheme.onSurfaceVariant,
@@ -287,7 +287,7 @@ class _StoryListTile extends StatelessWidget {
                         ),
                         const SizedBox(width: AppSpacing.sm),
                       ],
-                      FaIcon(
+                      Icon(
                         AppIcons.timer_outlined,
                         size: 11,
                         color: scheme.onSurfaceVariant,
@@ -313,11 +313,11 @@ class _StoryListTile extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             if (story.completed)
-              FaIcon(AppIcons.check_circle, color: scheme.tertiary, size: 18)
+              Icon(AppIcons.check_circle, color: scheme.tertiary, size: 18)
             else if (showBookmark)
-              FaIcon(AppIcons.bookmark, color: scheme.secondary, size: 18)
+              Icon(AppIcons.bookmark, color: scheme.secondary, size: 18)
             else
-              FaIcon(
+              Icon(
                 AppIcons.chevron_right,
                 color: scheme.onSurfaceVariant,
                 size: 16,

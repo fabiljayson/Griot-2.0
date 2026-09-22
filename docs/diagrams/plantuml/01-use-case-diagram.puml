@@ -115,24 +115,28 @@ package "Offline" {
   usecase "Sync Pending Requests" as UC_SYNC
 }
 
-' ─── Guest Associations ────────────────────────────────
+' ─── Guest Associations (unauthenticated) ──────────────
+' Verified: trending/popular/discover and badges are AllowAny in the API.
+' NOT listed: UC_VIEW_BM (bookmarks are per-user) and UC_GEN_QR (a
+' Manager/Admin action, now enforced as one).
+Guest --> UC_REG
+Guest --> UC_LOGIN
 Guest --> UC_BROWSE
 Guest --> UC_SEARCH
 Guest --> UC_READ
-Guest --> UC_VIEW_BM
-Guest --> UC_GEN_QR
 Guest --> UC_SCAN
 Guest --> UC_ARTIFACT
 Guest --> UC_TTS
 Guest --> UC_WATCH
+Guest --> UC_BADGES
+Guest --> UC_LEADER
 Guest --> UC_TRENDING
 Guest --> UC_POPULAR
 Guest --> UC_DISCOVER
 
 ' ─── Visitor Associations ──────────────────────────────
-Visitor --> UC_REG
-Visitor --> UC_LOGIN
 Visitor --> UC_PROFILE
+Visitor --> UC_GEN_TTS
 Visitor --> UC_BOOKMARK
 Visitor --> UC_LIKE
 Visitor --> UC_FLAG
@@ -156,19 +160,42 @@ Visitor --> UC_DEL_ACC
 ' ─── Contributor Associations ──────────────────────────
 Contributor --> UC_CREATE_STORY
 Contributor --> UC_EDIT_STORY
+Contributor --> UC_DEL_STORY
 Contributor --> UC_GEN_TTS
 Contributor --> UC_GEN_VIDEO
 Contributor --> UC_POLL_VIDEO
 
 ' ─── Institution Manager Associations ──────────────────
 InstitutionManager --> UC_CREATE_ART
+InstitutionManager --> UC_GEN_QR
 InstitutionManager --> UC_MODERATE
 InstitutionManager --> UC_MOD_QUEUE
 InstitutionManager --> UC_RESOLVE
+InstitutionManager --> UC_ANALYTICS
 
 ' ─── Admin Associations ────────────────────────────────
 Admin --> UC_DEL_STORY
 Admin --> UC_ANALYTICS
 Admin --> UC_DEL_ACC
+
+' ─── Divergences from original intent (reconciled 2026-09-22) ──
+' Delete Story        : the author may delete their own; Manager/Admin any.
+' Generate TTS        : any authenticated user for a PUBLISHED story.
+' Browse Quizzes /
+' View Leaderboard    : public (IsAuthenticatedOrReadOnly / AllowAny).
+' Share Story         : authenticated on both clients, though documented "All".
+' View Analytics      : implemented gate is IsAdminOrManager (wider than Admin).
+' Generate QR Code    : FIXED 2026-09-22 — previously fell through to AllowAny,
+'                       letting an anonymous POST persist qr_code_svg.
+' OPEN  co_authors     : declared on Story but read by no authorization check.
+' GAP   Guest actor    : AuthWrapper requires auth, so no guest mode in Flutter.
+' GAP   publication    : pending -> published happens only in the Django admin.
+' GAP   mobile         : no leaderboard, certificate, artifact-authoring,
+'                       artifact audio-guide or video-playback UI.
+
+note bottom of Guest
+  Guest is reachable on web + API only —
+  the Flutter app has no guest mode.
+end note
 
 @enduml

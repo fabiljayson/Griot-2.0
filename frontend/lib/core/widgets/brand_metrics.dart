@@ -46,7 +46,7 @@ class BrandMetricItem extends StatelessWidget {
     required this.label,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String value;
   final String label;
 
@@ -57,7 +57,7 @@ class BrandMetricItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(
+          Icon(
             icon,
             color: AppColors.ochreDark.withValues(alpha: 0.7),
             size: 20,

@@ -155,7 +155,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                       ],
                     ),
                     child: IconButton(
-                      icon: FaIcon(
+                      icon: Icon(
                         isPlaying ? AppIcons.pause : AppIcons.play_arrow,
                         color: Colors.white,
                         size: 36,
@@ -256,14 +256,14 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                       color: AppColors.terracotta,
                     ),
                   ),
-                  errorWidget: (_, _, _) => const FaIcon(
+                  errorWidget: (_, _, _) => const Icon(
                     AppIcons.movie_creation_outlined,
                     color: Colors.white38,
                     size: 48,
                   ),
                 )
               else
-                const FaIcon(
+                const Icon(
                   AppIcons.movie_creation_outlined,
                   color: Colors.white38,
                   size: 48,
@@ -315,7 +315,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const FaIcon(
+              const Icon(
                 AppIcons.error_outline,
                 color: AppColors.error,
                 size: 48,
@@ -335,7 +335,7 @@ class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
                   });
                   _initializePlayer();
                 },
-                icon: const FaIcon(AppIcons.refresh, size: 18),
+                icon: const Icon(AppIcons.refresh, size: 18),
                 label: const Text('Retry'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.terracotta,

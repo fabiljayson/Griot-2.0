@@ -119,7 +119,7 @@ class _ContinueCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
-                        FaIcon(
+                        Icon(
                           AppIcons.timer_outlined,
                           size: 12,
                           color: theme.colorScheme.onSurfaceVariant,

@@ -96,7 +96,7 @@ class _ArtifactsScreenState extends ConsumerState<ArtifactsScreen> {
                                 ArtifactDetailScreen.open(context, artifact);
                               }
                             },
-                            icon: const FaIcon(AppIcons.qr_code_scanner),
+                            icon: const Icon(AppIcons.qr_code_scanner),
                           ),
                         ],
                       ),
@@ -117,11 +117,11 @@ class _ArtifactsScreenState extends ConsumerState<ArtifactsScreen> {
                             ref.read(artifactsProvider.notifier).search(value),
                         decoration: InputDecoration(
                           hintText: 'Search artifacts, cultures, museums...',
-                          prefixIcon: const FaIcon(AppIcons.search),
+                          prefixIcon: const Icon(AppIcons.search),
                           suffixIcon: state.query.isEmpty
                               ? null
                               : IconButton(
-                                  icon: const FaIcon(AppIcons.clear),
+                                  icon: const Icon(AppIcons.clear),
                                   onPressed: () {
                                     _searchController.clear();
                                     ref
@@ -283,7 +283,7 @@ class _CategoryFilters extends StatelessWidget {
             onSelected: (_) => onSelected(value),
             avatar: value == kAllArtifactCategories
                 ? null
-                : FaIcon(
+                : Icon(
                     AppIcons.artifactCategory(value),
                     size: 13,
                     color: isSelected

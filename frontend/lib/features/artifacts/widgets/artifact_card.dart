@@ -51,7 +51,7 @@ class ArtifactCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    FaIcon(
+                    Icon(
                       AppIcons.artifactCategory(artifact.category),
                       size: 13,
                       color: AppColors.bronze,
@@ -95,7 +95,7 @@ class ArtifactCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
-                      FaIcon(
+                      Icon(
                         AppIcons.museum_outlined,
                         size: 12,
                         color: scheme.onSurfaceVariant,

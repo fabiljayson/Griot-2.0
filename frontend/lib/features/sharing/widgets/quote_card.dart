@@ -111,7 +111,7 @@ class QuoteCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    FaIcon(
+                    Icon(
                       AppIcons.lightbulb_outline,
                       size: 18,
                       color: accentColor,
@@ -271,7 +271,7 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const FaIcon(AppIcons.close),
+                  icon: const Icon(AppIcons.close),
                 ),
               ],
             ),
@@ -338,7 +338,7 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
               height: 56,
               child: ElevatedButton.icon(
                 onPressed: () => _shareCard(),
-                icon: const FaIcon(AppIcons.share),
+                icon: const Icon(AppIcons.share),
                 label: Text(
                   'Share Quote Card',
                   style: Theme.of(context).textTheme.titleMedium,

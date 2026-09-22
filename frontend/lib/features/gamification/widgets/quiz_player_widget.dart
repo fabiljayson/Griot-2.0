@@ -252,7 +252,7 @@ class _QuizPlayerWidgetState extends ConsumerState<QuizPlayerWidget>
         children: [
           Row(
             children: [
-              FaIcon(
+              Icon(
                 isCorrect ? AppIcons.check_circle : AppIcons.info_outline,
                 color: foreground,
                 size: 18,
@@ -452,9 +452,9 @@ class _AnswerOption extends StatelessWidget {
               ),
             ),
             if (showFeedback && isCorrect)
-              FaIcon(AppIcons.check_circle, color: scheme.tertiary, size: 22)
+              Icon(AppIcons.check_circle, color: scheme.tertiary, size: 22)
             else if (showFeedback && isWrong)
-              FaIcon(AppIcons.cancel, color: scheme.error, size: 22),
+              Icon(AppIcons.cancel, color: scheme.error, size: 22),
           ],
         ),
       ),

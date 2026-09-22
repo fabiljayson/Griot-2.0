@@ -1,5 +1,10 @@
 # Use Case Diagram — Griot 2.0
 
+> **Reconciled with the implementation on 2026-09-22.** The diagram and tables
+> below now describe *verified* behavior rather than the original intent.
+> Everything that changed, and every place where the implementation still
+> looks wrong, is recorded in [Divergences](#divergences-from-the-original-document).
+
 ## Actors
 
 | Actor | Description |
@@ -98,22 +103,32 @@ useCaseDiagram
         usecase "Sync Pending Requests" as UC_SYNC
     }
 
+    %% ── Guest (unauthenticated) ─────────────────────────────────────────
+    %% Verified: trending/popular/discover and badges are `AllowAny` in the
+    %% API; the web UI serves anonymous users the reader + artifact catalogue.
+    %% NOT listed here any more:
+    %%   UC_VIEW_BM  — bookmarks are per-user rows; a Guest cannot own one.
+    %%   UC_GEN_QR   — it is a Manager/Admin action and now enforced as one
+    %%                 (it previously fell through to AllowAny — see below).
+    %% Reachable on web + API only: the Flutter app has no guest mode.
+    Guest --> UC_REG
+    Guest --> UC_LOGIN
     Guest --> UC_BROWSE
     Guest --> UC_SEARCH
     Guest --> UC_READ
-    Guest --> UC_VIEW_BM
-    Guest --> UC_GEN_QR
     Guest --> UC_SCAN
     Guest --> UC_ARTIFACT
     Guest --> UC_TTS
     Guest --> UC_WATCH
+    Guest --> UC_QUIZZES
+    Guest --> UC_BADGES
+    Guest --> UC_LEADER
     Guest --> UC_TRENDING
     Guest --> UC_POPULAR
     Guest --> UC_DISCOVER
 
     Visitor --|> Guest
-    Visitor --> UC_REG
-    Visitor --> UC_LOGIN
+    Visitor --> UC_GEN_TTS
     Visitor --> UC_PROFILE
     Visitor --> UC_EDIT_PROFILE
     Visitor --> UC_PREFS
@@ -142,15 +157,18 @@ useCaseDiagram
     Contributor --|> Visitor
     Contributor --> UC_CREATE_STORY
     Contributor --> UC_EDIT_STORY
+    Contributor --> UC_DEL_STORY
     Contributor --> UC_GEN_TTS
     Contributor --> UC_GEN_VIDEO
     Contributor --> UC_POLL_VIDEO
 
     InstitutionManager --|> Contributor
     InstitutionManager --> UC_CREATE_ART
+    InstitutionManager --> UC_GEN_QR
     InstitutionManager --> UC_MODERATE
     InstitutionManager --> UC_MOD_QUEUE
     InstitutionManager --> UC_RESOLVE
+    InstitutionManager --> UC_ANALYTICS
 
     Admin --|> InstitutionManager
     Admin --> UC_DEL_STORY
@@ -169,6 +187,7 @@ useCaseDiagram
 | Read Story | All | View story content in Markdown reader |
 | Create Story | Contributor+ | Submit a new cultural story |
 | Edit Story | Owner, Manager, Admin | Modify existing story content |
+| Delete Story | Owner, Manager, Admin | Delete a story. Documented as Admin-only; the implementation also lets the author delete their own (see divergences) |
 | Bookmark Story | Authenticated | Save story to personal library |
 | Like Story | Authenticated | Toggle like on a story |
 | Flag Story | Authenticated | Report content for moderation |
@@ -177,21 +196,74 @@ useCaseDiagram
 | Scan QR Code | All | Scan museum artifact QR code |
 | View Artifact | All | View artifact details and related stories |
 | Create Artifact | Manager, Admin | Add new artifact to catalog |
-| Generate QR Code | Manager, Admin | Create QR code for an artifact |
+| Generate QR Code | Manager, Admin | Create QR code for an artifact. **Now enforced** — previously reachable unauthenticated (see divergences) |
 | Listen to TTS | All | Play audio narration of a story |
-| Generate Audio Narration | Contributor+ | Request TTS generation for a story |
+| Generate Audio Narration | Authenticated (published story); Owner/Manager/Admin (own or unpublished) | Request TTS generation for a story |
 | Generate Artifact Audio Guide | Authenticated (published artifact); Manager/Admin (unpublished) | Generate the museum audio guide via TTS |
 | Edit Profile | Authenticated | Update name, email and institution (roles are admin-granted) |
-| Set Language & Theme | Authenticated | Persist UI language (EN/FR) and theme preference |
-| Browse Quizzes | Authenticated | List published quizzes with latest results |
+| Set Language & Theme | Authenticated | Persist UI language (EN/FR). **Theme is not settable** — no endpoint writes `WebUserSettings.theme` |
+| Browse Quizzes | All | List published quizzes with latest results (`QuizViewSet` is `IsAuthenticatedOrReadOnly`) |
 | Generate AI Video | Contributor+ | Request Luma AI video generation |
 | Take Quiz | Authenticated | Complete a story quiz |
 | View Badges | All | Browse earned/available badges |
-| View Leaderboard | Authenticated | See top users by XP |
-| View Certificate | Authenticated | Download heritage certificate |
-| Share Story | All | Share to social platforms |
-| View Analytics Dashboard | Admin | View platform metrics |
+| View Leaderboard | All | See top users by XP (`LeaderboardView` is `AllowAny`). **No mobile UI** |
+| View Certificate | Authenticated | Download heritage certificate. **No mobile UI** |
+| Share Story | Authenticated | Share to social platforms (both the API and the web require a session) |
+| View Analytics Dashboard | Admin, Institution Manager | View platform metrics. The implemented gate is `IsAdminOrManager`, which is **wider than the original Admin-only rule** |
 | Moderate Content | Manager, Admin | Review flagged content |
 | Save Story Offline | Authenticated | Cache story for offline reading |
 | Read Offline | Authenticated | Read cached content without internet |
 | Sync Pending Requests | System | Replay queued offline requests |
+
+---
+
+## Divergences from the original document
+
+Recorded 2026-09-22 after tracing every use case from UI → provider/repository →
+API/view → model → authorization rule. Legend: **CORRECTED** = the document was
+wrong and the implementation is authoritative · **FIXED** = the implementation was
+wrong and has been changed · **OPEN** = implementation looks wrong and needs a
+decision · **GAP** = documented but not built.
+
+### CORRECTED (document changed to match the code)
+
+| # | Item | Originally said | Actually implemented |
+|---|---|---|---|
+| 1 | `Guest → View Bookmarks` | Guests can view bookmarks | Removed. `StoryBookmark` is a `unique_together(user, story)` row; the read endpoints (`bookmarks`, `recently_read`, `continue_reading`) are all `IsAuthenticated`. |
+| 2 | `Visitor → Register / Login` | Registration and login were Visitor use cases | Moved to **Guest**. They are pre-authentication actions; this file's own description table already attributed both to Guest. |
+| 3 | `Admin → Delete Story` | Delete was Admin-only | A **Contributor may delete their own** story; Manager/Admin may delete any (`IsStoryOwnerOrReadOnly`, `web/actions.py::story_delete`). |
+| 4 | `Generate Audio Narration` | Contributor+ | Any **authenticated** user for a **published** story; owner ∪ Manager/Admin otherwise. Mirrored in `AudioNarrationViewSet.create`. |
+| 5 | `Browse Quizzes` / `View Leaderboard` | Authenticated | **Public.** `QuizViewSet` is `IsAuthenticatedOrReadOnly`; `LeaderboardView` is `AllowAny`. `QuizQuestionSerializer` correctly omits `correct_answer`, so this exposes questions but not answers. |
+| 6 | `Share Story` | All | **Authenticated.** `StoryViewSet.share` falls to the `IsAuthenticated` branch; `web/actions.py::story_share` is `@login_required`, even though `StoryShare.user` is nullable and built for anonymous shares. |
+| 7 | `View Analytics Dashboard` | Admin | **Admin + Institution Manager** (`IsAdminOrManager`, `api/views_analytics.py`). |
+| 8 | `Set Language & Theme` | Language **and** theme persist | Only language is settable. No endpoint writes `WebUserSettings.theme`. |
+| 9 | Accessor notation | `is_visitor()`, `is_published()` etc. as methods | These are `@property` in the models — see `02-class-diagram.md`. |
+
+### FIXED (implementation changed to match the document)
+
+| # | Item | Was | Now |
+|---|---|---|---|
+| 10 | `Generate QR Code` authorization | `ArtifactViewSet.get_permissions` allow-listed only CRUD, so the `generate_qr` custom action fell through to `AllowAny` — an **unauthenticated POST could persist `qr_code_svg`** onto a published artifact. | `generate_qr` added to the manager-only action list. Anonymous → 401, Visitor → 403, Manager/Admin → 200. Guarded by `qr_codes/tests.py::test_generate_qr_requires_manager`; scanning remains public. |
+
+### OPEN (implementation looks wrong — awaiting a decision)
+
+| # | Item | Problem |
+|---|---|---|
+| 11 | `Story.co_authors` | Declared on the model and in the class diagram, but **no permission check, serializer, form or view reads it.** Co-authors have no edit/media/delete rights. Either four authorization checks are incomplete or the relation is vestigial. |
+| 12 | `home_view` vs public feeds | `trending`/`popular`/`discover` are `AllowAny` in the API, but `web/views.py::home_view` **empties trending and popular for anonymous users**. The same public use case is public on one client and blocked on the other. |
+| 13 | Share copy | The API says *"African Teller"*, the web says *"Griot AI"*, and both embed `🌍📖`. |
+| 14 | Duplicated template gate | `story_detail.html` uses the server-computed `can_generate_media` in four places but hand-rolls an equivalent expression for its Edit link — two sources of truth for one rule. |
+| 15 | `nav_items.html` precedence | `{% if user.is_authenticated and user.role == 'admin' or user.role == 'institution_manager' %}` parses as `(auth and admin) or manager`, so the manager branch is not covered by the auth check. Safe today only because an undefined `AnonymousUser.role` renders as `''`. Same pattern in `story_detail.html`. |
+
+### GAP (documented, not implemented)
+
+| # | Item | Status |
+|---|---|---|
+| 16 | **Guest actor on mobile** | `AuthWrapper` shows `LoginScreen` for every unauthenticated state, so the entire Guest column is **unreachable in the Flutter app**. Also makes `SignInPrompt` dead code in practice. |
+| 17 | **Publication workflow** | `draft`/`pending` are submittable from both clients, but `pending → published` happens **only via the Django admin site** (`stories/admin.py`). There is no review screen, no approve/reject endpoint, and `rejected` is never assigned anywhere. |
+| 18 | **Mobile leaderboard / certificate** | `gamification_api_service.getLeaderboard()` is hardcoded to `return []`; no leaderboard or certificate UI exists in Flutter. |
+| 19 | **Mobile artifact authoring** | No Flutter UI for `Create Artifact` or `Generate QR Code`. |
+| 20 | **Mobile artifact audio guide** | No Flutter UI or service call for `Generate Artifact Audio Guide`. |
+| 21 | **Mobile video playback** | `VideoStatusBadge` / `VideoPlayerWidget` are referenced only from inside the video feature, so `Watch Video` has no mobile surface. |
+| 22 | **Quote card (web)** | `QuoteCardGenerator` is mobile-only; there is no backend model or web template for `View Quote Card`. |
+| 23 | **Role-aware mobile navigation** | `main_shell.dart` renders the same five destinations for every role. `UserModel.canContribute` existed but was never referenced. |

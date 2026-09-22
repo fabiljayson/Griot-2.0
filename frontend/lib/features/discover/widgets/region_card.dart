@@ -84,7 +84,7 @@ class RegionCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.chip),
                       ),
                       child: Center(
-                        child: FaIcon(
+                        child: Icon(
                           region.icon,
                           size: 16,
                           color: Colors.white,

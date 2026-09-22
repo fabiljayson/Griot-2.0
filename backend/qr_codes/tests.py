@@ -88,6 +88,7 @@ class ArtifactTests(APITestCase):
         self.assertEqual(resp.data['title'], 'Bamileke Elephant Mask')
 
     def test_generate_qr_code_svg(self):
+        self.client.force_authenticate(self.manager)
         url = reverse('qr_codes:artifact-generate-qr', kwargs={'slug': 'royal-bamoun-throne'})
         resp = self.client.post(url, {
             'format': 'svg',
@@ -97,6 +98,37 @@ class ArtifactTests(APITestCase):
         self.assertIn('svg', resp.data)
         self.assertIn('deep_link', resp.data)
         self.assertIn('africanteller.org', resp.data['deep_link'])
+        self.artifact.refresh_from_db()
+        self.assertIn('<svg', self.artifact.qr_code_svg)
+
+    def test_generate_qr_requires_manager(self):
+        """Generating a QR code is a manager action, not a public one.
+
+        Regression: `get_permissions` only listed the CRUD actions, so
+        `generate_qr` fell through to `AllowAny` and an anonymous POST could
+        persist `qr_code_svg` onto a published artifact.
+        """
+        url = reverse('qr_codes:artifact-generate-qr', kwargs={'slug': 'royal-bamoun-throne'})
+
+        # Anonymous: rejected, and nothing is written.
+        resp = self.client.post(url, {'format': 'svg'})
+        self.assertIn(resp.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+        self.artifact.refresh_from_db()
+        self.assertEqual(self.artifact.qr_code_svg, '')
+
+        # Authenticated but only a Visitor: still rejected.
+        self.client.force_authenticate(self.visitor)
+        resp = self.client.post(url, {'format': 'svg'})
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.artifact.refresh_from_db()
+        self.assertEqual(self.artifact.qr_code_svg, '')
+
+    def test_visitor_can_still_scan(self):
+        """Scanning stays public — only QR *generation* was restricted."""
+        url = reverse('qr_codes:artifact-scan', kwargs={'slug': 'royal-bamoun-throne'})
+        resp = self.client.post(url, {'device_type': 'Android'})
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(QRCodeScan.objects.filter(artifact=self.artifact).count(), 1)
 
     def test_scan_artifact(self):
         url = reverse('qr_codes:artifact-scan', kwargs={'slug': 'royal-bamoun-throne'})

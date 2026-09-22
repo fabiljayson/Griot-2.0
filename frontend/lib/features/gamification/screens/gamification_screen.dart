@@ -163,7 +163,7 @@ class _StatCard extends StatelessWidget {
     required this.label,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String value;
   final String label;
 
@@ -176,7 +176,7 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         child: Column(
           children: [
-            FaIcon(icon, color: AppColors.bronze, size: 20),
+            Icon(icon, color: AppColors.bronze, size: 20),
             const SizedBox(height: AppSpacing.xs),
             Text(
               value,
@@ -232,7 +232,7 @@ class _QuizList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.control),
                   ),
                   child: const Center(
-                    child: FaIcon(
+                    child: Icon(
                       AppIcons.quiz_outlined,
                       size: 20,
                       color: AppColors.bronzeDark,
@@ -281,7 +281,7 @@ class _QuizList extends StatelessWidget {
                     ),
                   )
                 else
-                  FaIcon(
+                  Icon(
                     AppIcons.chevron_right,
                     size: 16,
                     color: scheme.onSurfaceVariant,

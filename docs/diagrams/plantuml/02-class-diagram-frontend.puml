@@ -68,10 +68,26 @@ package "Core" {
 
 ' ─── Auth ─────────────────────────────────────────────
 package "Auth" {
+  ' The mobile data layer is local-first: this delegates to SQLite and makes
+  ' NO HTTP calls. Tokens in FlutterSecureStorage are synthetic markers.
   class AuthRepository {
-    +Future~String~ accessToken
-    +Future refreshTokens() void
+    +Future~bool~ isAuthenticated
+    +Future~String?~ accessToken
+    +Future~String?~ refreshToken
     +Future clearTokens() void
+    +Future login(username,password) TokenPair
+    +Future register(...) UserModel
+    +Future refreshTokens() TokenPair
+    +Future getMe() UserModel
+    +Future updateProfile(...) UserModel
+    +Future deleteAccount() void
+    +Future logout() void
+  }
+
+  class LocalAuthRepository {
+    <<SQLite>>
+    +Future~bool~ isAuthenticated
+    +Future getMe() UserModel
   }
 
   class AuthProvider {
@@ -94,11 +110,16 @@ package "Auth" {
     +String lastName
     +String role
     +String institution
+    +canContribute bool
+    +canGenerateMediaFor(int authorId) bool
   }
 
   AuthProvider --> AuthRepository : uses
+  AuthRepository --> LocalAuthRepository : delegates to (no HTTP)
   AuthWrapper --> AuthProvider : watches
   AuthInterceptor --> AuthRepository : uses
+  ProfileScreen --> RoleBadge : displays
+  RoleBadge --> UserModel : reads role
 }
 
 ' ─── Stories ──────────────────────────────────────────
@@ -128,15 +149,42 @@ package "Stories" {
     -_loadFromCache() Future
   }
 
+  class LocalStoryRepository {
+    <<SQLite>>
+    +Future getStories(...) List~StoryModel~
+    +Future createStory(...) StoryModel
+    +Future updateStory(...) StoryModel
+    +Future toggleBookmark(slug) bool
+    +Future toggleLike(slug) bool
+  }
+
   class StoryRepository {
-    +fetchStories() Future
-    +searchStories() Future
-    +toggleBookmark() Future
-    +toggleLike() Future
+    +Future getStories(...) List~StoryModel~
+    +Future getStory(slug) StoryModel
+    +Future createStory(...) StoryModel
+    +Future updateStory(...) StoryModel
+    +Future deleteStory(slug) void
+    +Future getMyStories() List~StoryModel~
+    +Future getBookmarks() List~StoryModel~
+    +Future toggleBookmark(slug) bool
+    +Future toggleLike(slug) bool
+    +Future flagStory(...) void
+    +Future updateReadingProgress(...) void
   }
 
   StoryListNotifier --> StoryRepository : uses
-  StoryRepository --> ApiClient : HTTP calls
+  StoryRepository --> LocalStoryRepository : delegates to (no HTTP)
+
+  ' Only these feature services still reach the network, via ApiClient.
+  class ApiClientConsumers {
+    <<feature services>>
+    +admin_api_service -> /api/analytics
+    +audio_api_service -> /api/media
+    +video_api_service -> /api/media
+    +qr_api_service -> /api/artifacts
+    +sharing_service -> /api/stories/{slug}/share
+    +offline_auth_repository -> /api/auth
+  }
 }
 
 ' ─── Gamification ─────────────────────────────────────

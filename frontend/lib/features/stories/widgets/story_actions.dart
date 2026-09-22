@@ -26,10 +26,19 @@ class StoryActionsMenu extends ConsumerWidget {
       loading: () => false,
       error: (_, _) => false,
     );
+    final user = authState.maybeWhen(data: (s) => s.user, orElse: () => null);
     final isOnline = ref.watch(isCurrentlyOnlineProvider);
 
+    // Generation is a server-side job and the API additionally requires
+    // ownership, so Contributor-and-above alone is not enough to offer it —
+    // on another author's story the request could only ever 403. Mirrors the
+    // backend's `can_generate_media` gate.
+    final canGenerateVideo =
+        isOnline &&
+        (user?.canGenerateMediaFor(authorId: story.author.id) ?? false);
+
     return PopupMenuButton<String>(
-      icon: FaIcon(
+      icon: Icon(
         AppIcons.more_vert,
         color: Theme.of(context).colorScheme.onPrimary,
       ),
@@ -41,7 +50,7 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'bookmark',
           child: Row(
             children: [
-              FaIcon(
+              Icon(
                 story.isBookmarked
                     ? AppIcons.bookmark
                     : AppIcons.bookmark_border,
@@ -58,7 +67,7 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'like',
           child: Row(
             children: [
-              FaIcon(
+              Icon(
                 story.isLiked ? AppIcons.favorite : AppIcons.favorite_border,
                 color: story.isLiked ? AppColors.error : null,
               ),
@@ -75,7 +84,7 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'flag',
           child: Row(
             children: [
-              const FaIcon(AppIcons.flag_outlined, color: AppColors.error),
+              const Icon(AppIcons.flag_outlined, color: AppColors.error),
               const SizedBox(width: 12),
               Text(
                 'Flag Cultural Inaccuracy',
@@ -92,7 +101,7 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'share',
           child: Row(
             children: [
-              const FaIcon(AppIcons.share_outlined),
+              const Icon(AppIcons.share_outlined),
               const SizedBox(width: 12),
               const Text('Share'),
             ],
@@ -104,23 +113,22 @@ class StoryActionsMenu extends ConsumerWidget {
           value: 'quote',
           child: Row(
             children: [
-              const FaIcon(AppIcons.image_outlined),
+              const Icon(AppIcons.image_outlined),
               const SizedBox(width: 12),
               const Text('Share as Image'),
             ],
           ),
         ),
 
-        // AI video — generation is a server-side job, so the entry is only
-        // offered while the backend is reachable. Hiding it beats shipping a
-        // button that can only fail offline.
-        if (isOnline) ...[
+        // AI video — offered only to a role that can actually execute it, and
+        // only while the backend is reachable (generation is not local).
+        if (canGenerateVideo) ...[
           const PopupMenuDivider(),
           PopupMenuItem(
             value: 'video',
             child: Row(
               children: [
-                const FaIcon(AppIcons.auto_awesome),
+                const Icon(AppIcons.auto_awesome),
                 const SizedBox(width: 12),
                 const Text('Generate AI Video'),
               ],
@@ -209,7 +217,7 @@ class StoryActionsMenu extends ConsumerWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          icon: const FaIcon(
+          icon: const Icon(
             AppIcons.flag_outlined,
             color: AppColors.error,
             size: 48,
@@ -350,7 +358,7 @@ class StoryQuickActions extends ConsumerWidget {
       children: [
         // Like button
         IconButton(
-          icon: FaIcon(
+          icon: Icon(
             story.isLiked ? AppIcons.favorite : AppIcons.favorite_border,
             color: story.isLiked ? AppColors.error : null,
             size: 20,
@@ -367,7 +375,7 @@ class StoryQuickActions extends ConsumerWidget {
 
         // Bookmark button
         IconButton(
-          icon: FaIcon(
+          icon: Icon(
             story.isBookmarked ? AppIcons.bookmark : AppIcons.bookmark_border,
             color: story.isBookmarked ? AppColors.ochre : null,
             size: 20,

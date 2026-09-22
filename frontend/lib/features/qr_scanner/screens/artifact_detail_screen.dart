@@ -38,7 +38,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
   }
 
   /// Icon representing the artifact's category (never an emoji).
-  FaIconData get _categoryIcon => AppIcons.artifactCategory(artifact.category);
+  IconData get _categoryIcon => AppIcons.artifactCategory(artifact.category);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -208,7 +208,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
               color: scheme.secondary,
               borderRadius: BorderRadius.circular(AppRadius.control),
             ),
-            child: FaIcon(
+            child: Icon(
               AppIcons.headphones,
               color: scheme.onSecondary,
               size: 20,
@@ -258,7 +258,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
                 backgroundColor: scheme.secondary,
                 foregroundColor: scheme.onSecondary,
               ),
-              icon: const FaIcon(AppIcons.play_arrow_rounded),
+              icon: const Icon(AppIcons.play_arrow_rounded),
               tooltip: 'Play audio guide',
             ),
         ],
@@ -354,7 +354,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
       borderColor: scheme.primary.withValues(alpha: 0.3),
       child: Row(
         children: [
-          FaIcon(AppIcons.museum, color: scheme.primary, size: 22),
+          Icon(AppIcons.museum, color: scheme.primary, size: 22),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -454,7 +454,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
 
     return Row(
       children: [
-        FaIcon(
+        Icon(
           AppIcons.qr_code_scanner,
           size: 15,
           color: scheme.onSurfaceVariant,
@@ -473,7 +473,7 @@ class ArtifactDetailScreen extends ConsumerWidget {
 class _MetadataEntry extends StatelessWidget {
   const _MetadataEntry({required this.icon, required this.label});
 
-  final FaIconData icon;
+  final IconData icon;
   final String label;
 
   @override
@@ -484,7 +484,7 @@ class _MetadataEntry extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FaIcon(icon, size: 15, color: scheme.onSurfaceVariant),
+        Icon(icon, size: 15, color: scheme.onSurfaceVariant),
         const SizedBox(width: AppSpacing.xs + 1),
         Text(label, style: theme.textTheme.bodyMedium),
       ],
@@ -532,7 +532,7 @@ class _RelatedStoryCard extends StatelessWidget {
                     foregroundColor: AppColors.bronzeDark,
                   ),
                   iconSize: 18,
-                  icon: FaIcon(
+                  icon: Icon(
                     isAuthenticated
                         ? AppIcons.play_arrow_rounded
                         : AppIcons.lock_outline,

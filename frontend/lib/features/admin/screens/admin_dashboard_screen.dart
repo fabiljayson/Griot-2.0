@@ -37,7 +37,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ref.invalidate(dashboardSummaryProvider);
               ref.invalidate(moderationQueueProvider);
             },
-            icon: const FaIcon(AppIcons.refresh),
+            icon: const Icon(AppIcons.refresh),
           ),
         ],
       ),
@@ -741,7 +741,7 @@ class _ModerationSectionState extends ConsumerState<_ModerationSection> {
         ),
         child: Row(
           children: [
-            const FaIcon(AppIcons.check_circle, size: 22),
+            const Icon(AppIcons.check_circle, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -782,7 +782,7 @@ class _ModerationSectionState extends ConsumerState<_ModerationSection> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          icon: const FaIcon(
+          icon: const Icon(
             AppIcons.warning_amber_rounded,
             color: AppColors.error,
             size: 40,
@@ -849,7 +849,7 @@ class _GrowthCard extends StatelessWidget {
 
   final String title;
   final String subtitle;
-  final FaIconData icon;
+  final IconData icon;
   final Color color;
   final List<GrowthPoint> data;
 
@@ -858,7 +858,7 @@ class _GrowthCard extends StatelessWidget {
     return DashboardSection(
       title: title,
       subtitle: subtitle,
-      trailing: FaIcon(icon, color: color),
+      trailing: Icon(icon, color: color),
       child: GrowthChart(data: data, color: color),
     );
   }
@@ -901,7 +901,7 @@ class _RoleBreakdown extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Real icon for the role instead of the model's emoji glyph.
-                FaIcon(
+                Icon(
                   AppIcons.role(entry.key),
                   size: 13,
                   color: AppColors.bronzeDark,
@@ -1167,7 +1167,7 @@ class _DashboardError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const FaIcon(AppIcons.analytics_outlined, size: 44),
+            const Icon(AppIcons.analytics_outlined, size: 44),
             const SizedBox(height: 16),
             Text(
               'Dashboard unavailable',
@@ -1186,7 +1186,7 @@ class _DashboardError extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const FaIcon(AppIcons.refresh),
+              icon: const Icon(AppIcons.refresh),
               label: const Text('Try again'),
             ),
           ],

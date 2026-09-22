@@ -86,7 +86,7 @@ class SectionHeader extends StatelessWidget {
   });
 
   final String title;
-  final FaIconData? icon;
+  final IconData? icon;
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
 
@@ -99,7 +99,7 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           if (icon != null) ...[
-            FaIcon(icon, color: AppColors.bronze, size: 20),
+            Icon(icon, color: AppColors.bronze, size: 20),
             const SizedBox(width: AppSpacing.sm),
           ],
           Expanded(
@@ -129,7 +129,7 @@ class EmptyState extends StatelessWidget {
 
   final String title;
   final String? subtitle;
-  final FaIconData icon;
+  final IconData icon;
   final Widget? action;
 
   @override
@@ -143,7 +143,7 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            Icon(
               icon,
               size: 56,
               color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
@@ -189,7 +189,7 @@ class ErrorState extends StatelessWidget {
   final String message;
   final String title;
   final VoidCallback? onRetry;
-  final FaIconData icon;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +201,7 @@ class ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(icon, size: 56, color: theme.colorScheme.error),
+            Icon(icon, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: AppSpacing.lg),
             Text(
               title,
@@ -220,7 +220,7 @@ class ErrorState extends StatelessWidget {
               const SizedBox(height: AppSpacing.xl),
               FilledButton.icon(
                 onPressed: onRetry,
-                icon: const FaIcon(AppIcons.refresh, size: 16),
+                icon: const Icon(AppIcons.refresh, size: 16),
                 label: const Text('Try Again'),
               ),
             ],
@@ -252,7 +252,7 @@ class MetadataPill extends StatelessWidget {
   });
 
   final String label;
-  final FaIconData? icon;
+  final IconData? icon;
   final Color? color;
   final VoidCallback? onTap;
 
@@ -275,7 +275,7 @@ class MetadataPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            FaIcon(icon, size: 11, color: tone),
+            Icon(icon, size: 11, color: tone),
             const SizedBox(width: AppSpacing.xs + 1),
           ],
           Text(

@@ -245,7 +245,7 @@ class _RegisterFormPanel extends StatelessWidget {
                     controller: usernameController,
                     label: 'Username',
                     hint: 'Choose a unique username',
-                    icon: FaIcon(AppIcons.person_outline),
+                    icon: AppIcons.person_outline,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -267,7 +267,7 @@ class _RegisterFormPanel extends StatelessWidget {
                     controller: emailController,
                     label: 'Email',
                     hint: 'you@example.com',
-                    icon: FaIcon(AppIcons.email_outlined),
+                    icon: AppIcons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -292,7 +292,7 @@ class _RegisterFormPanel extends StatelessWidget {
                           controller: firstNameController,
                           label: 'First Name',
                           hint: 'Optional',
-                          icon: FaIcon(AppIcons.badge_outlined),
+                          icon: AppIcons.badge_outlined,
                           textInputAction: TextInputAction.next,
                         ),
                       ),
@@ -302,7 +302,7 @@ class _RegisterFormPanel extends StatelessWidget {
                           controller: lastNameController,
                           label: 'Last Name',
                           hint: 'Optional',
-                          icon: FaIcon(AppIcons.badge_outlined),
+                          icon: AppIcons.badge_outlined,
                           textInputAction: TextInputAction.next,
                         ),
                       ),
@@ -315,11 +315,11 @@ class _RegisterFormPanel extends StatelessWidget {
                     controller: passwordController,
                     label: 'Password',
                     hint: 'At least 8 characters',
-                    icon: FaIcon(AppIcons.lock_outline),
+                    icon: AppIcons.lock_outline,
                     obscureText: obscurePassword,
                     textInputAction: TextInputAction.next,
                     suffixIcon: IconButton(
-                      icon: FaIcon(
+                      icon: Icon(
                         obscurePassword
                             ? AppIcons.visibility_off
                             : AppIcons.visibility,
@@ -344,12 +344,12 @@ class _RegisterFormPanel extends StatelessWidget {
                     controller: confirmPasswordController,
                     label: 'Confirm Password',
                     hint: 'Re-enter your password',
-                    icon: FaIcon(AppIcons.lock_outline),
+                    icon: AppIcons.lock_outline,
                     obscureText: obscureConfirmPassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => onRegister(),
                     suffixIcon: IconButton(
-                      icon: FaIcon(
+                      icon: Icon(
                         obscureConfirmPassword
                             ? AppIcons.visibility_off
                             : AppIcons.visibility,
@@ -386,7 +386,7 @@ class _RegisterFormPanel extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const FaIcon(
+                          const Icon(
                             AppIcons.error_outline,
                             color: AppColors.error,
                             size: 18,
@@ -514,7 +514,7 @@ class _RoleCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              FaIcon(
+              Icon(
                 role == UserRole.visitor
                     ? AppIcons.explore
                     : AppIcons.edit_outlined,

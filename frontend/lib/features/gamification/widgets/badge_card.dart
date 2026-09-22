@@ -40,7 +40,7 @@ class BadgeCard extends StatelessWidget {
           ),
         ),
         child: Center(
-          child: FaIcon(
+          child: Icon(
             badge.earned ? AppIcons.star : AppIcons.lock_outline,
             size: 22,
             color: badge.earned
@@ -90,7 +90,7 @@ class BadgeCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: FaIcon(
+              child: Icon(
                 badge.earned ? AppIcons.star : AppIcons.lock_outline,
                 size: 30,
                 color: badge.earned

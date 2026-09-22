@@ -227,7 +227,7 @@ class _StoriesScreenState extends ConsumerState<StoriesScreen> {
         children: [
           MaterialBanner(
             content: Text(message),
-            leading: FaIcon(
+            leading: Icon(
               AppIcons.warning_amber_rounded,
               color: theme.colorScheme.error,
             ),
@@ -319,10 +319,10 @@ class _SearchBarState extends State<_SearchBar> {
               controller: widget.controller,
               decoration: InputDecoration(
                 hintText: 'Search stories...',
-                prefixIcon: const FaIcon(AppIcons.search),
+                prefixIcon: const Icon(AppIcons.search),
                 suffixIcon: widget.controller.text.isNotEmpty
                     ? IconButton(
-                        icon: const FaIcon(AppIcons.clear),
+                        icon: const Icon(AppIcons.clear),
                         onPressed: () {
                           widget.controller.clear();
                           widget.onSearch('');
@@ -347,7 +347,7 @@ class _SearchBarState extends State<_SearchBar> {
           ),
           const SizedBox(width: AppSpacing.sm),
           IconButton(
-            icon: FaIcon(
+            icon: Icon(
               widget.showFilters
                   ? AppIcons.filter_list_off
                   : AppIcons.filter_list,
@@ -420,7 +420,7 @@ class _FilterChips extends StatelessWidget {
               ...StoryLanguage.values.map((lang) {
                 return FilterChip(
                   // Language name instead of the model's flag emoji.
-                  avatar: const FaIcon(AppIcons.language, size: 13),
+                  avatar: const Icon(AppIcons.language, size: 13),
                   label: Text(lang.label),
                   selected: selectedLanguage == lang.value,
                   onSelected: (_) {
@@ -455,7 +455,7 @@ class _FilterChips extends StatelessWidget {
                         return FilterChip(
                           // Real icon resolved from the stored glyph, instead of
                           // rendering the emoji itself.
-                          avatar: FaIcon(
+                          avatar: Icon(
                             AppIcons.fromEmoji(cat.icon),
                             size: 13,
                           ),
@@ -506,7 +506,7 @@ class _FilterChips extends StatelessWidget {
               if (hasFilters)
                 TextButton.icon(
                   onPressed: onClearFilters,
-                  icon: const FaIcon(AppIcons.clear_all, size: 18),
+                  icon: const Icon(AppIcons.clear_all, size: 18),
                   label: const Text('Clear'),
                 ),
             ],

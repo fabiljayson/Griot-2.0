@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_icons.dart';
 import '../theme/app_colors.dart';
 
 /// Styled text field for auth forms (login, registration, and any future
 /// auth screens).
 ///
-/// Rounded, filled input with a leading [FaIcon], an optional [suffixIcon]
+/// Rounded, filled input with a leading [IconData], an optional [suffixIcon]
 /// (e.g. the password visibility toggle), and the shared terracotta
 /// focus/error styling.
 class AuthTextField extends StatelessWidget {
@@ -27,7 +26,7 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final FaIcon icon;
+  final IconData icon;
   final bool obscureText;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
@@ -50,7 +49,7 @@ class AuthTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: icon,
+        prefixIcon: Icon(icon),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: theme.brightness == Brightness.dark

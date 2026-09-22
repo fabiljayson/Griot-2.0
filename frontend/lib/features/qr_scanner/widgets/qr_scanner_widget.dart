@@ -141,14 +141,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
         title: const Text('Scan QR Code'),
         actions: [
           IconButton(
-            icon: FaIcon(
+            icon: Icon(
               _isFlashOn ? AppIcons.flash_on : AppIcons.flash_off,
               color: _isFlashOn ? AppColors.ochre : Colors.white,
             ),
             onPressed: _toggleFlash,
           ),
           IconButton(
-            icon: const FaIcon(AppIcons.keyboard),
+            icon: const Icon(AppIcons.keyboard),
             onPressed: _showManualInput,
             tooltip: 'Enter URL manually',
           ),

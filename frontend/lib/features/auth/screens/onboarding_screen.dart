@@ -262,7 +262,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           children: [
             Text(isLastPage ? 'Get Started' : 'Next'),
             const SizedBox(width: 8),
-            FaIcon(
+            Icon(
               isLastPage ? AppIcons.check : AppIcons.arrow_forward_ios,
               size: 16,
             ),
@@ -353,7 +353,7 @@ class _OnboardingSlide extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Center(
-                                    child: FaIcon(
+                                    child: Icon(
                                       slideData.icon,
                                       size: 19,
                                       color: AppColors.charcoal,
@@ -448,7 +448,7 @@ class _SlideData {
     required this.accentColor,
   });
 
-  final FaIconData icon;
+  final IconData icon;
   final String imageAsset;
   final String title;
   final String subtitle;

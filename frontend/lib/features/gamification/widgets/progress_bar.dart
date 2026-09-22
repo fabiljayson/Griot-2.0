@@ -99,7 +99,7 @@ class _LevelProgressBarState extends State<LevelProgressBar>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    FaIcon(
+                    Icon(
                       AppIcons.star,
                       color: scheme.onSecondary,
                       size: 14,
@@ -156,7 +156,7 @@ class _LevelProgressBarState extends State<LevelProgressBar>
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                FaIcon(
+                Icon(
                   AppIcons.bolt_outlined,
                   size: 14,
                   color: scheme.secondary,

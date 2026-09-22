@@ -70,7 +70,7 @@ class GriotImage extends StatelessWidget {
   final String? blurhash;
 
   /// Icon shown in the placeholder/error state. Defaults to a book icon.
-  final FaIconData? placeholderIcon;
+  final IconData? placeholderIcon;
 
   /// Accessibility label for the image.
   final String? semanticLabel;
@@ -154,7 +154,7 @@ class GriotImage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return _surface(
       context,
-      child: FaIcon(
+      child: Icon(
         placeholderIcon ?? AppIcons.auto_stories,
         size: _placeholderIconSize,
         color: scheme.onSurfaceVariant.withValues(alpha: 0.55),

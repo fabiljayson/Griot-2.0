@@ -185,7 +185,7 @@ class BrandPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          FaIcon(
+          Icon(
             AppIcons.auto_stories_outlined,
             color: AppColors.ochreDark.withValues(alpha: 0.8),
             size: 28,

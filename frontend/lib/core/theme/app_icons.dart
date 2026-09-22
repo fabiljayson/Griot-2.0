@@ -1,164 +1,169 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// Convenience re-exports so call sites only need this file's import to use
-/// [FaIcon] (v11's Font Awesome icon widget, required for [FaIconData]).
-export 'package:font_awesome_flutter/font_awesome_flutter.dart'
-    show FaIcon, FaIconData;
-
-/// Font Awesome icon set for the Griot 2.0 design system.
+/// Icon set for the Griot 2.0 design system.
 ///
-/// Central mapping from the Material [Icons] names previously used across the
-/// app to their Font Awesome equivalents (solid style; brand style only where
-/// no solid variant exists). Swapping or refining an icon app-wide is now a
-/// one-line change in this file.
+/// A single, deliberate **outline** vocabulary drawn from Material's
+/// `*_outlined` families, matching the line-icon sheet supplied in
+/// `UI model/fonts.jpeg` (and the thin-stroke icons in the navigation-bar and
+/// onboarding references). The app previously rendered Font Awesome *solid*
+/// glyphs everywhere, which read as heavy against the web's light, hairline
+/// treatment.
 ///
-/// Font Awesome 11 icons are [FaIconData] and render with [FaIcon] instead of
-/// the standard [Icon] widget.
+/// Every icon in the app resolves through this file, so changing the icon
+/// language app-wide is a one-file edit. Member names intentionally mirror the
+/// Material [Icons] members they replace so call sites stay readable; the
+/// `constant_identifier_names` lint is suppressed below because a handful keep
+/// their historical suffixes (`search`, `chevron_right`).
 ///
-/// Note: names intentionally mirror the Material [Icons] members they
-/// replace, so the `constant_identifier_names` lint is suppressed below.
-///
-/// Style note: in Font Awesome 7 data, plain names refer to the *regular*
-/// (outlined) variant when a `solid*` alias exists — the `solid*` prefix is
-/// used here so every icon renders filled.
+/// Two deliberate exceptions to the outline rule: the like and bookmark
+/// toggles keep a filled "on" state ([favorite], [bookmark]) because they are
+/// the only place where state would otherwise be conveyed by colour alone.
 // ignore_for_file: constant_identifier_names
 abstract final class AppIcons {
-  // --- Brand icons (no solid/regular variant exists) ---
-  static const FaIconData facebook = FontAwesomeIcons.facebookF;
-  static const FaIconData alternate_email = FontAwesomeIcons.xTwitter;
+  // --- Brand marks (outline glyphs do not exist for third-party logos) ---
+  static const IconData facebook = Icons.facebook;
+  static const IconData alternate_email = Icons.alternate_email;
 
-  // --- Solid icons ---
-  static const FaIconData account_circle_outlined =
-      FontAwesomeIcons.solidCircleUser;
-  static const FaIconData analytics_outlined = FontAwesomeIcons.chartColumn;
-  static const FaIconData arrow_forward_ios = FontAwesomeIcons.chevronRight;
-  static const FaIconData badge_outlined = FontAwesomeIcons.solidIdCard;
-  static const FaIconData auto_awesome = FontAwesomeIcons.wandMagicSparkles;
-  static const FaIconData auto_stories = FontAwesomeIcons.bookOpen;
-  static const FaIconData auto_stories_outlined = FontAwesomeIcons.bookOpen;
-  static const FaIconData autorenew = FontAwesomeIcons.rotate;
-  static const FaIconData bedtime_outlined = FontAwesomeIcons.solidMoon;
-  static const FaIconData bolt_outlined = FontAwesomeIcons.bolt;
-  static const FaIconData bookmark = FontAwesomeIcons.solidBookmark;
-  static const FaIconData bookmark_border = FontAwesomeIcons.solidBookmark;
-  static const FaIconData bookmark_outline = FontAwesomeIcons.solidBookmark;
-  static const FaIconData business_outlined = FontAwesomeIcons.solidBuilding;
-  static const FaIconData calendar_today = FontAwesomeIcons.solidCalendarDays;
-  static const FaIconData cancel = FontAwesomeIcons.xmark;
-  static const FaIconData chat_bubble = FontAwesomeIcons.solidComment;
-  static const FaIconData check = FontAwesomeIcons.check;
-  static const FaIconData check_circle = FontAwesomeIcons.solidCircleCheck;
-  static const FaIconData chevron_right = FontAwesomeIcons.chevronRight;
-  static const FaIconData clear = FontAwesomeIcons.xmark;
-  static const FaIconData clear_all = FontAwesomeIcons.broom;
-  static const FaIconData close = FontAwesomeIcons.xmark;
-  static const FaIconData crop_landscape = FontAwesomeIcons.tabletScreenButton;
-  static const FaIconData crop_portrait = FontAwesomeIcons.mobileScreenButton;
-  static const FaIconData crop_square = FontAwesomeIcons.solidSquare;
-  static const FaIconData dark_mode_outlined = FontAwesomeIcons.solidMoon;
-  static const FaIconData delete_forever = FontAwesomeIcons.trash;
-  static const FaIconData download_done_rounded = FontAwesomeIcons.download;
-  static const FaIconData edit = FontAwesomeIcons.pen;
-  static const FaIconData edit_outlined = FontAwesomeIcons.pen;
-  static const FaIconData email_outlined = FontAwesomeIcons.solidEnvelope;
-  static const FaIconData emoji_events_outlined = FontAwesomeIcons.trophy;
-  static const FaIconData error_outline = FontAwesomeIcons.circleExclamation;
-  static const FaIconData explore = FontAwesomeIcons.solidCompass;
-  static const FaIconData favorite = FontAwesomeIcons.solidHeart;
-  static const FaIconData favorite_border = FontAwesomeIcons.solidHeart;
-  static const FaIconData favorite_outline = FontAwesomeIcons.solidHeart;
-  static const FaIconData filter_list = FontAwesomeIcons.filter;
-  static const FaIconData filter_list_off = FontAwesomeIcons.filter;
-  static const FaIconData flag_outlined = FontAwesomeIcons.solidFlag;
-  static const FaIconData flash_off = FontAwesomeIcons.bolt;
-  static const FaIconData flash_on = FontAwesomeIcons.bolt;
-  static const FaIconData forward_10 = FontAwesomeIcons.forward;
-  static const FaIconData headphones = FontAwesomeIcons.headphones;
-  static const FaIconData history = FontAwesomeIcons.clockRotateLeft;
-  static const FaIconData image_outlined = FontAwesomeIcons.solidImage;
-  static const FaIconData info_outline = FontAwesomeIcons.circleInfo;
-  static const FaIconData insights_outlined = FontAwesomeIcons.chartLine;
-  static const FaIconData keyboard = FontAwesomeIcons.solidKeyboard;
-  static const FaIconData language = FontAwesomeIcons.language;
-  static const FaIconData lightbulb_outline = FontAwesomeIcons.solidLightbulb;
-  static const FaIconData location_on = FontAwesomeIcons.locationDot;
-  static const FaIconData lock_outline = FontAwesomeIcons.lock;
-  static const FaIconData logout = FontAwesomeIcons.rightFromBracket;
-  static const FaIconData menu_book_outlined = FontAwesomeIcons.bookOpen;
-  static const FaIconData military_tech_outlined = FontAwesomeIcons.medal;
-  static const FaIconData medal = FontAwesomeIcons.medal;
-  static const FaIconData medal_outlined = FontAwesomeIcons.medal;
-  static const FaIconData more_horiz = FontAwesomeIcons.ellipsis;
-  static const FaIconData more_vert = FontAwesomeIcons.ellipsisVertical;
-  static const FaIconData movie_creation_outlined =
-      FontAwesomeIcons.clapperboard;
-  static const FaIconData museum = FontAwesomeIcons.buildingColumns;
-  static const FaIconData museum_outlined = FontAwesomeIcons.buildingColumns;
-  static const FaIconData pause = FontAwesomeIcons.pause;
-  static const FaIconData pause_circle_filled =
-      FontAwesomeIcons.solidCirclePause;
-  static const FaIconData people_outline = FontAwesomeIcons.users;
-  static const FaIconData person_add_alt = FontAwesomeIcons.userPlus;
-  static const FaIconData person_outline = FontAwesomeIcons.solidUser;
-  static const FaIconData person_pin_outlined = FontAwesomeIcons.userTie;
-  static const FaIconData place_outlined = FontAwesomeIcons.locationDot;
-  static const FaIconData play_arrow = FontAwesomeIcons.play;
-  static const FaIconData play_arrow_rounded = FontAwesomeIcons.play;
-  static const FaIconData play_circle_filled = FontAwesomeIcons.solidCirclePlay;
-  static const FaIconData play_circle_outline =
-      FontAwesomeIcons.solidCirclePlay;
-  static const FaIconData preview = FontAwesomeIcons.eye;
-  static const FaIconData qr_code_scanner = FontAwesomeIcons.qrcode;
-  static const FaIconData quiz = FontAwesomeIcons.solidCircleQuestion;
-  static const FaIconData quiz_outlined = FontAwesomeIcons.solidCircleQuestion;
-  static const FaIconData refresh = FontAwesomeIcons.rotate;
-  static const FaIconData remove_red_eye_outlined = FontAwesomeIcons.eye;
-  static const FaIconData repeat = FontAwesomeIcons.repeat;
-  static const FaIconData replay_10 = FontAwesomeIcons.rotateLeft;
-  static const FaIconData schedule = FontAwesomeIcons.solidClock;
-  static const FaIconData search = FontAwesomeIcons.magnifyingGlass;
-  static const FaIconData send = FontAwesomeIcons.solidPaperPlane;
-  static const FaIconData share = FontAwesomeIcons.shareNodes;
-  static const FaIconData share_outlined = FontAwesomeIcons.shareNodes;
-  static const FaIconData speed = FontAwesomeIcons.gaugeHigh;
-  static const FaIconData star = FontAwesomeIcons.solidStar;
-  static const FaIconData task_alt = FontAwesomeIcons.solidCircleCheck;
-  static const FaIconData timer_outlined = FontAwesomeIcons.stopwatch;
-  static const FaIconData trending_up = FontAwesomeIcons.arrowTrendUp;
-  static const FaIconData visibility = FontAwesomeIcons.eye;
-  static const FaIconData visibility_off = FontAwesomeIcons.eyeSlash;
-  static const FaIconData visibility_outlined = FontAwesomeIcons.eye;
-  static const FaIconData volume_off = FontAwesomeIcons.volumeXmark;
-  static const FaIconData volume_up = FontAwesomeIcons.volumeHigh;
-  static const FaIconData warning_amber_rounded =
-      FontAwesomeIcons.triangleExclamation;
-  static const FaIconData wifi = FontAwesomeIcons.wifi;
-  static const FaIconData wifi_off = FontAwesomeIcons.wifi;
+  // --- Navigation & chrome ---
+  static const IconData account_circle_outlined = Icons.account_circle_outlined;
+  static const IconData analytics_outlined = Icons.analytics_outlined;
+  static const IconData arrow_forward_ios = Icons.chevron_right;
+  static const IconData badge_outlined = Icons.badge_outlined;
+  static const IconData auto_awesome = Icons.auto_awesome_outlined;
+  static const IconData auto_stories = Icons.auto_stories_outlined;
+  static const IconData auto_stories_outlined = Icons.auto_stories_outlined;
+  static const IconData autorenew = Icons.autorenew_outlined;
+  static const IconData bedtime_outlined = Icons.bedtime_outlined;
+  static const IconData bolt_outlined = Icons.bolt_outlined;
+  static const IconData business_outlined = Icons.business_outlined;
+  static const IconData calendar_today = Icons.calendar_today_outlined;
+  static const IconData chat_bubble = Icons.chat_bubble_outline;
+  static const IconData clear = Icons.close;
+  static const IconData clear_all = Icons.clear_all_outlined;
+  static const IconData close = Icons.close;
+  static const IconData dark_mode_outlined = Icons.dark_mode_outlined;
+  static const IconData download_done_rounded = Icons.download_done_outlined;
+  static const IconData edit = Icons.edit_outlined;
+  static const IconData edit_outlined = Icons.edit_outlined;
+  static const IconData email_outlined = Icons.email_outlined;
+  static const IconData error_outline = Icons.error_outline;
+  static const IconData explore = Icons.explore_outlined;
+  static const IconData filter_list = Icons.filter_list_outlined;
+  static const IconData filter_list_off = Icons.filter_list_off_outlined;
+  static const IconData flag_outlined = Icons.flag_outlined;
+  static const IconData flash_off = Icons.flash_off_outlined;
+  static const IconData flash_on = Icons.flash_on_outlined;
+  static const IconData history = Icons.history_outlined;
+  static const IconData image_outlined = Icons.image_outlined;
+  static const IconData info_outline = Icons.info_outline;
+  static const IconData insights_outlined = Icons.insights_outlined;
+  static const IconData keyboard = Icons.keyboard_outlined;
+  static const IconData language = Icons.language_outlined;
+  static const IconData lightbulb_outline = Icons.lightbulb_outline;
+  static const IconData location_on = Icons.location_on_outlined;
+  static const IconData lock_outline = Icons.lock_outline;
+  static const IconData logout = Icons.logout_outlined;
+  static const IconData menu_book_outlined = Icons.menu_book_outlined;
+  static const IconData chevron_right = Icons.chevron_right;
+  static const IconData more_horiz = Icons.more_horiz;
+  static const IconData more_vert = Icons.more_vert;
+  static const IconData pause_circle_filled = Icons.pause_circle_filled;
+  static const IconData people_outline = Icons.people_outline;
+  static const IconData person_add_alt = Icons.person_add_outlined;
+  static const IconData person_outline = Icons.person_outline;
+  static const IconData person_pin_outlined = Icons.person_pin_outlined;
+  static const IconData place_outlined = Icons.place_outlined;
+  static const IconData preview = Icons.preview_outlined;
+  static const IconData refresh = Icons.refresh_outlined;
+  static const IconData repeat = Icons.repeat_outlined;
+  static const IconData schedule = Icons.schedule_outlined;
+  static const IconData search = Icons.search_outlined;
+  static const IconData send = Icons.send_outlined;
+  static const IconData settings_outlined = Icons.settings_outlined;
+  static const IconData share = Icons.share_outlined;
+  static const IconData share_outlined = Icons.share_outlined;
+  static const IconData speed = Icons.speed_outlined;
+  static const IconData task_alt = Icons.task_alt_outlined;
+  static const IconData timer_outlined = Icons.timer_outlined;
+  static const IconData trending_up = Icons.trending_up_outlined;
+  static const IconData visibility = Icons.visibility_outlined;
+  static const IconData visibility_off = Icons.visibility_off_outlined;
+  static const IconData visibility_outlined = Icons.visibility_outlined;
+  static const IconData volume_off = Icons.volume_off_outlined;
+  static const IconData volume_up = Icons.volume_up_outlined;
+  static const IconData warning_amber_rounded = Icons.warning_amber_rounded;
+  static const IconData wifi = Icons.wifi_outlined;
+  static const IconData wifi_off = Icons.wifi_off_outlined;
+
+  // --- Media playback ---
+  static const IconData forward_10 = Icons.forward_10_outlined;
+  static const IconData headphones = Icons.headphones_outlined;
+  static const IconData movie_creation_outlined = Icons.movie_creation_outlined;
+  static const IconData pause = Icons.pause;
+  static const IconData play_arrow = Icons.play_arrow;
+  static const IconData play_arrow_rounded = Icons.play_arrow_rounded;
+  static const IconData play_circle_filled = Icons.play_circle_filled;
+  static const IconData play_circle_outline = Icons.play_circle_outline;
+  static const IconData replay_10 = Icons.replay_10_outlined;
+
+  // --- State toggles (filled "on" state, outlined "off" state) ---
+  static const IconData check = Icons.check;
+  static const IconData check_circle = Icons.check_circle_outlined;
+  static const IconData favorite = Icons.favorite;
+  static const IconData favorite_border = Icons.favorite_border;
+  static const IconData favorite_outline = Icons.favorite_border;
+  static const IconData bookmark = Icons.bookmark;
+  static const IconData bookmark_border = Icons.bookmark_border;
+  static const IconData bookmark_outline = Icons.bookmark_border;
+  static const IconData star = Icons.star;
+  static const IconData cancel = Icons.cancel_outlined;
+  static const IconData delete_forever = Icons.delete_forever_outlined;
+  static const IconData emoji_events_outlined = Icons.emoji_events_outlined;
+  static const IconData remove_red_eye_outlined =
+      Icons.remove_red_eye_outlined;
+
+  // --- Crop / aspect ratio (video generation) ---
+  static const IconData crop_landscape = Icons.crop_landscape_outlined;
+  static const IconData crop_portrait = Icons.crop_portrait_outlined;
+  static const IconData crop_square = Icons.crop_square_outlined;
+
+  // --- Discovery & achievements ---
+  static const IconData auto_awesome_outlined = Icons.auto_awesome_outlined;
+
+  /// Medal / milestone marker. Material has no `medal_outlined`.
+  static const IconData medal = Icons.workspace_premium_outlined;
+  static const IconData medal_outlined = Icons.workspace_premium_outlined;
+  static const IconData military_tech_outlined = Icons.military_tech_outlined;
+  static const IconData qr_code_scanner = Icons.qr_code_scanner_outlined;
+  static const IconData quiz = Icons.quiz_outlined;
+  static const IconData quiz_outlined = Icons.quiz_outlined;
 
   // --- Artifact & region icons (parity with web_extras.artifact_category_icon)
-  static const FaIconData monument = FontAwesomeIcons.monument;
-  static const FaIconData gopuram = FontAwesomeIcons.gopuram;
-  static const FaIconData jar = FontAwesomeIcons.jar;
-  static const FaIconData drum = FontAwesomeIcons.drum;
-  static const FaIconData gem = FontAwesomeIcons.gem;
-  static const FaIconData khanda = FontAwesomeIcons.khanda;
-  static const FaIconData hammer = FontAwesomeIcons.hammer;
-  static const FaIconData box_open = FontAwesomeIcons.boxOpen;
-  static const FaIconData landmark = FontAwesomeIcons.landmark;
-  static const FaIconData earth_africa = FontAwesomeIcons.earthAfrica;
-  static const FaIconData fire = FontAwesomeIcons.fireFlameCurved;
-  static const FaIconData masks_theater = FontAwesomeIcons.masksTheater;
-  static const FaIconData scissors = FontAwesomeIcons.scissors;
-  static const FaIconData scroll = FontAwesomeIcons.scroll;
-  static const FaIconData mountain_sun = FontAwesomeIcons.mountainSun;
-  static const FaIconData water = FontAwesomeIcons.water;
-  static const FaIconData layerGroup = FontAwesomeIcons.layerGroup;
+  /// Monument / sculpture. Material has no `monument`; the classical colonnade
+  /// reads as architecture and is used for both.
+  static const IconData monument = Icons.account_balance_outlined;
+  static const IconData gopuram = Icons.temple_hindu_outlined;
+  static const IconData jar = Icons.liquor_outlined;
+  static const IconData drum = Icons.piano_outlined;
+  static const IconData gem = Icons.diamond_outlined;
+  static const IconData khanda = Icons.gavel_outlined;
+  static const IconData hammer = Icons.handyman_outlined;
+  static const IconData box_open = Icons.inventory_2_outlined;
+  static const IconData landmark = Icons.account_balance_outlined;
+  static const IconData earth_africa = Icons.public_outlined;
+  static const IconData fire = Icons.local_fire_department_outlined;
+  static const IconData masks_theater = Icons.theater_comedy_outlined;
+  static const IconData scissors = Icons.content_cut_outlined;
+  static const IconData scroll = Icons.article_outlined;
+  static const IconData mountain_sun = Icons.landscape_outlined;
+  static const IconData water = Icons.waves_outlined;
+  static const IconData layerGroup = Icons.layers_outlined;
+  static const IconData museum = Icons.museum_outlined;
 
   /// Icon for an artifact category slug.
   ///
   /// Mirrors `artifact_category_icon` in the webapp.
-  static FaIconData artifactCategory(String category) {
+  static IconData artifactCategory(String category) {
     switch (category) {
       case 'sculpture':
         return monument;
@@ -188,12 +193,12 @@ abstract final class AppIcons {
   ///
   /// Ports `ICON_MAP` from the webapp's `web_extras.py` and extends it with
   /// the glyphs the web mapping is missing, so both platforms stay in step.
-  static FaIconData fromEmoji(String emoji) {
+  static IconData fromEmoji(String emoji) {
     switch (emoji.trim()) {
       case '📖':
         return auto_stories;
       case '📚':
-        return FontAwesomeIcons.book;
+        return menu_book_outlined;
       case '🏛':
       case '🏛️':
         return landmark;
@@ -204,21 +209,21 @@ abstract final class AppIcons {
       case '🌄':
         return mountain_sun;
       case '🌊':
-        return FontAwesomeIcons.water;
+        return water;
       case '🏆':
-        return FontAwesomeIcons.trophy;
+        return emoji_events_outlined;
       case '🔍':
         return search;
       case '✍':
       case '✍️':
-        return FontAwesomeIcons.featherPointed;
+        return create_outlined;
       case '⚡':
         return bolt_outlined;
       case '❤':
       case '❤️':
         return favorite;
       case '🤍':
-        return FontAwesomeIcons.heart;
+        return favorite_border;
       case '🔖':
         return bookmark;
       case '📑':
@@ -229,9 +234,9 @@ abstract final class AppIcons {
       case '🌐':
         return earth_africa;
       case '🥇':
-        return FontAwesomeIcons.medal;
+        return medal;
       case '🎉':
-        return FontAwesomeIcons.champagneGlasses;
+        return celebration_outlined;
       case '🎭':
         return masks_theater;
       case '🪘':
@@ -241,14 +246,14 @@ abstract final class AppIcons {
         return explore;
       case '🗂':
       case '🗂️':
-        return FontAwesomeIcons.layerGroup;
+        return layerGroup;
       case '🔥':
         return fire;
       case '👋':
       case '🤲':
-        return FontAwesomeIcons.hand;
+        return emoji_people_outlined;
       case '📊':
-        return FontAwesomeIcons.chartSimple;
+        return bar_chart_outlined;
       case '🗡':
       case '🗡️':
       case '⚔':
@@ -265,52 +270,51 @@ abstract final class AppIcons {
         return hammer;
       case '⚗':
       case '⚗️':
-        return FontAwesomeIcons.flask;
+        return science_outlined;
       case '📦':
         return box_open;
       case '🛖':
-        return FontAwesomeIcons.igloo;
+        return cottage_outlined;
       // Glyphs absent from the web ICON_MAP; mapped here so the Flutter app
       // never falls back to rendering emoji text.
       case '🌌':
-        return FontAwesomeIcons.moon;
+        return dark_mode_outlined;
       case '💡':
         return lightbulb_outline;
       case '🎵':
-        return FontAwesomeIcons.music;
+        return music_note_outlined;
       case '👣':
-        return FontAwesomeIcons.shoePrints;
+        return directions_walk_outlined;
       case '🐛':
-        return FontAwesomeIcons.bug;
+        return bug_report_outlined;
       case '🛡':
       case '🛡️':
-        return FontAwesomeIcons.shieldHalved;
+        return shield_outlined;
       case '📝':
-        return FontAwesomeIcons.penToSquare;
+        return edit_note_outlined;
       case '🎓':
-        return FontAwesomeIcons.graduationCap;
+        return school_outlined;
       case '💯':
-        return FontAwesomeIcons.star;
+        return star;
       case '🗺':
       case '🗺️':
-        return FontAwesomeIcons.map;
+        return map_outlined;
       case '✅':
         return check_circle;
       case '❌':
         return cancel;
       case '⚙':
       case '⚙️':
-        return FontAwesomeIcons.gear;
+        return settings_outlined;
       case '🇬🇧':
-        return FontAwesomeIcons.earthEurope;
       case '🇫🇷':
-        return FontAwesomeIcons.earthEurope;
+        return language;
       default:
         return auto_stories;
     }
   }
 
-  static FaIconData role(String value) {
+  static IconData role(String value) {
     switch (value) {
       case 'contributor':
         return edit_outlined;
@@ -322,4 +326,21 @@ abstract final class AppIcons {
         return explore;
     }
   }
+
+  // --- Glyphs referenced directly by the helpers above ---
+  static const IconData bar_chart_outlined = Icons.bar_chart_outlined;
+  static const IconData celebration_outlined = Icons.celebration_outlined;
+  static const IconData cottage_outlined = Icons.cottage_outlined;
+  static const IconData create_outlined = Icons.create_outlined;
+  static const IconData directions_walk_outlined =
+      Icons.directions_walk_outlined;
+  static const IconData bug_report_outlined = Icons.bug_report_outlined;
+  static const IconData edit_note_outlined = Icons.edit_note_outlined;
+  static const IconData emoji_people_outlined = Icons.emoji_people_outlined;
+  static const IconData map_outlined = Icons.map_outlined;
+  static const IconData music_note_outlined = Icons.music_note_outlined;
+  static const IconData museum_outlined = Icons.museum_outlined;
+  static const IconData school_outlined = Icons.school_outlined;
+  static const IconData science_outlined = Icons.science_outlined;
+  static const IconData shield_outlined = Icons.shield_outlined;
 }

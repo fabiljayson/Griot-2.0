@@ -1,5 +1,11 @@
 # Class Diagram — Griot 2.0
 
+> **Reconciled with the implementation on 2026-09-22.** Every member below was
+> checked against the source. **Accessor convention:** members written without
+> parentheses are Django `@property` (or Dart getters) — the original document
+> showed several of them as methods. Corrections and remaining gaps are listed
+> in `01-use-case-diagram.md` → *Divergences*.
+
 ## Backend Models (Django)
 
 ```mermaid
@@ -19,11 +25,11 @@ classDiagram
         +bool is_staff
         +bool is_superuser
         +DateTime date_joined
-        +is_visitor() bool
-        +is_contributor() bool
-        +is_institution_manager() bool
-        +is_admin_role() bool
-        +role_display() String
+        +is_visitor bool
+        +is_contributor bool
+        +is_institution_manager bool
+        +is_admin_role bool
+        +role_display String
     }
 
     class UserRole {
@@ -62,8 +68,8 @@ classDiagram
         +DateTime created_at
         +DateTime updated_at
         +DateTime published_at
-        +is_published() bool
-        +tag_list() List
+        +is_published bool
+        +tag_list List
     }
 
     class StoryStatus {
@@ -149,14 +155,14 @@ classDiagram
         +bool completed
         +DateTime created_at
         +DateTime updated_at
-        +is_complete() bool
+        +is_complete bool
     }
 
     Story --> StoryStatus : has
     Story --> StoryLanguage : has
     StoryFlag --> FlagReason : has
     User "1" --> "*" Story : authors
-    Story "*" --> "*" User : co_authors
+    Story "*" --> "*" User : co_authors {unused by authorization}
     User "1" --> "*" StoryBookmark : creates
     Story "1" --> "*" StoryBookmark : has
     User "1" --> "*" StoryLike : creates
@@ -194,7 +200,7 @@ classDiagram
         +bool is_published
         +DateTime created_at
         +DateTime updated_at
-        +qr_deep_link() String
+        +qr_deep_link String
     }
 
     class ArtifactCategory {
@@ -240,8 +246,8 @@ classDiagram
         +bool is_published
         +DateTime created_at
         +DateTime updated_at
-        +question_count() int
-        +xp_reward() int
+        +question_count int
+        +xp_reward int
     }
 
     class QuizQuestion {
@@ -336,8 +342,8 @@ classDiagram
         +Date last_active_date
         +DateTime created_at
         +DateTime updated_at
-        +xp_for_next_level() int
-        +xp_progress() float
+        +xp_for_next_level int
+        +xp_progress float
         +add_xp(amount) void
         +update_streak() void
     }
@@ -355,6 +361,7 @@ classDiagram
         +int level_achieved
         +String pdf_url
         +save() void
+        +generate_pdf() void
     }
 
     class CertificateType {
@@ -396,8 +403,8 @@ classDiagram
         +DateTime updated_at
         +DateTime started_at
         +DateTime completed_at
-        +is_ready() bool
-        +is_processing() bool
+        +is_ready bool
+        +is_processing bool
     }
 
     class AudioNarrationJob {
@@ -418,7 +425,7 @@ classDiagram
         +DateTime created_at
         +DateTime updated_at
         +DateTime completed_at
-        +is_ready() bool
+        +is_ready bool
     }
 
     class JobStatus {
@@ -447,6 +454,57 @@ classDiagram
     }
 
     User "1" --> "1" WebUserSettings : has
+```
+
+### Authorization classes (backend)
+
+Every gate in the system is one of these. Role checks are **hierarchical**
+(`in (...)` against the documented role strings); ownership is **object-level**.
+Sources: `stories/views.py`, `qr_codes/views.py`, `api/views_analytics.py`,
+`media_app/views.py`, `web/views.py`.
+
+```mermaid
+classDiagram
+    title Griot 2.0 — Authorization classes
+
+    class IsAuthenticated {
+        <<DRF builtin>>
+        +has_permission(bool)
+    }
+
+    class IsContributorOrAbove {
+        +has_permission(bool)
+        %% role in (contributor, institution_manager, admin)
+    }
+
+    class IsInstitutionManagerOrAbove {
+        +has_permission(bool)
+        %% role in (institution_manager, admin)
+    }
+
+    class IsAdminOrManager {
+        +has_permission(bool)
+        %% role in (institution_manager, admin)
+        %% used by ALL six analytics endpoints
+    }
+
+    class IsStoryOwnerOrReadOnly {
+        +has_object_permission(bool)
+        %% SAFE_METHODS OR obj.author == user OR role in (manager, admin)
+    }
+
+    class IsOwnerOrReadOnly {
+        +has_object_permission(bool)
+        %% SAFE_METHODS OR obj.user == user
+    }
+
+    IsContributorOrAbove --|> IsAuthenticated
+    IsInstitutionManagerOrAbove --|> IsAuthenticated
+    IsAdminOrManager --|> IsAuthenticated
+    IsStoryOwnerOrReadOnly --|> IsAuthenticated
+    IsOwnerOrReadOnly --|> IsAuthenticated
+
+    note for IsAdminOrManager "Implemented gate is WIDER than the\ndocumented Admin-only rule for analytics."
 ```
 
 ## Frontend Classes (Flutter/Dart)
@@ -508,9 +566,36 @@ classDiagram
 
     %% ─── Auth ─────────────────────────────────────────────
     class AuthRepository {
-        +Future~String~ accessToken
-        +Future refreshTokens() void
+        +Future~bool~ isAuthenticated
+        +Future~String?~ accessToken
+        +Future~String?~ refreshToken
         +Future clearTokens() void
+        +Future login(username,password) TokenPair
+        +Future register(...) UserModel
+        +Future refreshTokens() TokenPair
+        +Future getMe() UserModel
+        +Future updateProfile(...) UserModel
+        +Future deleteAccount() void
+        +Future logout() void
+    }
+
+    %% The mobile data layer is local-first: AuthRepository and
+    %% StoryRepository delegate to SQLite and make NO HTTP calls.
+    class LocalAuthRepository {
+        <<SQLite>>
+        +Future~bool~ isAuthenticated
+        +Future getMe() UserModel
+    }
+
+    class LocalStoryRepository {
+        <<SQLite>>
+        +Future getStories(...) List~StoryModel~
+        +Future createStory(...) StoryModel
+        +Future updateStory(...) StoryModel
+        +Future toggleBookmark(slug) bool
+        +Future toggleLike(slug) bool
+        +Future flagStory(slug,reason,details) void
+        +Future updateReadingProgress(...) void
     }
 
     class LoginScreen {
@@ -553,13 +638,17 @@ classDiagram
         +String lastName
         +String role
         +String institution
+        +canContribute bool
+        +canGenerateMediaFor(int authorId) bool
     }
 
     AuthProvider --> AuthRepository : uses
+    AuthRepository --> LocalAuthRepository : delegates to (no HTTP)
     AuthWrapper --> AuthProvider : watches
     AuthInterceptor --> AuthRepository : uses
     ProfileScreen --> AuthProvider : watches
     ProfileScreen --> RoleBadge : displays
+    RoleBadge --> UserModel : reads role
 
     %% ─── Stories ──────────────────────────────────────────
     class StoryModel {
@@ -614,18 +703,36 @@ classDiagram
     }
 
     class StoryRepository {
-        +fetchStories() Future
-        +searchStories() Future
-        +toggleBookmark() Future
-        +toggleLike() Future
+        +Future getStories(...) List~StoryModel~
+        +Future getStory(slug) StoryModel
+        +Future createStory(...) StoryModel
+        +Future updateStory(...) StoryModel
+        +Future deleteStory(slug) void
+        +Future getMyStories() List~StoryModel~
+        +Future getBookmarks() List~StoryModel~
+        +Future toggleBookmark(slug) bool
+        +Future toggleLike(slug) bool
+        +Future flagStory(...) void
+        +Future updateReadingProgress(...) void
     }
 
     StoryListNotifier --> StoryRepository : uses
-    StoryRepository --> ApiClient : HTTP calls
+    StoryRepository --> LocalStoryRepository : delegates to (no HTTP)
     StoriesScreen --> StoryListNotifier : watches
     StoryDetailScreen --> StoryRepository : reads
     StoryFormScreen --> StoryRepository : saves
     StoryCard --> StoryModel : displays
+
+    %% Only these features still reach the network, via ApiClient.
+    class ApiClientConsumer {
+        <<feature services>>
+        +admin_api_service  -> /api/analytics
+        +audio_api_service  -> /api/media
+        +video_api_service  -> /api/media
+        +qr_api_service     -> /api/artifacts
+        +sharing_service    -> /api/stories/{slug}/share
+        +offline_auth_repository -> /api/auth
+    }
 
     %% ─── Gamification ─────────────────────────────────────
     class GamificationScreen {
@@ -692,6 +799,9 @@ classDiagram
         +story_generate_audio(request, slug)
         +story_generate_video(request, slug)
         +artifact_generate_audio(request, slug)
+        +story_video_status(request, slug)
+        +story_moderate(request, slug)
+        +set_language(request)
         +quiz_start(request, quiz_id)
         +quiz_answer(request, quiz_id, question_id)
         +quiz_finish(request, quiz_id)

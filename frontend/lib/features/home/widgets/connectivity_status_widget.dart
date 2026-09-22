@@ -72,7 +72,7 @@ class ConnectivityStatusWidget extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          FaIcon(
+          Icon(
             isOnline ? AppIcons.wifi : AppIcons.wifi_off,
             size: 16,
             color: isOnline ? AppColors.savannahGreen : AppColors.terracotta,

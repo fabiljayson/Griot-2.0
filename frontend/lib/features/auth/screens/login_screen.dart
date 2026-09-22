@@ -159,7 +159,7 @@ class _LoginFormPanel extends StatelessWidget {
                     controller: usernameController,
                     label: 'Username',
                     hint: 'Enter your username',
-                    icon: FaIcon(AppIcons.person_outline),
+                    icon: AppIcons.person_outline,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -175,12 +175,12 @@ class _LoginFormPanel extends StatelessWidget {
                     controller: passwordController,
                     label: 'Password',
                     hint: 'Enter your password',
-                    icon: FaIcon(AppIcons.lock_outline),
+                    icon: AppIcons.lock_outline,
                     obscureText: obscurePassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => onLogin(),
                     suffixIcon: IconButton(
-                      icon: FaIcon(
+                      icon: Icon(
                         obscurePassword
                             ? AppIcons.visibility_off
                             : AppIcons.visibility,
@@ -214,7 +214,7 @@ class _LoginFormPanel extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const FaIcon(
+                          const Icon(
                             AppIcons.error_outline,
                             color: AppColors.error,
                             size: 18,
@@ -278,7 +278,7 @@ class _LoginFormPanel extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const FaIcon(
+                        const Icon(
                           AppIcons.bookmark_outline,
                           color: AppColors.bronzeDark,
                           size: 15,

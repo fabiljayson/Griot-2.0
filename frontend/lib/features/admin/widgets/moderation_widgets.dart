@@ -20,7 +20,7 @@ class FlagRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FaIcon(AppIcons.flag_outlined, size: 16, color: color),
+          Icon(AppIcons.flag_outlined, size: 16, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -99,7 +99,7 @@ class ModerationError extends StatelessWidget {
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: onRetry,
-          icon: const FaIcon(AppIcons.refresh),
+          icon: const Icon(AppIcons.refresh),
           label: const Text('Retry'),
         ),
       ],
