@@ -51,3 +51,11 @@ Thumbs.db
 /tmp/
 
 .vercel
+.env*
+
+# Media referenced by production data — keep the Render build self-contained
+# (free tier has no persistent disk, so these are baked into the image).
+!media/
+!media/stories/
+!media/stories/covers/
+!media/stories/covers/*.jpg

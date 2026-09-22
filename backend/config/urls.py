@@ -36,6 +36,7 @@ urlpatterns = [
     ),
 ]
 
-# Serve uploaded media in development.
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media. Enabled in production too: Render runs gunicorn with
+# no separate media server and the free tier has no persistent disk, so media
+# baked into the container must be served by Django itself.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
