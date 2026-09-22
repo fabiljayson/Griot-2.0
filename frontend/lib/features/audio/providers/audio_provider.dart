@@ -147,9 +147,11 @@ class AudioNarrationState {
 
 /// Notifier for generating TTS narration and playing it.
 class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
-  AudioNarrationNotifier({required this.onReady})
-    : _apiService = AudioApiService.instance,
-      super(const AudioNarrationState());
+  AudioNarrationNotifier({
+    required this.onReady,
+    AudioApiService? apiService,
+  }) : _apiService = apiService ?? AudioApiService.instance,
+       super(const AudioNarrationState());
 
   final AudioApiService _apiService;
 

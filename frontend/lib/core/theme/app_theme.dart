@@ -6,75 +6,47 @@ import 'app_typography.dart';
 /// Builds the full ThemeData for the Griot 2.0 app, mirroring the webapp's
 /// Tailwind theme (Ndop indigo primary, bronze accent, ivory surfaces).
 abstract final class AppTheme {
-  static ThemeData get light => _build(Brightness.light);
-
-  static ThemeData get dark => _build(Brightness.dark);
-
-  static ThemeData _build(Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
-
-    final scheme = ColorScheme(
-      brightness: brightness,
-      primary: isDark ? AppColors.indigoLight : AppColors.indigo,
+  static ThemeData get light {
+    const scheme = ColorScheme(
+      brightness: Brightness.light,
+      primary: AppColors.indigo,
       onPrimary: Colors.white,
-      primaryContainer: isDark
-          ? AppColors.indigoLight.withValues(alpha: 0.25)
-          : AppColors.indigo.withValues(alpha: 0.1),
-      onPrimaryContainer: isDark ? AppColors.textDark : AppColors.charcoal,
-      secondary: isDark ? AppColors.bronzeLight : AppColors.bronze,
-      onSecondary: isDark ? AppColors.charcoal : Colors.white,
-      secondaryContainer: isDark
-          ? AppColors.bronzeLight.withValues(alpha: 0.2)
-          : AppColors.bronzeTint,
-      onSecondaryContainer: isDark ? AppColors.textDark : AppColors.charcoal,
-      tertiary: isDark
-          ? AppColors.equatorialGreenLight
-          : AppColors.equatorialGreen,
+      primaryContainer: Color(0x1A1E2B58),
+      onPrimaryContainer: AppColors.charcoal,
+      secondary: AppColors.bronze,
+      onSecondary: Colors.white,
+      secondaryContainer: AppColors.bronzeTint,
+      onSecondaryContainer: AppColors.charcoal,
+      tertiary: AppColors.equatorialGreen,
       onTertiary: Colors.white,
-      // NOTE: the raw `ColorScheme` constructor fills any field left unset
-      // with the *light* Material 3 defaults, regardless of `brightness`.
-      // Every container below therefore has to be given a dark variant
-      // explicitly, or dark mode ends up rendering light-mode chips.
-      tertiaryContainer: isDark
-          ? AppColors.equatorialGreenDark
-          : AppColors.equatorialGreenTint,
-      onTertiaryContainer: isDark ? AppColors.textDark : AppColors.charcoal,
-      error: isDark ? AppColors.earthLight : AppColors.earth,
+      tertiaryContainer: AppColors.equatorialGreenTint,
+      onTertiaryContainer: AppColors.charcoal,
+      error: AppColors.earth,
       onError: Colors.white,
-      errorContainer: isDark ? AppColors.earthDark : AppColors.earthTint,
-      onErrorContainer: isDark ? AppColors.textDark : AppColors.charcoal,
-      surface: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-      onSurface: isDark ? AppColors.textDark : AppColors.charcoal,
-      onSurfaceVariant: isDark
-          ? AppColors.textDarkMuted
-          : AppColors.muted,
-      surfaceContainerHighest: isDark
-          ? AppColors.indigoDark
-          : AppColors.ivory,
-      surfaceContainerHigh: isDark
-          ? AppColors.indigoDark
-          : AppColors.ivory,
-      surfaceContainer: isDark
-          ? AppColors.indigoDark
-          : AppColors.ivory,
-      surfaceTint: isDark ? AppColors.indigoLight : AppColors.indigo,
-      outline: isDark
-          ? Color(0xFF3A4A7A) // indigo-tinted border for dark surfaces
-          : AppColors.webBorder,
-      shadow: Colors.black.withValues(alpha: 0.08),
+      errorContainer: AppColors.earthTint,
+      onErrorContainer: AppColors.charcoal,
+      surface: AppColors.surfaceLight,
+      onSurface: AppColors.charcoal,
+      onSurfaceVariant: AppColors.muted,
+      surfaceContainerHighest: AppColors.ivory,
+      surfaceContainerHigh: AppColors.ivory,
+      surfaceContainer: AppColors.ivory,
+      surfaceTint: AppColors.indigo,
+      outline: AppColors.webBorder,
+      shadow: Color(0x14000000),
     );
 
     final base = ThemeData(
-      brightness: brightness,
+      brightness: Brightness.light,
       colorScheme: scheme,
       useMaterial3: true,
-      scaffoldBackgroundColor: isDark ? AppColors.mudCharcoal : AppColors.ivory,
+      scaffoldBackgroundColor: AppColors.ivory,
       textTheme: AppTypography.textTheme(colorScheme: scheme),
     );
 
     return base.copyWith(
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? AppColors.indigoDark : scheme.surface,
+        backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         centerTitle: false,
@@ -137,7 +109,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? AppColors.indigoDark : scheme.surface,
+        fillColor: scheme.surface,
         hintStyle: TextStyle(color: scheme.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
@@ -176,7 +148,7 @@ abstract final class AppTheme {
         thickness: 1,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? AppColors.indigoDark : scheme.surface,
+        backgroundColor: scheme.surface,
         indicatorColor: scheme.primaryContainer,
         labelTextStyle: WidgetStatePropertyAll(
           TextStyle(
@@ -189,10 +161,10 @@ abstract final class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.charcoal,
+        backgroundColor: AppColors.charcoal,
         contentTextStyle: TextStyle(
           fontFamily: 'PlusJakartaSans',
-          color: isDark ? AppColors.textDark : AppColors.ivory,
+          color: AppColors.ivory,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

@@ -216,7 +216,11 @@ class _ArtifactsScreenState extends ConsumerState<ArtifactsScreen> {
             crossAxisCount: _columns(context),
             mainAxisSpacing: AppSpacing.lg,
             crossAxisSpacing: AppSpacing.lg,
-            mainAxisExtent: 300,
+            // The cover is a fixed 4:3, but the text block below it must
+            // grow with the column width and the active text scale. The old
+            // constant 300 overflowed by ~85px on 1-column phones, pushing
+            // the title / rows outside the card.
+            mainAxisExtent: _cellExtent(context, _columns(context)),
           ),
           delegate: SliverChildBuilderDelegate((context, index) {
             final artifact = visible[index];
@@ -245,6 +249,35 @@ class _ArtifactsScreenState extends ConsumerState<ArtifactsScreen> {
     if (width > 840) return 3;
     if (width > 560) return 2;
     return 1;
+  }
+
+  /// Height of one artifact grid cell.
+  ///
+  /// Fits the 4:3 cover plus the full text block (category, two-line title,
+  /// culture/region and museum rows) at the current text scale, so the card's
+  /// content never overflows the cell — the previous fixed `300` broke the
+  /// layout on narrow phones.
+  static double _cellExtent(BuildContext context, int columns) {
+    final width = MediaQuery.sizeOf(context).width;
+    final usable = width - AppSpacing.lg * 2;
+    final crossAxisExtent =
+        (usable - (columns - 1) * AppSpacing.lg) / columns;
+
+    final theme = Theme.of(context);
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+
+    double line(TextStyle? style) =>
+        (style?.fontSize ?? 14) * (style?.height ?? 1.4) * scale;
+
+    final textBlock =
+        AppSpacing.md * 2 + // vertical card padding
+        line(theme.textTheme.labelSmall) + // category row
+        line(theme.textTheme.titleSmall) * 2 + // title (2 lines)
+        line(theme.textTheme.bodySmall) * 2 + // culture + museum rows
+        AppSpacing.sm * 3 + // row gaps
+        AppSpacing.xs; // reflow cushion
+
+    return crossAxisExtent * 3 / 4 + textBlock;
   }
 }
 

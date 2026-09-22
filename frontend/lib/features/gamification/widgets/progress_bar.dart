@@ -116,11 +116,17 @@ class _LevelProgressBarState extends State<LevelProgressBar>
                 ),
               ),
               const Spacer(),
-              Text(
-                '${widget.totalXp} XP',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: scheme.secondary,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  '${widget.totalXp} XP',
+                  maxLines: 1,
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: scheme.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -144,10 +150,15 @@ class _LevelProgressBarState extends State<LevelProgressBar>
                   style: theme.textTheme.bodySmall,
                 ),
               ),
-              Text(
-                '${((1 - widget.xpProgress.clamp(0.0, 1.0)) * widget.xpForNextLevel).round()} XP '
-                'to Level ${widget.level + 1}',
-                style: theme.textTheme.bodySmall,
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  '${((1 - widget.xpProgress.clamp(0.0, 1.0)) * widget.xpForNextLevel).round()} XP '
+                  'to Level ${widget.level + 1}',
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
               ),
             ],
           ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:just_audio/just_audio.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../models/audio_model.dart';
 
 /// Service for managing audio playback with just_audio.
@@ -128,7 +129,14 @@ class AudioPlayerService {
 
       // Load the audio source
       if (audio.url.isNotEmpty) {
-        await _player.setUrl(audio.url);
+        // Resolve relative URLs (e.g. a bare '/media/audio/x.mp3') against
+        // the effective backend base, the same way [GriotImage] does.
+        final url = AppConstants.resolveMediaUrl(
+              audio.url,
+              baseUrl: AppConstants.effectiveBaseUrl,
+            ) ??
+            audio.url;
+        await _player.setUrl(url);
       } else {
         _updateState(errorMessage: 'No audio URL provided', clearAudio: true);
         return;

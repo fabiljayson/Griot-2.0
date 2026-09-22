@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/providers/settings_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_icons.dart';
 import '../../core/theme/app_spacing.dart';
@@ -64,7 +63,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: CustomScrollView(
           key: const ValueKey('homeScroll'),
           slivers: [
-            SliverToBoxAdapter(child: _buildHeader(context, theme, ref, user)),
+            SliverToBoxAdapter(child: _buildHeader(context, theme, user)),
             SliverPadding(
               padding: EdgeInsets.symmetric(
                 horizontal: wide ? AppSpacing.gutterWide : AppSpacing.lg,
@@ -263,7 +262,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildHeader(
     BuildContext context,
     ThemeData theme,
-    WidgetRef ref,
     UserModel? user,
   ) {
     final scheme = theme.colorScheme;
@@ -282,18 +280,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Row(
             children: [
               const Expanded(child: GriotLogo(size: 44, light: true)),
-              IconButton(
-                tooltip: 'Toggle theme',
-                onPressed: () => ref
-                    .read(settingsProvider.notifier)
-                    .toggleDarkMode(
-                      systemBrightness: MediaQuery.of(
-                        context,
-                      ).platformBrightness,
-                    ),
-                icon: const Icon(AppIcons.dark_mode_outlined),
-                color: AppColors.ivory,
-              ),
               if (user != null)
                 IconButton(
                   tooltip: 'Profile',

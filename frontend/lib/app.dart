@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/navigation/app_router.dart';
 import 'core/offline/offline_provider.dart';
-import 'core/providers/settings_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/widgets/auth_wrapper.dart';
 import 'features/audio/widgets/audio_player_sheet.dart';
@@ -25,9 +24,6 @@ class GriotAiApp extends ConsumerWidget {
         // a BuildContext (see AppRouter).
         navigatorKey: AppRouter.navigatorKey,
         theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        // Follow the system light/dark preference (togglable in-app).
-        themeMode: ref.watch(settingsProvider),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
