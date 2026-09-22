@@ -27,8 +27,10 @@ services:
       # Optional overrides — omit to fall back to RENDER_EXTERNAL_HOSTNAME:
       # - key: DJANGO_ALLOWED_HOSTS
       #   value: api.example.com,www.example.com
-      # - key: DJANGO_CORS_ORIGINS
-      #   value: https://app.example.com
+      # Vercel-hosted Flutter web client. Add https://africanteller.org here
+      # when the custom domain is wired up on Vercel.
+      - key: DJANGO_CORS_ORIGINS
+        value: https://griot-2-0.vercel.app
       - key: DATABASE_URL
         fromDatabase:
           name: griot-db

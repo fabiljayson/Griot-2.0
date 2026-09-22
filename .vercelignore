@@ -1,0 +1,12 @@
+.vscode
+.agents
+backend
+crawler
+downloads
+docs
+"UI model"
+Griot_2.0
+frontend/build
+frontend/.dart_tool
+*.md
+plantuml.jar
