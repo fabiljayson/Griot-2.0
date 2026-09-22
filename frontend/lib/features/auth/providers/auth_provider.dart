@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../core/network/app_error.dart';
+import '../../../core/network/auth_interceptor.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/offline_auth_repository.dart';
@@ -149,8 +151,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         role: role,
       );
 
-      // Auto-login after registration.
-      await authRepo.login(username: username, password: password);
+      // Register already signs in and persists the real session.
       final user = await authRepo.getMe();
 
       state = AsyncData(AuthState(
@@ -288,6 +289,17 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 /// Repository provider.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
+});
+
+/// ApiClient wired with the [AuthInterceptor], so any authenticated feature
+/// (TTS narration, gamification, …) automatically presents a valid Bearer
+/// token and refreshes when the server returns 401.
+final authenticatedApiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient.withAuth(
+    authInterceptor: AuthInterceptor(
+      authRepository: ref.watch(authRepositoryProvider),
+    ),
+  );
 });
 
 /// Authentication state provider.

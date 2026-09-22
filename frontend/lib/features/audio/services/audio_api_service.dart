@@ -10,11 +10,11 @@ import '../models/narration_job_model.dart';
 ///   - Listing the user's narration jobs
 ///   - Fetching a single job (status / audio URL)
 class AudioApiService {
-  AudioApiService._({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
+  AudioApiService({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
 
   final Dio _dio;
 
-  static final AudioApiService instance = AudioApiService._();
+  static final AudioApiService instance = AudioApiService();
 
   static const _mediaPath = '/api/media';
 

@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/app_error.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../models/audio_model.dart';
 import '../models/narration_job_model.dart';
 import '../services/audio_api_service.dart';
@@ -178,12 +181,22 @@ class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
       }
       return job;
     } catch (e) {
+      final errorMessage = e is DioException
+          ? _narrationErrorMessage(e)
+          : 'Failed to generate narration: $e';
       state = state.copyWith(
         isGenerating: false,
-        errorMessage: 'Failed to generate narration: $e',
+        errorMessage: errorMessage,
       );
       return null;
     }
+  }
+
+  String _narrationErrorMessage(DioException e) {
+    if (e.response?.statusCode == 401) {
+      return 'Please sign in to generate narrations.';
+    }
+    return 'Failed to generate narration: ${AppErrorMapper.fromDio(e).message}';
   }
 
   /// Clear the last generation error.
@@ -193,9 +206,14 @@ class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
 }
 
 /// Narration generation provider. Plays completed narrations automatically.
+///
+/// Uses the auth-aware API client so the request carries the user's JWT
+/// (narration generation is an authenticated endpoint).
 final audioNarrationProvider =
     StateNotifierProvider<AudioNarrationNotifier, AudioNarrationState>((ref) {
+      final apiClient = ref.watch(authenticatedApiClientProvider);
       return AudioNarrationNotifier(
+        apiService: AudioApiService(dio: apiClient.dio),
         onReady: (job) async {
           await ref.read(audioPlayerProvider.notifier).play(job.toAudioModel());
         },

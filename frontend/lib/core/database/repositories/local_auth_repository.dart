@@ -47,6 +47,75 @@ class LocalAuthRepository {
     await _storage.delete(key: _keyCurrentUserId);
   }
 
+  /// Whether the stored tokens are a real backend JWT pair (as opposed to
+  /// the synthetic `local_token_*` markers used for offline-only sessions).
+  Future<bool> get hasServerSession async {
+    final token = await _storage.read(key: _keyAccessToken);
+    return token != null &&
+        token.isNotEmpty &&
+        !token.startsWith('local_');
+  }
+
+  /// Persist a real backend session so authenticated API calls (e.g. TTS
+  /// narration) can present a valid JWT.
+  ///
+  /// Synchronises the matching `local_users` row so offline browsing and
+  /// profiles keep working, then stores the real token pair.
+  Future<void> saveRemoteSession({
+    required int serverUserId,
+    required String username,
+    required String email,
+    String firstName = '',
+    String lastName = '',
+    UserRole role = UserRole.visitor,
+    String institution = '',
+    required String password,
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    final db = await _db;
+
+    final existing = await db.query(
+      'local_users',
+      where: 'username = ?',
+      whereArgs: [username],
+      limit: 1,
+    );
+
+    final fields = {
+      'email': email,
+      'first_name': firstName,
+      'last_name': lastName,
+      'role': role.value,
+      'institution': institution,
+    };
+
+    if (existing.isNotEmpty) {
+      final id = existing.first['id'] as int;
+      await db.update(
+        'local_users',
+        fields,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } else {
+      await db.insert('local_users', {
+        'username': username,
+        'password': password,
+        ...fields,
+      });
+    }
+
+    await _storage.write(key: _keyAccessToken, value: accessToken);
+    await _storage.write(key: _keyRefreshToken, value: refreshToken);
+    await _storage.write(key: _keyCurrentUserId, value: '$serverUserId');
+  }
+
+  /// Replace the existing access token (after a successful refresh).
+  Future<void> saveAccessToken(String accessToken) async {
+    await _storage.write(key: _keyAccessToken, value: accessToken);
+  }
+
   // ── Authentication ──
 
   /// Login with username and password against the local `local_users` table.

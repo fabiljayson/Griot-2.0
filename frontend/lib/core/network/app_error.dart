@@ -130,6 +130,9 @@ abstract final class AppErrorMapper {
           detail = errors.first.toString();
         }
       }
+      // Fall back to the first field-level error (e.g. register: "A user
+      // with this email already exists.").
+      detail ??= _firstFieldError(data);
     }
 
     final message = detail ?? _defaultMessage(statusCode);
@@ -165,6 +168,18 @@ abstract final class AppErrorMapper {
     if (statusCode == null) return 'An unexpected error occurred.';
     if (statusCode >= 500) return 'Server error. Please try again later.';
     return 'An unexpected error occurred. Please try again.';
+  }
+
+  /// First human-readable string inside a DRF field-error payload like
+  /// `{'email': ['A user with this email already exists.']}`.
+  static String? _firstFieldError(Map<String, dynamic> data) {
+    for (final value in data.values) {
+      if (value is List && value.isNotEmpty) {
+        final first = value.first;
+        if (first is String && first.trim().isNotEmpty) return first;
+      }
+    }
+    return null;
   }
 
   /// Generic mapper for non-Dio exceptions.
