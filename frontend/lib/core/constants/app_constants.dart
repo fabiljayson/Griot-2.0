@@ -85,4 +85,16 @@ abstract final class AppConstants {
   /// v7 repairs installs that were created without the `local_*` content
   /// schema and links seeded quizzes to their story.
   static const int databaseVersion = 7;
+
+  /// Developer shown in the WhatsApp feedback prefilled draft.
+  static const String developerName = 'Fabil Jayson';
+
+  /// Public WhatsApp number the feedback deep link opens.
+  static const String feedbackWhatsAppNumber = '237692996791';
+
+  /// Message pre-filled in WhatsApp when feedback is requested.
+  ///
+  /// Ends with blank lines so the user's own message starts on a new line.
+  static String get feedbackWhatsAppDraft =>
+      'Hi $developerName,\n\nI have some feedback about Griot AI:\n\n';
 }
