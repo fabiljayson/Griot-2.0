@@ -42,8 +42,23 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with TickerProviderStateMixin {
   int _currentIndex = 0;
+
+  /// Re-armed on every tab change so the new page fades in smoothly without
+  /// remounting the [IndexedStack] (which would lose each tab's state).
+  late final AnimationController _tabFade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 240),
+    value: 1,
+  );
+
+  @override
+  void dispose() {
+    _tabFade.dispose();
+    super.dispose();
+  }
 
   /// Pages are cached so tab state survives switches.
   late final List<_Destination> _destinations = [
@@ -93,6 +108,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (index == _currentIndex) return;
     HapticFeedback.lightImpact();
     setState(() => _currentIndex = index);
+    _tabFade.forward(from: 0);
   }
 
   @override
@@ -100,17 +116,20 @@ class _MainShellState extends ConsumerState<MainShell> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          for (var i = 0; i < _destinations.length; i++)
-            // Indexes must stay stable, so unvisited tabs hold a placeholder
-            // until they are opened for the first time.
-            if (i == _currentIndex || _pages[i] != null)
-              _pageAt(i)
-            else
-              const SizedBox.shrink(),
-        ],
+      body: FadeTransition(
+        opacity: CurvedAnimation(parent: _tabFade, curve: Curves.easeOut),
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            for (var i = 0; i < _destinations.length; i++)
+              // Indexes must stay stable, so unvisited tabs hold a placeholder
+              // until they are opened for the first time.
+              if (i == _currentIndex || _pages[i] != null)
+                _pageAt(i)
+              else
+                const SizedBox.shrink(),
+          ],
+        ),
       ),
       bottomNavigationBar: _NotchedNavBar(
         destinations: _destinations,

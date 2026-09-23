@@ -7,17 +7,24 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/widgets/griot_image.dart';
+import '../../../core/widgets/griot_logo.dart';
 
 /// Beautiful quote card widget for sharing story excerpts.
 ///
-/// Can be exported as an image using RepaintBoundary.
+/// Can be exported as an image using RepaintBoundary. Renders the shared
+/// story's cover (when provided) under the Griot logo/branding so the card is
+/// instantly recognisable.
 class QuoteCard extends StatelessWidget {
   const QuoteCard({
     super.key,
     required this.quote,
     required this.attribution,
+    this.imageUrl,
+    this.imageBlurhash,
     this.moralLesson,
     this.backgroundColor = AppColors.parchment,
     this.textColor = AppColors.charcoal,
@@ -27,6 +34,13 @@ class QuoteCard extends StatelessWidget {
 
   final String quote;
   final String attribution;
+
+  /// Cover image of the shared story; rendered full-bleed under the branding.
+  final String? imageUrl;
+
+  /// Blurhash for [imageUrl], used while the cover loads.
+  final String? imageBlurhash;
+
   final String? moralLesson;
   final Color backgroundColor;
   final Color textColor;
@@ -55,6 +69,23 @@ class QuoteCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Brand header: logo + wordmark.
+            _BrandHeader(accentColor: accentColor, textColor: textColor),
+            const SizedBox(height: 20),
+
+            // Story cover — the image being shared.
+            if (imageUrl != null && imageUrl!.trim().isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: GriotCoverImage(
+                  source: imageUrl,
+                  blurhash: imageBlurhash,
+                  semanticLabel: attribution,
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // Decorative quote mark
             Text(
               '"',
@@ -133,7 +164,7 @@ class QuoteCard extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Branding
+            // Footer branding
             Row(
               children: [
                 Container(
@@ -157,7 +188,7 @@ class QuoteCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'griot-ai.org',
+                  AppConstants.appShareHost,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontSize: 11,
                     color: textColor.withValues(alpha: 0.5),
@@ -187,23 +218,75 @@ class QuoteCard extends StatelessWidget {
   }
 }
 
+/// Logo emblem + "Griot AI" wordmark row at the top of the share card.
+class _BrandHeader extends StatelessWidget {
+  const _BrandHeader({required this.accentColor, required this.textColor});
+
+  final Color accentColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const GriotMark(size: 40),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Griot AI',
+                style: TextStyle(
+                  fontFamily: 'Fraunces',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                AppConstants.appShareHost,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 11,
+                  color: textColor.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Modal bottom sheet for generating and sharing quote cards.
 class QuoteCardGenerator extends StatefulWidget {
   const QuoteCardGenerator({
     super.key,
     required this.quote,
     required this.attribution,
+    this.imageUrl,
+    this.imageBlurhash,
     this.moralLesson,
   });
 
   final String quote;
   final String attribution;
+
+  /// Cover image of the shared story, rendered on the card.
+  final String? imageUrl;
+  final String? imageBlurhash;
+
   final String? moralLesson;
 
   static Future<void> show(
     BuildContext context, {
     required String quote,
     required String attribution,
+    String? imageUrl,
+    String? imageBlurhash,
     String? moralLesson,
   }) {
     return showModalBottomSheet(
@@ -213,6 +296,8 @@ class QuoteCardGenerator extends StatefulWidget {
       builder: (_) => QuoteCardGenerator(
         quote: quote,
         attribution: attribution,
+        imageUrl: imageUrl,
+        imageBlurhash: imageBlurhash,
         moralLesson: moralLesson,
       ),
     );
@@ -324,6 +409,8 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
                 repaintKey: _cardKey,
                 quote: widget.quote,
                 attribution: widget.attribution,
+                imageUrl: widget.imageUrl,
+                imageBlurhash: widget.imageBlurhash,
                 moralLesson: widget.moralLesson,
                 accentColor: _selectedAccent,
               ),
@@ -378,7 +465,7 @@ class _QuoteCardGeneratorState extends State<QuoteCardGenerator> {
     } else {
       // Fallback to text share
       final shareText =
-          '${widget.quote}\n\n— ${widget.attribution}\n\nDiscover more on Griot AI: https://griot-ai.org\n\n#GriotAI #Cameroon #CulturalHeritage';
+          '${widget.quote}\n\n— ${widget.attribution}\n\nDiscover more on Griot AI: ${AppConstants.appShareBaseUrl}\n\n#GriotAI #Cameroon #CulturalHeritage';
       await SharePlus.instance.share(ShareParams(text: shareText));
     }
 

@@ -16,8 +16,8 @@ services:
     # preDeployCommand only runs on paid tiers, so startCommand fuses
     # `migrate` (idempotent) + gunicorn so free-plan deploys still get tables.
     preDeployCommand: python manage.py migrate --noinput
-    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT
-    healthCheckPath: /api/health/
+    startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application --workers 1 --threads 2 --timeout 120 --max-requests 400 --max-requests-jitter 100 --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/health/ready/
     autoDeployTrigger: commit
     envVars:
       - key: DJANGO_SETTINGS_MODULE

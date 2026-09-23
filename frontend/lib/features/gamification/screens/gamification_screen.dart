@@ -6,6 +6,7 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/griot_loader.dart';
+import '../../../core/widgets/griot_splash_screen.dart';
 import '../providers/gamification_provider.dart';
 import '../services/gamification_api_service.dart';
 import '../widgets/badge_card.dart';
@@ -63,7 +64,13 @@ class GamificationScreen extends ConsumerWidget {
 
             profileAsync.when(
               data: (profile) => _StatsRow(profile: profile),
-              loading: () => const SizedBox.shrink(),
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                child: GriotSplashLoader(
+                  compact: true,
+                  caption: 'Loading stats',
+                ),
+              ),
               error: (_, _) => const SizedBox.shrink(),
             ),
             const SizedBox(height: AppSpacing.section),

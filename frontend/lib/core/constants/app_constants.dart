@@ -69,6 +69,14 @@ abstract final class AppConstants {
 
   static const String appDeepLinkHost = 'griot-ai.org';
 
+  /// Public web app origin used when sharing story links (copy/share text).
+  static const String appShareBaseUrl = 'https://griot-2-0.vercel.app';
+
+  /// `appShareBaseUrl` without the scheme, for on-brand surfaces such as the
+  /// quote-card watermark.
+  static String get appShareHost =>
+      appShareBaseUrl.replaceAll(RegExp(r'^https?://'), '');
+
   /// Local database name — sqflite on mobile, IndexedDB-backed on web via
   /// the sqflite_common_ffi_web factory (set in `main()`).
   static const String databaseName = 'griot_ai.db';

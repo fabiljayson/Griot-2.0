@@ -64,6 +64,9 @@ abstract final class AppColors {
   static const Color equatorialGreenTint = Color(0xFFD8E8E0);
 
   // --- Surfaces & ink ------------------------------------------------------
+  /// Pure black — Home header and dark emphasis surfaces.
+  static const Color black = Color(0xFF000000);
+
   /// Raffia ivory — light mode background (web: `cam-ivory`).
   static const Color ivory = Color(0xFFFBF9F4);
 

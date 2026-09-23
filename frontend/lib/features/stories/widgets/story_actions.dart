@@ -199,6 +199,8 @@ class StoryActionsMenu extends ConsumerWidget {
       attribution: hasMoral || story.author.displayName.isEmpty
           ? story.title
           : story.author.displayName,
+      imageUrl: story.coverImage,
+      imageBlurhash: story.coverImageBlurhash,
     );
   }
 

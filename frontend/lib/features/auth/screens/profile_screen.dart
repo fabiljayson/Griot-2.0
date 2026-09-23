@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/griot_loader.dart';
 import '../../../core/widgets/griot_logo.dart';
+import '../../../core/widgets/griot_splash_screen.dart';
 import '../../admin/admin_feature.dart';
 import '../../gamification/providers/gamification_provider.dart';
 import '../../stories/models/story_model.dart';
@@ -241,7 +242,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           confirmLabel: 'Sign Out',
                         );
                         if (confirmed && context.mounted) {
-                          await ref.read(authProvider.notifier).logout();
+                          // Replay the branded splash while the session closes,
+                          // so sign-out reads as the mirror of app load.
+                          await GriotSplashScreen.showAndRun(
+                            context,
+                            caption: 'See you soon',
+                            action: () =>
+                                ref.read(authProvider.notifier).logout(),
+                          );
                         }
                       },
                     ),

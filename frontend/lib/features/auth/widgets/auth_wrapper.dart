@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/onboarding_provider.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/brand_widgets.dart';
+import '../../../core/widgets/griot_splash_screen.dart';
 import '../providers/auth_provider.dart';
 import '../screens/login_screen.dart';
 import '../screens/onboarding_screen.dart';
@@ -74,13 +74,9 @@ class _AuthLoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BrandScaffold(
-      child: Container(
-        color: Theme.of(context).colorScheme.surface,
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.terracotta,
-            strokeWidth: 2.5,
-          ),
+      child: const SafeArea(
+        child: GriotSplashLoader(
+          caption: "Preserving Cameroon's living heritage",
         ),
       ),
     );

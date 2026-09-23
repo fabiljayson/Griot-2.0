@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
 
 /// Service for sharing stories across platforms.
@@ -16,7 +17,7 @@ class SharingService {
     required String summary,
     String? imageUrl,
   }) async {
-    final shareUrl = 'https://griot-ai.org/story/$slug';
+    final shareUrl = '${AppConstants.appShareBaseUrl}/story/$slug';
     final shareText = _buildShareText(title, summary, shareUrl);
 
     await SharePlus.instance.share(
@@ -34,7 +35,7 @@ class SharingService {
     required String summary,
     required String platform,
   }) async {
-    final shareUrl = 'https://griot-ai.org/story/$slug';
+    final shareUrl = '${AppConstants.appShareBaseUrl}/story/$slug';
     final shareText = _buildShareText(title, summary, shareUrl);
 
     await SharePlus.instance.share(
@@ -47,7 +48,7 @@ class SharingService {
 
   /// Copy story link to clipboard.
   Future<void> copyLink({required String slug}) async {
-    final shareUrl = 'https://griot-ai.org/story/$slug';
+    final shareUrl = '${AppConstants.appShareBaseUrl}/story/$slug';
     await Clipboard.setData(ClipboardData(text: shareUrl));
   }
 

@@ -3,6 +3,38 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
 
+/// Built-in page transition used by every `MaterialPageRoute` in the app: a
+/// soft fade with a slight upward drift, so pushed screens feel connected to
+/// the Griot identity instead of the default platform slide.
+class GriotPageTransitionsBuilder extends PageTransitionsBuilder {
+  const GriotPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.05),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Builds the full ThemeData for the Griot 2.0 app, mirroring the webapp's
 /// Tailwind theme (Ndop indigo primary, bronze accent, ivory surfaces).
 abstract final class AppTheme {
@@ -45,6 +77,16 @@ abstract final class AppTheme {
     );
 
     return base.copyWith(
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: GriotPageTransitionsBuilder(),
+          TargetPlatform.iOS: GriotPageTransitionsBuilder(),
+          TargetPlatform.linux: GriotPageTransitionsBuilder(),
+          TargetPlatform.macOS: GriotPageTransitionsBuilder(),
+          TargetPlatform.windows: GriotPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: GriotPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,

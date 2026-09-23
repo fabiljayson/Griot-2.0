@@ -8,6 +8,7 @@ import '../../core/widgets/app_components.dart';
 import '../../core/widgets/griot_image.dart';
 import '../../core/widgets/griot_loader.dart';
 import '../../core/widgets/griot_logo.dart';
+import '../../core/widgets/griot_splash_screen.dart';
 import '../auth/models/user_model.dart';
 import '../auth/providers/auth_provider.dart';
 import '../auth/screens/profile_screen.dart';
@@ -273,7 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         AppSpacing.md,
         AppSpacing.xl,
       ),
-      decoration: const BoxDecoration(color: AppColors.indigo),
+      decoration: const BoxDecoration(color: AppColors.black),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -526,7 +527,10 @@ class _CategoryStrip extends ConsumerWidget {
           ],
         );
       },
-      loading: () => const SizedBox.shrink(),
+      loading: () => const GriotSplashLoader(
+        compact: true,
+        caption: 'Loading categories',
+      ),
       error: (_, _) => const SizedBox.shrink(),
     );
   }
