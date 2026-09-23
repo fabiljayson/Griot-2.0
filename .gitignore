@@ -68,3 +68,8 @@ backend/media/artifacts/*
 !backend/media/artifacts/images/
 backend/media/artifacts/images/*
 !backend/media/artifacts/images/*.jpg
+
+# Crawler output (regenerable via crawler/main.py) — keep out of git
+/downloads/
+/plantuml.jar
+/Griot_2.0/

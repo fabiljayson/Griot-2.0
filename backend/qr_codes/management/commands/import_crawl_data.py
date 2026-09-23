@@ -34,7 +34,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--json-path',
             type=str,
-            default=str(Path(__file__).resolve().parent.parent.parent.parent.parent / 'downloads' / 'cameroon_content.json'),
+            default=str(Path(__file__).resolve().parent.parent.parent / 'data' / 'cameroon_content.json'),
             help='Path to the crawled JSON file',
         )
         parser.add_argument(
