@@ -388,3 +388,51 @@ Map<String, int> _stringToIntMap(Map<String, dynamic>? raw) {
     (key, value) => MapEntry(key, (value as num?)?.toInt() ?? 0),
   );
 }
+
+/// One platform user in the admin users list (`/api/analytics/users/list/`).
+class AdminUser {
+  const AdminUser({
+    this.id = 0,
+    this.username = '',
+    this.email = '',
+    this.firstName = '',
+    this.lastName = '',
+    this.role = '',
+    this.roleDisplay = '',
+    this.institution = '',
+    this.dateJoined = '',
+    this.isActive = true,
+  });
+
+  final int id;
+  final String username;
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String role;
+  final String roleDisplay;
+  final String institution;
+  final String dateJoined;
+  final bool isActive;
+
+  /// Best full-name available, falling back to the username.
+  String get displayName {
+    final name = '$firstName $lastName'.trim();
+    return name.isNotEmpty ? name : username;
+  }
+
+  factory AdminUser.fromJson(Map<String, dynamic> json) {
+    return AdminUser(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      username: json['username'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      firstName: json['first_name'] as String? ?? '',
+      lastName: json['last_name'] as String? ?? '',
+      role: json['role'] as String? ?? '',
+      roleDisplay: json['role_display'] as String? ?? '',
+      institution: json['institution'] as String? ?? '',
+      dateJoined: json['date_joined'] as String? ?? '',
+      isActive: json['is_active'] as bool? ?? true,
+    );
+  }
+}

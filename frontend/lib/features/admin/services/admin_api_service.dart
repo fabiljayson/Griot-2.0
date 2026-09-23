@@ -64,6 +64,23 @@ class AdminApiService {
         .toList();
   }
 
+  /// Fetch every platform user, newest first (admin only).
+  ///
+  /// After `sync_local_users` has run, this is the union of the local SQLite
+  /// and deployed PostgreSQL accounts.
+  Future<List<AdminUser>> getUsers({String? search}) async {
+    final params = (search == null || search.trim().isEmpty)
+        ? null
+        : {'search': search.trim()};
+    final response = await _dio.get(
+      '$_basePath/users/list/',
+      queryParameters: params,
+    );
+    return (response.data as List<dynamic>)
+        .map((e) => AdminUser.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Resolve flags on a story.
   ///
   /// [action] is either `remove` (archives the story) or `dismiss` (keeps it).

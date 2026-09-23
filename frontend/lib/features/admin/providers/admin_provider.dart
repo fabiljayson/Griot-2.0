@@ -65,3 +65,13 @@ final moderationQueueProvider = FutureProvider.autoDispose<List<FlaggedStory>>((
 ) async {
   return AdminApiService.instance.getModerationQueue();
 });
+
+/// Every platform user, newest first.
+///
+/// Covers accounts from both the local and deployed databases once
+/// `sync_local_users` has copied the local ones into the deploy database.
+final adminUsersProvider = FutureProvider.autoDispose<List<AdminUser>>((
+  ref,
+) async {
+  return AdminApiService.instance.getUsers();
+});
