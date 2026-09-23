@@ -26,12 +26,17 @@ REST_FRAMEWORK = {  # noqa: F405
     },
 }
 
-# Use in-memory SQLite for faster tests.
+# Use in-memory SQLite for faster tests. A separate 'local' alias mirrors the
+# dev setup so the user-sync command can be tested across two databases.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:',
-    }
+    },
+    'local': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    },
 }
 
 # Speed up the suite: the MD5 hasher is only used for test fixtures, never

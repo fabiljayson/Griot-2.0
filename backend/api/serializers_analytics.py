@@ -64,3 +64,18 @@ class DashboardSummarySerializer(serializers.Serializer):
     gamification = GamificationStatsSerializer()
     qr_codes = QRStatsSerializer()
     engagement = EngagementSummarySerializer()
+
+
+class AdminUserListSerializer(serializers.Serializer):
+    """One platform user in the admin users list."""
+
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    role = serializers.CharField()
+    role_display = serializers.CharField()
+    institution = serializers.CharField()
+    date_joined = serializers.DateTimeField()
+    is_active = serializers.BooleanField()

@@ -11,6 +11,7 @@ from .views_analytics import (
     GamificationAnalyticsView,
     QRAnalyticsView,
     EngagementAnalyticsView,
+    AdminUsersListView,
 )
 
 urlpatterns = [
@@ -44,6 +45,7 @@ urlpatterns = [
 
     # Phase 9: Admin analytics dashboard.
     path('analytics/dashboard/', DashboardSummaryView.as_view(), name='analytics-dashboard'),
+    path('analytics/users/list/', AdminUsersListView.as_view(), name='analytics-users-list'),
     path('analytics/users/', UserAnalyticsView.as_view(), name='analytics-users'),
     path('analytics/stories/', StoryAnalyticsView.as_view(), name='analytics-stories'),
     path('analytics/gamification/', GamificationAnalyticsView.as_view(), name='analytics-gamification'),

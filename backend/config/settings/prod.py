@@ -66,19 +66,17 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_REFERRER_POLICY = 'same-origin'
 
-# Database — PostgreSQL when DATABASE_URL is set (e.g.
-# postgres://user:password@host:5432/dbname). Falls back to the SQLite
-# configured in base.py for small/single-instance deployments.
+# Database — PostgreSQL for the 'default' alias when DATABASE_URL is set
+# (e.g. postgres://user:password@host:5432/dbname). Falls back to the SQLite
+# configured in base.py for small/single-instance deployments. The 'local'
+# alias is left pointing at SQLite so prod never reads the repo file.
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
-    # Reassign the name (don't mutate) to keep the override local to prod.
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '600')),
-            conn_health_checks=True,
-        ),
-    }
+    DATABASES['default'] = dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '600')),
+        conn_health_checks=True,
+    )
 
 # Sentry error monitoring (Phase 10.1 baseline wired in from the start).
 SENTRY_DSN = os.environ.get('SENTRY_DSN')

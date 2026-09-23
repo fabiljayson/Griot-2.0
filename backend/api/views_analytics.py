@@ -4,6 +4,8 @@ Admin analytics API views.
 Provides endpoints for platform-wide analytics accessible only by admins
 and institution managers.
 """
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,7 +25,10 @@ from .serializers_analytics import (
     QRStatsSerializer,
     EngagementSummarySerializer,
     DashboardSummarySerializer,
+    AdminUserListSerializer,
 )
+
+User = get_user_model()
 
 
 class IsAdminOrManager(permissions.BasePermission):
@@ -61,6 +66,29 @@ class UserAnalyticsView(APIView):
     def get(self, request):
         data = get_user_stats()
         serializer = UserStatsSerializer(data)
+        return Response(serializer.data)
+
+
+class AdminUsersListView(APIView):
+    """
+    GET /api/analytics/users/list/
+
+    Every platform user (across all synced databases), newest first.
+    Optional `?search=` filters by username, email or full name.
+    """
+    permission_classes = [IsAdminOrManager]
+
+    def get(self, request):
+        queryset = User.objects.all().order_by('-date_joined', 'id')
+        search = (request.query_params.get('search') or '').strip()
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search)
+                | Q(email__icontains=search)
+                | Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+            )
+        serializer = AdminUserListSerializer(queryset, many=True)
         return Response(serializer.data)
 
 

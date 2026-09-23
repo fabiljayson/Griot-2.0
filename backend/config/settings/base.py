@@ -102,12 +102,23 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # ---------------------------------------------------------------------------
 # Database (SQLite per Phase 1 spec; swap ENGINE in prod for Postgres later)
+#
+# Two aliases:
+#   - 'default'   — the environment's primary database (SQLite in dev, the
+#                   deployed PostgreSQL in prod when DATABASE_URL is set).
+#   - 'local'     — always the repository SQLite file. Used by
+#                   `sync_local_users` to push local accounts into the
+#                   deployed database.
 # ---------------------------------------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    },
+    'local': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    },
 }
 
 # ---------------------------------------------------------------------------

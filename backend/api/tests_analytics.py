@@ -17,6 +17,7 @@ User = get_user_model()
 # Use direct URL paths since api/ urls don't have a namespace
 DASHBOARD_URL = '/api/analytics/dashboard/'
 USERS_URL = '/api/analytics/users/'
+USERS_LIST_URL = '/api/analytics/users/list/'
 STORIES_URL = '/api/analytics/stories/'
 GAMIFICATION_URL = '/api/analytics/gamification/'
 QR_URL = '/api/analytics/qr-codes/'
@@ -163,3 +164,58 @@ class AnalyticsDataTests(APITestCase):
                 resp.status_code, status.HTTP_200_OK,
                 f'{url} returned {resp.status_code}'
             )
+
+
+class AdminUsersListTests(APITestCase):
+    """The users-list endpoint shows every platform account to admins."""
+
+    def setUp(self):
+        self.visitor = User.objects.create_user(
+            'visitor1', email='v1@test.com', password='pass123', role='visitor'
+        )
+        self.manager = User.objects.create_user(
+            'manager1', email='m1@test.com', password='pass123',
+            role='institution_manager',
+        )
+        self.admin = User.objects.create_user(
+            'admin1', email='a1@test.com', password='pass123', role='admin'
+        )
+
+    def test_requires_admin_or_manager(self):
+        resp = self.client.get(USERS_LIST_URL)
+        self.assertIn(
+            resp.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
+
+        self.client.force_authenticate(self.visitor)
+        resp = self.client.get(USERS_LIST_URL)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_returns_all_users_newest_first(self):
+        self.client.force_authenticate(self.admin)
+        resp = self.client.get(USERS_LIST_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 3)
+
+        first = resp.data[0]
+        self.assertIn('id', first)
+        self.assertIn('username', first)
+        self.assertIn('email', first)
+        self.assertEqual(first['role_display'], 'Admin')
+        self.assertIn('is_active', first)
+        self.assertIn('date_joined', first)
+
+    def test_search_filters_by_username_and_email(self):
+        self.client.force_authenticate(self.admin)
+
+        resp = self.client.get(USERS_LIST_URL, {'search': 'admin1'})
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]['username'], 'admin1')
+
+        resp = self.client.get(USERS_LIST_URL, {'search': 'm1@test.com'})
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]['username'], 'manager1')
+
+        resp = self.client.get(USERS_LIST_URL, {'search': 'no-such-user'})
+        self.assertEqual(len(resp.data), 0)

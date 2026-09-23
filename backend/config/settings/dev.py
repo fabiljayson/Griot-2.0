@@ -51,20 +51,26 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    },
+    # Local source for `sync_local_users`; always the SQLite file even when
+    # 'default' below is pointed at the hosted PostgreSQL.
+    'local': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    },
 }
 
-# Optional: point local development at the hosted PostgreSQL (e.g. the Render
-# instance) so local admin/shell commands see live production data.
+# Optional: point the *default* database at the hosted PostgreSQL (e.g. the
+# Render instance) so local admin/shell commands see live production data.
 #     DATABASE_URL="postgresql://user:pass@host:5432/dbname?sslmode=require"
+# Setting the URL leaves the 'local' alias on SQLite, so
+# `python manage.py sync_local_users` can push local users to the deployed DB.
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     import dj_database_url
 
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '60')),
-            conn_health_checks=True,
-        ),
-    }
+    DATABASES['default'] = dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '60')),
+        conn_health_checks=True,
+    )
