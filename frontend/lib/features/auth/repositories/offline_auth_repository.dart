@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/models/offline_user.dart';
@@ -7,6 +6,7 @@ import '../../../core/database/repositories/offline_user_repository.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/connectivity_service.dart';
 import '../../../core/providers/database_providers.dart';
+import '../../../core/debug/debug_log.dart';
 
 /// Repository for handling offline user registration and syncing.
 ///
@@ -57,17 +57,17 @@ class OfflineAuthRepository {
       institution: institution,
     );
 
-    debugPrint('[OfflineAuth] User saved locally: ${offlineUser.username}');
+    debugLog('[OfflineAuth] User saved locally: ${offlineUser.username}');
 
     // Try to sync immediately if online
     if (_connectivityService.isOnline) {
       try {
         await _syncUser(offlineUser);
-        debugPrint(
+        debugLog(
           '[OfflineAuth] User synced immediately: ${offlineUser.username}',
         );
       } catch (e) {
-        debugPrint(
+        debugLog(
           '[OfflineAuth] Failed to sync immediately, will retry later: $e',
         );
       }
@@ -97,14 +97,14 @@ class OfflineAuthRepository {
       final serverUserId = userData['user']?['id'] as int? ?? 0;
 
       await _offlineUserRepository.markSynced(offlineUser.id!, serverUserId);
-      debugPrint(
+      debugLog(
         '[OfflineAuth] User synced to server: ${offlineUser.username} (ID: $serverUserId)',
       );
     } on DioException catch (e) {
       final errorMessage =
           e.response?.data?['detail'] as String? ?? e.message ?? 'Sync failed';
       await _offlineUserRepository.markFailed(offlineUser.id!, errorMessage);
-      debugPrint('[OfflineAuth] Failed to sync user: $errorMessage');
+      debugLog('[OfflineAuth] Failed to sync user: $errorMessage');
       rethrow;
     }
   }
@@ -114,13 +114,13 @@ class OfflineAuthRepository {
     if (!_connectivityService.isOnline) return;
 
     final pendingUsers = await _offlineUserRepository.getPendingUsers();
-    debugPrint('[OfflineAuth] Syncing ${pendingUsers.length} pending users...');
+    debugLog('[OfflineAuth] Syncing ${pendingUsers.length} pending users...');
 
     for (final user in pendingUsers) {
       try {
         await _syncUser(user);
       } catch (e) {
-        debugPrint('[OfflineAuth] Failed to sync user ${user.username}: $e');
+        debugLog('[OfflineAuth] Failed to sync user ${user.username}: $e');
       }
     }
   }

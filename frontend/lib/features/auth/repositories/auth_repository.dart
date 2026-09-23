@@ -21,11 +21,9 @@ class InvalidCredentialsException implements Exception {
 /// server is unreachable the legacy local SQLite/secure-storage session is
 /// used so the app remains usable offline.
 class AuthRepository {
-  AuthRepository({
-    LocalAuthRepository? localAuth,
-    ServerAuthRepository? server,
-  })  : _local = localAuth ?? LocalAuthRepository(),
-        _server = server ?? ServerAuthRepository();
+  AuthRepository({LocalAuthRepository? localAuth, ServerAuthRepository? server})
+    : _local = localAuth ?? LocalAuthRepository(),
+      _server = server ?? ServerAuthRepository();
 
   final LocalAuthRepository _local;
   final ServerAuthRepository _server;
@@ -151,7 +149,8 @@ class AuthRepository {
   Future<TokenPair> refreshTokens() async {
     final refreshToken = await _local.refreshToken;
 
-    final isSynthetic = refreshToken == null ||
+    final isSynthetic =
+        refreshToken == null ||
         refreshToken.isEmpty ||
         refreshToken.startsWith('local_');
     if (isSynthetic) {

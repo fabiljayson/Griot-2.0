@@ -75,19 +75,13 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
     try {
       final user = await authRepo.getMe();
-      return AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-      );
+      return AuthState(status: AuthStatus.authenticated, user: user);
     } catch (e) {
       // Token might be expired; try refresh.
       try {
         await authRepo.refreshTokens();
         final user = await authRepo.getMe();
-        return AuthState(
-          status: AuthStatus.authenticated,
-          user: user,
-        );
+        return AuthState(status: AuthStatus.authenticated, user: user);
       } catch (_) {
         await authRepo.clearTokens();
         return const AuthState(status: AuthStatus.unauthenticated);
@@ -107,20 +101,23 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await authRepo.login(username: username, password: password);
       final user = await authRepo.getMe();
 
-      state = AsyncData(AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-      ));
+      state = AsyncData(
+        AuthState(status: AuthStatus.authenticated, user: user),
+      );
     } on DioException catch (e) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: AppErrorMapper.fromDio(e).message,
-      ));
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage: AppErrorMapper.fromDio(e).message,
+        ),
+      );
     } catch (e) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: AppErrorMapper.fromException(e).message,
-      ));
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage: AppErrorMapper.fromException(e).message,
+        ),
+      );
     }
   }
 
@@ -154,10 +151,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       // Register already signs in and persists the real session.
       final user = await authRepo.getMe();
 
-      state = AsyncData(AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-      ));
+      state = AsyncData(
+        AuthState(status: AuthStatus.authenticated, user: user),
+      );
       return AuthStatus.authenticated;
     } on DioException catch (e) {
       // Server unreachable — save the registration locally and let the
@@ -175,38 +171,39 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
             lastName: lastName ?? '',
             role: role.value,
           );
-          state = const AsyncData(AuthState(
-            status: AuthStatus.pendingSync,
-          ));
+          state = const AsyncData(AuthState(status: AuthStatus.pendingSync));
           return AuthStatus.pendingSync;
         } catch (offlineError) {
-          state = AsyncData(AuthState(
-            status: AuthStatus.error,
-            errorMessage:
-                'Could not save your account for offline activation. Please try again.',
-          ));
+          state = AsyncData(
+            AuthState(
+              status: AuthStatus.error,
+              errorMessage:
+                  'Could not save your account for offline activation. Please try again.',
+            ),
+          );
           return AuthStatus.error;
         }
       }
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: AppErrorMapper.fromDio(e).message,
-      ));
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage: AppErrorMapper.fromDio(e).message,
+        ),
+      );
       return AuthStatus.error;
     } catch (e) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: AppErrorMapper.fromException(e).message,
-      ));
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage: AppErrorMapper.fromException(e).message,
+        ),
+      );
       return AuthStatus.error;
     }
   }
 
   /// Update the user's profile.
-  Future<void> updateProfile({
-    String? firstName,
-    String? lastName,
-  }) async {
+  Future<void> updateProfile({String? firstName, String? lastName}) async {
     state = const AsyncData(AuthState(status: AuthStatus.loading));
 
     try {
@@ -216,20 +213,20 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         lastName: lastName,
       );
 
-      state = AsyncData(AuthState(
-        status: AuthStatus.authenticated,
-        user: user,
-      ));
+      state = AsyncData(
+        AuthState(status: AuthStatus.authenticated, user: user),
+      );
     } on DioException catch (e) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: AppErrorMapper.fromDio(e).message,
-      ));
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage: AppErrorMapper.fromDio(e).message,
+        ),
+      );
     } catch (e) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ));
+      state = AsyncData(
+        AuthState(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -241,14 +238,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       final authRepo = ref.read(authRepositoryProvider);
       await authRepo.deleteAccount();
 
-      state = const AsyncData(AuthState(
-        status: AuthStatus.unauthenticated,
-      ));
+      state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
     } catch (e) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.error,
-        errorMessage: AppErrorMapper.fromException(e).message,
-      ));
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage: AppErrorMapper.fromException(e).message,
+        ),
+      );
     }
   }
 
@@ -257,22 +254,16 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final authRepo = ref.read(authRepositoryProvider);
     await authRepo.logout();
 
-    state = const AsyncData(AuthState(
-      status: AuthStatus.unauthenticated,
-    ));
+    state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
   }
 
   /// Clear any error message.
   void clearError() {
-    final current = state.maybeWhen(
-      data: (s) => s,
-      orElse: () => null,
-    );
+    final current = state.maybeWhen(data: (s) => s, orElse: () => null);
     if (current != null && current.hasError) {
-      state = AsyncData(AuthState(
-        status: AuthStatus.unauthenticated,
-        user: current.user,
-      ));
+      state = AsyncData(
+        AuthState(status: AuthStatus.unauthenticated, user: current.user),
+      );
     }
   }
 
@@ -303,5 +294,6 @@ final authenticatedApiClientProvider = Provider<ApiClient>((ref) {
 });
 
 /// Authentication state provider.
-final authProvider =
-    AsyncNotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);

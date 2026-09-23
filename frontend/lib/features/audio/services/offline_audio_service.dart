@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' hide consolidateHttpClientResponseBytes;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/network/http_utils.dart';
+import '../../../core/debug/debug_log.dart';
 
 /// Service for playing audio files offline.
 ///
@@ -45,16 +45,16 @@ class OfflineAudioService {
         final cachedPath = _cachedFiles[url];
         if (cachedPath != null && await File(cachedPath).exists()) {
           source = cachedPath;
-          debugPrint('[OfflineAudio] Playing cached file: $cachedPath');
+          debugLog('[OfflineAudio] Playing cached file: $cachedPath');
         } else {
           // Cache the file first
           source = await _cacheAudioFile(url);
-          debugPrint('[OfflineAudio] Cached and playing: $source');
+          debugLog('[OfflineAudio] Cached and playing: $source');
         }
       } else {
         // Local file path
         source = url;
-        debugPrint('[OfflineAudio] Playing local file: $url');
+        debugLog('[OfflineAudio] Playing local file: $url');
       }
 
       // Set the source and seek to resume position
@@ -64,7 +64,7 @@ class OfflineAudioService {
       }
       await _player.play();
     } catch (e) {
-      debugPrint('[OfflineAudio] Error playing audio: $e');
+      debugLog('[OfflineAudio] Error playing audio: $e');
       rethrow;
     }
   }
@@ -93,7 +93,7 @@ class OfflineAudioService {
       _cachedFiles[url] = filePath;
       return filePath;
     } catch (e) {
-      debugPrint('[OfflineAudio] Error caching audio: $e');
+      debugLog('[OfflineAudio] Error caching audio: $e');
       rethrow;
     }
   }
@@ -151,7 +151,7 @@ class OfflineAudioService {
       }
       _cachedFiles.clear();
     } catch (e) {
-      debugPrint('[OfflineAudio] Error clearing cache: $e');
+      debugLog('[OfflineAudio] Error clearing cache: $e');
     }
   }
 
@@ -160,5 +160,3 @@ class OfflineAudioService {
     _player.dispose();
   }
 }
-
-

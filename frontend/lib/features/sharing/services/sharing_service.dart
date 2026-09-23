@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/debug/debug_log.dart';
 
 /// Service for sharing stories across platforms.
 class SharingService {
@@ -78,7 +78,7 @@ class SharingService {
       api.dio.post('/api/stories/$slug/share/', data: {'platform': platform});
     } catch (e) {
       // Non-critical analytics — log but don't surface.
-      debugPrint('[SharingService] share tracking failed: $e');
+      debugLog('[SharingService] share tracking failed: $e');
     }
   }
 }

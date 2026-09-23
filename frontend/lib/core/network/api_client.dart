@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
-import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
 import '../database/repositories/offline_request_repository.dart';
 import 'auth_interceptor.dart';
 import 'connectivity_service.dart';
+import '../debug/debug_log.dart';
 
 /// Shared Dio instance for all API calls.
 ///
@@ -27,9 +27,7 @@ class ApiClient {
         baseUrl: baseUrl ?? AppConstants.effectiveBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: {'Accept': 'application/json'},
       ),
     );
 
@@ -45,7 +43,7 @@ class ApiClient {
     dio.interceptors.add(
       RetryInterceptor(
         dio: dio,
-        logPrint: (message) => debugPrint('[dio] $message'),
+        logPrint: (message) => debugLog('[dio] $message'),
         retries: 3,
         retryDelays: const [
           Duration(seconds: 1),
@@ -56,10 +54,12 @@ class ApiClient {
     );
 
     // Add offline queue interceptor
-    dio.interceptors.add(OfflineQueueInterceptor(
-      offlineRepository: _offlineRepository,
-      connectivityService: _connectivityService,
-    ));
+    dio.interceptors.add(
+      OfflineQueueInterceptor(
+        offlineRepository: _offlineRepository,
+        connectivityService: _connectivityService,
+      ),
+    );
   }
 
   static final ApiClient instance = ApiClient._();
@@ -94,7 +94,7 @@ class ApiClient {
       body: body,
       headers: headers,
     );
-    debugPrint('[ApiClient] Request queued for offline: $method $path');
+    debugLog('[ApiClient] Request queued for offline: $method $path');
   }
 }
 
@@ -103,8 +103,8 @@ class OfflineQueueInterceptor extends Interceptor {
   OfflineQueueInterceptor({
     required OfflineRequestRepository offlineRepository,
     ConnectivityService? connectivityService,
-  })  : _offlineRepository = offlineRepository,
-        _connectivityService = connectivityService;
+  }) : _offlineRepository = offlineRepository,
+       _connectivityService = connectivityService;
 
   final OfflineRequestRepository _offlineRepository;
   final ConnectivityService? _connectivityService;

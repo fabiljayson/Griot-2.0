@@ -45,12 +45,13 @@ abstract final class SignInPrompt {
 
     if (wantsToSignIn != true || !context.mounted) return false;
 
-    final signedIn = await Navigator.of(context, rootNavigator: true).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => const _SignInRoute(),
-        fullscreenDialog: true,
-      ),
-    );
+    final signedIn = await Navigator.of(context, rootNavigator: true)
+        .push<bool>(
+          MaterialPageRoute(
+            builder: (_) => const _SignInRoute(),
+            fullscreenDialog: true,
+          ),
+        );
     return signedIn ?? false;
   }
 }

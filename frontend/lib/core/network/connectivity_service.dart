@@ -1,10 +1,8 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-
+import '../debug/debug_log.dart';
 
 /// Service that monitors network connectivity and manages offline/online transitions.
 ///
@@ -12,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// When connectivity is restored, queued requests are replayed.
 class ConnectivityService {
   ConnectivityService._({required Connectivity connectivity})
-      : _connectivity = connectivity;
+    : _connectivity = connectivity;
 
   final Connectivity _connectivity;
 
@@ -36,7 +34,9 @@ class ConnectivityService {
       final wasOnline = _isOnline;
       _isOnline = results.any((r) => r != ConnectivityResult.none);
 
-      debugPrint('[Connectivity] Status changed: ${_isOnline ? "online" : "offline"}');
+      debugLog(
+        '[Connectivity] Status changed: ${_isOnline ? "online" : "offline"}',
+      );
 
       // If we just came back online, sync pending requests
       if (_isOnline && !wasOnline) {
@@ -56,7 +56,7 @@ class ConnectivityService {
 
   /// Sync pending requests when coming back online.
   Future<void> _syncPendingRequests() async {
-    debugPrint('[Connectivity] Syncing pending requests...');
+    debugLog('[Connectivity] Syncing pending requests...');
     // The sync will be handled by the OfflineSyncManager
   }
 
@@ -69,9 +69,7 @@ class ConnectivityService {
 
 /// Provider for the connectivity service.
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
-  final service = ConnectivityService._(
-    connectivity: Connectivity(),
-  );
+  final service = ConnectivityService._(connectivity: Connectivity());
   ref.onDispose(() => service.dispose());
   return service;
 });

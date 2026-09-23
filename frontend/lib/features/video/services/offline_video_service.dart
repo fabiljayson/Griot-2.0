@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' hide consolidateHttpClientResponseBytes;
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../core/network/http_utils.dart';
+import '../../../core/debug/debug_log.dart';
 
 /// Service for playing video files offline.
 ///
@@ -42,16 +42,16 @@ class OfflineVideoService {
       final cachedPath = _cachedFiles[url];
       if (cachedPath != null && await File(cachedPath).exists()) {
         source = cachedPath;
-        debugPrint('[OfflineVideo] Using cached file: $cachedPath');
+        debugLog('[OfflineVideo] Using cached file: $cachedPath');
       } else {
         // Cache the file first
         source = await _cacheVideoFile(url);
-        debugPrint('[OfflineVideo] Cached and using: $source');
+        debugLog('[OfflineVideo] Cached and using: $source');
       }
     } else {
       // Local file path
       source = url;
-      debugPrint('[OfflineVideo] Using local file: $url');
+      debugLog('[OfflineVideo] Using local file: $url');
     }
 
     final controller = VideoPlayerController.file(File(source));
@@ -85,7 +85,7 @@ class OfflineVideoService {
       _cachedFiles[url] = filePath;
       return filePath;
     } catch (e) {
-      debugPrint('[OfflineVideo] Error caching video: $e');
+      debugLog('[OfflineVideo] Error caching video: $e');
       rethrow;
     }
   }
@@ -117,7 +117,7 @@ class OfflineVideoService {
       }
       _cachedFiles.clear();
     } catch (e) {
-      debugPrint('[OfflineVideo] Error clearing cache: $e');
+      debugLog('[OfflineVideo] Error clearing cache: $e');
     }
   }
 
@@ -129,5 +129,3 @@ class OfflineVideoService {
     _controllers.clear();
   }
 }
-
-

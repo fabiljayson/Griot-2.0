@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/repositories/story_cache_repository.dart';
@@ -8,6 +7,7 @@ import '../../../core/network/connectivity_service.dart';
 import '../../auth/models/user_model.dart';
 import '../models/story_model.dart';
 import '../repositories/story_repository.dart';
+import '../../../core/debug/debug_log.dart';
 
 // ---------------------------------------------------------------------------
 // Story List — sealed union state
@@ -244,7 +244,7 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
         );
       }
     } catch (e) {
-      debugPrint('[StoryProvider] toggleBookmark failed: $e');
+      debugLog('[StoryProvider] toggleBookmark failed: $e');
     }
   }
 
@@ -266,7 +266,7 @@ class StoryListNotifier extends StateNotifier<StoryListState> {
         );
       }
     } catch (e) {
-      debugPrint('[StoryProvider] toggleLike failed: $e');
+      debugLog('[StoryProvider] toggleLike failed: $e');
     }
   }
 }
@@ -336,7 +336,7 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
         ),
       );
     } catch (e) {
-      debugPrint('[StoryDetailNotifier] toggleBookmark failed: $e');
+      debugLog('[StoryDetailNotifier] toggleBookmark failed: $e');
     }
   }
 
@@ -355,7 +355,7 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
         ),
       );
     } catch (e) {
-      debugPrint('[StoryDetailNotifier] toggleLike failed: $e');
+      debugLog('[StoryDetailNotifier] toggleLike failed: $e');
     }
   }
 
@@ -387,7 +387,7 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
         ),
       );
     } catch (e) {
-      debugPrint('[StoryDetailNotifier] updateProgress failed: $e');
+      debugLog('[StoryDetailNotifier] updateProgress failed: $e');
     }
   }
 
