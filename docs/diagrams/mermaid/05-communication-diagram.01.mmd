@@ -1,0 +1,40 @@
+flowchart LR
+    subgraph "Flutter Client"
+        U["User"]
+        SS["StoriesScreen"]
+        SD["StoryDetailScreen"]
+        SP["StoryProvider"]
+        SR["StoryRepository"]
+        AC["ApiClient"]
+        AI["AuthInterceptor"]
+        DB["AppDatabase"]
+    end
+
+    subgraph "Backend API"
+        SV["StoryViewSet"]
+        SVS["StorySerializer"]
+        Mod["Story Model"]
+    end
+
+    U -- "1. select story" --> SS
+    SS -- "2. navigate(slug)" --> SD
+    SD -- "3. fetchStory(slug)" --> SP
+    SP -- "4. getStory(slug)" --> SR
+    SR -- "5. GET /api/stories/{slug}/" --> AC
+    AC -- "6. inject Bearer token" --> AI
+    AI -- "7. forwarded request" --> SV
+    SV -- "8. get_object()" --> Mod
+    Mod -- "9. story data" --> SV
+    SV -- "10. serialize" --> SVS
+    SVS -- "11. JSON response" --> AI
+    AI -- "12. pass response" --> AC
+    AC -- "13. StoryModel" --> SR
+    SR -- "14. update state" --> SP
+    SP -- "15. story data" --> SD
+    SD -- "16. render content" --> U
+
+    SD -- "17. upsert into SQLite mirror" --> DB
+    U -- "18. scroll 50%" --> SD
+    SD -- "19. updateProgress(50%)" --> SP
+    SP -- "20. local-first + best-effort POST /stories/{slug}/progress/" --> AC
+    AC --> SV

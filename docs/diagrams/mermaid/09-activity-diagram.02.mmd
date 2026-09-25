@@ -1,0 +1,40 @@
+flowchart TD
+    Start([Contributor taps "Create Story"]) --> AuthCheck{Is Contributor+?}
+
+    AuthCheck -->|No| ShowDenied[Show access denied]
+    ShowDenied --> End1([Stop])
+
+    AuthCheck -->|Yes| OpenForm[Open StoryFormScreen]
+    OpenForm --> FillStory[Fill story details<br/>title, content, category,<br/>language, region]
+    FillStory --> AddMedia[Add cover image<br/>(optional)]
+    AddMedia --> Preview[Preview story]
+    Preview --> SubmitStory{Submit for<br/>review?}
+
+    SubmitStory -->|Save Draft| SaveDraft[Save as Draft]
+    SaveDraft --> DraftSaved[Story saved locally]
+    DraftSaved --> End2([Draft saved])
+
+    SubmitStory -->|Submit| SubmitToAPI[POST /api/stories/]
+    SubmitToAPI --> APICreate{API creates<br/>story?}
+
+    APICreate -->|No| ShowCreateError[Show error]
+    ShowCreateError --> FillStory
+
+    APICreate -->|Yes| SetPending[Status → Pending]
+    SetPending --> NotifyAuthor[Notify author:<br/>"Submitted for review"]
+    NotifyAuthor --> WaitReview[Wait for<br/>moderation]
+
+    WaitReview --> ModCheck{Admin/Manager<br/>reviews}
+
+    ModCheck -->|Approve| Publish[Status → Published]
+    Publish --> NotifyApproved[Notify: "Story published!"]
+    NotifyApproved --> LiveOnPlatform[Story visible to all]
+    LiveOnPlatform --> End3([Story live])
+
+    ModCheck -->|Reject| RejectStory[Status → Rejected]
+    RejectStory --> NotifyRejected[Notify: "Needs revision"]
+    NotifyRejected --> Revise[Author revises story]
+    Revise --> FillStory
+
+    ModCheck -->|Archive| ArchiveStory[Status → Archived]
+    ArchiveStory --> End4([Story archived])

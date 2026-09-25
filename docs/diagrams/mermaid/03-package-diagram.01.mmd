@@ -1,0 +1,236 @@
+flowchart LR
+    title Griot 2.0 - Package Diagram
+
+    subgraph FlutterClient ["Flutter Client"]
+    subgraph core ["core"]
+    subgraph core.constants ["constants"]
+    AppConstants[AppConstants]
+    PreRegisteredAccounts[PreRegisteredAccounts]
+    end
+    subgraph core.database ["database"]
+    AppDatabase[AppDatabase]
+    LocalAuthRepository[LocalAuthRepository]
+    LocalStoryRepository[LocalStoryRepository]
+    LocalGamificationRepository[LocalGamificationRepository]
+    LocalLibraryRepository[LocalLibraryRepository]
+    OfflineRequestRepository[OfflineRequestRepository]
+    OfflineUserRepository[OfflineUserRepository]
+    StoryCacheRepository[StoryCacheRepository]
+    ReadingProgressRepository[ReadingProgressRepository]
+    SearchHistoryRepository[SearchHistoryRepository]
+    end
+    subgraph core.debug ["debug"]
+    DebugLog[DebugLog]
+    end
+    subgraph core.navigation ["navigation"]
+    AppRouter[AppRouter]
+    MainShell[MainShell]
+    AppDeepLink[AppDeepLink]
+    AuthPageRoute[AuthPageRoute]
+    end
+    subgraph core.network ["network"]
+    ApiClient[ApiClient]
+    AuthInterceptor[AuthInterceptor]
+    RetryInterceptor[RetryInterceptor]
+    ConnectivityService[ConnectivityService]
+    OfflineSyncManager[OfflineSyncManager]
+    AppError[AppError]
+    HttpUtils[HttpUtils]
+    end
+    subgraph core.offline ["offline"]
+    OfflineProvider[OfflineProvider]
+    OfflineFeature[OfflineFeature]
+    OfflineErrorBuffer[OfflineErrorBuffer]
+    end
+    subgraph core.providers ["providers"]
+    DatabaseProviders[DatabaseProviders]
+    OnboardingProvider[OnboardingProvider]
+    end
+    subgraph core.theme ["theme"]
+    AppColors[AppColors]
+    AppTheme[AppTheme]
+    AppTypography[AppTypography]
+    end
+    subgraph core.widgets ["widgets"]
+    BrandWidgets[BrandWidgets]
+    GriotImage[GriotImage]
+    GriotLoader[GriotLoader]
+    AuthFormWidgets[AuthFormWidgets]
+    end
+    end
+    subgraph features ["features"]
+    subgraph features.auth ["auth"]
+    LoginScreen[LoginScreen]
+    RegisterScreen[RegisterScreen]
+    ProfileScreen[ProfileScreen]
+    AuthWrapper[AuthWrapper]
+    AuthProvider[AuthProvider]
+    AuthRepository[AuthRepository]
+    ServerAuthRepository[ServerAuthRepository]
+    LocalAuthRepository[LocalAuthRepository]
+    end
+    subgraph features.home ["home"]
+    HomeScreen[HomeScreen]
+    ConnectivityStatusWidget[ConnectivityStatusWidget]
+    OfflineStoryCounter[OfflineStoryCounter]
+    end
+    subgraph features.stories ["stories"]
+    StoriesScreen[StoriesScreen]
+    StoryDetailScreen[StoryDetailScreen]
+    StoryFormScreen[StoryFormScreen]
+    StoryCard[StoryCard]
+    StoryActions[StoryActions]
+    end
+    subgraph features.library ["library"]
+    LibraryScreen[LibraryScreen]
+    ContinueReadingWidget[ContinueReadingWidget]
+    LibraryApiService[LibraryApiService]
+    end
+    subgraph features.qr_scanner ["qr_scanner"]
+    QRScannerWidget[QRScannerWidget]
+    ArtifactDetailScreen[ArtifactDetailScreen]
+    QrApiService[QrApiService]
+    end
+    subgraph features.audio ["audio"]
+    AudioPlayerSheet[AudioPlayerSheet]
+    AudioPlayerService[AudioPlayerService]
+    OfflineAudioService[OfflineAudioService]
+    end
+    subgraph features.video ["video"]
+    VideoGenerationSheet[VideoGenerationSheet]
+    VideoPlayerWidget[VideoPlayerWidget]
+    VideoStatusPoller[VideoStatusPoller]
+    VideoApiService[VideoApiService]
+    end
+    subgraph features.gamification ["gamification"]
+    GamificationScreen[GamificationScreen]
+    QuizScreen[QuizScreen]
+    QuizPlayerWidget[QuizPlayerWidget]
+    BadgeCard[BadgeCard]
+    GamificationApiService[GamificationApiService]
+    end
+    subgraph features.sharing ["sharing"]
+    ShareSheet[ShareSheet]
+    QuoteCard[QuoteCard]
+    SharingService[SharingService]
+    end
+    subgraph features.settings ["settings"]
+    SettingsScreen[SettingsScreen]
+    WhatsAppFeedbackService[WhatsAppFeedbackService]
+    end
+    subgraph features.artifacts ["artifacts"]
+    ArtifactsScreen[ArtifactsScreen]
+    ArtifactCard[ArtifactCard]
+    ArtifactsProvider[ArtifactsProvider]
+    end
+    subgraph features.discover ["discover"]
+    RegionStoryScreen[RegionStoryScreen]
+    RegionCard[RegionCard]
+    RegionProvider[RegionProvider]
+    RegionModel[RegionModel]
+    end
+    subgraph features.admin ["admin"]
+    AdminDashboardScreen[AdminDashboardScreen]
+    AdminApiService[AdminApiService]
+    GrowthChart[GrowthChart]
+    ModerationWidgets[ModerationWidgets]
+    StatCard[StatCard]
+    end
+    end
+    end
+    subgraph DjangoREST ["Django REST API"]
+    subgraph users ["users"]
+    User[User]
+    UserRole[UserRole]
+    RegisterView[RegisterView]
+    MeView[MeView]
+    AuthTokenRefreshView[AuthTokenRefreshView]
+    CustomTokenObtainPairView[CustomTokenObtainPairView]
+    end
+    subgraph stories ["stories"]
+    Story[Story]
+    StoryCategory[StoryCategory]
+    StoryBookmark[StoryBookmark]
+    StoryLike[StoryLike]
+    StoryFlag[StoryFlag]
+    StoryShare[StoryShare]
+    ReadingProgress[ReadingProgress]
+    StoryViewSet[StoryViewSet]
+    end
+    subgraph qr_codes ["qr_codes"]
+    Artifact[Artifact]
+    QRCodeScan[QRCodeScan]
+    QRCodeGenerator[QRCodeGenerator]
+    end
+    subgraph gamification ["gamification"]
+    Quiz[Quiz]
+    QuizQuestion[QuizQuestion]
+    QuizAttempt[QuizAttempt]
+    Badge[Badge]
+    UserBadge[UserBadge]
+    UserProfile[UserProfile]
+    Certificate[Certificate]
+    end
+    subgraph media_app ["media_app"]
+    VideoGenerationJob[VideoGenerationJob]
+    AudioNarrationJob[AudioNarrationJob]
+    LumaAIService[LumaAIService]
+    TtsService[TtsService]
+    BlurhashUtils[BlurhashUtils]
+    end
+    subgraph api ["api"]
+    HealthViews[HealthViews]
+    AdminUsersListView[AdminUsersListView]
+    AnalyticsViews[AnalyticsViews]
+    JsonFormatter[JsonFormatter]
+    RequestLogMiddleware[RequestLogMiddleware]
+    SeedAllCommand[SeedAllCommand]
+    end
+    subgraph web ["web"]
+    WebViews[WebViews]
+    WebActions[WebActions]
+    WebServices[WebServices]
+    WebTemplates[WebTemplates]
+    end
+    end
+    subgraph Crawler ["Crawler (ingestion tool)"]
+    subgraph crawler ["crawler"]
+    Config[Config]
+    Session[Session]
+    Utils[Utils]
+    Extractors[Extractors]
+    Images[Images]
+    Runner[Runner]
+    CrawlSource[CrawlSource]
+    end
+    end
+    subgraph External ["External Services"]
+    LumaAiAPI[LumaAiAPI]
+    TTSProvider[TTSProvider]
+    Sentry[Sentry]
+    WhatsApp[WhatsApp]
+    end
+    %% ─── Frontend dependencies ──────────────────────────
+    core -->|used by| features
+    features.auth -->|online-first (JWT via ApiClient)| core.network
+    features.stories -->|online-first + SQLite mirror| core.network
+    features.library -->|LOCAL SQLite facade| core.database
+    features.qr_scanner -->|API lookup + record scan| core.network
+    features.audio -->|/api/media/audio + status| core.network
+    features.audio -->|offline audio cache| core.database
+    features.video -->|/api/media/videos + status| core.network
+    features.gamification -->|LOCAL SQLite facade| core.database
+    features.sharing -->|/api/stories/{slug}/share| core.network
+    features.admin -->|/api/analytics/*| core.network
+    features.artifacts -->|/api/artifacts| core.network
+    features.discover -->|/api/categories| core.network
+    features.settings -->|wa.me chat (url_launcher)| WhatsApp
+    core.network -->|offline queue| core.database
+    core.offline -->|error reporting (client)| Sentry
+    %% ─── Backend / external ─────────────────────────────
+    core.network ..> Django REST API : HTTPS
+    media_app -->|REST (mock if no LUMA_API_KEY)| LumaAiAPI
+    media_app -->|gTTS (no key required)| TTSProvider
+    crawler -->|discover-cameroon.com → cameroon_content.json| CrawlSource
+    crawler ..> Django REST API : import_crawl_data command → Artifact
+

@@ -1,0 +1,496 @@
+classDiagram
+    title Griot 2.0 — Frontend Class Diagram
+
+    %% ─── Core ─────────────────────────────────────────────
+    class ApiClient {
+        +Dio dio
+        -OfflineRequestRepository _offlineRepository
+        -ConnectivityService _connectivityService
+        +ApiClient instance$
+        +ApiClient withAuth()$
+        +queueOfflineRequest() Future
+    }
+
+    class AuthInterceptor {
+        -AuthRepository _authRepo
+        -bool _isRefreshing
+        +onRequest() void
+        +onError() void
+    }
+
+    class RetryInterceptor {
+        -int _maxRetries
+        +onError() void
+    }
+
+    class AppError {
+        <<sealed>>
+        -network / -auth / -validation / -offline / -unknown
+        +AppErrorMapper appErrorFromDio(dioException)
+    }
+
+    class ConnectivityService {
+        -Connectivity _connectivity
+        -OfflineRequestRepository _offlineRepository
+        -StreamController _connectivityController
+        -bool _isOnline
+        +bool isOnline
+        +Stream connectivityStream
+        +initialize() void
+        +dispose() void
+    }
+
+    class OfflineSyncManager {
+        -OfflineRequestRepository _offlineRepository
+        -ApiClient _apiClient
+        -ConnectivityService _connectivityService
+        -bool _isSyncing
+        +initialize() void
+        +triggerSync() Future
+        +dispose() void
+    }
+
+    class OfflineQueueInterceptor {
+        -OfflineRequestRepository _offlineRepository
+        -ConnectivityService _connectivityService
+        +onRequest() void
+    }
+
+    ApiClient --> AuthInterceptor : uses
+    ApiClient --> OfflineQueueInterceptor : uses
+    ApiClient --> RetryInterceptor : uses
+    ApiClient --> ConnectivityService : depends
+    OfflineSyncManager --> ConnectivityService : listens
+    OfflineSyncManager --> ApiClient : replays requests
+    OfflineSyncManager --> OfflineRequestRepository : reads queue
+
+    %% ─── Auth ─────────────────────────────────────────────
+    class AuthRepository {
+        +Future~bool~ isAuthenticated
+        +Future~String?~ accessToken
+        +Future~String?~ refreshToken
+        +Future clearTokens() void
+        +Future login(username,password) TokenPair
+        +Future register(...) UserModel
+        +Future refreshTokens() TokenPair
+        +Future getMe() UserModel
+        +Future updateProfile(...) UserModel
+        +Future deleteAccount() void
+        +Future logout() void
+    }
+
+    %% Auth is ONLINE-FIRST: when the API is reachable, real JWT pairs are
+    %% obtained from /api/auth/token/ and kept in secure storage so protected
+    %% endpoints (TTS narration, progress sync, …) work. When offline, the
+    %% legacy SQLite/secure-storage session is used so the app stays usable.
+
+
+
+    class ServerAuthRepository {
+        +Future login() TokenPair
+        +Future getMe() UserModel
+        +Future register() UserModel
+    }
+
+    class LocalAuthRepository {
+        <<SQLite + secure storage>>
+        +Future~bool~ isAuthenticated
+        +Future getMe() UserModel
+    }
+
+    class OfflineAuthRepository {
+        +registerQueued() Future
+    }
+
+    class OfflineUserRepository {
+        <<SQLite>>
+        +upsertUserFromServer() Future
+    }
+
+    class LocalStoryRepository {
+        <<SQLite>>
+        +Future getStories(...) List~StoryModel~
+        +Future createStory(...) StoryModel
+        +Future updateStory(...) StoryModel
+        +Future toggleBookmark(slug) bool
+        +Future toggleLike(slug) bool
+        +Future flagStory(slug,reason,details) void
+        +Future updateReadingProgress(...) void
+    }
+
+    class LoginScreen {
+        +build() Widget
+    }
+
+    class RegisterScreen {
+        +build() Widget
+    }
+
+    class ProfileScreen {
+        +TextEditingController _firstNameController
+        +TextEditingController _lastNameController
+        +bool _isEditing
+        +build() Widget
+    }
+
+    class RoleBadge {
+        +UserRole role
+        +build() Widget
+    }
+
+    class AuthProvider {
+        +AsyncValue authState
+        +login() Future
+        +register() Future
+        +logout() void
+    }
+
+    class AuthWrapper {
+        +Widget child
+        +build() Widget
+    }
+
+    class UserModel {
+        +int id
+        +String username
+        +String email
+        +String firstName
+        +String lastName
+        +String role
+        +String institution
+        +bool canContribute
+        +canGenerateMediaFor(int authorId) bool
+    }
+
+    AuthProvider --> AuthRepository : uses
+    AuthRepository --> ServerAuthRepository : online-first (JWT)
+    AuthRepository --> LocalAuthRepository : offline fallback
+    AuthRepository --> OfflineAuthRepository : queues register while offline
+    AuthWrapper --> AuthProvider : watches
+    AuthInterceptor --> AuthRepository : uses
+    ProfileScreen --> AuthProvider : watches
+    ProfileScreen --> RoleBadge : displays
+    RoleBadge --> UserModel : reads role
+
+    %% ─── Stories ──────────────────────────────────────────
+    class StoryModel {
+        +int id
+        +String slug
+        +String title
+        +String summary
+        +String content
+        +UserModel author
+        +String language
+        +String region
+        +List categories
+        +String coverImage
+        +String audioUrl
+        +String videoUrl
+        +int estimatedReadTime
+        +bool isBookmarked
+    }
+
+    class StoryListNotifier {
+        +StoryListState state
+        +loadStories() Future
+        +refresh() Future
+        +loadMore() Future
+        -_loadFromCache() Future
+    }
+
+    class StoriesScreen {
+        +TextEditingController _searchController
+        +build() Widget
+    }
+
+    class StoryDetailScreen {
+        +build() Widget
+    }
+
+    class StoryFormScreen {
+        +TextEditingController _titleController
+        +TextEditingController _contentController
+        +TextEditingController _summaryController
+        +TextEditingController _tagsController
+        +TextEditingController _regionController
+        +TextEditingController _culturalContextController
+        +TextEditingController _moralLessonController
+        +TextEditingController _sourceController
+        +build() Widget
+    }
+
+    class StoryCard {
+        +StoryModel story
+        +build() Widget
+    }
+
+    class StoryRepository {
+        +Future getStories(...) List~StoryModel~
+        +Future getStory(slug) StoryModel
+        +Future createStory(...) StoryModel
+        +Future updateStory(...) StoryModel
+        +Future deleteStory(slug) void
+        +Future getMyStories() List~StoryModel~
+        +Future getBookmarks() List~StoryModel~
+        +Future toggleBookmark(slug) bool
+        +Future toggleLike(slug) bool
+        +Future flagStory(...) void
+        +Future updateReadingProgress(...) void
+    }
+
+    StoryListNotifier --> StoryRepository : uses
+    StoryRepository --> ApiClient : online-first (GET covers/media)
+    StoryRepository --> LocalStoryRepository : offline mirror (SQLite upsert)
+    StoriesScreen --> StoryListNotifier : watches
+    StoryDetailScreen --> StoryRepository : reads
+    StoryFormScreen --> StoryRepository : saves
+    StoryCard --> StoryModel : displays
+
+    %% Network reach. Story/auth now go online-first via ApiClient; the
+    %% gamification and library services are LOCAL SQLite facades only.
+    class ApiClientConsumer {
+        <<feature services/packages>>
+        +admin_api_service     -> /api/analytics + /api/stories/moderation_queue/
+        +audio_api_service     -> /api/media/audio + status
+        +video_api_service     -> /api/media/videos + status
+        +qr_api_service        -> /api/artifacts/lookup/ + scans
+        +sharing_service       -> /api/stories/{slug}/share
+        +offline_auth_repository -> /api/auth/register (queued)
+        +story_repository      -> /api/stories (online-first mirror)
+        +artifacts_provider    -> /api/artifacts
+        +region_provider       -> /api/categories (discover)
+    }
+
+    class GamificationApiService {
+        <<SQLite facade>>
+        +listQuizzes() / getQuiz() / submitAnswer() / finishQuiz()
+        +getLeaderboard() List
+    }
+
+    class LibraryApiService {
+        <<SQLite facade>>
+        +getRecentStories() / getBookmarks() / getContinueReading()
+    }
+
+    GamificationApiService --> LocalGamificationRepository : delegates
+    LibraryApiService --> LocalLibraryRepository : delegates
+
+    %% ─── Gamification ─────────────────────────────────────
+    class GamificationScreen {
+        +build() Widget
+    }
+
+    class QuizPlayerWidget {
+        +Quiz quiz
+        +build() Widget
+    }
+
+    class BadgeCard {
+        +Badge badge
+        +bool earned
+        +build() Widget
+    }
+
+    GamificationScreen --> QuizPlayerWidget : contains
+    GamificationScreen --> BadgeCard : displays
+
+    %% ─── State (sealed) ──────────────────────────────────
+    class StoryListState {
+        <<sealed>>
+        +InProgress()
+        +Ready()
+        +Failure()
+    }
+
+    class AuthStatus {
+        <<enumeration>>
+        initial
+        unauthenticated
+        authenticated
+        pendingSync
+        loading
+        error
+    }
+
+    StoryListNotifier --> StoryListState : emits
+    AuthProvider --> AuthStatus : tracks
+
+    %% ─── Navigation ──────────────────────────────────────
+    class AppRouter {
+        <<go_router>>
+        +String location
+        +goToStory(slug) void
+        +goToArtifact(slug) void
+        +routeTo(deepLinkKind, slug) void
+    }
+
+    class MainShell {
+        +int currentIndex
+        +destinationCount 5
+        +build() Widget
+    }
+
+    class AppDeepLink {
+        <<enumeration>>
+        story / artifact / quiz / profile / library / scan
+    }
+
+    AppRouter --> AppDeepLink : maps moved URL to route
+    MainShell --> AppRouter : hosts
+
+    %% ─── Settings (WhatsApp feedback) ────────────────────
+    class SettingsScreen {
+        +SwitchValue _audioSync
+        +build() Widget
+    }
+
+    class WhatsAppFeedbackService {
+        +openWhatsApp() Future
+    }
+
+    SettingsScreen --> WhatsAppFeedbackService : uses
+
+    %% ─── Admin dashboard consumers ───────────────────────
+    class AdminApiService {
+        +getDashboardSummary() DashboardSummary
+        +getUsers(search) List~AdminUser~
+        +getModerationQueue() List~ModerationItem~
+        +moderateStory(slug, action, notes) void
+    }
+
+    class AdminUser {
+        +int id
+        +String username
+        +String email
+        +String firstName
+        +String lastName
+        +String role
+        +String roleDisplay
+        +String institution
+        +String dateJoined
+        +bool isActive
+    }
+
+    class DashboardSummary {
+        +UserStats users
+        +StoryStats stories
+        +GamificationStats gamification
+        +QRStats qrCodes
+        +EngagementSummary engagement
+    }
+
+    AdminApiService --> ApiClient : uses
+    AdminApiService --> AdminUser : returns
+    AdminApiService --> DashboardSummary : returns
+
+    %% ─── Artifacts & Discover ────────────────────────────
+    class ArtifactsProvider {
+        +Future listArtifacts()
+    }
+
+    class RegionModel {
+        +String slug
+        +String name
+        +String language
+        +String description
+    }
+
+    class RegionProvider {
+        +Future regions() List~RegionModel~
+    }
+
+    ArtifactsProvider --> ApiClient : uses
+    RegionProvider --> ApiClient : uses
+
+    %% ─── Audio ───────────────────────────────────────────
+    class AudioApiService {
+        +generateNarration(storyId) void
+        +checkStatus(jobId) void
+    }
+
+    class AudioNarrationNotifier {
+        <<Riverpod>>
+        +play() / pause() / stop()
+    }
+
+    class OfflineAudioService {
+        +cacheAudio() / playCached()
+    }
+
+    %% ─── Video ───────────────────────────────────────────
+    class VideoApiService {
+        +createJob(storyId, prompt) void
+        +pollStatus(jobId) void
+    }
+
+    class VideoStatusPoller {
+        +Timer _timer
+        +start(jobId) void
+    }
+
+    VideoApiService --> ApiClient : uses
+    AudioApiService --> ApiClient : uses
+    VideoStatusPoller --> VideoApiService : polls
+
+    class Dio {
+    }
+
+    class Connectivity {
+    }
+
+    class Future {
+    }
+
+    class AppErrorMapper {
+    }
+
+    class Stream {
+    }
+
+    class StreamController {
+    }
+
+    class TokenPair {
+    }
+
+    class List {
+    }
+
+    class Widget {
+    }
+
+    class TextEditingController {
+    }
+
+    class Badge {
+    }
+
+    class UserRole {
+    }
+
+    class AsyncValue {
+    }
+
+    class Quiz {
+    }
+
+    class SwitchValue {
+    }
+
+    class UserStats {
+    }
+
+    class StoryStats {
+    }
+
+    class GamificationStats {
+    }
+
+    class QRStats {
+    }
+
+    class EngagementSummary {
+    }
+
+    class Timer {
+    }

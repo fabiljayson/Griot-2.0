@@ -28,6 +28,8 @@ stateDiagram-v2
     note right of Published : Live on platform.\nVisible to all users.
     note right of Rejected : Failed review.\nAuthor can revise.
     note right of Archived : Hidden from public.\nCan be restored.
+
+    note right of Pending : GAP: pending → published happens\nonly in the Django admin site;\nno approve/reject API endpoint.
 ```
 
 ## 2. Quiz Attempt State Machine
@@ -102,6 +104,11 @@ stateDiagram-v2
 
 ## 5. User Authentication State Machine
 
+> **Updated 2026-09-23:** mirrors `AuthStatus` in the Flutter app
+> (`initial, unauthenticated, authenticated, pendingSync, loading, error`).
+> `pendingSync` is entered when actions (e.g. an offline registration) are
+> queued behind an offline-first session.
+
 ```mermaid
 stateDiagram-v2
     title User Authentication State Machine
@@ -109,7 +116,7 @@ stateDiagram-v2
     [*] --> Initial : App starts
 
     Initial --> Loading : Checking stored tokens
-    Loading --> Authenticated : Valid tokens found
+    Loading --> Authenticated : Valid tokens found (JWT or offline session)
     Loading --> Unauthenticated : No tokens / invalid
 
     Unauthenticated --> Loading : User logs in\n(credentials submitted)
@@ -117,14 +124,22 @@ stateDiagram-v2
 
     Loading --> Authenticated : Login/Register success
     Loading --> Unauthenticated : Login/Register failure
+    Loading --> Error : Network error during\nauth bootstrap
+    Error --> Loading : User retries
 
     Authenticated --> Unauthenticated : Logout / token expired\n/ delete account
-
     Authenticated --> Loading : Token refresh needed\n(on 401 response)
+    Authenticated --> PendingSync : Offline-registration or\nmutations queued (202 Queued)
+
+    PendingSync --> Authenticated : OfflineSyncManager\nreplays queue successfully
+    PendingSync --> Unauthenticated : Queue replay fails\npermanently (max retries)
+    PendingSync --> Loading : Manual retry
 
     note right of Initial : App bootstrapping.\nChecking local storage.
     note right of Loading : Waiting for API\nresponse.
-    note right of Authenticated : JWT tokens valid.\nFull feature access.
+    note right of Authenticated : JWT valid (online) or\nlegacy session (offline fallback).
+    note right of PendingSync : Offline queue holds\npending auth/action requests.\nDisplayed to user as "syncing".
+    note right of Error : Network/validation error.\nRetry offered.
     note right of Unauthenticated : No valid tokens.\nOnly public content.
 ```
 

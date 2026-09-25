@@ -1,0 +1,97 @@
+classDiagram
+    title Griot 2.0 — Web UI Classes (web app)
+
+    class WebUserSettings {
+        +User user
+        +String language
+        +String theme
+    }
+
+    class web_views {
+        <<module (thin)>>
+        +home_view(request)
+        +stories_view(request)
+        +story_detail_view(request, slug)
+        +story_form_view(request, slug)
+        +library_view(request)
+        +artifact_list_view(request)
+        +artifact_detail_view(request, slug)
+        +gamification_view(request)
+        +quizzes_view(request)
+        +quiz_play_view(request, quiz_id)
+        +profile_view(request)
+        +admin_dashboard_view(request)
+        +WebLoginView
+        +WebLogoutView
+    }
+
+    class web_services {
+        <<module (business logic)>>
+        +home_data(user)
+        +stories_data(user, *, search, language, category_slug, region, sort)
+        +story_detail_data(user, slug)
+        +artifact_list_data(category)
+        +artifact_detail_data(user, request, slug)
+        +gamification_data(user)
+        +quiz_play_data(user, quiz_id)
+        +admin_dashboard_data()
+        +toggle_story_like(user, story)
+        +flag_story(user, story, reason, details)
+        +start_quiz(user, quiz)
+        +finish_quiz(user, quiz)
+        +moderate_story(user, story, action, notes)
+        +generate_story_audio(user, story, language)
+        +generate_story_video(user, story, prompt)
+        +register_user(*, username, email, password, password2, role)
+    }
+
+    class web_actions {
+        <<module>>
+        +story_like(request, slug)
+        +story_bookmark(request, slug)
+        +story_flag(request, slug)
+        +story_share(request, slug)
+        +story_progress(request, slug)
+        +story_save(request, slug)
+        +story_delete(request, slug)
+        +story_generate_audio(request, slug)
+        +story_generate_video(request, slug)
+        +artifact_generate_audio(request, slug)
+        +story_video_status(request, slug)
+        +story_moderate(request, slug)
+        +set_language(request)
+        +quiz_start(request, quiz_id)
+        +quiz_answer(request, quiz_id, question_id)
+        +quiz_finish(request, quiz_id)
+        +profile_update(request)
+        +profile_delete(request)
+        +register(request)
+    }
+
+    class StoryTemplates {
+        <<files>>
+        base.html
+        home.html
+        stories.html
+        story_detail.html
+        story_form.html
+        library.html
+        artifacts.html
+        artifact_detail.html
+        gamification.html
+        quizzes.html
+        quiz_play.html
+        profile.html
+        admin_dashboard.html
+    }
+
+    web_actions --> web_views : redirects to
+    web_views --> web_services : delegates business logic
+    web_views --> StoryTemplates : renders
+    web_views --> WebUserSettings : reads per-user prefs
+    web_services --> Story : same models as the API
+    web_services --> AudioNarrationJob : generates via TTS
+    web_services --> VideoGenerationJob : generates via Luma AI
+
+    class User {
+    }

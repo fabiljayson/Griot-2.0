@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_c3fae2b432241785" name="05-communication-diagram.01">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_320a7a03fc4ef6b9" name="Flutter Client">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_ddf3255e2c108684" name="User" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_d5ce1fe977a2ffc9" name="StoriesScreen" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_365acf1c0419f925" name="StoryDetailScreen" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_b559ca7af8d4947e" name="StoryProvider" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_7b78b6b80d1c530d" name="StoryRepository" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_df327d499f037978" name="ApiClient" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_986b33f7786b97e7" name="AuthInterceptor" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_53382cf44a273037" name="AppDatabase" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_f90d0da533bfd3ac" name="Backend API">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_d0e1ae6d946fc338" name="StoryViewSet" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_53d6259617cb87e6" name="StorySerializer" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_b637d5313591e277" name="Story Model" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e4bcf9efab052610" name="1. select story">
+    <uml:client xmi:idref="_ddf3255e2c108684" />
+    <uml:supplier xmi:idref="_d5ce1fe977a2ffc9" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_bb119dc3954d0eee" name="2. navigate(slug)">
+    <uml:client xmi:idref="_d5ce1fe977a2ffc9" />
+    <uml:supplier xmi:idref="_365acf1c0419f925" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7f76b55ea330e801" name="3. fetchStory(slug)">
+    <uml:client xmi:idref="_365acf1c0419f925" />
+    <uml:supplier xmi:idref="_b559ca7af8d4947e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_d6b43b53c99f758d" name="4. getStory(slug)">
+    <uml:client xmi:idref="_b559ca7af8d4947e" />
+    <uml:supplier xmi:idref="_7b78b6b80d1c530d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_98b2a683b284bd77" name="5. GET /api/stories/{slug}/">
+    <uml:client xmi:idref="_7b78b6b80d1c530d" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_8ecdbdd1e08144b2" name="6. inject Bearer token">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_986b33f7786b97e7" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_fddee6b728baef56" name="7. forwarded request">
+    <uml:client xmi:idref="_986b33f7786b97e7" />
+    <uml:supplier xmi:idref="_d0e1ae6d946fc338" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_fd4ff45199963736" name="8. get_object()">
+    <uml:client xmi:idref="_d0e1ae6d946fc338" />
+    <uml:supplier xmi:idref="_b637d5313591e277" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_191e35c9af707352" name="9. story data">
+    <uml:client xmi:idref="_b637d5313591e277" />
+    <uml:supplier xmi:idref="_d0e1ae6d946fc338" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_149b37776168792d" name="10. serialize">
+    <uml:client xmi:idref="_d0e1ae6d946fc338" />
+    <uml:supplier xmi:idref="_53d6259617cb87e6" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_d995faca53732a64" name="11. JSON response">
+    <uml:client xmi:idref="_53d6259617cb87e6" />
+    <uml:supplier xmi:idref="_986b33f7786b97e7" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7b86cc92f3ff6e50" name="12. pass response">
+    <uml:client xmi:idref="_986b33f7786b97e7" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_1a4919387406a2d5" name="13. StoryModel">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_7b78b6b80d1c530d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_77c09aafcab0dfce" name="14. update state">
+    <uml:client xmi:idref="_7b78b6b80d1c530d" />
+    <uml:supplier xmi:idref="_b559ca7af8d4947e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_1741a49e54b9a8b0" name="15. story data">
+    <uml:client xmi:idref="_b559ca7af8d4947e" />
+    <uml:supplier xmi:idref="_365acf1c0419f925" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e346bc218ce968b3" name="16. render content">
+    <uml:client xmi:idref="_365acf1c0419f925" />
+    <uml:supplier xmi:idref="_ddf3255e2c108684" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7f532d05563b52ee" name="17. upsert into SQLite mirror">
+    <uml:client xmi:idref="_365acf1c0419f925" />
+    <uml:supplier xmi:idref="_53382cf44a273037" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_652ff13c583b0db4" name="18. scroll 50%">
+    <uml:client xmi:idref="_ddf3255e2c108684" />
+    <uml:supplier xmi:idref="_365acf1c0419f925" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_564bf2021442d36d" name="19. updateProgress(50%)">
+    <uml:client xmi:idref="_365acf1c0419f925" />
+    <uml:supplier xmi:idref="_b559ca7af8d4947e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_9f771e38db864686" name="20. local-first + best-effort POST /stories/{slug}/progress/">
+    <uml:client xmi:idref="_b559ca7af8d4947e" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_9e2dd47c5d40f6e9">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_d0e1ae6d946fc338" />
+  </uml:packagedElement>
+</uml:Model>

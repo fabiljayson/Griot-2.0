@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_8767d1b40b4807e5" name="07-deployment-diagram.02">
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_bf637e062f63a21a" name="HTTP">
+    <uml:client xmi:idref="_0134ab4161ad3617" />
+    <uml:supplier xmi:idref="_cdf1a8be9fac632a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2250d79f3f1c1ae9">
+    <uml:client xmi:idref="_0134ab4161ad3617" />
+    <uml:supplier xmi:idref="_f182b99556890fe1" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_abe275a361844f00">
+    <uml:client xmi:idref="_f182b99556890fe1" />
+    <uml:supplier xmi:idref="_cdf1a8be9fac632a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_956d169a53aa96f9">
+    <uml:client xmi:idref="_cdf1a8be9fac632a" />
+    <uml:supplier xmi:idref="_34138f54608de0e9" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_61826157fd64ed01">
+    <uml:client xmi:idref="_cdf1a8be9fac632a" />
+    <uml:supplier xmi:idref="_457b29ae1ab92cf3" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_45c1039a12b7bfa2" name="HTTPS API + CORS">
+    <uml:client xmi:idref="_8bfb7cabea3ddd2e" />
+    <uml:supplier xmi:idref="_7c9225ac9aeb1ee3" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e6e4e834455f7a79">
+    <uml:client xmi:idref="_7c9225ac9aeb1ee3" />
+    <uml:supplier xmi:idref="_e40639d3d19b2bf0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_af875d06b2d07e53">
+    <uml:client xmi:idref="_7c9225ac9aeb1ee3" />
+    <uml:supplier xmi:idref="_a4a0fdf26df967b1" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_cea33489a498a6ef" name="share links">
+    <uml:client xmi:idref="_8bfb7cabea3ddd2e" />
+    <uml:supplier xmi:idref="_8bfb7cabea3ddd2e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f2d648627aa2e7c6" name="sync_local_users&lt;br/&gt;migrate data">
+    <uml:client xmi:idref="_cdf1a8be9fac632a" />
+    <uml:supplier xmi:idref="_e40639d3d19b2bf0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_0134ab4161ad3617" name="Flutter App&lt;br/&gt;(flutter run)&lt;br/&gt;API_BASE_URL=10.0.2.2:8000&lt;br/&gt;(web: localhost:8000)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_cdf1a8be9fac632a" name="Django Dev Server&lt;br/&gt;(manage.py runserver)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_34138f54608de0e9" name="SQLite&lt;br/&gt;(db.sqlite3, default alias)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_f182b99556890fe1" name="Ngrok (optional)&lt;br/&gt;real-device testing" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_457b29ae1ab92cf3" name="Media: /media/ (static() helper)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_8bfb7cabea3ddd2e" name="Flutter Web on Vercel&lt;br/&gt;(griot-2-0.vercel.app)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_7c9225ac9aeb1ee3" name="Render griot-backend&lt;br/&gt;Gunicorn + Django" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_e40639d3d19b2bf0" name="PostgreSQL 16&lt;br/&gt;(Render griot-db)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_a4a0fdf26df967b1" name="Sentry&lt;br/&gt;(optional)" />
+</uml:Model>

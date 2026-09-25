@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_ce5aad5ef300f451" name="05-communication-diagram.05">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_320a7a03fc4ef6b9" name="Flutter Client">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_ddf3255e2c108684" name="User" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_dc59fe49b3320e4d" name="VideoGenerationSheet" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_0877fe23dc894e40" name="VideoStatusPoller" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_e9f8e040c800b9ee" name="VideoApiService" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_df327d499f037978" name="ApiClient" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_f90d0da533bfd3ac" name="Backend API">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_18c6dce5b71dda9e" name="VideoViewSet" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_53f30f36307ae251" name="VideoGenerationJob" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_dd74947f5183fefc" name="External">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_ed07016548d81fa1" name="Luma AI API" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_c1c4cacc358f2aed" name="1. enter prompt">
+    <uml:client xmi:idref="_ddf3255e2c108684" />
+    <uml:supplier xmi:idref="_dc59fe49b3320e4d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_59b636aaf355b08f" name="2. generateVideo()">
+    <uml:client xmi:idref="_dc59fe49b3320e4d" />
+    <uml:supplier xmi:idref="_e9f8e040c800b9ee" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_b2bde909f8bef834" name="3. POST /api/media/videos/">
+    <uml:client xmi:idref="_e9f8e040c800b9ee" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_8069550a5403b996">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_18c6dce5b71dda9e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_cb600f64bf22b565" name="4. create job">
+    <uml:client xmi:idref="_18c6dce5b71dda9e" />
+    <uml:supplier xmi:idref="_53f30f36307ae251" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_809fdaf0d1ff3576" name="5. call Luma AI">
+    <uml:client xmi:idref="_18c6dce5b71dda9e" />
+    <uml:supplier xmi:idref="_ed07016548d81fa1" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_82e5bfd0dff79e27" name="6. job_id">
+    <uml:client xmi:idref="_ed07016548d81fa1" />
+    <uml:supplier xmi:idref="_18c6dce5b71dda9e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_61b57c6d65f399de" name="7. job created">
+    <uml:client xmi:idref="_18c6dce5b71dda9e" />
+    <uml:supplier xmi:idref="_e9f8e040c800b9ee" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_09900ed0861bf012" name="8. start polling">
+    <uml:client xmi:idref="_e9f8e040c800b9ee" />
+    <uml:supplier xmi:idref="_0877fe23dc894e40" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_b3310900cfc8587e" name="9. GET /status/video/{id}/">
+    <uml:client xmi:idref="_0877fe23dc894e40" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e956e006e762b392">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_18c6dce5b71dda9e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_0530eae87ac08623" name="10. job status">
+    <uml:client xmi:idref="_18c6dce5b71dda9e" />
+    <uml:supplier xmi:idref="_0877fe23dc894e40" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_6672ff3c872b2442" name="11. update badge">
+    <uml:client xmi:idref="_0877fe23dc894e40" />
+    <uml:supplier xmi:idref="_dc59fe49b3320e4d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_3708f96654f2ca9d" name="12. completed + video_url">
+    <uml:client xmi:idref="_18c6dce5b71dda9e" />
+    <uml:supplier xmi:idref="_0877fe23dc894e40" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f7f526c362a41395" name="13. video ready">
+    <uml:client xmi:idref="_0877fe23dc894e40" />
+    <uml:supplier xmi:idref="_dc59fe49b3320e4d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_6fee157715ecf786" name="14. show player">
+    <uml:client xmi:idref="_dc59fe49b3320e4d" />
+    <uml:supplier xmi:idref="_ddf3255e2c108684" />
+  </uml:packagedElement>
+</uml:Model>

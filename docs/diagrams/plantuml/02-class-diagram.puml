@@ -161,7 +161,7 @@ Story "1" --> "*" StoryFlag : has
 Story "1" --> "*" StoryShare : has
 User "1" --> "*" ReadingProgress : tracks
 Story "1" --> "*" ReadingProgress : has
-StoryCategory "1" --> "*" Story : categorizes
+StoryCategory "*" --> "*" Story : categories (M2M, related_name=stories)
 
 ' ─── QR Codes & Artifacts ─────────────────────────────
 package "QR Codes & Artifacts" {
@@ -418,7 +418,12 @@ package "Authorization (DRF permission classes)" {
   class IsAdminOrManager {
     +has_permission bool
     ' role in (institution_manager, admin)
-    ' gates ALL six analytics endpoints
+    ' gates ALL seven analytics endpoints + story moderation
+  }
+
+  class IsAuthenticatedOrReadOnly {
+    +has_permission bool
+    ' SAFE_METHODS OR authenticated (gamification app; DRF default)
   }
 
   class IsStoryOwnerOrReadOnly {
@@ -437,6 +442,7 @@ IsInstitutionManagerOrAbove --|> IsAuthenticated
 IsAdminOrManager --|> IsAuthenticated
 IsStoryOwnerOrReadOnly --|> IsAuthenticated
 IsOwnerOrReadOnly --|> IsAuthenticated
+IsAuthenticatedOrReadOnly --|> IsAuthenticated
 
 note right of IsAdminOrManager
   Implemented gate is WIDER than the

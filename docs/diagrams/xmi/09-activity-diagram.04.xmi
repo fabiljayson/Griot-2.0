@@ -1,0 +1,148 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_72ed32e1f95aeb10" name="09-activity-diagram.04">
+  <uml:packagedElement xmi:type="uml:Activity" xmi:id="_80a5960f6639a8f2" name="09-activity-diagram.04">
+    <uml:node xmi:type="uml:InitialNode" xmi:id="_04c012f77e77c896" name="App detects connectivity change" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_d7833660643d1022" name="Device&lt;br/&gt;online?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_58085a752dcfac18" name="Enter offline mode" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_a760bc34993e61e1" name="Show &quot;Offline&quot; indicator" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_822a0ab2573c6b44" name="User action" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_68e523e1e9aaad6d" name="HTTP method?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_c8c860c3501e5cb4" name="Try local cache" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_607749b8e702013b" name="Cache hit?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_f442cde72e1c72a1" name="Return cached data" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_a8843fe68edd66e2" name="Show &quot;No data available&quot;" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_4a3761245f9be664" name="Queue request&lt;br/&gt;in offline_requests" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_13220a27253ae51f" name="Show &quot;Queued for sync&quot;" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_cb580ef063f17984" name="Pending&lt;br/&gt;queued requests?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_3ea60c30ccab3e5c" name="Normal online mode" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_b3c172f98f5ed0c0" name="Handle user actions normally" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_050afb14328a42a1" name="Start sync process" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_88f11d9274a4e714" name="Fetch all pending requests" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_1a8e24a76f045363" name="Requests&lt;br/&gt;found?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_20f28e697516d1bc" name="Sync complete" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_1e6c8e9ef8b5f5a2" name="Process requests&lt;br/&gt;in order" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_7cf826680d1dd6a7" name="Execute request&lt;br/&gt;via ApiClient" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_17fd5b92b83f8109" name="Server&lt;br/&gt;response 2xx?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_6406d44266731a82" name="Mark request completed" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_74da030eba701fd4" name="Retry count&lt;br/&gt;&lt; max?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_0f25771b4cfa9fd3" name="Increment retry count&lt;br/&gt;Apply backoff delay" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_1ee4f4e9d45e9ae6" name="Mark request failed" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_c69adf9d1f7788cd" name="More&lt;br/&gt;requests?" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_f481d6907ca61b38" name="Pending user&lt;br/&gt;registrations?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_fa882441a9735e55" name="Sync offline registrations" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_44619ba60ca7484e" name="Notify: &quot;All synced&quot;" />
+    <uml:node xmi:type="uml:ActivityFinalNode" xmi:id="_c53e94a3f0692aa9" name="Sync complete" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_e54332366e48f978" source="_04c012f77e77c896" target="_d7833660643d1022" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_8253d4a7827a8dad" source="_d7833660643d1022" target="_58085a752dcfac18">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_85b38b648fb52f14">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_7794b427586713b5" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_9fd0c64b8fcf6ed7" source="_58085a752dcfac18" target="_a760bc34993e61e1" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_e914cac643a8dda3" source="_a760bc34993e61e1" target="_822a0ab2573c6b44" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_d78ac0b0629c8b36" source="_822a0ab2573c6b44" target="_68e523e1e9aaad6d">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_5077ee29834e167c">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_b0bdf30eb00b5994" value="API request" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_7d175c8c705e36d2" source="_68e523e1e9aaad6d" target="_c8c860c3501e5cb4">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_3c444411e3541f06">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_6c133f540d0824ff" value="GET" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_d6fe98ec6b2fca76" source="_c8c860c3501e5cb4" target="_607749b8e702013b" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_ae310020cd238441" source="_607749b8e702013b" target="_f442cde72e1c72a1">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_231b06ff3c50a283">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_36f6e909ff663a7a" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_fc91cf841c9ecd4a" source="_607749b8e702013b" target="_a8843fe68edd66e2">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_c1da1faa355f12ee">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_7a8dd9d35aed4d4b" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_a9ebe8fc07d7f754" source="_68e523e1e9aaad6d" target="_4a3761245f9be664">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_c6cf38223e3a52b6">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_b3b5e1b91fc35724" value="POST/PUT/PATCH/DELETE" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_63631f51dd76fb72" source="_4a3761245f9be664" target="_13220a27253ae51f" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_aff27920b43fbbcb" source="_13220a27253ae51f" target="_822a0ab2573c6b44" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_89da61a9c48157a6" source="_d7833660643d1022" target="_cb580ef063f17984">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_19f3e6dd94804770">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_a9dbc171aae984e7" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_a8c109669bf8ed93" source="_cb580ef063f17984" target="_3ea60c30ccab3e5c">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_0716cd519c4bb68b">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_143f43ed9b3031ab" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_7c2bc30790a27c00" source="_3ea60c30ccab3e5c" target="_b3c172f98f5ed0c0" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_f7616d21678cd30d" source="_cb580ef063f17984" target="_050afb14328a42a1">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_3703926b05f98ccb">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_859e0b5fa2b2dcdb" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_9ee52b1cbf1ff1cf" source="_050afb14328a42a1" target="_88f11d9274a4e714" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_9d5092a9adea4362" source="_88f11d9274a4e714" target="_1a8e24a76f045363" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_7a777d6b71e306e6" source="_1a8e24a76f045363" target="_20f28e697516d1bc">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_3982edda7b69d8f0">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_bbe6325de2e38d5f" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_b5ee0cd3c5c7c68f" source="_1a8e24a76f045363" target="_1e6c8e9ef8b5f5a2">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_2e7e0c8f4d304dbc">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_62e451b27a3d1a88" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_35abaa8054c10b81" source="_1e6c8e9ef8b5f5a2" target="_7cf826680d1dd6a7" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_e44c46adf85f4d44" source="_7cf826680d1dd6a7" target="_17fd5b92b83f8109" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_089d9bc49f8800b2" source="_17fd5b92b83f8109" target="_6406d44266731a82">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_93c5e757c9ffbe23">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_cd3e14955c80ac90" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_acfe23583c424e2d" source="_17fd5b92b83f8109" target="_74da030eba701fd4">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_8a38bdcced689b42">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_bf5b5c488d011883" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_8a502fb683b60454" source="_74da030eba701fd4" target="_0f25771b4cfa9fd3">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_76f2b52345c86f4e">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_3f40b1a8983a7a12" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_63badbd4958111f2" source="_0f25771b4cfa9fd3" target="_1e6c8e9ef8b5f5a2" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_ed85b489cf0f7706" source="_74da030eba701fd4" target="_1ee4f4e9d45e9ae6">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_df89ba80d8543388">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_8836e503d8357640" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_daa221c02842e21f" source="_6406d44266731a82" target="_c69adf9d1f7788cd" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_51d48d1983cac548" source="_1ee4f4e9d45e9ae6" target="_c69adf9d1f7788cd" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_15383fa88fdf62d6" source="_c69adf9d1f7788cd" target="_1e6c8e9ef8b5f5a2">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_7902e06d77e377cf">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_b9d3b75d5054c19e" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_0caddeb2a3e0fbd2" source="_c69adf9d1f7788cd" target="_20f28e697516d1bc">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_4cbd2eab1d5d3149">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_204aa95183b35cd9" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_806dc086c2750e47" source="_20f28e697516d1bc" target="_f481d6907ca61b38" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_b8a778ffa39a79b4" source="_f481d6907ca61b38" target="_fa882441a9735e55">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_dcd1950027861d7b">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_d6e65b4b23a34328" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_d4fc57569143b541" source="_f481d6907ca61b38" target="_44619ba60ca7484e">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_5e564226930783c1">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_6a6079142c3d7379" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_982a549f4249a520" source="_fa882441a9735e55" target="_44619ba60ca7484e" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_6aabe8e6ce003872" source="_44619ba60ca7484e" target="_c53e94a3f0692aa9" />
+  </uml:packagedElement>
+</uml:Model>

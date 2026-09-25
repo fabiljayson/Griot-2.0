@@ -28,15 +28,18 @@ package "Flutter Client Application" {
   }
 
   package "Feature Services" {
-    component "AuthService\n(Login, Register,\nToken Management)" as AuthSvc
-    component "StoryService\n(CRUD, Search,\nBookmarks, Likes)" as StorySvc
-    component "LibraryService\n(Continue Reading,\nRecently Read)" as LibrarySvc
-    component "GamificationService\n(Quizzes, Badges,\nLeaderboard)" as GamificationSvc
+    component "AuthService\n(Online-first JWT login,\noffline fallback)" as AuthSvc
+    component "StoryService\n(CRUD, Search,\nBookmarks, Likes; mirror)" as StorySvc
+    component "LibraryService\n(Continue Reading,\nRecently Read) — SQLite" as LibrarySvc
+    component "GamificationService\n(Quizzes, Badges) — SQLite" as GamificationSvc
     component "QRService\n(Scanner, Artifact Lookup)" as QRSvc
     component "AudioService\n(TTS Playback,\nOffline Audio)" as AudioSvc
     component "VideoService\n(Generation, Polling,\nPlayback)" as VideoSvc
     component "SharingService\n(Social Share,\nQuote Cards)" as ShareSvc
-    component "AdminService\n(Analytics,\nModeration)" as AdminSvc
+    component "AdminService\n(Analytics, Users List,\nModeration)" as AdminSvc
+    component "ArtifactsService\n(Catalogue browse)" as ArtifactsSvc
+    component "DiscoverService\n(Region stories)" as DiscoverSvc
+    component "SettingsService\n(WhatsApp feedback)" as SettingsSvc
   }
 
   package "Core Infrastructure" {
@@ -56,7 +59,7 @@ package "Django REST Framework API" {
   package "Authentication" {
     component "SimpleJWT\n(Token Obtain,\nRefresh, Blacklist)" as JWTAuth
     component "Role-Based Permissions\n(IsContributorOrAbove,\nIsAdminOrManager)" as RolePerms
-    component "Rate Throttling\n(Auth: 5/min,\nAPI: 120/min)" as Throttling
+    component "Rate Throttling\n(auth: 5/min ·\nanon: 120/min · user: 600/min)" as Throttling
   }
 
   package "Business Logic" {
@@ -79,15 +82,17 @@ package "Django REST Framework API" {
 ' ─── External Services ────────────────────────────────
 package "External Services" {
   cloud "🎬 Luma AI\nDream Machine\n(Video Generation)" as LumaAI
-  cloud "🔊 TTS Provider\n(Text-to-Speech)" as TTSProvider
-  cloud "🐛 Sentry\n(Error Monitoring)" as SentryMonitor
+  cloud "🔊 Google TTS via gTTS\n(no API key)" as TTSProvider
+  cloud "🐛 Sentry\n(DSN-gated)" as SentryMonitor
+  cloud "💬 WhatsApp\n(feedback wa.me link)" as WhatsApp
 }
 
 ' ─── Data Layer ───────────────────────────────────────
 package "Data Layer" {
-  database "SQLite\n(Development)" as SQLite
-  database "PostgreSQL\n(Production)" as PostgreSQL
-  artifact "Media Storage\n(Files, Images)" as MediaStorage
+  database "SQLite\n(db.sqlite3 — dev / local)" as SQLite
+  database "PostgreSQL 16\n(Render griot-db — prod)" as PostgreSQL
+  artifact "Crawler (ingestion)\ndiscover-cameroon.com →\ncameroon_content.json → import_crawl_data" as Crawler
+  artifact "Media\n(Django /media/ on\nRender disk / local)" as MediaStorage
 }
 
 ' ─── Client Internal Connections ──────────────────────
@@ -103,16 +108,22 @@ Riverpod --> AudioSvc
 Riverpod --> VideoSvc
 Riverpod --> ShareSvc
 Riverpod --> AdminSvc
+Riverpod --> ArtifactsSvc
+Riverpod --> DiscoverSvc
+Riverpod --> SettingsSvc
 
 AuthSvc --> APIClient
 StorySvc --> APIClient
-LibrarySvc --> APIClient
-GamificationSvc --> APIClient
+LibrarySvc --> LocalDB
+GamificationSvc --> LocalDB
 QRSvc --> APIClient
 AudioSvc --> APIClient
 VideoSvc --> APIClient
 ShareSvc --> APIClient
 AdminSvc --> APIClient
+ArtifactsSvc --> APIClient
+DiscoverSvc --> APIClient
+SettingsSvc --> WhatsApp
 
 APIClient --> AuthInterceptor
 APIClient --> OfflineInterceptor
@@ -143,13 +154,16 @@ QRModule --> SQLite
 GameEngine --> SQLite
 MediaEngine --> SQLite
 AnalyticsEngine --> SQLite
+QRModule --> Crawler : import_crawl_data
 
 StoryEngine --> MediaStorage
 QRModule --> MediaStorage
+Crawler --> MediaStorage
 
 ' ─── External Services ────────────────────────────────
 MediaEngine --> LumaAI
 MediaEngine --> TTSProvider
+APIClient -right-> SentryMonitor : client-side
 AnalyticsEngine --> SentryMonitor
 
 @enduml

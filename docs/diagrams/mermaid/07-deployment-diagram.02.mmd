@@ -1,0 +1,28 @@
+flowchart LR
+    subgraph "Development Environment"
+        DevApp["Flutter App<br/>(flutter run)<br/>API_BASE_URL=10.0.2.2:8000<br/>(web: localhost:8000)"]
+        DevServer["Django Dev Server<br/>(manage.py runserver)"]
+        DevDB["SQLite<br/>(db.sqlite3, default alias)"]
+        DevNgrok["Ngrok (optional)<br/>real-device testing"]
+        DevMedia["Media: /media/ (static() helper)"]
+
+        DevApp -->|HTTP| DevServer
+        DevApp -.-> DevNgrok
+        DevNgrok --> DevServer
+        DevServer --> DevDB
+        DevServer --> DevMedia
+    end
+
+    subgraph "Production Environment"
+        ProdApp["Flutter Web on Vercel<br/>(griot-2-0.vercel.app)"]
+        ProdServer["Render griot-backend<br/>Gunicorn + Django"]
+        ProdDB["PostgreSQL 16<br/>(Render griot-db)"]
+        ProdSentry["Sentry<br/>(optional)"]
+
+        ProdApp -->|HTTPS API + CORS| ProdServer
+        ProdServer --> ProdDB
+        ProdServer --> ProdSentry
+        ProdApp -->|share links| ProdApp
+    end
+
+    DevServer -.->|sync_local_users<br/>migrate data| ProdDB

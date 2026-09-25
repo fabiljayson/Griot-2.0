@@ -1,0 +1,44 @@
+flowchart TD
+    Start([Contributor taps "Generate Video"]) --> AuthCheck{Contributor+?}
+
+    AuthCheck -->|No| ShowDenied[Show access denied]
+    ShowDenied --> End1([Stop])
+
+    AuthCheck -->|Yes| OpenSheet[Open VideoGenerationSheet]
+    OpenSheet --> EnterPrompt[Enter video prompt<br/>custom description]
+    EnterPrompt --> SelectStory[Select story for video]
+    SelectStory --> Preview[Preview prompt + story]
+    Preview --> SubmitJob[POST /api/media/videos/]
+
+    SubmitJob --> JobCreated{Job created?}
+    JobCreated -->|No| ShowError[Show error]
+    ShowError --> EnterPrompt
+
+    JobCreated -->|Yes| StartPolling[Start status polling<br/>every 10 seconds]
+    StartPolling --> ShowProgress[Show progress indicator]
+
+    ShowProgress --> PollStatus[GET /api/media/status/video/{id}/]
+    PollStatus --> JobStatus{Job status?}
+
+    JobStatus -->|Pending| Wait[Wait 10 seconds]
+    Wait --> PollStatus
+
+    JobStatus -->|Processing| UpdateProgress[Update progress %]
+    UpdateProgress --> ShowProgress
+
+    JobStatus -->|Failed| ShowFailed[Show error message]
+    ShowFailed --> RetryOption{Retry?}
+    RetryOption -->|Yes| SubmitJob
+    RetryOption -->|No| End2([Cancelled])
+
+    JobStatus -->|Completed| VideoReady[Video ready!]
+    VideoReady --> ShowPlayer[Show VideoPlayerWidget]
+    ShowPlayer --> PlayVideo[Play generated video]
+    PlayVideo --> Actions{User actions}
+
+    Actions -->|Download| Download[Download video]
+    Actions -->|Share| Share[Share video link]
+    Actions -->|Regenerate| EnterPrompt
+
+    Download --> End3([Video saved])
+    Share --> End4([Video shared])

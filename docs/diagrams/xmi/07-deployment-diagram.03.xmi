@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_0a60483a6d77cb1b" name="07-deployment-diagram.03">
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_369340dce293ef0a" name="manage.py sync_local_users">
+    <uml:client xmi:idref="_03977f3993c43a43" />
+    <uml:supplier xmi:idref="_e693372ece8cc45e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_29f7ee6959787810" name="runner.py">
+    <uml:client xmi:idref="_2a8444612146d8d8" />
+    <uml:supplier xmi:idref="_686c104eda509191" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:ExecutionEnvironment" xmi:id="_2b8fca1b48993e49" name="Artifact rows" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_e693372ece8cc45e" name="PostgreSQL (prod)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_03977f3993c43a43" name="SQLite (dev / per-install)" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_686c104eda509191" name="backend/data/cameroon_content.json" />
+  <uml:packagedElement xmi:type="uml:Artifact" xmi:id="_2a8444612146d8d8" name="crawler/ (discover-cameroon.com)" />
+  <uml:packagedElement xmi:type="uml:Deployment" xmi:id="_45272161ac089d76" name="import_crawl_data" deployedArtifact="_686c104eda509191">
+    <uml:client xmi:idref="_2b8fca1b48993e49" />
+    <uml:supplier xmi:idref="_686c104eda509191" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Deployment" xmi:id="_a6dcda68c4005120" deployedArtifact="_e693372ece8cc45e">
+    <uml:client xmi:idref="_2b8fca1b48993e49" />
+    <uml:supplier xmi:idref="_e693372ece8cc45e" />
+  </uml:packagedElement>
+</uml:Model>

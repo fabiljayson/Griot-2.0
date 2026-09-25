@@ -1,0 +1,49 @@
+sequenceDiagram
+    title Gamification — Local Quiz Take & Grading Flow
+
+    participant U as User
+    participant GS as GamificationScreen
+    participant QP as QuizPlayerWidget
+    participant GA as GamificationApiService
+    participant LQ as LocalGamificationRepository (SQLite)
+    participant DB as Local Database
+
+    U->>GS: Open Gamification
+    GS->>GA: fetchQuizzes()
+    GA->>LQ: listQuizzes()
+    LQ->>DB: SELECT from quizzes
+    DB-->>LQ: Seeded quiz rows
+    LQ-->>GA: Quiz list
+    GA-->>GS: Display quizzes
+
+    U->>GS: Select a quiz
+    GS->>QP: Start QuizPlayer
+
+    QP->>GA: startQuiz(quizId)
+    GA->>LQ: loadQuestions(quizId)
+    LQ->>DB: SELECT questions
+    DB-->>LQ: Questions (incl. correct_answer, local only)
+    LQ-->>GA: Question list
+    GA-->>QP: Display first question
+
+    Note over U,DB: === Answer Questions (local grading) ===
+
+    loop For each question
+        U->>QP: Select answer (A/B/C/D)
+        QP->>GA: submitAnswer(question, option)
+        GA->>GA: Compare with correct_answer (local)
+        GA-->>QP: {is_correct, explanation}
+        QP->>U: Display feedback
+    end
+
+    Note over U,DB: === Finish & Grade (local) ===
+
+    U->>QP: Tap "Finish Quiz"
+    QP->>GA: finishQuiz(quizId)
+    GA->>LQ: recordAttempt(score, result)
+    LQ->>DB: upsert into attempts table
+    DB-->>LQ: Attempt saved locally
+    LQ-->>GA: Result
+
+    GA-->>QP: Display score
+    QP->>U: Show results screen

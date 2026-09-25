@@ -41,7 +41,7 @@ SR -up-> SP : 14. update state
 SP -up-> SD : 15. story data
 SD -up-> U : 16. render content
 
-SD -right-> DB : 17. cache story
+SD -right-> DB : 17. upsert into SQLite mirror
 
 @enduml
 
@@ -54,32 +54,39 @@ skinparam component {
   BorderColor #1565C0
 }
 
-title Authentication Communication
+title Authentication Communication (online-first)
 
 package "Flutter Client" {
   [User] as U
   [LoginScreen] as LS
   [AuthRepository] as AR
+  [ServerAuthRepository] as SR
+  [LocalAuthRepository] as LA
   [ApiClient] as AC
   [AuthWrapper] as AW
   [HomeScreen] as HS
 }
 
 package "Backend API" {
-  [TokenObtainPairView] as TV
+  [CustomTokenObtainPairView] as TV
   [RegisterView] as RV
   [MeView] as MV
 }
 
 U -down-> LS : 1. enter credentials
 LS -down-> AR : 2. login(user, pass)
-AR -down-> AC : 3. POST /api/auth/token/
-AC -down-> TV : 4. credentials
-TV -up-> AR : 5. JWT {access, refresh}
-AR -right-> AR : 6. store tokens
-AR -up-> AW : 7. AuthState.authenticated
-AW -down-> HS : 8. rebuild
-HS -up-> U : 9. show home
+AR -down-> SR : 3. online-first
+SR -down-> AC : 4. POST /api/auth/token/
+AC -down-> TV : 5. credentials
+TV -up-> SR : 6. JWT {access, refresh} (30m / 7d)
+SR -up-> AR : 7. TokenPair
+AR -right-> AR : 8. store tokens in secure storage
+AR -up-> AW : 9. AuthState.authenticated
+AW -down-> HS : 10. rebuild
+HS -up-> U : 11. show home
+
+AR ..> LA : offline fallback (no JWT)
+LA ..> AW : offline session
 
 @enduml
 

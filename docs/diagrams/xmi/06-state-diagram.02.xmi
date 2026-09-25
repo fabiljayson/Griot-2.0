@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_1fa99d8129c151f6" name="Quiz Attempt State Machine">
+  <uml:packagedElement xmi:type="uml:StateMachine" xmi:id="_9ed7e758f20d70df" name="Quiz Attempt State Machine">
+    <uml:region xmi:type="uml:Region" xmi:id="_b71e2d6d6580815c">
+      <uml:subvertex xmi:type="uml:State" xmi:id="_1b5d149ab9ab73dc" name="InProgress" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_ec8c5fdfa56340b4" name="Completed" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_995349ce1ef90577" name="TimedOut" />
+      <uml:subvertex xmi:type="uml:Pseudostate" xmi:id="_5a5a7c6db76191da" kind="initial" />
+      <uml:subvertex xmi:type="uml:FinalState" xmi:id="_e99566d8aa289be8" />
+      <uml:transition xmi:type="uml:Transition" xmi:id="_1232108b52945edf" name="User starts quiz">
+        <uml:source xmi:idref="_5a5a7c6db76191da" />
+        <uml:target xmi:idref="_1b5d149ab9ab73dc" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_87ac82cc1ea10ca7">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_b0d3dfaa21460261" name="User starts quiz" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_b2c72fdbffbad9bd" name="User finishes\nor all questions answered">
+        <uml:source xmi:idref="_1b5d149ab9ab73dc" />
+        <uml:target xmi:idref="_ec8c5fdfa56340b4" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_96d75dac2786ec26">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_be4c5c2676ed505e" name="User finishes\nor all questions answered" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_6cf67964de7fcb04" name="Time limit exceeded">
+        <uml:source xmi:idref="_1b5d149ab9ab73dc" />
+        <uml:target xmi:idref="_995349ce1ef90577" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_25021e4a52d88147">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_02019c9901e5c3d4" name="Time limit exceeded" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_1f0fe889643e9fb4" name="Auto-submit on\nlast question">
+        <uml:source xmi:idref="_1b5d149ab9ab73dc" />
+        <uml:target xmi:idref="_ec8c5fdfa56340b4" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_e0e44d123ec3c9a0">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_4756b333c8381786" name="Auto-submit on\nlast question" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_c63b90dd9522c14e">
+        <uml:source xmi:idref="_ec8c5fdfa56340b4" />
+        <uml:target xmi:idref="_e99566d8aa289be8" />
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_09c943f7857addf3">
+        <uml:source xmi:idref="_995349ce1ef90577" />
+        <uml:target xmi:idref="_e99566d8aa289be8" />
+      </uml:transition>
+    </uml:region>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_e100f77a8031e110" body="Answers recorded.\nScore not yet calculated.\nXP not yet awarded.">
+      <uml:annotatedElement xmi:idref="_1b5d149ab9ab73dc" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_7c2369f46568bbc2" body="Score calculated.\nXP awarded if passed.\nBadges checked.">
+      <uml:annotatedElement xmi:idref="_ec8c5fdfa56340b4" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_170f421f4d02548b" body="Partial score.\nNo XP awarded.\nAttempt recorded.">
+      <uml:annotatedElement xmi:idref="_995349ce1ef90577" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

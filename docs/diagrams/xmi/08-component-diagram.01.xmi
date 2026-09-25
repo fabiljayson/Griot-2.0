@@ -1,0 +1,300 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_87e9ea86813c2b92" name="08-component-diagram.01">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_3271046e271e4c64" name="Flutter Client Application">
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_908ab2d9ff8f113a" name="UI Layer">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_0d2778e6012f88ba" name="Screens&lt;br/&gt;(Login, Home, Stories,&lt;br/&gt;StoryDetail, Library,&lt;br/&gt;QR Scanner, Gamification,&lt;br/&gt;Admin Dashboard)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_03332b17a2e397c2" name="Reusable Widgets&lt;br/&gt;(StoryCard, BadgeCard,&lt;br/&gt;QuizPlayer, AudioPlayer,&lt;br/&gt;VideoPlayer, ShareButton)" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_2c8884d1e8c2e311" name="State Management">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_bb293a133775c156" name="Riverpod Providers&lt;br/&gt;(Auth, Story, Library,&lt;br/&gt;Gamification, Admin,&lt;br/&gt;Audio, Video, QR)" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_60757e2f760e6eef" name="Feature Services">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_2bfc17e85097fe0d" name="AuthService&lt;br/&gt;(Online-first JWT login,&lt;br/&gt;offline fallback)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_036a4974dd5ef06e" name="StoryService&lt;br/&gt;(CRUD, Search,&lt;br/&gt;Bookmarks, Likes; mirror)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_788df80a027f2526" name="LibraryService&lt;br/&gt;(Continue Reading,&lt;br/&gt;Recently Read) — SQLite" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_693feb5b83de6666" name="GamificationService&lt;br/&gt;(Quizzes, Badges) — SQLite" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_18a64d9ce3819b65" name="QRService&lt;br/&gt;(Scanner, Artifact Lookup)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_7f74d852d3494f03" name="AudioService&lt;br/&gt;(TTS Playback,&lt;br/&gt;Offline Audio)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_4c77ae0203851655" name="VideoService&lt;br/&gt;(Generation, Polling,&lt;br/&gt;Playback)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_2719e6b2868d6992" name="SharingService&lt;br/&gt;(Social Share,&lt;br/&gt;Quote Cards)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_c82b6f3fa6de9f6c" name="AdminService&lt;br/&gt;(Analytics, Users List,&lt;br/&gt;Moderation)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_9dce9a7a2d2fdb0d" name="ArtifactsService&lt;br/&gt;(Catalogue browse)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_6f543159170d7830" name="DiscoverService&lt;br/&gt;(Region stories)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_246872678cafa9fd" name="SettingsService&lt;br/&gt;(WhatsApp feedback)" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_674d2bf46edd0450" name="Core Infrastructure">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_6c143c6f552c3da0" name="ApiClient&lt;br/&gt;(Dio + Interceptors)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_658426208e0fa359" name="AuthInterceptor&lt;br/&gt;(Bearer Token,&lt;br/&gt;Auto-Refresh)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_a77dd18dddfd93b0" name="OfflineQueueInterceptor&lt;br/&gt;(Request Queuing)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_8aa31356a7664279" name="ConnectivityService&lt;br/&gt;(Online/Offline&lt;br/&gt;Detection)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_3b708929ecd81512" name="OfflineSyncManager&lt;br/&gt;(Background Sync)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_1e00f03481119c6a" name="AppDatabase&lt;br/&gt;(SQLite / IndexedDB)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_86cd072deb7d4cfc" name="Cache Repositories&lt;br/&gt;(Story, ReadingProgress,&lt;br/&gt;SearchHistory, Offline)" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_c1b842ec193d0ecb" name="Django REST Framework API">
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_ea5aa331a75904fc" name="Authentication">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_def7a491ef803552" name="SimpleJWT&lt;br/&gt;(Token Obtain,&lt;br/&gt;Refresh, Blacklist)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_7849ade84b35fd05" name="Role-Based Permissions&lt;br/&gt;(IsContributorOrAbove,&lt;br/&gt;IsAdminOrManager)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_790b9ff73b7169c1" name="Rate Throttling&lt;br/&gt;(auth: 5/min ·&lt;br/&gt;anon: 120/min · user: 600/min)" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_d705c288f975d074" name="Business Logic">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_96aa7c11599476ef" name="User Management&lt;br/&gt;(Register, Profile,&lt;br/&gt;Delete Account)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_345309c5c4b70506" name="Story Engine&lt;br/&gt;(CRUD, Search,&lt;br/&gt;Categories, Feeds)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_51c3561da6a08c71" name="Content Moderation&lt;br/&gt;(Flag, Review,&lt;br/&gt;Resolve)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_c349c2b7d9609487" name="QR Code Module&lt;br/&gt;(Artifacts, QR Gen,&lt;br/&gt;Scan Tracking)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_a90f359b8231c87c" name="Gamification Engine&lt;br/&gt;(Quizzes, Badges,&lt;br/&gt;XP, Certificates)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_8ade7628668eb2a8" name="Media Engine&lt;br/&gt;(AI Video, TTS)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_29ddeb232db31b02" name="Analytics Engine&lt;br/&gt;(Dashboard, Metrics,&lt;br/&gt;Engagement)" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_2e3a3b331e6b9ea9" name="Infrastructure">
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_ab8e315b503adfa4" name="Health Probes&lt;br/&gt;(Liveness, Readiness,&lt;br/&gt;Metrics)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_9f548162d7cf9415" name="Structured Logging&lt;br/&gt;(JSON Formatter,&lt;br/&gt;Request Middleware)" />
+      <uml:packagedElement xmi:type="uml:Component" xmi:id="_ea2f2c866ca968c1" name="Seed Commands&lt;br/&gt;(Users, Stories, QR,&lt;br/&gt;Gamification)" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_75aa3da313650751" name="External Services">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_663d26cfe39f0054" name="🎬 Luma AI&lt;br/&gt;Dream Machine&lt;br/&gt;(Video Generation)" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_a039c4f310e8753d" name="🔊 Google TTS via gTTS&lt;br/&gt;(Text-to-Speech,&lt;br/&gt;no API key)" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_01c797b608720fd9" name="🐛 Sentry&lt;br/&gt;(Error Monitoring,&lt;br/&gt;DSN-gated)" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_284246e8e33baece" name="💬 WhatsApp&lt;br/&gt;(feedback wa.me link)" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_a97d97f9e18e42a5" name="Data Layer">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_5f8469ef8b8a5005" name="SQLite&lt;br/&gt;(db.sqlite3 — dev / local)" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_1a170de34071a439" name="PostgreSQL 16&lt;br/&gt;(Render griot-db — prod)" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_39a68b26e651e9e5" name="Crawler (ingestion)&lt;br/&gt;discover-cameroon.com&lt;br/&gt;→ cameroon_content.json&lt;br/&gt;→ import_crawl_data" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_14872d5f6ab33979" name="Media&lt;br/&gt;(Django /media/ on&lt;br/&gt;Render disk / local)" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2aa425dadfb58e21">
+    <uml:client xmi:idref="_0d2778e6012f88ba" />
+    <uml:supplier xmi:idref="_03332b17a2e397c2" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_4c054f3bb18eba89">
+    <uml:client xmi:idref="_0d2778e6012f88ba" />
+    <uml:supplier xmi:idref="_bb293a133775c156" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_54f38220c8f3d7fb">
+    <uml:client xmi:idref="_03332b17a2e397c2" />
+    <uml:supplier xmi:idref="_bb293a133775c156" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_be7e0c9f6004ec2f">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_2bfc17e85097fe0d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5381b9e853ac708c">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_036a4974dd5ef06e" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_fc6ec818a8bf7e08">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_788df80a027f2526" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_66325148bf46a665">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_693feb5b83de6666" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_4bb8a02e224c113c">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_18a64d9ce3819b65" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_775c493b70570729">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_7f74d852d3494f03" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_78fc749424df1432">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_4c77ae0203851655" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_b646cc298b780b90">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_2719e6b2868d6992" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_438594b257c23cb7">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_c82b6f3fa6de9f6c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_084d3ffb823ec428">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_9dce9a7a2d2fdb0d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5dd715c0cd885f82">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_6f543159170d7830" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_1d8904e4e0044957">
+    <uml:client xmi:idref="_bb293a133775c156" />
+    <uml:supplier xmi:idref="_246872678cafa9fd" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_6d3e97b2c949cd54">
+    <uml:client xmi:idref="_2bfc17e85097fe0d" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_71a252cbd2a97095">
+    <uml:client xmi:idref="_036a4974dd5ef06e" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_681518ed31b55721">
+    <uml:client xmi:idref="_788df80a027f2526" />
+    <uml:supplier xmi:idref="_1e00f03481119c6a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_275a349bb4b1120d">
+    <uml:client xmi:idref="_693feb5b83de6666" />
+    <uml:supplier xmi:idref="_1e00f03481119c6a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_984698fa1853bfe5">
+    <uml:client xmi:idref="_18a64d9ce3819b65" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_ff00b711966d9cb8">
+    <uml:client xmi:idref="_7f74d852d3494f03" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_869016a5f226cf23">
+    <uml:client xmi:idref="_4c77ae0203851655" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_27614b558d0a7b20">
+    <uml:client xmi:idref="_2719e6b2868d6992" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_a4b6c40b875e5a36">
+    <uml:client xmi:idref="_c82b6f3fa6de9f6c" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_51a5db1099d97871">
+    <uml:client xmi:idref="_9dce9a7a2d2fdb0d" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_c869c69b27c20c61">
+    <uml:client xmi:idref="_6f543159170d7830" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_cfd802c3973a0cdd">
+    <uml:client xmi:idref="_246872678cafa9fd" />
+    <uml:supplier xmi:idref="_284246e8e33baece" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_cefa6ff9d34d3c27">
+    <uml:client xmi:idref="_6c143c6f552c3da0" />
+    <uml:supplier xmi:idref="_658426208e0fa359" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_b7fbb55a3735dbf3">
+    <uml:client xmi:idref="_6c143c6f552c3da0" />
+    <uml:supplier xmi:idref="_a77dd18dddfd93b0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5ae42517eece77a5">
+    <uml:client xmi:idref="_658426208e0fa359" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_a9b8518bbdc7ba35">
+    <uml:client xmi:idref="_a77dd18dddfd93b0" />
+    <uml:supplier xmi:idref="_8aa31356a7664279" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_0b70fc560276fdca">
+    <uml:client xmi:idref="_8aa31356a7664279" />
+    <uml:supplier xmi:idref="_3b708929ecd81512" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_ef4e3ee1e49cb4a7">
+    <uml:client xmi:idref="_3b708929ecd81512" />
+    <uml:supplier xmi:idref="_6c143c6f552c3da0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_cb2227a476bf2532">
+    <uml:client xmi:idref="_6c143c6f552c3da0" />
+    <uml:supplier xmi:idref="_1e00f03481119c6a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_762a2ac7e8b6be23">
+    <uml:client xmi:idref="_1e00f03481119c6a" />
+    <uml:supplier xmi:idref="_86cd072deb7d4cfc" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_62ccadd124dc4cb7" name="HTTPS/JSON">
+    <uml:client xmi:idref="_6c143c6f552c3da0" />
+    <uml:supplier xmi:idref="_def7a491ef803552" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7539aa22307e7cc1">
+    <uml:client xmi:idref="_def7a491ef803552" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_8e45ea33cafdd390">
+    <uml:client xmi:idref="_def7a491ef803552" />
+    <uml:supplier xmi:idref="_790b9ff73b7169c1" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e5ba301505d3adc6">
+    <uml:client xmi:idref="_96aa7c11599476ef" />
+    <uml:supplier xmi:idref="_def7a491ef803552" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_b95af86b11cf89ef">
+    <uml:client xmi:idref="_345309c5c4b70506" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_d7f52e34a26b9e24">
+    <uml:client xmi:idref="_51c3561da6a08c71" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2f0720fecc92bb3a">
+    <uml:client xmi:idref="_c349c2b7d9609487" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_fe8dbbdb15832222">
+    <uml:client xmi:idref="_a90f359b8231c87c" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_3e7294e35c0609fa">
+    <uml:client xmi:idref="_8ade7628668eb2a8" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f1605d9ef8e6be4c">
+    <uml:client xmi:idref="_29ddeb232db31b02" />
+    <uml:supplier xmi:idref="_7849ade84b35fd05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_71df2b3a0a3c409d">
+    <uml:client xmi:idref="_345309c5c4b70506" />
+    <uml:supplier xmi:idref="_5f8469ef8b8a5005" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_ce7560c8ab793676">
+    <uml:client xmi:idref="_c349c2b7d9609487" />
+    <uml:supplier xmi:idref="_5f8469ef8b8a5005" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7d44f3cc354a5ec7">
+    <uml:client xmi:idref="_a90f359b8231c87c" />
+    <uml:supplier xmi:idref="_5f8469ef8b8a5005" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_15f1a7328c6555eb">
+    <uml:client xmi:idref="_8ade7628668eb2a8" />
+    <uml:supplier xmi:idref="_5f8469ef8b8a5005" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_68a2abae4145d490">
+    <uml:client xmi:idref="_29ddeb232db31b02" />
+    <uml:supplier xmi:idref="_5f8469ef8b8a5005" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_4b9caf2d50658608">
+    <uml:client xmi:idref="_c349c2b7d9609487" />
+    <uml:supplier xmi:idref="_39a68b26e651e9e5" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_a6b4728634a85d23">
+    <uml:client xmi:idref="_345309c5c4b70506" />
+    <uml:supplier xmi:idref="_14872d5f6ab33979" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7bd4d551a6dd3cc5">
+    <uml:client xmi:idref="_c349c2b7d9609487" />
+    <uml:supplier xmi:idref="_14872d5f6ab33979" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2573b89a39f58807">
+    <uml:client xmi:idref="_39a68b26e651e9e5" />
+    <uml:supplier xmi:idref="_14872d5f6ab33979" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_715d239fdef75b3b">
+    <uml:client xmi:idref="_8ade7628668eb2a8" />
+    <uml:supplier xmi:idref="_663d26cfe39f0054" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e75e8f79687410b4">
+    <uml:client xmi:idref="_8ade7628668eb2a8" />
+    <uml:supplier xmi:idref="_a039c4f310e8753d" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_353d73bc236ab76a" name="Sentry (client)">
+    <uml:client xmi:idref="_6c143c6f552c3da0" />
+    <uml:supplier xmi:idref="_01c797b608720fd9" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2aedb37cd713a3be">
+    <uml:client xmi:idref="_29ddeb232db31b02" />
+    <uml:supplier xmi:idref="_01c797b608720fd9" />
+  </uml:packagedElement>
+</uml:Model>

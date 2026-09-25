@@ -1,0 +1,91 @@
+flowchart TB
+    subgraph "Client Devices"
+        subgraph "Mobile"
+            iOS["📱 iOS Device<br/>(Flutter App)"]
+            Android["📱 Android Device<br/>(Flutter App)"]
+        end
+        subgraph "Web"
+            PWA["🌐 Browser<br/>(Flutter Web on Vercel)"]
+        end
+    end
+
+    subgraph "Flutter Client Layer"
+        direction LR
+        UI["Flutter UI<br/>(MaterialApp + AppRouter)"]
+        Riverpod["Riverpod<br/>State Management"]
+        Dio["Dio HTTP Client<br/>(auth / retry / offline interceptors)"]
+        SQLite["SQLite / IndexedDB<br/>(griot_ai.db, local mirror + queue)"]
+    end
+
+    subgraph "Network"
+        HTTPS["HTTPS"]
+        Ngrok["Ngrok Tunnel<br/>(dev-only, real-device testing)"]
+    end
+
+    subgraph "Vercel (Flutter Web)"
+        Vercel["https://griot-2-0.vercel.app<br/>(static build + share links)"]
+    end
+
+    subgraph "Render.com (Backend)"
+        direction TB
+
+        subgraph "griot-backend service"
+            Gunicorn["Gunicorn WSGI<br/>(migrate + start)"]
+            Django["Django REST Framework<br/>+ SimpleJWT + Throttling"]
+            Apps["Apps<br/>users · stories · qr_codes ·<br/>gamification · media_app · api · web"]
+        end
+
+        Postgres["PostgreSQL 16<br/>(griot-db, managed)"]
+        Media["Media Files<br/>/media/ on Render disk"]
+    end
+
+    subgraph "External Services"
+        direction LR
+        LumaAI["🎬 Luma AI<br/>Dream Machine<br/>(video generation)"]
+        TTSService["🔊 Google TTS via gTTS<br/>(no API key)"]
+        Sentry["🐛 Sentry<br/>(optional, DSN-gated)"]
+        WhatsApp["💬 WhatsApp<br/>(feedback wa.me link)"]
+    end
+
+    subgraph "DevOps & Monitoring"
+        direction LR
+        HealthCheck["Health Endpoints<br/>/api/health/ · /api/health/ready/<br/>/api/health/metrics/"]
+        StructLog["Structured JSON Logging<br/>(RequestLogMiddleware +<br/>JsonFormatter)"]
+        SyncCmd["sync_local_users<br/>(SQLite → Postgres)"]
+    end
+
+    %% Client connections
+    iOS --> HTTPS
+    Android --> HTTPS
+    PWA --> HTTPS
+
+    %% Web client hosting
+    PWA --> Vercel
+    Vercel --> HTTPS : API + share links
+
+    iOS -.-> Ngrok
+    Android -.-> Ngrok
+
+    %% Flutter internals
+    UI --> Riverpod
+    Riverpod --> Dio
+    Dio --> SQLite
+
+    %% Network to backend
+    HTTPS --> Gunicorn
+    Ngrok --> Gunicorn
+
+    %% Django internals
+    Gunicorn --> Django
+    Django --> Apps
+
+    %% Database / storage
+    Apps --> Postgres : default alias (prod)
+    Apps --> Media
+    Apps -.-> SyncCmd
+
+    %% External services
+    Django --> LumaAI
+    Django --> TTSService
+    Django --> Sentry
+    UI --> WhatsApp

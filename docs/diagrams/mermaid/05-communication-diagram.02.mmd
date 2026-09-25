@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph "Flutter Client"
+        U["User"]
+        LS["LoginScreen"]
+        AR["AuthRepository"]
+        SR["ServerAuthRepository"]
+        LA["LocalAuthRepository (offline fallback)"]
+        AC["ApiClient"]
+        AW["AuthWrapper"]
+        HS["HomeScreen"]
+    end
+
+    subgraph "Backend API"
+        TV["CustomTokenObtainPairView"]
+        RV["RegisterView"]
+        MV["MeView"]
+    end
+
+    U -- "1. enter credentials" --> LS
+    LS -- "2. login(user, pass)" --> AR
+    AR -- "3. online-first" --> SR
+    SR -- "4. POST /api/auth/token/" --> AC
+    AC -- "5. credentials" --> TV
+    TV -- "6. JWT {access, refresh} (30m / 7d)" --> SR
+    SR -- "7. TokenPair" --> AR
+    AR -- "8. store tokens in secure storage" --> AR
+    AR -- "9. AuthState.authenticated" --> AW
+    AW -- "10. rebuild" --> HS
+    HS -- "11. show home" --> U
+
+    AR -. "API unreachable → fall back locally" .-> LA
+    LA -. "offline session (no JWT)" .-> AW

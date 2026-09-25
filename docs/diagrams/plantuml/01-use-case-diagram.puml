@@ -100,9 +100,15 @@ package "Sharing" {
   usecase "View Quote Card" as UC_QUOTE
 }
 
+' ─── Settings Package ──────────────────────────────────
+package "Settings" {
+  usecase "Send Feedback (WhatsApp)" as UC_FEEDBACK
+}
+
 ' ─── Admin Package ─────────────────────────────────────
 package "Admin" {
   usecase "View Analytics Dashboard" as UC_ANALYTICS
+  usecase "View Platform Users" as UC_PLATFORM_USERS
   usecase "Moderate Content" as UC_MODERATE
   usecase "View Moderation Queue" as UC_MOD_QUEUE
   usecase "Resolve Flags" as UC_RESOLVE
@@ -155,6 +161,7 @@ Visitor --> UC_QUOTE
 Visitor --> UC_SAVE_OFFLINE
 Visitor --> UC_READ_OFFLINE
 Visitor --> UC_OFFLINE_AUDIO
+Visitor --> UC_FEEDBACK
 Visitor --> UC_DEL_ACC
 
 ' ─── Contributor Associations ──────────────────────────
@@ -172,13 +179,15 @@ InstitutionManager --> UC_MODERATE
 InstitutionManager --> UC_MOD_QUEUE
 InstitutionManager --> UC_RESOLVE
 InstitutionManager --> UC_ANALYTICS
+InstitutionManager --> UC_PLATFORM_USERS
 
 ' ─── Admin Associations ────────────────────────────────
 Admin --> UC_DEL_STORY
 Admin --> UC_ANALYTICS
+Admin --> UC_PLATFORM_USERS
 Admin --> UC_DEL_ACC
 
-' ─── Divergences from original intent (reconciled 2026-09-22) ──
+' ─── Divergences from original intent (reconciled 2026-09-22, +2026-09-23) ──
 ' Delete Story        : the author may delete their own; Manager/Admin any.
 ' Generate TTS        : any authenticated user for a PUBLISHED story.
 ' Browse Quizzes /
@@ -192,6 +201,9 @@ Admin --> UC_DEL_ACC
 ' GAP   publication    : pending -> published happens only in the Django admin.
 ' GAP   mobile         : no leaderboard, certificate, artifact-authoring,
 '                       artifact audio-guide or video-playback UI.
+' ADDED 2026-09-23     : UC_FEEDBACK (WhatsAppFeedbackService, wa.me chat,
+'                       no backend endpoint) and UC_PLATFORM_USERS
+'                       (AdminUsersListView, GET /api/analytics/users/list/).
 
 note bottom of Guest
   Guest is reachable on web + API only —

@@ -1,0 +1,47 @@
+classDiagram
+    title Griot 2.0 — Authorization classes
+
+    class IsAuthenticated {
+        <<DRF builtin>>
+        +has_permission(bool)
+    }
+
+    class IsContributorOrAbove {
+        +has_permission(bool)
+        %% role in (contributor, institution_manager, admin)
+    }
+
+    class IsInstitutionManagerOrAbove {
+        +has_permission(bool)
+        %% role in (institution_manager, admin)
+    }
+
+    class IsAdminOrManager {
+        +has_permission(bool)
+        %% role in (institution_manager, admin)
+        %% used by ALL seven analytics endpoints + story moderation
+    }
+
+    class IsAuthenticatedOrReadOnly {
+        +has_permission(bool)
+        %% SAFE_METHODS OR authenticated (gamification app; DRF default)
+    }
+
+    class IsStoryOwnerOrReadOnly {
+        +has_object_permission(bool)
+        %% SAFE_METHODS OR obj.author == user OR role in (manager, admin)
+    }
+
+    class IsOwnerOrReadOnly {
+        +has_object_permission(bool)
+        %% SAFE_METHODS OR obj.user == user
+    }
+
+    IsContributorOrAbove --|> IsAuthenticated
+    IsInstitutionManagerOrAbove --|> IsAuthenticated
+    IsAdminOrManager --|> IsAuthenticated
+    IsStoryOwnerOrReadOnly --|> IsAuthenticated
+    IsOwnerOrReadOnly --|> IsAuthenticated
+    IsAuthenticatedOrReadOnly --|> IsAuthenticated
+
+    note for IsAdminOrManager "Implemented gate is WIDER than the\ndocumented Admin-only rule for analytics."

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:dio_smart_retry/dio_smart_retry.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../models/user_model.dart';
@@ -10,20 +11,47 @@ import '../models/user_model.dart';
 /// repository keeps its own bare Dio with the same base URL and timeouts.
 /// No tokens are injected here — login, refresh and register are all
 /// anonymous by design.
+///
+/// The Dio is forgiving on purpose: the hosted backend runs on Render's free
+/// tier, which sleeps after ~15 min idle and cold-starts slowly. Generous
+/// timeouts plus a single retry on connection issues let login/sign-up survive
+/// a cold start instead of surfacing a spurious "server unreachable" error.
 class ServerAuthRepository {
   ServerAuthRepository({Dio? dio}) : _dio = dio ?? _defaultDio();
 
   final Dio _dio;
 
   static Dio _defaultDio() {
-    return Dio(
+    final dio = Dio(
       BaseOptions(
         baseUrl: AppConstants.effectiveBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: const Duration(seconds: 45),
+        sendTimeout: const Duration(seconds: 45),
+        receiveTimeout: const Duration(seconds: 90),
         headers: {'Accept': 'application/json'},
       ),
     );
+    // Retry only transport-level failures (cold start / flaky network), never
+    // 4xx/5xx responses such as rejected credentials or throttling.
+    dio.interceptors.add(
+      RetryInterceptor(
+        dio: dio,
+        retries: 1,
+        retryDelays: const [Duration(seconds: 6)],
+        retryEvaluator: (error, attempt) {
+          switch (error.type) {
+            case DioExceptionType.connectionTimeout:
+            case DioExceptionType.connectionError:
+            case DioExceptionType.sendTimeout:
+            case DioExceptionType.receiveTimeout:
+              return true;
+            default:
+              return false;
+          }
+        },
+      ),
+    );
+    return dio;
   }
 
   /// Exchange username/password for a real JWT pair.

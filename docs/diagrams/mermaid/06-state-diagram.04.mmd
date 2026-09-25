@@ -1,0 +1,21 @@
+stateDiagram-v2
+    title Offline Request Queue State Machine
+
+    [*] --> Pending : Request queued\n(device offline)
+
+    Pending --> InProgress : Connectivity restored,\nsync starts
+    Pending --> Pending : Retry count < max\n(after failure)
+
+    InProgress --> Completed : Server responds\n2xx success
+    InProgress --> Failed : Server error\nor network failure
+
+    Failed --> InProgress : Retry\n(retry_count < max)
+    Failed --> Pending : Max retries reached,\nwait for next sync
+
+    Completed --> [*]
+    Pending --> [*] : Max retries exceeded\n(give up)
+
+    note right of Pending : Stored in\noffline_requests table.\nMethod, path, body saved.
+    note right of InProgress : Request being\nreplayed to server.
+    note right of Completed : Successfully synced.\nReady for cleanup.
+    note right of Failed : Error message stored.\nRetry with backoff.

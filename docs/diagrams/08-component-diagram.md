@@ -17,15 +17,18 @@ flowchart TB
         end
 
         subgraph "Feature Services"
-            AuthSvc["AuthService<br/>(Login, Register,<br/>Token Management)"]
-            StorySvc["StoryService<br/>(CRUD, Search,<br/>Bookmarks, Likes)"]
-            LibrarySvc["LibraryService<br/>(Continue Reading,<br/>Recently Read)"]
-            GamificationSvc["GamificationService<br/>(Quizzes, Badges,<br/>Leaderboard)"]
+            AuthSvc["AuthService<br/>(Online-first JWT login,<br/>offline fallback)"]
+            StorySvc["StoryService<br/>(CRUD, Search,<br/>Bookmarks, Likes; mirror)"]
+            LibrarySvc["LibraryService<br/>(Continue Reading,<br/>Recently Read) — SQLite"]
+            GamificationSvc["GamificationService<br/>(Quizzes, Badges) — SQLite"]
             QRSvc["QRService<br/>(Scanner, Artifact Lookup)"]
             AudioSvc["AudioService<br/>(TTS Playback,<br/>Offline Audio)"]
             VideoSvc["VideoService<br/>(Generation, Polling,<br/>Playback)"]
             ShareSvc["SharingService<br/>(Social Share,<br/>Quote Cards)"]
-            AdminSvc["AdminService<br/>(Analytics,<br/>Moderation)"]
+            AdminSvc["AdminService<br/>(Analytics, Users List,<br/>Moderation)"]
+            ArtifactsSvc["ArtifactsService<br/>(Catalogue browse)"]
+            DiscoverSvc["DiscoverService<br/>(Region stories)"]
+            SettingsSvc["SettingsService<br/>(WhatsApp feedback)"]
         end
 
         subgraph "Core Infrastructure"
@@ -45,7 +48,7 @@ flowchart TB
         subgraph "Authentication"
             JWTAuth["SimpleJWT<br/>(Token Obtain,<br/>Refresh, Blacklist)"]
             RolePerms["Role-Based Permissions<br/>(IsContributorOrAbove,<br/>IsAdminOrManager)"]
-            Throttling["Rate Throttling<br/>(Auth: 5/min,<br/>API: 120/min)"]
+            Throttling["Rate Throttling<br/>(auth: 5/min ·<br/>anon: 120/min · user: 600/min)"]
         end
 
         subgraph "Business Logic"
@@ -67,14 +70,16 @@ flowchart TB
 
     subgraph "External Services"
         LumaAI["🎬 Luma AI<br/>Dream Machine<br/>(Video Generation)"]
-        TTSProvider["🔊 TTS Provider<br/>(Text-to-Speech)"]
-        SentryMonitor["🐛 Sentry<br/>(Error Monitoring)"]
+        TTSProvider["🔊 Google TTS via gTTS<br/>(Text-to-Speech,<br/>no API key)"]
+        SentryMonitor["🐛 Sentry<br/>(Error Monitoring,<br/>DSN-gated)"]
+        WhatsApp["💬 WhatsApp<br/>(feedback wa.me link)"]
     end
 
     subgraph "Data Layer"
-        SQLite["SQLite<br/>(Development)"]
-        PostgreSQL["PostgreSQL<br/>(Production)"]
-        MediaStorage["Media Storage<br/>(Files, Images)"]
+        SQLite["SQLite<br/>(db.sqlite3 — dev / local)"]
+        PostgreSQL["PostgreSQL 16<br/>(Render griot-db — prod)"]
+        Crawler["Crawler (ingestion)<br/>discover-cameroon.com<br/>→ cameroon_content.json<br/>→ import_crawl_data"]
+        MediaStorage["Media<br/>(Django /media/ on<br/>Render disk / local)"]
     end
 
     %% ─── Client Internal Connections ───────────────────
@@ -90,16 +95,22 @@ flowchart TB
     Riverpod --> VideoSvc
     Riverpod --> ShareSvc
     Riverpod --> AdminSvc
+    Riverpod --> ArtifactsSvc
+    Riverpod --> DiscoverSvc
+    Riverpod --> SettingsSvc
 
     AuthSvc --> APIClient
     StorySvc --> APIClient
-    LibrarySvc --> APIClient
-    GamificationSvc --> APIClient
+    LibrarySvc --> LocalDB
+    GamificationSvc --> LocalDB
     QRSvc --> APIClient
     AudioSvc --> APIClient
     VideoSvc --> APIClient
     ShareSvc --> APIClient
     AdminSvc --> APIClient
+    ArtifactsSvc --> APIClient
+    DiscoverSvc --> APIClient
+    SettingsSvc --> WhatsApp
 
     APIClient --> AuthInterceptor
     APIClient --> OfflineInterceptor
@@ -130,13 +141,16 @@ flowchart TB
     GameEngine --> SQLite
     MediaEngine --> SQLite
     AnalyticsEngine --> SQLite
+    QRModule --> Crawler : import_crawl_data
 
     StoryEngine --> MediaStorage
     QRModule --> MediaStorage
+    Crawler --> MediaStorage
 
     %% ─── External Services ────────────────────────────
     MediaEngine --> LumaAI
     MediaEngine --> TTSProvider
+    APIClient -- "Sentry (client)" --> SentryMonitor
     AnalyticsEngine --> SentryMonitor
 ```
 
@@ -146,7 +160,9 @@ flowchart TB
 |---|---|---|---|
 | **Flutter UI** | Riverpod | Internal | State observation |
 | **Riverpod** | Feature Services | Internal | State mutation |
-| **Feature Services** | ApiClient | Internal | API calls |
+| **Feature Services** | ApiClient | Internal | API calls (auth, stories, qr, audio, video, share, admin, artifacts, discover) |
+| **Library / Gamification Service** | AppDatabase | Internal | **Local SQLite** — no HTTP |
+| **Settings Service** | WhatsApp | wa.me deep link | Feedback chat, no backend endpoint |
 | **ApiClient** | AuthInterceptor | Internal | Token injection |
 | **ApiClient** | OfflineInterceptor | Internal | Offline queuing |
 | **ConnectivityService** | OfflineSyncManager | Internal | Connectivity events |
@@ -155,10 +171,11 @@ flowchart TB
 | **Role Permissions** | User Model | Internal | Authorization check |
 | **Story Engine** | Story Model | Internal | CRUD operations |
 | **Media Engine** | Luma AI API | REST API | Video generation |
-| **Media Engine** | TTS Provider | REST API | Audio narration |
-| **Analytics Engine** | Sentry | SDK | Error reporting |
-| **All Backend Apps** | Database | SQL | Data persistence |
-| **Backend Apps** | Media Storage | Filesystem | File I/O |
+| **Media Engine** | gTTS | REST API | Audio narration |
+| **QR Code Module** | Crawler | File import | `import_crawl_data` command ingests `cameroon_content.json` |
+| **ApiClient** | Sentry | SDK | Client-side error reporting (DSN-gated) |
+| **All Backend Apps** | Database | SQL | `default` (Postgres prod / SQLite dev) + `local` alias |
+| **Backend Apps** | Media | Filesystem | Django `/media/` (no S3/GCS) |
 
 ## Interface Contracts
 
@@ -166,26 +183,34 @@ flowchart TB
 
 | Interface | Method | Content Type | Auth Required |
 |---|---|---|---|
-| Login | POST | JSON | No |
-| Register | POST | JSON | No |
-| Stories List | GET | JSON | No |
+| Login (`/api/auth/token/`) | POST | JSON | No (throttled 5/min) |
+| Register (`/api/auth/register/`) | POST | JSON | No (throttled 5/min) |
+| Refresh (`/api/auth/token/refresh/`) | POST | JSON | Refresh token (rotated + blacklisted) |
+| Current User (`/api/users/me/`) | GET | JSON | Yes (JWT) |
+| Stories List (`/api/stories/`) | GET | JSON | Read-only (IsAuthenticatedOrReadOnly) |
 | Story Detail | GET | JSON | No |
 | Create Story | POST | JSON | Yes (Contributor+) |
+| Moderation Queue (`/api/stories/moderation_queue/`) | GET | JSON | Yes (Admin/Manager) |
+| Moderate (`.../moderate/`) | POST | JSON | Yes (Admin/Manager) |
+| Flag | POST | JSON | Yes |
 | Bookmark | POST | JSON | Yes |
 | Like | POST | JSON | Yes |
-| Progress | POST | JSON | Yes |
-| QR Lookup | GET | JSON | No |
-| Quiz Start | POST | JSON | Yes |
-| Quiz Submit | POST | JSON | Yes |
-| Video Generate | POST | JSON | Yes (Contributor+) |
-| Audio Generate | POST | JSON | Yes (Contributor+) |
-| Analytics | GET | JSON | Yes (Admin) |
+| Progress (`/api/stories/slug/progress/`) | POST | JSON | Yes — **local-first**, best-effort sync |
+| Audio Narration (`/api/media/story/slug/audio/`) | POST | JSON | Yes (Authenticated; published story) |
+| Video Generate (`/api/media/story/slug/video/`) | POST | JSON | Yes (Contributor+) |
+| Video / Poll (`/api/media/video/task-id/`) | GET | JSON | Yes |
+| QR Lookup (`/api/artifacts/lookup/`) | GET | JSON | No |
+| Quiz Start / Submit / Finish (`/api/gamification/...`) | POST | JSON | Yes — **web client only** (mobile = local SQLite) |
+| Analytics Dashboard / lists (`/api/analytics/...`) | GET | JSON | Yes (Admin/Manager — IsAdminOrManager) |
+| Platform Users List (`/api/analytics/users/list/`) | GET | JSON | Yes (Admin/Manager) |
+| Health (`/api/health/`, `ready/`, `metrics/`) | GET | JSON | No |
+| Schema / Docs / Redoc | GET | JSON/HTML | No |
 
 ### Server → External Services
 
 | Interface | Method | Service | Description |
 |---|---|---|---|
-| Video Generation | POST | Luma AI API | Submit video job |
+| Video Generation | POST | Luma AI API | Submit video job (`LUMA_API_KEY` gated; mock fallback) |
 | Video Status | GET | Luma AI API | Poll job status |
-| TTS Generation | POST | TTS Provider | Submit narration job |
-| Error Report | POST | Sentry SDK | Report errors |
+| TTS Generation | POST | gTTS (Google Translate endpoint) | Audio narration — no API key |
+| Error Report | SDK | Sentry | **Client-side** (Flutter); backend DSN optional |

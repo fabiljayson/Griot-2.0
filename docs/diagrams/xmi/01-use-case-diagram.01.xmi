@@ -1,0 +1,530 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_820a2498fd2382b5" name="Griot 2.0 - Use Case Diagram">
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_07dffa22bfd96f56">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_24e1b936857412fe">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e5e1fc1610696eb3">
+      <uml:type xmi:idref="_59a67cf78a29ed08" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_a440e70dfc6a3eed">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_886ad897b2358cea">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ccb7e84a8c17e639">
+      <uml:type xmi:idref="_c3b4bf2a3532bab9" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_4040a3edfb6ecb53">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_83756b749dcf3f99">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f38713b5d30297c9">
+      <uml:type xmi:idref="_f36bbd805a933618" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_93d0024217639dc7">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_de1fba20c2b439bd">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9f13ea2c9c9fe9d5">
+      <uml:type xmi:idref="_41ae7483d193a0a8" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_52ef7efd28a97f84">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c53f2bcfe214998f">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9125da9ba31168a7">
+      <uml:type xmi:idref="_c1898d503bdf2a90" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_89c56591e4b00dd1">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c4efbe2d3ba36287">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_25bfbbbf8b1c8305">
+      <uml:type xmi:idref="_be36d4972a1afdc8" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_987a16e8be970c03">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_35f70fbafb309107">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_7ec2e33d7d87b7a3">
+      <uml:type xmi:idref="_073e65477b1aed1b" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e358b88bbd12bdbe">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a54c696a93eaefee">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e09242dd0e0c130d">
+      <uml:type xmi:idref="_f827f1f174137604" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ba7689b9b6917856">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9134088c011723af">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a888e35dd9f2f307">
+      <uml:type xmi:idref="_576276d404bd255e" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_b1239adb03805e01">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_05b0348516685a77">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8313f8068b83b821">
+      <uml:type xmi:idref="_04772eb2afb6c95d" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_bc748dfc74cde27f">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_36a2934b6e5f1c8f">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a216ad13213f815d">
+      <uml:type xmi:idref="_a30e5dec34e8615c" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_924a28b35edf2dfd">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_becf7ae70913e14d">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6cc8090e90387d3d">
+      <uml:type xmi:idref="_0bb36f9118c62a4e" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_60abc8a6afb582b5">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_db6f46fba3a8adc6">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f27bc5a261de29c3">
+      <uml:type xmi:idref="_61467d012e00dd08" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9fa98ad41d9bae8a">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6c8a7a995f523eae">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_90fdb439e0240f93">
+      <uml:type xmi:idref="_86bedb60d6f6ea52" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_746063c8089c45c9">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a199d8bc47b8c596">
+      <uml:type xmi:idref="_eba7b8519bd12e31" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fbab70bb8f11fe50">
+      <uml:type xmi:idref="_2cff758d5c48f7e1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8c26776ae83eee06">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_bcf6df39e3983d80">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_364f9a3a6a14d52f">
+      <uml:type xmi:idref="_1b240bb9e6ad43d4" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ff136a61334f41b5">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c56f98c8f5814689">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8747cb58539701d8">
+      <uml:type xmi:idref="_7f8a8f02fe8c1fe8" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_d548339d10249c04">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_66e51c6cfb34f935">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_891a36a380a80e7c">
+      <uml:type xmi:idref="_bdeff71574a79675" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_b21fe1a3c84d6e72">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_dab5f19313996b78">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_b0256a93813c9f17">
+      <uml:type xmi:idref="_5632b8086f8106e9" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_3bc092067b23a21a">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f3605270dbe54c95">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f80c9f49c430d84b">
+      <uml:type xmi:idref="_ae94c75d299084b6" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9e0dbed0795193d0">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_7a76bc31f9dca21a">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_94b166d14d13d296">
+      <uml:type xmi:idref="_f45e9a3ae4dcf13c" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_3420987cc42acfff">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_732a818b8071d65f">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_33d004348ec29f39">
+      <uml:type xmi:idref="_b9bfb90e71b55e70" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_dbbbafbab55c9bad">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4ac8a7a630bb56d2">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6d8b5afc698e0f95">
+      <uml:type xmi:idref="_c6acf245a7fb2290" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e91178a1d3cb3f07">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_64ffe178328726b4">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_de334326d0b2d138">
+      <uml:type xmi:idref="_745d43cef6931448" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_cb11f0e2260d0e16">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_de2c64748568eb16">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_084f29ae9a41ab71">
+      <uml:type xmi:idref="_b1503350cf211882" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_78b8c8ec2730f155">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5bbb572d63a7dddc">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a43e55b62dee11a6">
+      <uml:type xmi:idref="_b70afe459bcef1ec" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_abc576d3c36488df">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_28d04e31482ea091">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ca1a0d667a133892">
+      <uml:type xmi:idref="_d4f1ee032ec61171" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_05aebac7bdcc53c8">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ad76f4f574aaea0a">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5780c3bcb0e8060c">
+      <uml:type xmi:idref="_04772eb2afb6c95d" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9e5a7001114711e2">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2a8d6d003151b92e">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_854c54cdece57f21">
+      <uml:type xmi:idref="_ad2755a75b02b31a" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ae20c5fe1d92c343">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_40874af1312171bf">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5a2072fc4222de75">
+      <uml:type xmi:idref="_a30e5dec34e8615c" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_81e052697476c9bf">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ea008ba93c95b7f5">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8b1a26b0be381ae7">
+      <uml:type xmi:idref="_0bb36f9118c62a4e" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ca21b7811f4bc26a">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_57c05a0be32e2b50">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fae258beb35d08ba">
+      <uml:type xmi:idref="_9ea848328438b028" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_986c02b3ec27a58f">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_b32059b159b0687a">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2758db10d633606a">
+      <uml:type xmi:idref="_72073fc1ba0eac9d" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_88d30fe43076b3fa">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4898431870d6e682">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_58e359d06c6ec116">
+      <uml:type xmi:idref="_e7d6466ba85a41f7" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_58f46dd8a4450aa1">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2a58ca2ce24ebbbf">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_63351e495485088f">
+      <uml:type xmi:idref="_075513b3850a3f24" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_094a53765ccabddb">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_58046d6babba1b8c">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3fb111ec884918f4">
+      <uml:type xmi:idref="_1338db8a4e844c30" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ff9b8de51d26f076">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4b4f9e47738869c8">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4b1ef081a1df066a">
+      <uml:type xmi:idref="_731ec4763135b73b" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_288810007b3a43cd">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4204b1522d48b459">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_01bd406914c31170">
+      <uml:type xmi:idref="_dc78cf4b8eb74586" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_41d5a96fccb79076">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_cb5c35e1c96b69e2">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_b4f5fbcc6c596d30">
+      <uml:type xmi:idref="_b2fe9e9f3219b86f" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_d230a5f38b7706cc">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ae3e1af2c715ee34">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3d0d54e6fecf1eb8">
+      <uml:type xmi:idref="_36c6f3fd9d529dff" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8728bfbd67c161d7">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_7c59bf2984933e06">
+      <uml:type xmi:idref="_042475fe432f9ca6" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fcec38e64edb5508">
+      <uml:type xmi:idref="_64e7b70d11c6c3a8" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_3e6e7fd28447658c">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f7787e27191d538e">
+      <uml:type xmi:idref="_8b7978d4dcd581a1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_38ca729d9a952938">
+      <uml:type xmi:idref="_6c30b112a919d6fd" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_5c6117922fd4d7bb">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_cbad590c26fa46ad">
+      <uml:type xmi:idref="_8b7978d4dcd581a1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a40a55fb4250e1e0">
+      <uml:type xmi:idref="_c9209baf04bbc647" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9c469198ea1e3f19">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_52e80c8d2230f51f">
+      <uml:type xmi:idref="_8b7978d4dcd581a1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e561304495b32807">
+      <uml:type xmi:idref="_99992c432033697b" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_1b2182e5d9fa6de9">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6de214b6c76a5a0b">
+      <uml:type xmi:idref="_8b7978d4dcd581a1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3d608352e239b732">
+      <uml:type xmi:idref="_1b240bb9e6ad43d4" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9d5c98d9d016fb11">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_24b69bc75d19f588">
+      <uml:type xmi:idref="_8b7978d4dcd581a1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8303f25d8153f179">
+      <uml:type xmi:idref="_f8fe69363588d7d5" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_87a42a82897b0ddb">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e78c54d7bcde6827">
+      <uml:type xmi:idref="_8b7978d4dcd581a1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5fc3ef22372f28a7">
+      <uml:type xmi:idref="_ba3df271e732919e" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_4ab62d55ddc27660">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_51b8a29eb70f5de4">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_62ae79ea3e1d3a0d">
+      <uml:type xmi:idref="_d68b7c68ba3be7d0" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e666b9ee1554e060">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ae7f7e50c30ee3ab">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4cfe54c29a76229b">
+      <uml:type xmi:idref="_5daec63ba69569ad" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_d9057fc19d8297d0">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5613435acba21633">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_174fededec419120">
+      <uml:type xmi:idref="_621d5b256e9ea8b5" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e4abf955292eb069">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_039a8fcb35f18d2f">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5e9ef02c35f99b6e">
+      <uml:type xmi:idref="_57237c9792e03bee" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_6bf9724d50440d98">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_79b661e481441426">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_109e91d5f2d5e2d1">
+      <uml:type xmi:idref="_8cfe913517dea1ce" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e1d530dc4c4b8948">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f7382c35fa1e25b3">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_381236288be46d5c">
+      <uml:type xmi:idref="_06f8ab34396ae2da" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ed8e33357acd1fed">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_d764f6aa401e75fc">
+      <uml:type xmi:idref="_d8032d86b8dd3946" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4ba43214923bac7f">
+      <uml:type xmi:idref="_90c4c2c8d2998926" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_f45997e65710b821">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_788339559377bb9c">
+      <uml:type xmi:idref="_bd97553617f69bdc" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_240c7c421b404044">
+      <uml:type xmi:idref="_99992c432033697b" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_5b2fa15e16a4efb6">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_29cde20cba3c1c25">
+      <uml:type xmi:idref="_bd97553617f69bdc" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3f31a43580df7282">
+      <uml:type xmi:idref="_06f8ab34396ae2da" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_025c939cfc67d177">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c8ae799856b48e21">
+      <uml:type xmi:idref="_bd97553617f69bdc" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e338e7ccf9990e8d">
+      <uml:type xmi:idref="_90c4c2c8d2998926" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_f2d0cd60673db7ae">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3fd66811d85cf85f">
+      <uml:type xmi:idref="_bd97553617f69bdc" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4033ade68dcbd00c">
+      <uml:type xmi:idref="_64e7b70d11c6c3a8" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Actor" xmi:id="_eba7b8519bd12e31" name="Guest" />
+  <uml:packagedElement xmi:type="uml:Actor" xmi:id="_042475fe432f9ca6" name="Visitor">
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_8889f2c899b3f70b" general="_eba7b8519bd12e31" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Actor" xmi:id="_8b7978d4dcd581a1" name="Contributor">
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_bbfc9f4a1fe1b6c6" general="_042475fe432f9ca6" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Actor" xmi:id="_d8032d86b8dd3946" name="InstitutionManager">
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_7277a72358e2c22b" general="_8b7978d4dcd581a1" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Actor" xmi:id="_bd97553617f69bdc" name="Admin">
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_d57b2958f0e90623" general="_d8032d86b8dd3946" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_59a67cf78a29ed08" name="UC_REG" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_c3b4bf2a3532bab9" name="UC_LOGIN" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_f36bbd805a933618" name="UC_BROWSE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_41ae7483d193a0a8" name="UC_SEARCH" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_c1898d503bdf2a90" name="UC_READ" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_be36d4972a1afdc8" name="UC_SCAN" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_073e65477b1aed1b" name="UC_ARTIFACT" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_f827f1f174137604" name="UC_TTS" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_576276d404bd255e" name="UC_WATCH" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_04772eb2afb6c95d" name="UC_QUIZZES" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_a30e5dec34e8615c" name="UC_BADGES" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_0bb36f9118c62a4e" name="UC_LEADER" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_61467d012e00dd08" name="UC_TRENDING" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_86bedb60d6f6ea52" name="UC_POPULAR" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_2cff758d5c48f7e1" name="UC_DISCOVER" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_1b240bb9e6ad43d4" name="UC_GEN_TTS" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_7f8a8f02fe8c1fe8" name="UC_PROFILE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_bdeff71574a79675" name="UC_EDIT_PROFILE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_5632b8086f8106e9" name="UC_PREFS" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_ae94c75d299084b6" name="UC_BOOKMARK" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_f45e9a3ae4dcf13c" name="UC_LIKE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_b9bfb90e71b55e70" name="UC_FLAG" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_c6acf245a7fb2290" name="UC_PROGRESS" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_745d43cef6931448" name="UC_LIB" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_b1503350cf211882" name="UC_CONTINUE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_b70afe459bcef1ec" name="UC_VIEW_BM" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_d4f1ee032ec61171" name="UC_RECENT" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_ad2755a75b02b31a" name="UC_QUIZ" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_9ea848328438b028" name="UC_CERT" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_72073fc1ba0eac9d" name="UC_GAME_PROFILE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_e7d6466ba85a41f7" name="UC_SHARE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_075513b3850a3f24" name="UC_QUOTE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_1338db8a4e844c30" name="UC_SAVE_OFFLINE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_731ec4763135b73b" name="UC_READ_OFFLINE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_dc78cf4b8eb74586" name="UC_OFFLINE_AUDIO" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_b2fe9e9f3219b86f" name="UC_GEN_GUIDE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_36c6f3fd9d529dff" name="UC_FEEDBACK" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_64e7b70d11c6c3a8" name="UC_DEL_ACC" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_6c30b112a919d6fd" name="UC_CREATE_STORY" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_c9209baf04bbc647" name="UC_EDIT_STORY" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_99992c432033697b" name="UC_DEL_STORY" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_f8fe69363588d7d5" name="UC_GEN_VIDEO" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_ba3df271e732919e" name="UC_POLL_VIDEO" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_d68b7c68ba3be7d0" name="UC_CREATE_ART" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_5daec63ba69569ad" name="UC_GEN_QR" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_621d5b256e9ea8b5" name="UC_MODERATE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_57237c9792e03bee" name="UC_MOD_QUEUE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_8cfe913517dea1ce" name="UC_RESOLVE" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_06f8ab34396ae2da" name="UC_ANALYTICS" />
+  <uml:packagedElement xmi:type="uml:UseCase" xmi:id="_90c4c2c8d2998926" name="UC_PLATFORM_USERS" />
+</uml:Model>

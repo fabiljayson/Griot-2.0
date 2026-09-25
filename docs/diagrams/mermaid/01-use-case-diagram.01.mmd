@@ -1,0 +1,142 @@
+flowchart LR
+    title Griot 2.0 - Use Case Diagram
+    Guest((Guest))
+    Visitor((Visitor))
+    Contributor((Contributor))
+    InstitutionManager((InstitutionManager))
+    Admin((Admin))
+
+    %% flattening note: use cases below keep their original package
+    %% package 'Authentication':
+    %%   Register Account
+    %%   Login
+    %%   View Profile
+    %%   Edit Profile
+    %%   Set Language & Theme
+    %%   Delete Account
+    %% package 'Stories':
+    %%   Browse Stories
+    %%   Search Stories
+    %%   Read Story
+    %%   Create Story
+    %%   Edit Story
+    %%   Delete Story
+    %%   Bookmark Story
+    %%   Like Story
+    %%   Flag Story
+    %%   Track Reading Progress
+    %%   View Curated Feeds
+    %%   View Trending
+    %%   View Popular
+    %%   View Discover
+    %% package 'Library':
+    %%   View Library
+    %%   Continue Reading
+    %%   View Bookmarks
+    %%   View Recently Read
+    %% package 'QR & Artifacts':
+    %%   Scan QR Code
+    %%   View Artifact
+    %%   Create Artifact
+    %%   Generate QR Code
+    %% package 'Audio':
+    %%   Listen to TTS
+    %%   Generate Audio Narration
+    %%   Generate Artifact Audio Guide
+    %%   Play Offline Audio
+    %% package 'Video':
+    %%   Generate AI Video
+    %%   Watch Video
+    %%   Poll Video Status
+    %% package 'Gamification':
+    %%   Browse Quizzes
+    %%   Take Quiz
+    %%   View Badges
+    %%   View Leaderboard
+    %%   View Certificate
+    %%   View Gamification Profile
+    %% package 'Sharing':
+    %%   Share Story
+    %%   View Quote Card
+    %% package 'Settings':
+    %%   Send Feedback (WhatsApp)
+    %% package 'Admin':
+    %%   View Analytics Dashboard
+    %%   View Platform Users
+    %%   Moderate Content
+    %%   View Moderation Queue
+    %%   Resolve Flags
+    %% package 'Offline':
+    %%   Save Story Offline
+    %%   Read Offline
+    %%   Sync Pending Requests
+    %% ── Guest (unauthenticated) ─────────────────────────────────────────
+    %% Verified: trending/popular/discover and badges are `AllowAny` in the
+    %% API; the web UI serves anonymous users the reader + artifact catalogue.
+    %% NOT listed here any more:
+    %%   UC_VIEW_BM  — bookmarks are per-user rows; a Guest cannot own one.
+    %%   UC_GEN_QR   — it is a Manager/Admin action and now enforced as one
+    %%                 (it previously fell through to AllowAny — see below).
+    %% Reachable on web + API only: the Flutter app has no guest mode.
+    Guest --> UC_REG
+    Guest --> UC_LOGIN
+    Guest --> UC_BROWSE
+    Guest --> UC_SEARCH
+    Guest --> UC_READ
+    Guest --> UC_SCAN
+    Guest --> UC_ARTIFACT
+    Guest --> UC_TTS
+    Guest --> UC_WATCH
+    Guest --> UC_QUIZZES
+    Guest --> UC_BADGES
+    Guest --> UC_LEADER
+    Guest --> UC_TRENDING
+    Guest --> UC_POPULAR
+    Guest --> UC_DISCOVER
+    Visitor --|> Guest
+    Visitor --> UC_GEN_TTS
+    Visitor --> UC_PROFILE
+    Visitor --> UC_EDIT_PROFILE
+    Visitor --> UC_PREFS
+    Visitor --> UC_BOOKMARK
+    Visitor --> UC_LIKE
+    Visitor --> UC_FLAG
+    Visitor --> UC_PROGRESS
+    Visitor --> UC_LIB
+    Visitor --> UC_CONTINUE
+    Visitor --> UC_VIEW_BM
+    Visitor --> UC_RECENT
+    Visitor --> UC_QUIZZES
+    Visitor --> UC_QUIZ
+    Visitor --> UC_BADGES
+    Visitor --> UC_LEADER
+    Visitor --> UC_CERT
+    Visitor --> UC_GAME_PROFILE
+    Visitor --> UC_SHARE
+    Visitor --> UC_QUOTE
+    Visitor --> UC_SAVE_OFFLINE
+    Visitor --> UC_READ_OFFLINE
+    Visitor --> UC_OFFLINE_AUDIO
+    Visitor --> UC_GEN_GUIDE
+    Visitor --> UC_FEEDBACK
+    Visitor --> UC_DEL_ACC
+    Contributor --|> Visitor
+    Contributor --> UC_CREATE_STORY
+    Contributor --> UC_EDIT_STORY
+    Contributor --> UC_DEL_STORY
+    Contributor --> UC_GEN_TTS
+    Contributor --> UC_GEN_VIDEO
+    Contributor --> UC_POLL_VIDEO
+    InstitutionManager --|> Contributor
+    InstitutionManager --> UC_CREATE_ART
+    InstitutionManager --> UC_GEN_QR
+    InstitutionManager --> UC_MODERATE
+    InstitutionManager --> UC_MOD_QUEUE
+    InstitutionManager --> UC_RESOLVE
+    InstitutionManager --> UC_ANALYTICS
+    InstitutionManager --> UC_PLATFORM_USERS
+    Admin --|> InstitutionManager
+    Admin --> UC_DEL_STORY
+    Admin --> UC_ANALYTICS
+    Admin --> UC_PLATFORM_USERS
+    Admin --> UC_DEL_ACC

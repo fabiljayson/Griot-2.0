@@ -1,0 +1,37 @@
+flowchart TD
+    Start([User opens QR Scanner]) --> InitCamera[Initialize camera]
+    InitCamera --> ShowOverlay[Show scanner overlay<br/>with African border motif]
+    ShowOverlay --> Waiting[Waiting for scan...]
+
+    Waiting --> ScanDetected[QR code detected]
+    ScanDetected --> DecodeQR[Decode QR → slug/ID]
+    DecodeQR --> ShowLoading[Show loading indicator]
+
+    ShowLoading --> LookupArtifact[GET /api/artifacts/lookup/]
+    LookupArtifact --> Found{Artifact<br/>found?}
+
+    Found -->|No| ShowNotFound[Show "Artifact not found"]
+    ShowNotFound --> Waiting
+
+    Found -->|Yes| RecordScan[Record QR scan<br/>device, IP, GPS]
+    RecordScan --> LoadArtifact[Load artifact details]
+
+    LoadArtifact --> ShowArtifact[Show ArtifactDetailScreen<br/>title, image, description,<br/>culture, region, materials]
+
+    ShowArtifact --> ShowRelated[Load related stories]
+    ShowRelated --> HasStories{Related<br/>stories?}
+
+    HasStories -->|Yes| ShowStories[Display related<br/>story cards]
+    HasStories -->|No| ShowNoStories[Show "No related stories"]
+
+    ShowStories --> UserChoice{User action}
+
+    UserChoice -->|Tap story| NavigateStory[Navigate to<br/>StoryDetailScreen]
+    UserChoice -->|Play audio| PlayTTS[Play TTS narration<br/>for artifact]
+    UserChoice -->|Share| ShareArtifact[Share artifact<br/>to social platform]
+    UserChoice -->|Back| Waiting
+
+    NavigateStory --> End1([Story opened])
+    PlayTTS --> UserChoice
+    ShareArtifact --> UserChoice
+    ShowNoStories --> UserChoice

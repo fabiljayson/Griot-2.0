@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_5945dfbec072047e" name="05-communication-diagram.02">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_320a7a03fc4ef6b9" name="Flutter Client">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_ddf3255e2c108684" name="User" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_84d8b9edccb951d0" name="LoginScreen" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_2544e641a5e3b558" name="AuthRepository" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_0ba78e202f9d0b37" name="ServerAuthRepository" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_d9661cb801d3581a" name="LocalAuthRepository (offline fallback)" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_df327d499f037978" name="ApiClient" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_935190d38381acb5" name="AuthWrapper" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_92b27838b19d0d5b" name="HomeScreen" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_f90d0da533bfd3ac" name="Backend API">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_905675577e1ac768" name="CustomTokenObtainPairView" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_326936ccc0fb2178" name="RegisterView" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_282cfbc4e9683c0b" name="MeView" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_9f555b858b0e0763" name="1. enter credentials">
+    <uml:client xmi:idref="_ddf3255e2c108684" />
+    <uml:supplier xmi:idref="_84d8b9edccb951d0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_69bdfeb9d40ea3b8" name="2. login(user, pass)">
+    <uml:client xmi:idref="_84d8b9edccb951d0" />
+    <uml:supplier xmi:idref="_2544e641a5e3b558" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_622f43b8ee6a69a5" name="3. online-first">
+    <uml:client xmi:idref="_2544e641a5e3b558" />
+    <uml:supplier xmi:idref="_0ba78e202f9d0b37" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_24e0d2bc9162bc43" name="4. POST /api/auth/token/">
+    <uml:client xmi:idref="_0ba78e202f9d0b37" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_8693ab7eb396237b" name="5. credentials">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_905675577e1ac768" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_95caf1cc46e38349" name="6. JWT {access, refresh} (30m / 7d)">
+    <uml:client xmi:idref="_905675577e1ac768" />
+    <uml:supplier xmi:idref="_0ba78e202f9d0b37" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_661082f530bf41ab" name="7. TokenPair">
+    <uml:client xmi:idref="_0ba78e202f9d0b37" />
+    <uml:supplier xmi:idref="_2544e641a5e3b558" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5574b491b6b0f681" name="8. store tokens in secure storage">
+    <uml:client xmi:idref="_2544e641a5e3b558" />
+    <uml:supplier xmi:idref="_2544e641a5e3b558" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_27c98c63ec9d84de" name="9. AuthState.authenticated">
+    <uml:client xmi:idref="_2544e641a5e3b558" />
+    <uml:supplier xmi:idref="_935190d38381acb5" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_531cefc031f91d1e" name="10. rebuild">
+    <uml:client xmi:idref="_935190d38381acb5" />
+    <uml:supplier xmi:idref="_92b27838b19d0d5b" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_4441411e4a6633b7" name="11. show home">
+    <uml:client xmi:idref="_92b27838b19d0d5b" />
+    <uml:supplier xmi:idref="_ddf3255e2c108684" />
+  </uml:packagedElement>
+</uml:Model>

@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_3f3ebf65537589c5" name="05-communication-diagram.04">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_320a7a03fc4ef6b9" name="Flutter Client">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_ddf3255e2c108684" name="User" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_e6a1f4db01861c92" name="QRScannerWidget" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_1e323e0c25289a40" name="ArtifactDetailScreen" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_dc4f974225e375fc" name="QrApiService" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_df327d499f037978" name="ApiClient" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_f90d0da533bfd3ac" name="Backend API">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_7d430d35736f85a9" name="ArtifactViewSet" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_5d267e95b42865c9" name="Artifact Model" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_e3f1e019aa793842" name="QRCodeScan Model" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f1730db4513802ab" name="1. scan QR code">
+    <uml:client xmi:idref="_ddf3255e2c108684" />
+    <uml:supplier xmi:idref="_e6a1f4db01861c92" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_955ea02e58022c6c" name="2. decode slug">
+    <uml:client xmi:idref="_e6a1f4db01861c92" />
+    <uml:supplier xmi:idref="_e6a1f4db01861c92" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_0fc7d467bde1b097" name="3. lookupArtifact(slug)">
+    <uml:client xmi:idref="_e6a1f4db01861c92" />
+    <uml:supplier xmi:idref="_dc4f974225e375fc" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5275f0317691c1e4" name="4. GET /api/artifacts/lookup/">
+    <uml:client xmi:idref="_dc4f974225e375fc" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7b25e4c9d7202726" name="5. request">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_7d430d35736f85a9" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_aa2a2f7245f5fdb7" name="6. find artifact">
+    <uml:client xmi:idref="_7d430d35736f85a9" />
+    <uml:supplier xmi:idref="_5d267e95b42865c9" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_9caf6cfb7086d405" name="7. record scan">
+    <uml:client xmi:idref="_7d430d35736f85a9" />
+    <uml:supplier xmi:idref="_e3f1e019aa793842" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_39c3c7a6158d49fd" name="8. artifact JSON">
+    <uml:client xmi:idref="_7d430d35736f85a9" />
+    <uml:supplier xmi:idref="_dc4f974225e375fc" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_c2f78a2a9ac065d3" name="9. navigate">
+    <uml:client xmi:idref="_dc4f974225e375fc" />
+    <uml:supplier xmi:idref="_1e323e0c25289a40" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2c62c36e1a0df7f9" name="10. display info">
+    <uml:client xmi:idref="_1e323e0c25289a40" />
+    <uml:supplier xmi:idref="_ddf3255e2c108684" />
+  </uml:packagedElement>
+</uml:Model>

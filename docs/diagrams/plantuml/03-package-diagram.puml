@@ -13,7 +13,7 @@ skinparam rectangle {
   BorderColor #E65100
 }
 
-title Griot 2.0 — Package Diagram
+title Griot 2.0 — Package Diagram (reconciled 2026-09-23)
 
 ' ─── Flutter Client ───────────────────────────────────
 package "Flutter Client" {
@@ -24,31 +24,53 @@ package "Flutter Client" {
     }
     package "database" {
       [AppDatabase]
-      [StoryCacheRepository]
+      [LocalAuthRepository]
+      [LocalStoryRepository]
+      [LocalGamificationRepository]
+      [LocalLibraryRepository]
       [OfflineRequestRepository]
       [OfflineUserRepository]
+      [StoryCacheRepository]
       [ReadingProgressRepository]
       [SearchHistoryRepository]
+    }
+    package "debug" {
+      [DebugLog]
+    }
+    package "navigation" {
+      [AppRouter]
+      [MainShell]
+      [AppDeepLink]
+      [AuthPageRoute]
     }
     package "network" {
       [ApiClient]
       [AuthInterceptor]
+      [RetryInterceptor]
       [ConnectivityService]
       [OfflineSyncManager]
+      [AppError]
       [HttpUtils]
     }
     package "offline" {
       [OfflineProvider]
+      [OfflineFeature]
       [OfflineErrorBuffer]
     }
     package "providers" {
       [DatabaseProviders]
-      [SettingsProviders]
+      [OnboardingProvider]
     }
     package "theme" {
       [AppColors]
       [AppTheme]
       [AppTypography]
+    }
+    package "widgets" {
+      [BrandWidgets]
+      [GriotImage]
+      [GriotLoader]
+      [AuthFormWidgets]
     }
   }
 
@@ -60,6 +82,8 @@ package "Flutter Client" {
       [AuthWrapper]
       [AuthProvider]
       [AuthRepository]
+      [ServerAuthRepository]
+      [LocalAuthRepository]
     }
     package "home" {
       [HomeScreen]
@@ -96,15 +120,30 @@ package "Flutter Client" {
     }
     package "gamification" {
       [GamificationScreen]
+      [QuizScreen]
       [QuizPlayerWidget]
       [BadgeCard]
       [GamificationApiService]
     }
     package "sharing" {
-      [ShareButton]
+      [ShareSheet]
       [QuoteCard]
-      [TrendingStoriesWidget]
       [SharingService]
+    }
+    package "settings" {
+      [SettingsScreen]
+      [WhatsAppFeedbackService]
+    }
+    package "artifacts" {
+      [ArtifactsScreen]
+      [ArtifactCard]
+      [ArtifactsProvider]
+    }
+    package "discover" {
+      [RegionStoryScreen]
+      [RegionCard]
+      [RegionProvider]
+      [RegionModel]
     }
     package "admin" {
       [AdminDashboardScreen]
@@ -123,7 +162,8 @@ package "Django REST API" {
     [UserRole]
     [RegisterView]
     [MeView]
-    [TokenObtainPairView]
+    [AuthTokenRefreshView]
+    [CustomTokenObtainPairView]
   }
   package "stories" {
     [Story]
@@ -138,7 +178,7 @@ package "Django REST API" {
   package "qr_codes" {
     [Artifact]
     [QRCodeScan]
-    [QRGenerator]
+    [QRCodeGenerator]
   }
   package "gamification" {
     [Quiz]
@@ -152,15 +192,35 @@ package "Django REST API" {
   package "media_app" {
     [VideoGenerationJob]
     [AudioNarrationJob]
-    [LumaAiService]
+    [LumaAIService]
     [TtsService]
+    [BlurhashUtils]
   }
   package "api" {
     [HealthViews]
+    [AdminUsersListView]
     [AnalyticsViews]
     [JsonFormatter]
     [RequestLogMiddleware]
-    [SeedCommands]
+    [SeedAllCommand]
+  }
+  package "web" {
+    [WebViews]
+    [WebActions]
+    [WebServices]
+    [WebTemplates]
+  }
+}
+
+' ─── Crawler (ingestion tool) ─────────────────────────
+package "Crawler (ingestion tool)" {
+  package "crawler" {
+    [Config]
+    [Session]
+    [Utils]
+    [Extractors]
+    [Images]
+    [Runner]
   }
 }
 
@@ -169,28 +229,34 @@ package "External Services" {
   [LumaAiAPI]
   [TTSProvider]
   [Sentry]
+  [WhatsApp]
 }
 
-' ─── Dependencies ─────────────────────────────────────
-' Frontend internal
+' ─── Frontend dependencies ────────────────────────────
 core ..> features : used by
-features.auth ..> core.network : HTTP
-features.stories ..> core.network : HTTP
-features.library ..> core.network : HTTP
-features.qr_scanner ..> core.network : HTTP
-features.audio ..> core.network : HTTP
-features.video ..> core.network : HTTP
-features.gamification ..> core.network : HTTP
-features.sharing ..> core.network : HTTP
-features.admin ..> core.network : HTTP
+features.auth ..> core.network : online-first (JWT via ApiClient)
+features.stories ..> core.network : online-first + SQLite mirror
+features.library ..> core.database : LOCAL SQLite facade
+features.qr_scanner ..> core.network : API lookup + record scan
+features.audio ..> core.network : /api/media/audio + status
+features.audio ..> core.database : offline audio cache
+features.video ..> core.network : /api/media/videos + status
+features.gamification ..> core.database : LOCAL SQLite facade
+features.sharing ..> core.network : /api/stories/{slug}/share
+features.admin ..> core.network : /api/analytics/*
+features.artifacts ..> core.network : /api/artifacts
+features.discover ..> core.network : /api/categories
+features.settings ..> WhatsApp : wa.me chat (url_launcher)
 core.network ..> core.database : offline queue
+core.offline ..> Sentry : error reporting (client)
 
-' Client to Server
+' ─── Client to Server ─────────────────────────────────
 core.network ..> "Django REST API" : HTTPS
 
-' External
-media_app ..> LumaAiAPI : REST
-media_app ..> TTSProvider : REST
-core.offline ..> Sentry : error reporting
+' ─── Backend / external ───────────────────────────────
+media_app ..> LumaAiAPI : REST (mock if no LUMA_API_KEY)
+media_app ..> TTSProvider : gTTS (no key required)
+crawler ..> "external site" : discover-cameroon.com
+crawler ..> "Django REST API" : import_crawl_data → Artifact
 
 @enduml

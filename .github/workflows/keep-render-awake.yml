@@ -1,0 +1,32 @@
+name: Keep Render backend awake
+
+# The backend runs on Render's free tier, which sleeps after ~15 minutes of
+# inactivity and can take 30-60+ seconds to cold-start. That cold start exceeds
+# the mobile/web clients' request timeouts, so the first login/sign-up attempts
+# each morning fail with "server unreachable". Pinging the cheap health
+# endpoint every 5 minutes keeps the service warm (Render counts any request as
+# activity), so users never hit a cold start during the day.
+#
+# Free tier: the repo is public, so GitHub Actions minutes for scheduled
+# workflows cost nothing. 288 pings/day against /api/health/ is well under
+# Render's free egress limits.
+#
+# To stop the pings: delete this file, or disable the workflow in
+# GitHub > Actions.
+
+on:
+  schedule:
+    # Every 5 minutes (GitHub Actions minimum) — 5 < 15-minute sleep window.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Griot backend health endpoint
+        run: |
+          curl -fsS --max-time 90 "https://griot-backend-7ie7.onrender.com/api/health/" >/dev/null

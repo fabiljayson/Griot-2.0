@@ -1,0 +1,56 @@
+sequenceDiagram
+    title Story Reading & Progress Tracking (online-first + mirror)
+
+    participant U as User
+    participant SS as StoriesScreen
+    participant SD as StoryDetailScreen
+    participant SR as StoryRepository
+    participant API as Django REST API
+    participant LSR as LocalStoryRepository (SQLite mirror)
+    participant Cache as Story Cache
+
+    U->>SS: Open Stories (online)
+    SS->>SR: fetchStories()
+    SR->>API: GET /api/stories/
+    API-->>SR: Stories list
+    SR->>LSR: Upsert all rows (slug-keyed mirror)
+    LSR-->>SR: Mirror updated
+    SR-->>SS: Display stories
+    U->>SS: Tap story card
+
+    SS->>SD: Navigate to StoryDetail
+    SD->>SR: fetchStory(slug)
+    SR->>API: GET /api/stories/{slug}/
+    API-->>SR: Story detail
+    API->>API: Increment view_count
+    SR->>LSR: Upsert story cover/content
+    SR-->>SD: Display story content
+    SD->>U: Render Markdown content
+
+    Note over U,Cache: === Offline: last synced mirror served ===
+
+    U->>SS: Open Stories (offline)
+    SS->>SR: fetchStories()
+    SR->>API: GET /api/stories/ — connection fails
+    SR->>LSR: Read mirror from SQLite
+    LSR-->>SR: Cached stories (never-overwritten local data)
+    SR-->>SS: Display stories from mirror
+    U->>SD: Open saved story
+    SD->>Cache: getFromCache(storyId)
+    Cache-->>SD: Cached story content
+    SD->>U: Display from cache
+
+    Note over U,Cache: === Reading Progress (local-first, best-effort sync) ===
+
+    U->>SD: Scroll down (25%)
+    SD->>SR: updateProgress(slug, 25%)
+    SR->>SR: Write to local ReadingProgressRepository
+    SR->>API: POST /api/stories/{slug}/progress/ (best-effort)
+    API-->>SR: Progress saved
+
+    U->>SD: Bookmark story
+    SD->>SR: toggleBookmark(slug)
+    SR->>SR: Optimistic local write
+    SR->>API: POST /api/stories/{slug}/bookmark/
+    API-->>SR: {bookmarked: true}
+    SR-->>SD: Update UI

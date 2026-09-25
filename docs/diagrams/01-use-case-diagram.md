@@ -2,6 +2,8 @@
 
 > **Reconciled with the implementation on 2026-09-22.** The diagram and tables
 > below now describe *verified* behavior rather than the original intent.
+> **Updated 2026-09-23** for the `settings` (WhatsApp feedback) and admin
+> platform-users features ([Added](#added-2026-09-23)).
 > Everything that changed, and every place where the implementation still
 > looks wrong, is recorded in [Divergences](#divergences-from-the-original-document).
 
@@ -90,8 +92,13 @@ useCaseDiagram
         usecase "View Quote Card" as UC_QUOTE
     }
 
+    package "Settings" {
+        usecase "Send Feedback (WhatsApp)" as UC_FEEDBACK
+    }
+
     package "Admin" {
         usecase "View Analytics Dashboard" as UC_ANALYTICS
+        usecase "View Platform Users" as UC_PLATFORM_USERS
         usecase "Moderate Content" as UC_MODERATE
         usecase "View Moderation Queue" as UC_MOD_QUEUE
         usecase "Resolve Flags" as UC_RESOLVE
@@ -152,6 +159,7 @@ useCaseDiagram
     Visitor --> UC_READ_OFFLINE
     Visitor --> UC_OFFLINE_AUDIO
     Visitor --> UC_GEN_GUIDE
+    Visitor --> UC_FEEDBACK
     Visitor --> UC_DEL_ACC
 
     Contributor --|> Visitor
@@ -169,10 +177,12 @@ useCaseDiagram
     InstitutionManager --> UC_MOD_QUEUE
     InstitutionManager --> UC_RESOLVE
     InstitutionManager --> UC_ANALYTICS
+    InstitutionManager --> UC_PLATFORM_USERS
 
     Admin --|> InstitutionManager
     Admin --> UC_DEL_STORY
     Admin --> UC_ANALYTICS
+    Admin --> UC_PLATFORM_USERS
     Admin --> UC_DEL_ACC
 ```
 
@@ -214,6 +224,8 @@ useCaseDiagram
 | Save Story Offline | Authenticated | Cache story for offline reading |
 | Read Offline | Authenticated | Read cached content without internet |
 | Sync Pending Requests | System | Replay queued offline requests |
+| Send Feedback (WhatsApp) | Authenticated | Open the developer's WhatsApp chat with a prefilled message via `wa.me` (`WhatsAppFeedbackService`) |
+| View Platform Users | Manager, Admin | List platform users with search (`AdminUsersListView`, `GET /api/analytics/users/list/?search=`) |
 
 ---
 
@@ -267,3 +279,10 @@ decision · **GAP** = documented but not built.
 | 21 | **Mobile video playback** | `VideoStatusBadge` / `VideoPlayerWidget` are referenced only from inside the video feature, so `Watch Video` has no mobile surface. |
 | 22 | **Quote card (web)** | `QuoteCardGenerator` is mobile-only; there is no backend model or web template for `View Quote Card`. |
 | 23 | **Role-aware mobile navigation** | `main_shell.dart` renders the same five destinations for every role. `UserModel.canContribute` existed but was never referenced. |
+
+### ADDED (2026-09-23)
+
+| # | Item | Status |
+|---|---|---|
+| 24 | **Send Feedback (WhatsApp)** | Implemented in `frontend/lib/features/settings/` (`SettingsScreen` + `WhatsAppFeedbackService`). Opens a `wa.me` chat with a prefilled message to the developer contact — no backend endpoint. |
+| 25 | **View Platform Users** | Implemented (`AdminUsersListView`, `GET /api/analytics/users/list/?search=`). Lists every platform account (SQLite + Postgres) with role/status filter; used by the admin dashboard users widget. Gated by `IsAdminOrManager`. |

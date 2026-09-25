@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_fea86a1b9fa34872" name="Griot 2.0 — Authorization classes">
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_d4e76ff80155f9b4" name="IsAuthenticated">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_b34e7355023e687f" name="has_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_3ac824c6b2774990" name="bool" direction="in" />
+    </uml:ownedOperation>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_6f995a0b5aac36e9" name="IsContributorOrAbove">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_da64098601b51e52" name="has_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_82958311ef7088f1" name="bool" direction="in" />
+    </uml:ownedOperation>
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_3e7b480324ee10d3" general="_d4e76ff80155f9b4" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_8a00681865c25fc6" name="IsInstitutionManagerOrAbove">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_91ee6deb6b8d5747" name="has_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_8305ab3ae574b3bb" name="bool" direction="in" />
+    </uml:ownedOperation>
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_d7ebd37bc3c73746" general="_d4e76ff80155f9b4" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_9d0985d7d71f2439" name="IsAdminOrManager">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_d1c710d992b746f0" name="has_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_bbf66805b4e734ee" name="bool" direction="in" />
+    </uml:ownedOperation>
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_a7b5af69caeb072b" general="_d4e76ff80155f9b4" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_a506bde5b28a237f" name="IsAuthenticatedOrReadOnly">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_63a2b23941f6fbb2" name="has_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_858b780aa10649f1" name="bool" direction="in" />
+    </uml:ownedOperation>
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_31e74ad621950303" general="_d4e76ff80155f9b4" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_54ae2ebb8f57c629" name="IsStoryOwnerOrReadOnly">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_773567ee57cb5ed6" name="has_object_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_1e3d601be4edb26f" name="bool" direction="in" />
+    </uml:ownedOperation>
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_93553b26a6f1a2d4" general="_d4e76ff80155f9b4" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_0ced1129fe6703e8" name="IsOwnerOrReadOnly">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_8d611d46e1e1c872" name="has_object_permission">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_3d44149c7137896d" name="bool" direction="in" />
+    </uml:ownedOperation>
+    <uml:generalization xmi:type="uml:Generalization" xmi:id="_85f35685f971916f" general="_d4e76ff80155f9b4" />
+  </uml:packagedElement>
+  <uml:ownedComment xmi:type="uml:Comment" xmi:id="_b95bd8e20470cf20" body="Implemented gate is WIDER than the\ndocumented Admin-only rule for analytics.">
+    <uml:annotatedElement xmi:idref="_9d0985d7d71f2439" />
+  </uml:ownedComment>
+</uml:Model>

@@ -1,0 +1,149 @@
+flowchart TB
+    subgraph "Flutter Client Application"
+        direction TB
+
+        subgraph "UI Layer"
+            Screens["Screens<br/>(Login, Home, Stories,<br/>StoryDetail, Library,<br/>QR Scanner, Gamification,<br/>Admin Dashboard)"]
+            Widgets["Reusable Widgets<br/>(StoryCard, BadgeCard,<br/>QuizPlayer, AudioPlayer,<br/>VideoPlayer, ShareButton)"]
+        end
+
+        subgraph "State Management"
+            Riverpod["Riverpod Providers<br/>(Auth, Story, Library,<br/>Gamification, Admin,<br/>Audio, Video, QR)"]
+        end
+
+        subgraph "Feature Services"
+            AuthSvc["AuthService<br/>(Online-first JWT login,<br/>offline fallback)"]
+            StorySvc["StoryService<br/>(CRUD, Search,<br/>Bookmarks, Likes; mirror)"]
+            LibrarySvc["LibraryService<br/>(Continue Reading,<br/>Recently Read) — SQLite"]
+            GamificationSvc["GamificationService<br/>(Quizzes, Badges) — SQLite"]
+            QRSvc["QRService<br/>(Scanner, Artifact Lookup)"]
+            AudioSvc["AudioService<br/>(TTS Playback,<br/>Offline Audio)"]
+            VideoSvc["VideoService<br/>(Generation, Polling,<br/>Playback)"]
+            ShareSvc["SharingService<br/>(Social Share,<br/>Quote Cards)"]
+            AdminSvc["AdminService<br/>(Analytics, Users List,<br/>Moderation)"]
+            ArtifactsSvc["ArtifactsService<br/>(Catalogue browse)"]
+            DiscoverSvc["DiscoverService<br/>(Region stories)"]
+            SettingsSvc["SettingsService<br/>(WhatsApp feedback)"]
+        end
+
+        subgraph "Core Infrastructure"
+            APIClient["ApiClient<br/>(Dio + Interceptors)"]
+            AuthInterceptor["AuthInterceptor<br/>(Bearer Token,<br/>Auto-Refresh)"]
+            OfflineInterceptor["OfflineQueueInterceptor<br/>(Request Queuing)"]
+            ConnectivitySvc["ConnectivityService<br/>(Online/Offline<br/>Detection)"]
+            OfflineSync["OfflineSyncManager<br/>(Background Sync)"]
+            LocalDB["AppDatabase<br/>(SQLite / IndexedDB)"]
+            CacheRepos["Cache Repositories<br/>(Story, ReadingProgress,<br/>SearchHistory, Offline)"]
+        end
+    end
+
+    subgraph "Django REST Framework API"
+        direction TB
+
+        subgraph "Authentication"
+            JWTAuth["SimpleJWT<br/>(Token Obtain,<br/>Refresh, Blacklist)"]
+            RolePerms["Role-Based Permissions<br/>(IsContributorOrAbove,<br/>IsAdminOrManager)"]
+            Throttling["Rate Throttling<br/>(auth: 5/min ·<br/>anon: 120/min · user: 600/min)"]
+        end
+
+        subgraph "Business Logic"
+            UserMgmt["User Management<br/>(Register, Profile,<br/>Delete Account)"]
+            StoryEngine["Story Engine<br/>(CRUD, Search,<br/>Categories, Feeds)"]
+            ContentMod["Content Moderation<br/>(Flag, Review,<br/>Resolve)"]
+            QRModule["QR Code Module<br/>(Artifacts, QR Gen,<br/>Scan Tracking)"]
+            GameEngine["Gamification Engine<br/>(Quizzes, Badges,<br/>XP, Certificates)"]
+            MediaEngine["Media Engine<br/>(AI Video, TTS)"]
+            AnalyticsEngine["Analytics Engine<br/>(Dashboard, Metrics,<br/>Engagement)"]
+        end
+
+        subgraph "Infrastructure"
+            HealthCheck["Health Probes<br/>(Liveness, Readiness,<br/>Metrics)"]
+            StructLog["Structured Logging<br/>(JSON Formatter,<br/>Request Middleware)"]
+            SeedCmds["Seed Commands<br/>(Users, Stories, QR,<br/>Gamification)"]
+        end
+    end
+
+    subgraph "External Services"
+        LumaAI["🎬 Luma AI<br/>Dream Machine<br/>(Video Generation)"]
+        TTSProvider["🔊 Google TTS via gTTS<br/>(Text-to-Speech,<br/>no API key)"]
+        SentryMonitor["🐛 Sentry<br/>(Error Monitoring,<br/>DSN-gated)"]
+        WhatsApp["💬 WhatsApp<br/>(feedback wa.me link)"]
+    end
+
+    subgraph "Data Layer"
+        SQLite["SQLite<br/>(db.sqlite3 — dev / local)"]
+        PostgreSQL["PostgreSQL 16<br/>(Render griot-db — prod)"]
+        Crawler["Crawler (ingestion)<br/>discover-cameroon.com<br/>→ cameroon_content.json<br/>→ import_crawl_data"]
+        MediaStorage["Media<br/>(Django /media/ on<br/>Render disk / local)"]
+    end
+
+    %% ─── Client Internal Connections ───────────────────
+    Screens --> Widgets
+    Screens --> Riverpod
+    Widgets --> Riverpod
+    Riverpod --> AuthSvc
+    Riverpod --> StorySvc
+    Riverpod --> LibrarySvc
+    Riverpod --> GamificationSvc
+    Riverpod --> QRSvc
+    Riverpod --> AudioSvc
+    Riverpod --> VideoSvc
+    Riverpod --> ShareSvc
+    Riverpod --> AdminSvc
+    Riverpod --> ArtifactsSvc
+    Riverpod --> DiscoverSvc
+    Riverpod --> SettingsSvc
+
+    AuthSvc --> APIClient
+    StorySvc --> APIClient
+    LibrarySvc --> LocalDB
+    GamificationSvc --> LocalDB
+    QRSvc --> APIClient
+    AudioSvc --> APIClient
+    VideoSvc --> APIClient
+    ShareSvc --> APIClient
+    AdminSvc --> APIClient
+    ArtifactsSvc --> APIClient
+    DiscoverSvc --> APIClient
+    SettingsSvc --> WhatsApp
+
+    APIClient --> AuthInterceptor
+    APIClient --> OfflineInterceptor
+    AuthInterceptor --> APIClient
+    OfflineInterceptor --> ConnectivitySvc
+    ConnectivitySvc --> OfflineSync
+    OfflineSync --> APIClient
+    APIClient --> LocalDB
+    LocalDB --> CacheRepos
+
+    %% ─── Client to Server ─────────────────────────────
+    APIClient -- "HTTPS/JSON" --> JWTAuth
+
+    %% ─── Server Internal Connections ──────────────────
+    JWTAuth --> RolePerms
+    JWTAuth --> Throttling
+
+    UserMgmt --> JWTAuth
+    StoryEngine --> RolePerms
+    ContentMod --> RolePerms
+    QRModule --> RolePerms
+    GameEngine --> RolePerms
+    MediaEngine --> RolePerms
+    AnalyticsEngine --> RolePerms
+
+    StoryEngine --> SQLite
+    QRModule --> SQLite
+    GameEngine --> SQLite
+    MediaEngine --> SQLite
+    AnalyticsEngine --> SQLite
+    QRModule --> Crawler : import_crawl_data
+
+    StoryEngine --> MediaStorage
+    QRModule --> MediaStorage
+    Crawler --> MediaStorage
+
+    %% ─── External Services ────────────────────────────
+    MediaEngine --> LumaAI
+    MediaEngine --> TTSProvider
+    APIClient -- "Sentry (client)" --> SentryMonitor
+    AnalyticsEngine --> SentryMonitor

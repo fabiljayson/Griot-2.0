@@ -1,0 +1,192 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_987c855011eab566" name="Gamification — Local Quiz Take &amp; Grading Flow">
+  <uml:packagedElement xmi:type="uml:Interaction" xmi:id="_604d9f26a659d226" name="Gamification — Local Quiz Take &amp; Grading Flow">
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_9bfb5b30439f77d3" name="User" interaction="_604d9f26a659d226" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_8adf76d5075024d8" name="GamificationScreen" interaction="_604d9f26a659d226" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_6feb2168462b2821" name="QuizPlayerWidget" interaction="_604d9f26a659d226" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_19154522055539dd" name="GamificationApiService" interaction="_604d9f26a659d226" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_6dc9fd10372fadc7" name="LocalGamificationRepository (SQLite)" interaction="_604d9f26a659d226" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_c5e4093f189370d7" name="Local Database" interaction="_604d9f26a659d226" />
+    <uml:message xmi:type="uml:Message" xmi:id="_7d93a1061125b5bb" name="Open Gamification" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_71e904688fcb557f" />
+      <uml:receiveEvent xmi:idref="_a1f7a6b4d2b04d6f" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_677936d971b7141b" name="fetchQuizzes()" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_37dc61b39c5067aa" />
+      <uml:receiveEvent xmi:idref="_44aa5757b92fdd4d" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_69c41b41b9fff434" name="listQuizzes()" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_24b87134e0c5b9f7" />
+      <uml:receiveEvent xmi:idref="_2783f0d6f31c667a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a5fd5d4c88145d7d" name="SELECT from quizzes" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_fd29e2e7cb910790" />
+      <uml:receiveEvent xmi:idref="_09a84f3b591da0b4" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_611ada94a2d875d7" name="Seeded quiz rows" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_f742cb708d4e6dd2" />
+      <uml:receiveEvent xmi:idref="_5143a35a9f456e69" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_fa7902b75ab5a16e" name="Quiz list" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_d8c26b37799724cf" />
+      <uml:receiveEvent xmi:idref="_04c5cbddb150699a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_60feb2099a4db4f9" name="Display quizzes" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_0f6528ccc3d2ec58" />
+      <uml:receiveEvent xmi:idref="_d8b2f7e645f1a953" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_5d7a9394eaf9121d" name="Select a quiz" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_c4874e6ce1e8c03d" />
+      <uml:receiveEvent xmi:idref="_061c52b675834346" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_d5b7afaf98d54f54" name="Start QuizPlayer" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_6e84afb4151308dc" />
+      <uml:receiveEvent xmi:idref="_0a440c447daa5e45" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_426fe194d1ccb799" name="startQuiz(quizId)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_11c797ca0574bbaf" />
+      <uml:receiveEvent xmi:idref="_e4e091d8d3bc9f92" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_7226391d39f008dd" name="loadQuestions(quizId)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_0d408517347ecde2" />
+      <uml:receiveEvent xmi:idref="_2c2cbe99bad132f8" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_dc6a8c13a035c71d" name="SELECT questions" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_54a6031e8e7df31e" />
+      <uml:receiveEvent xmi:idref="_7e1d9856cdf7ba29" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_104784d7bb63a9dc" name="Questions (incl. correct_answer, local only)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_e0730312553d00a9" />
+      <uml:receiveEvent xmi:idref="_16b64324c7da4a1d" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_2b96ce1c66f84513" name="Question list" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_e018025f127b97fd" />
+      <uml:receiveEvent xmi:idref="_558a23e837e89c07" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_5d4f645c476c7a5f" name="Display first question" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_a40addaea1ea5e8d" />
+      <uml:receiveEvent xmi:idref="_72f38bce3b0574ad" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_f380fbc5a8de407b" name="Select answer (A/B/C/D)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_09d6e2f3f38ee519" />
+      <uml:receiveEvent xmi:idref="_cfa195ce6b9b72be" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_00ebac31ea3b56ca" name="submitAnswer(question, option)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_c5850a4f60ddf655" />
+      <uml:receiveEvent xmi:idref="_02f765554f193c30" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_15b1dd143cff231f" name="Compare with correct_answer (local)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_19971b61a5101ccf" />
+      <uml:receiveEvent xmi:idref="_f84f3072f0be0689" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a57d5d745dbebdb2" name="{is_correct, explanation}" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_d50bb2d97de65bfa" />
+      <uml:receiveEvent xmi:idref="_9e2573f41783451b" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_8e4f5ebe3962467b" name="Display feedback" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_63da7b8735b93a88" />
+      <uml:receiveEvent xmi:idref="_35e4dff6c189a904" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_69844e70fac6abbe" name="Tap &quot;Finish Quiz&quot;" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_7d59c4a84d26559e" />
+      <uml:receiveEvent xmi:idref="_368c17bf22433c0a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_49ea0e5db2e4405f" name="finishQuiz(quizId)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_6bb68f5a4adfe3d0" />
+      <uml:receiveEvent xmi:idref="_87a700f1cbff2918" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_214b549beff0cbb2" name="recordAttempt(score, result)" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_d9a1e1ac4185fd1c" />
+      <uml:receiveEvent xmi:idref="_aa1e0244cba0f996" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_46d3a01bcdd7161b" name="upsert into attempts table" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_fda45b91395c4bec" />
+      <uml:receiveEvent xmi:idref="_99ca260d6af27705" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_7cabf98d5ab1b708" name="Attempt saved locally" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_c51c59221a614248" />
+      <uml:receiveEvent xmi:idref="_49b1ba9fa210a11a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_21893d8c9cafcfb5" name="Result" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_3f86a46d5b425c54" />
+      <uml:receiveEvent xmi:idref="_d40010ede328e079" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_67b1477a48cd0cdd" name="Display score" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_34dfc86ce060effb" />
+      <uml:receiveEvent xmi:idref="_b42a925441620888" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_6ebd6467a2178119" name="Show results screen" messageSort="synchCall" interaction="_604d9f26a659d226">
+      <uml:sendEvent xmi:idref="_c2c2f0073fafb7b2" />
+      <uml:receiveEvent xmi:idref="_315fc9edb616b2f4" />
+    </uml:message>
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_71e904688fcb557f" covered="_9bfb5b30439f77d3" message="_7d93a1061125b5bb" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_a1f7a6b4d2b04d6f" covered="_8adf76d5075024d8" message="_7d93a1061125b5bb" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_37dc61b39c5067aa" covered="_8adf76d5075024d8" message="_677936d971b7141b" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_44aa5757b92fdd4d" covered="_19154522055539dd" message="_677936d971b7141b" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_24b87134e0c5b9f7" covered="_19154522055539dd" message="_69c41b41b9fff434" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_2783f0d6f31c667a" covered="_6dc9fd10372fadc7" message="_69c41b41b9fff434" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_fd29e2e7cb910790" covered="_6dc9fd10372fadc7" message="_a5fd5d4c88145d7d" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_09a84f3b591da0b4" covered="_c5e4093f189370d7" message="_a5fd5d4c88145d7d" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f742cb708d4e6dd2" covered="_c5e4093f189370d7" message="_611ada94a2d875d7" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_5143a35a9f456e69" covered="_6dc9fd10372fadc7" message="_611ada94a2d875d7" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_d8c26b37799724cf" covered="_6dc9fd10372fadc7" message="_fa7902b75ab5a16e" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_04c5cbddb150699a" covered="_19154522055539dd" message="_fa7902b75ab5a16e" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_0f6528ccc3d2ec58" covered="_19154522055539dd" message="_60feb2099a4db4f9" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_d8b2f7e645f1a953" covered="_8adf76d5075024d8" message="_60feb2099a4db4f9" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c4874e6ce1e8c03d" covered="_9bfb5b30439f77d3" message="_5d7a9394eaf9121d" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_061c52b675834346" covered="_8adf76d5075024d8" message="_5d7a9394eaf9121d" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6e84afb4151308dc" covered="_8adf76d5075024d8" message="_d5b7afaf98d54f54" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_0a440c447daa5e45" covered="_6feb2168462b2821" message="_d5b7afaf98d54f54" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_11c797ca0574bbaf" covered="_6feb2168462b2821" message="_426fe194d1ccb799" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e4e091d8d3bc9f92" covered="_19154522055539dd" message="_426fe194d1ccb799" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_0d408517347ecde2" covered="_19154522055539dd" message="_7226391d39f008dd" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_2c2cbe99bad132f8" covered="_6dc9fd10372fadc7" message="_7226391d39f008dd" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_54a6031e8e7df31e" covered="_6dc9fd10372fadc7" message="_dc6a8c13a035c71d" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7e1d9856cdf7ba29" covered="_c5e4093f189370d7" message="_dc6a8c13a035c71d" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e0730312553d00a9" covered="_c5e4093f189370d7" message="_104784d7bb63a9dc" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_16b64324c7da4a1d" covered="_6dc9fd10372fadc7" message="_104784d7bb63a9dc" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e018025f127b97fd" covered="_6dc9fd10372fadc7" message="_2b96ce1c66f84513" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_558a23e837e89c07" covered="_19154522055539dd" message="_2b96ce1c66f84513" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_a40addaea1ea5e8d" covered="_19154522055539dd" message="_5d4f645c476c7a5f" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_72f38bce3b0574ad" covered="_6feb2168462b2821" message="_5d4f645c476c7a5f" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:CombinedFragment" xmi:id="_53a1d87db56467cb" interactionOperator="loop" enclosingInteraction="_604d9f26a659d226">
+      <uml:operand xmi:type="uml:InteractionOperand" xmi:id="_540598034ff80e03">
+        <uml:guard xmi:type="uml:InteractionConstraint" xmi:id="_8f761b703abf5fc5">
+          <uml:specification xmi:type="uml:LiteralString" xmi:id="_9e5acd5aa8636993" value="For each question" />
+        </uml:guard>
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_09d6e2f3f38ee519" covered="_9bfb5b30439f77d3" message="_f380fbc5a8de407b" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_cfa195ce6b9b72be" covered="_6feb2168462b2821" message="_f380fbc5a8de407b" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c5850a4f60ddf655" covered="_6feb2168462b2821" message="_00ebac31ea3b56ca" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_02f765554f193c30" covered="_19154522055539dd" message="_00ebac31ea3b56ca" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_19971b61a5101ccf" covered="_19154522055539dd" message="_15b1dd143cff231f" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f84f3072f0be0689" covered="_19154522055539dd" message="_15b1dd143cff231f" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_d50bb2d97de65bfa" covered="_19154522055539dd" message="_a57d5d745dbebdb2" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_9e2573f41783451b" covered="_6feb2168462b2821" message="_a57d5d745dbebdb2" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_63da7b8735b93a88" covered="_6feb2168462b2821" message="_8e4f5ebe3962467b" enclosingInteraction="_604d9f26a659d226" />
+        <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_35e4dff6c189a904" covered="_9bfb5b30439f77d3" message="_8e4f5ebe3962467b" enclosingInteraction="_604d9f26a659d226" />
+      </uml:operand>
+    </uml:fragment>
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7d59c4a84d26559e" covered="_9bfb5b30439f77d3" message="_69844e70fac6abbe" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_368c17bf22433c0a" covered="_6feb2168462b2821" message="_69844e70fac6abbe" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6bb68f5a4adfe3d0" covered="_6feb2168462b2821" message="_49ea0e5db2e4405f" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_87a700f1cbff2918" covered="_19154522055539dd" message="_49ea0e5db2e4405f" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_d9a1e1ac4185fd1c" covered="_19154522055539dd" message="_214b549beff0cbb2" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_aa1e0244cba0f996" covered="_6dc9fd10372fadc7" message="_214b549beff0cbb2" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_fda45b91395c4bec" covered="_6dc9fd10372fadc7" message="_46d3a01bcdd7161b" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_99ca260d6af27705" covered="_c5e4093f189370d7" message="_46d3a01bcdd7161b" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c51c59221a614248" covered="_c5e4093f189370d7" message="_7cabf98d5ab1b708" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_49b1ba9fa210a11a" covered="_6dc9fd10372fadc7" message="_7cabf98d5ab1b708" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_3f86a46d5b425c54" covered="_6dc9fd10372fadc7" message="_21893d8c9cafcfb5" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_d40010ede328e079" covered="_19154522055539dd" message="_21893d8c9cafcfb5" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_34dfc86ce060effb" covered="_19154522055539dd" message="_67b1477a48cd0cdd" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b42a925441620888" covered="_6feb2168462b2821" message="_67b1477a48cd0cdd" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c2c2f0073fafb7b2" covered="_6feb2168462b2821" message="_6ebd6467a2178119" enclosingInteraction="_604d9f26a659d226" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_315fc9edb616b2f4" covered="_9bfb5b30439f77d3" message="_6ebd6467a2178119" enclosingInteraction="_604d9f26a659d226" />
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_f66a7e875359aeb6" body="=== Answer Questions (local grading) ===">
+      <uml:annotatedElement xmi:idref="_9bfb5b30439f77d3" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_3ba6146a8ea817fe" body="=== Finish &amp; Grade (local) ===">
+      <uml:annotatedElement xmi:idref="_9bfb5b30439f77d3" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

@@ -38,14 +38,18 @@ flowchart LR
     SP -- "15. story data" --> SD
     SD -- "16. render content" --> U
 
-    SD -- "17. cache story" --> DB
+    SD -- "17. upsert into SQLite mirror" --> DB
     U -- "18. scroll 50%" --> SD
     SD -- "19. updateProgress(50%)" --> SP
-    SP -- "20. POST /stories/{slug}/progress/" --> AC
+    SP -- "20. local-first + best-effort POST /stories/{slug}/progress/" --> AC
     AC --> SV
 ```
 
 ## 2. Authentication Communication
+
+> **Updated 2026-09-23:** login is **online-first** (`AuthRepository` →
+> `ServerAuthRepository`); the local SQLite/secure-storage session is only the
+> offline fallback.
 
 ```mermaid
 flowchart LR
@@ -53,26 +57,33 @@ flowchart LR
         U["User"]
         LS["LoginScreen"]
         AR["AuthRepository"]
+        SR["ServerAuthRepository"]
+        LA["LocalAuthRepository (offline fallback)"]
         AC["ApiClient"]
         AW["AuthWrapper"]
         HS["HomeScreen"]
     end
 
     subgraph "Backend API"
-        TV["TokenObtainPairView"]
+        TV["CustomTokenObtainPairView"]
         RV["RegisterView"]
         MV["MeView"]
     end
 
     U -- "1. enter credentials" --> LS
     LS -- "2. login(user, pass)" --> AR
-    AR -- "3. POST /api/auth/token/" --> AC
-    AC -- "4. credentials" --> TV
-    TV -- "5. JWT {access, refresh}" --> AR
-    AR -- "6. store tokens" --> AR
-    AR -- "7. AuthState.authenticated" --> AW
-    AW -- "8. rebuild" --> HS
-    HS -- "9. show home" --> U
+    AR -- "3. online-first" --> SR
+    SR -- "4. POST /api/auth/token/" --> AC
+    AC -- "5. credentials" --> TV
+    TV -- "6. JWT {access, refresh} (30m / 7d)" --> SR
+    SR -- "7. TokenPair" --> AR
+    AR -- "8. store tokens in secure storage" --> AR
+    AR -- "9. AuthState.authenticated" --> AW
+    AW -- "10. rebuild" --> HS
+    HS -- "11. show home" --> U
+
+    AR -. "API unreachable → fall back locally" .-> LA
+    LA -. "offline session (no JWT)" .-> AW
 ```
 
 ## 3. Offline Queue Communication

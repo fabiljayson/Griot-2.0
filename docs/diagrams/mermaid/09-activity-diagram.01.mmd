@@ -1,0 +1,50 @@
+flowchart TD
+    Start([User opens app]) --> AuthCheck{AuthWrapper<br/>checks tokens}
+
+    AuthCheck -->|No tokens| LoginScreen[Show LoginScreen]
+    AuthCheck -->|Valid tokens| HomeScreen[Show HomeScreen]
+
+    LoginScreen --> HasAccount{Has account?}
+
+    HasAccount -->|Yes| EnterCreds[Enter credentials]
+    HasAccount -->|No| TapRegister[Tap "Create account"]
+
+    TapRegister --> FillForm[Fill registration form<br/>username, email, password]
+    FillForm --> ValidateForm{Form valid?}
+
+    ValidateForm -->|No| ShowErrors[Show validation errors]
+    ShowErrors --> FillForm
+
+    ValidateForm -->|Yes| OnlineNow{Online?}
+    OnlineNow -->|Yes| SubmitReg[POST /api/auth/register/<br/>via ServerAuthRepository]
+    OnlineNow -->|No| QueueReg[Queue registration<br/>offline_requests<br/>AuthStatus → pendingSync]
+    QueueReg --> ShowQueued[Show "Account saved —<br/>will sync when online"]
+    ShowQueued --> HomeScreen
+
+    SubmitReg --> RegSuccess{Registration<br/>successful?}
+
+    RegSuccess -->|No| ShowRegError[Show error message]
+    ShowRegError --> FillForm
+
+    RegSuccess -->|Yes| AutoLogin[Auto-login with credentials]
+    AutoLogin --> StoreTokens[Store JWT tokens<br/>access + refresh (local)]
+
+    EnterCreds --> AuthOnline{Online?}
+    AuthOnline -->|Yes| ValidateCreds[POST /api/auth/token/]
+    AuthOnline -->|No| AuthFallback[LocalAuthRepository etc.<br/>serve cached session<br/>(AuthStatus → pendingSync)]
+    AuthFallback --> StoreTokens
+
+    ValidateCreds --> CredsValid{Credentials<br/>valid?}
+
+    CredsValid -->|No| ShowLoginError[Show error message]
+    ShowLoginError --> EnterCreds
+
+    CredsValid -->|Yes| StoreTokens
+
+    StoreTokens --> HomeScreen
+
+    HomeScreen --> Welcome{First time?}
+    Welcome -->|Yes| ShowTour[Show onboarding tour]
+    Welcome -->|No| ShowContent[Show personalized content]
+    ShowTour --> ShowContent
+    ShowContent --> End([App ready])

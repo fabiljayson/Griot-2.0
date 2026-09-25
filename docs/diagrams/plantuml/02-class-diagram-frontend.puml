@@ -11,7 +11,7 @@ skinparam package {
   BorderColor #2E7D32
 }
 
-title Griot 2.0 — Frontend Class Diagram
+title Griot 2.0 — Frontend Class Diagram (reconciled 2026-09-23)
 
 ' ─── Core ─────────────────────────────────────────────
 package "Core" {
@@ -29,6 +29,17 @@ package "Core" {
     -bool _isRefreshing
     +onRequest() void
     +onError() void
+  }
+
+  class RetryInterceptor {
+    -int _maxRetries
+    +onError() void
+  }
+
+  class AppError {
+    <<sealed>>
+    -network / -auth / -validation / -offline / -unknown
+    +AppErrorMapper appErrorFromDio(dioException)
   }
 
   class ConnectivityService {
@@ -58,18 +69,27 @@ package "Core" {
     +onRequest() void
   }
 
+  class OfflineRequestRepository {
+    <<SQLite>>
+    +Queue pending
+    +markInProgress(method, path, body)
+    +markCompleted / markFailed / maxRetries
+  }
+
   ApiClient --> AuthInterceptor : uses
   ApiClient --> OfflineQueueInterceptor : uses
+  ApiClient --> RetryInterceptor : uses
   ApiClient --> ConnectivityService : depends
   OfflineSyncManager --> ConnectivityService : listens
   OfflineSyncManager --> ApiClient : replays requests
   OfflineSyncManager --> OfflineRequestRepository : reads queue
 }
 
-' ─── Auth ─────────────────────────────────────────────
+' ─── Auth (online-first) ──────────────────────────────
 package "Auth" {
-  ' The mobile data layer is local-first: this delegates to SQLite and makes
-  ' NO HTTP calls. Tokens in FlutterSecureStorage are synthetic markers.
+  ' ONLINE-FIRST: when the API is reachable, real JWT pairs are obtained from
+  ' /api/auth/token/ and stored in secure storage so protected endpoints work.
+  ' Offline, the legacy SQLite/secure-storage session is used as fallback.
   class AuthRepository {
     +Future~bool~ isAuthenticated
     +Future~String?~ accessToken
@@ -84,14 +104,25 @@ package "Auth" {
     +Future logout() void
   }
 
+  class ServerAuthRepository {
+    +Future login() TokenPair      ' POST /api/auth/token/
+    +Future getMe() UserModel      ' GET /api/users/me/
+    +Future register() UserModel   ' POST /api/auth/register/
+  }
+
   class LocalAuthRepository {
-    <<SQLite>>
+    <<SQLite + secure storage>>
     +Future~bool~ isAuthenticated
     +Future getMe() UserModel
   }
 
+  class OfflineAuthRepository {
+    +registerQueued() Future       ' queues /api/auth/register/ for replay
+  }
+
   class AuthProvider {
     +AsyncValue authState
+    +AuthStatus status
     +login() Future
     +register() Future
     +logout() void
@@ -115,14 +146,14 @@ package "Auth" {
   }
 
   AuthProvider --> AuthRepository : uses
-  AuthRepository --> LocalAuthRepository : delegates to (no HTTP)
+  AuthRepository --> ServerAuthRepository : online-first (JWT)
+  AuthRepository --> LocalAuthRepository : offline fallback
+  AuthRepository --> OfflineAuthRepository : queues register while offline
   AuthWrapper --> AuthProvider : watches
   AuthInterceptor --> AuthRepository : uses
-  ProfileScreen --> RoleBadge : displays
-  RoleBadge --> UserModel : reads role
 }
 
-' ─── Stories ──────────────────────────────────────────
+' ─── Stories (online-first + mirror) ──────────────────
 package "Stories" {
   class StoryModel {
     +int id
@@ -141,6 +172,13 @@ package "Stories" {
     +bool isBookmarked
   }
 
+  enum StoryListState {
+    Initial
+    InProgress
+    Ready
+    Failure
+  }
+
   class StoryListNotifier {
     +StoryListState state
     +loadStories() Future
@@ -150,8 +188,9 @@ package "Stories" {
   }
 
   class LocalStoryRepository {
-    <<SQLite>>
+    <<SQLite mirror>>
     +Future getStories(...) List~StoryModel~
+    +Future upsertFromApi(...) void
     +Future createStory(...) StoryModel
     +Future updateStory(...) StoryModel
     +Future toggleBookmark(slug) bool
@@ -173,21 +212,25 @@ package "Stories" {
   }
 
   StoryListNotifier --> StoryRepository : uses
-  StoryRepository --> LocalStoryRepository : delegates to (no HTTP)
+  StoryRepository --> LocalStoryRepository : offline mirror (SQLite upsert)
+  StoryListNotifier --> StoryListState : emits
 
-  ' Only these feature services still reach the network, via ApiClient.
+  ' Network reach via ApiClient (story/auth now online-first).
   class ApiClientConsumers {
-    <<feature services>>
-    +admin_api_service -> /api/analytics
-    +audio_api_service -> /api/media
-    +video_api_service -> /api/media
-    +qr_api_service -> /api/artifacts
+    <<feature services/packages>>
+    +admin_api_service -> /api/analytics + /api/stories/moderation_queue/
+    +audio_api_service -> /api/media/audio + status
+    +video_api_service -> /api/media/videos + status
+    +qr_api_service -> /api/artifacts + lookup + scans
     +sharing_service -> /api/stories/{slug}/share
-    +offline_auth_repository -> /api/auth
+    +offline_auth_repository -> /api/auth/register (queued)
+    +story_repository -> /api/stories (online-first mirror)
+    +artifacts_provider -> /api/artifacts
+    +region_provider -> /api/categories (discover)
   }
 }
 
-' ─── Gamification ─────────────────────────────────────
+' ─── Gamification & Library (LOCAL SQLite facades) ────
 package "Gamification" {
   class GamificationScreen {
     +build() Widget
@@ -204,8 +247,159 @@ package "Gamification" {
     +build() Widget
   }
 
+  class GamificationApiService {
+    <<SQLite facade>>
+    +listQuizzes() / getQuiz()
+    +submitAnswer(quiz, question, option) bool
+    +finishQuiz(quiz) int
+    +getLeaderboard() List   ' hardcoded []
+  }
+
+  class LocalGamificationRepository {
+    <<SQLite>>
+  }
+
   GamificationScreen --> QuizPlayerWidget : contains
   GamificationScreen --> BadgeCard : displays
+  GamificationApiService --> LocalGamificationRepository : delegates (no HTTP)
+}
+
+package "Library" {
+  class LibraryApiService {
+    <<SQLite facade>>
+    +getRecentStories() / getBookmarks() / getContinueReading()
+  }
+
+  class LocalLibraryRepository {
+    <<SQLite>>
+  }
+
+  LibraryApiService --> LocalLibraryRepository : delegates (no HTTP)
+}
+
+' ─── Settings / Admin / Artifacts / Discover ──────────
+package "Settings" {
+  class SettingsScreen {
+    +SwitchValue _audioSync
+    +build() Widget
+  }
+
+  class WhatsAppFeedbackService {
+    +openWhatsApp() Future   ' wa.me chat to developer contact
+  }
+
+  SettingsScreen --> WhatsAppFeedbackService : uses
+}
+
+package "Admin" {
+  class AdminApiService {
+    +getDashboardSummary() DashboardSummary
+    +getUsers(search) List~AdminUser~
+    +getModerationQueue() List~ModerationItem~
+    +moderateStory(slug, action, notes) void
+  }
+
+  class AdminUser {
+    +int id
+    +String username
+    +String email
+    +String firstName
+    +String lastName
+    +String role
+    +String roleDisplay
+    +String institution
+    +String dateJoined
+    +bool isActive
+  }
+
+  class DashboardSummary {
+    +UserStats users
+    +StoryStats stories
+    +GamificationStats gamification
+    +QRStats qrCodes
+    +EngagementSummary engagement
+  }
+
+  AdminApiService --> AdminUser : returns
+  AdminApiService --> DashboardSummary : returns
+}
+
+package "Artifacts & Discover" {
+  class ArtifactsProvider {
+    +Future listArtifacts()   ' GET /api/artifacts/
+  }
+
+  class RegionModel {
+    +String slug
+    +String name
+    +String language
+    +String description
+  }
+
+  class RegionProvider {
+    +Future regions() List~RegionModel~   ' GET /api/categories/
+  }
+}
+
+' ─── Audio / Video ────────────────────────────────────
+package "Audio" {
+  class AudioApiService {
+    +generateNarration(storyId) void   ' POST /api/media/audio/
+    +checkStatus(jobId) void           ' GET /api/media/status/audio/{id}/
+  }
+
+  class AudioNarrationNotifier {
+    <<Riverpod>>
+    +play() / pause() / stop()
+  }
+
+  class OfflineAudioService {
+    +cacheAudio() / playCached()
+  }
+}
+
+package "Video" {
+  class VideoApiService {
+    +createJob(storyId, prompt) void
+    +pollStatus(jobId) void
+  }
+
+  class VideoStatusPoller {
+    -Timer _timer
+    +start(jobId) void
+    +dispose() void
+  }
+
+  VideoStatusPoller --> VideoApiService : polls
+}
+
+' ─── Navigation ───────────────────────────────────────
+package "Navigation" {
+  class AppRouter {
+    <<go_router>>
+    +String location
+    +goToStory(slug) void
+    +goToArtifact(slug) void
+    +routeTo(deepLinkKind, slug) void
+  }
+
+  class MainShell {
+    +int currentIndex
+    +destinationCount 5
+    +build() Widget
+  }
+
+  enum AppDeepLink {
+    story
+    artifact
+    quiz
+    profile
+    library
+    scan
+  }
+
+  AppRouter --> AppDeepLink : maps moved URL to route
+  MainShell --> AppRouter : hosts
 }
 
 @enduml

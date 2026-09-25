@@ -1,0 +1,50 @@
+sequenceDiagram
+    title Offline Request Queue → Online Sync Flow
+
+    participant U as User
+    participant App as Flutter App
+    participant CSM as ConnectivityService
+    participant OQI as OfflineQueueInterceptor
+    participant OReqRepo as OfflineRequestRepository
+    participant OSM as OfflineSyncManager
+    participant API as Django REST API
+
+    Note over U,API: === User is Offline ===
+
+    U->>App: Tap "Bookmark Story"
+    App->>OQI: POST /api/stories/{slug}/bookmark/
+    OQI->>CSM: Check connectivity
+    CSM-->>OQI: isOnline = false
+    OQI->>OReqRepo: saveRequest(method, path, body)
+    OReqRepo-->>OQI: Request queued
+    OQI-->>App: 202 Queued response
+    App->>U: "Request queued for offline"
+
+    U->>App: Tap "Like Story"
+    App->>OQI: POST /api/stories/{slug}/like/
+    OQI->>OReqRepo: saveRequest(...)
+    OReqRepo-->>OQI: Queued
+    OQI-->>App: 202 Queued
+
+    Note over U,API: === Connectivity Restored ===
+
+    CSM->>CSM: Connectivity restored!
+    CSM->>OSM: Notify (isOnline = true)
+    OSM->>OReqRepo: getPendingRequests()
+    OReqRepo-->>OSM: [bookmark, like]
+
+    loop For each pending request
+        OSM->>OSM: markInProgress(requestId)
+        OSM->>API: POST /api/stories/{slug}/bookmark/
+        API-->>OSM: 201 Created
+        OSM->>OReqRepo: markCompleted(requestId)
+    end
+
+    loop For each pending request
+        OSM->>API: POST /api/stories/{slug}/like/
+        API-->>OSM: 201 Created
+        OSM->>OReqRepo: markCompleted(requestId)
+    end
+
+    OSM-->>App: Sync complete
+    App->>U: "All pending requests synced"

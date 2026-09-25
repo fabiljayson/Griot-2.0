@@ -1,0 +1,15 @@
+stateDiagram-v2
+    title Quiz Attempt State Machine
+
+    [*] --> InProgress : User starts quiz
+
+    InProgress --> Completed : User finishes\nor all questions answered
+    InProgress --> TimedOut : Time limit exceeded
+    InProgress --> Completed : Auto-submit on\nlast question
+
+    Completed --> [*]
+    TimedOut --> [*]
+
+    note right of InProgress : Answers recorded.\nScore not yet calculated.\nXP not yet awarded.
+    note right of Completed : Score calculated.\nXP awarded if passed.\nBadges checked.
+    note right of TimedOut : Partial score.\nNo XP awarded.\nAttempt recorded.

@@ -1,4 +1,4 @@
-@startuml System Deployment Architecture
+@startuml Griot 2.0 — System Deployment Architecture (reconciled 2026-09-23)
 !theme plain
 skinparam node {
   BackgroundColor #E3F2FD
@@ -18,6 +18,8 @@ skinparam cloud {
 }
 
 title Griot 2.0 — System Deployment Architecture
+' Render Blueprint (render.yaml): griot-backend service + managed Postgres 16.
+' Flutter web is deployed to Vercel (griot-2-0.vercel.app). No S3/CDN/custom TLS.
 
 ' ─── Client Devices ───────────────────────────────────
 node "Client Devices" {
@@ -26,65 +28,60 @@ node "Client Devices" {
     artifact "📱 Android Device\n(Flutter App)" as Android
   }
   node "Web" {
-    artifact "🌐 Web Browser\n(Flutter PWA)" as PWA
+    artifact "🌐 Browser\n(Flutter Web on Vercel)" as PWA
   }
 }
 
 ' ─── Flutter Client Layer ─────────────────────────────
 package "Flutter Client Layer" {
-  artifact "Flutter UI\n(MaterialApp)" as UI
+  artifact "Flutter UI\n(MaterialApp + AppRouter)" as UI
   artifact "Riverpod\nState Management" as Riverpod
-  artifact "Dio HTTP Client\n(+ interceptors)" as Dio
-  artifact "SQLite / IndexedDB\n(Local Cache)" as SQLite
+  artifact "Dio HTTP Client\n(auth/retry/offline interceptors)" as Dio
+  artifact "SQLite / IndexedDB\n(griot_ai.db mirror + queue)" as SQLite
 }
 
-' ─── Network Layer ────────────────────────────────────
+' ─── Network ──────────────────────────────────────────
 cloud "Network" {
   artifact "HTTPS" as HTTPS
-  artifact "Ngrok Tunnel\n(dev testing)" as Ngrok
+  artifact "Ngrok Tunnel\n(dev only, real devices)" as Ngrok
 }
 
-' ─── Backend Server ───────────────────────────────────
-node "Backend Server" {
-  package "Django Application" {
-    artifact "WSGI / ASGI\nServer" as WSGI
-    artifact "Django REST\nFramework" as DRF
-    artifact "SimpleJWT\nAuthentication" as JWT
+cloud "Vercel (Flutter Web)" {
+  artifact "griot-2-0.vercel.app\n(static build + share links)" as Vercel
+}
+
+' ─── Render backend ───────────────────────────────────
+node "Render.com" {
+  node "griot-backend service" {
+    artifact "Gunicorn WSGI\n(migrate + start)" as Gunicorn
+    artifact "Django REST Framework\n+ SimpleJWT + Throttling" as Django
+    artifact "Apps\nusers · stories · qr_codes\n· gamification · media_app · api · web" as Apps
   }
-
-  package "Django Apps" {
-    artifact "users\n(Auth & Roles)" as UsersApp
-    artifact "stories\n(Content)" as StoriesApp
-    artifact "qr_codes\n(Artifacts)" as QRCodesApp
-    artifact "gamification\n(Quizzes & Badges)" as GamificationApp
-    artifact "media_app\n(Video & TTS)" as MediaApp
-    artifact "api\n(Health & Analytics)" as APIApp
-  }
-
-  database "SQLite\n(Development)" as SQLiteProd
-  database "PostgreSQL\n(Production)" as PostgreSQL
-
-  artifact "Media Files\n(Stories, Artifacts)" as MediaFiles
+  database "PostgreSQL 16\n(griot-db, managed)" as Postgres
+  artifact "Media Files\n/media/ on Render disk" as MediaFiles
 }
 
 ' ─── External Services ────────────────────────────────
 package "External Services" {
-  cloud "🎬 Luma AI\nDream Machine\n(Video Generation)" as LumaAI
-  cloud "🔊 TTS Provider\n(Audio Narration)" as TTSService
-  cloud "🐛 Sentry\n(Error Monitoring)" as Sentry
+  cloud "🎬 Luma AI\nDream Machine" as LumaAI
+  cloud "🔊 Google TTS via gTTS\n(no API key)" as TTSService
+  cloud "🐛 Sentry\n(optional, DSN-gated)" as Sentry
+  cloud "💬 WhatsApp\n(feedback wa.me link)" as WhatsApp
 }
 
 ' ─── DevOps & Monitoring ──────────────────────────────
 package "DevOps & Monitoring" {
-  artifact "Ngrok\n(Tunneling)" as NgrokTunnel
-  artifact "Health Endpoints\n/api/health/*" as HealthCheck
-  artifact "Structured\nJSON Logging" as StructLog
+  artifact "Health Endpoints\n/api/health/ · /api/health/ready/\n/api/health/metrics/" as HealthCheck
+  artifact "Structured JSON Logging\n(RequestLogMiddleware + JsonFormatter)" as StructLog
+  artifact "sync_local_users\n(SQLite → Postgres)" as SyncCmd
 }
 
 ' ─── Connections ──────────────────────────────────────
 iOS --> HTTPS
 Android --> HTTPS
 PWA --> HTTPS
+PWA --> Vercel
+Vercel --> HTTPS : API + share links
 iOS ..> Ngrok
 Android ..> Ngrok
 
@@ -92,31 +89,21 @@ UI --> Riverpod
 Riverpod --> Dio
 Dio --> SQLite
 
-HTTPS --> WSGI
-Ngrok --> WSGI
+HTTPS --> Gunicorn
+Ngrok --> Gunicorn
 
-WSGI --> DRF
-DRF --> JWT
-DRF --> UsersApp
-DRF --> StoriesApp
-DRF --> QRCodesApp
-DRF --> GamificationApp
-DRF --> MediaApp
-DRF --> APIApp
+Gunicorn --> Django
+Django --> Apps
+Apps --> Postgres : default alias (prod)
+Apps --> MediaFiles
+Apps ..> SyncCmd
 
-UsersApp --> SQLiteProd
-StoriesApp --> SQLiteProd
-QRCodesApp --> SQLiteProd
-GamificationApp --> SQLiteProd
-MediaApp --> SQLiteProd
-SQLiteProd ..> PostgreSQL
-
-StoriesApp --> MediaFiles
-QRCodesApp --> MediaFiles
-
-MediaApp --> LumaAI
-MediaApp --> TTSService
-APIApp --> Sentry
+Django --> LumaAI
+Django --> TTSService
+Django --> Sentry
+UI --> WhatsApp
+Apps --> HealthCheck
+Apps --> StructLog
 
 @enduml
 
@@ -140,31 +127,30 @@ skinparam database {
 title Development vs Production Environment
 
 package "Development Environment" {
-  artifact "Flutter App\n(flutter run)" as DevApp
+  artifact "Flutter App\n(flutter run)\nAPI_BASE_URL=10.0.2.2:8000" as DevApp
   artifact "Django Dev Server\n(manage.py runserver)" as DevServer
-  database "SQLite\n(african_teller.db)" as DevDB
-  artifact "Ngrok\n(ngrok-free.app)" as DevNgrok
+  database "SQLite\n(db.sqlite3)" as DevDB
+  artifact "Ngrok (optional)\nreal-device testing" as DevNgrok
   artifact "Media: /media/" as DevMedia
 
-  DevApp --> DevNgrok
+  DevApp --> DevServer
+  DevApp ..> DevNgrok
   DevNgrok --> DevServer
   DevServer --> DevDB
   DevServer --> DevMedia
 }
 
 package "Production Environment" {
-  artifact "Flutter Web/Mobile\n(built assets)" as ProdApp
-  artifact "Django + Gunicorn\n(WSGI)" as ProdServer
-  database "PostgreSQL\n(managed)" as ProdDB
-  artifact "CDN / Static Files" as ProdCDN
-  artifact "Cloud Storage\n(S3 / GCS)" as ProdMedia
-  artifact "Sentry\n(error tracking)" as ProdSentry
+  cloud "Flutter Web on Vercel\n(griot-2-0.vercel.app)" as ProdApp
+  artifact "Render griot-backend\nGunicorn + Django" as ProdServer
+  database "PostgreSQL 16\n(Render griot-db)" as ProdDB
+  cloud "Sentry\n(optional)" as ProdSentry
 
-  ProdApp -->|HTTPS| ProdCDN
-  ProdCDN -->|API calls| ProdServer
+  ProdApp -->|HTTPS API + CORS| ProdServer
   ProdServer --> ProdDB
-  ProdServer --> ProdMedia
   ProdServer --> ProdSentry
 }
+
+DevServer ..> ProdDB : sync_local_users (migrate data)
 
 @enduml

@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_7c4eb0d81b730501" name="User Authentication State Machine">
+  <uml:packagedElement xmi:type="uml:StateMachine" xmi:id="_7db9fd33ef03c3ad" name="User Authentication State Machine">
+    <uml:region xmi:type="uml:Region" xmi:id="_d760702d034cf8d5">
+      <uml:subvertex xmi:type="uml:State" xmi:id="_03c8ef71c835de5c" name="Initial" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_5aacbd2245537720" name="Loading" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_fb53b31e6c2818a8" name="Authenticated" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_f6120ea51031ad14" name="Unauthenticated" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_6e3c089c255334f6" name="Error" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_9fbc3a7190cdd4c6" name="PendingSync" />
+      <uml:subvertex xmi:type="uml:Pseudostate" xmi:id="_be6cd216c5f12242" kind="initial" />
+      <uml:transition xmi:type="uml:Transition" xmi:id="_d59fc6cfc18c5e0f" name="App starts">
+        <uml:source xmi:idref="_be6cd216c5f12242" />
+        <uml:target xmi:idref="_03c8ef71c835de5c" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_c92a819fa5e8d3cc">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_1fd0ca7e0abf1a63" name="App starts" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_60c259108e3b6490" name="Checking stored tokens">
+        <uml:source xmi:idref="_03c8ef71c835de5c" />
+        <uml:target xmi:idref="_5aacbd2245537720" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_fbf145e9092fc979">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_49af146252cea1fd" name="Checking stored tokens" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_7f7ade7c8ad39271" name="Valid tokens found (JWT or offline session)">
+        <uml:source xmi:idref="_5aacbd2245537720" />
+        <uml:target xmi:idref="_fb53b31e6c2818a8" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_4ee91c7e398d8e86">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_5a4b1e479b5a2291" name="Valid tokens found (JWT or offline session)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_ac85873c1903aa77" name="No tokens">
+        <uml:source xmi:idref="_5aacbd2245537720" />
+        <uml:target xmi:idref="_f6120ea51031ad14" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_b70509c58642e321">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_6036f1f52b470ac6" name="No tokens" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_1c5519e1345ede69" name="User logs in\n(credentials submitted)">
+        <uml:source xmi:idref="_f6120ea51031ad14" />
+        <uml:target xmi:idref="_5aacbd2245537720" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_9c7071d2d0327de0">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_2128d720f4963457" name="User logs in\n(credentials submitted)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_7737178a76584742" name="User registers">
+        <uml:source xmi:idref="_f6120ea51031ad14" />
+        <uml:target xmi:idref="_5aacbd2245537720" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_58d9cbc5e0a47012">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_3d7e22999c5dd566" name="User registers" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_673b272f3d4cf5d6" name="Login">
+        <uml:source xmi:idref="_5aacbd2245537720" />
+        <uml:target xmi:idref="_fb53b31e6c2818a8" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_42e4cc88bbe0da09">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_403bcd1ddf118e23" name="Login" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_b51c9505a0af063e" name="Login">
+        <uml:source xmi:idref="_5aacbd2245537720" />
+        <uml:target xmi:idref="_f6120ea51031ad14" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_8c7e866559f08b89">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_82bb76a7011b8543" name="Login" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_d2ce39091bf129fb" name="Network error during\nauth bootstrap">
+        <uml:source xmi:idref="_5aacbd2245537720" />
+        <uml:target xmi:idref="_6e3c089c255334f6" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_3b6a141bc2d1cc0a">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_47db057354720ef3" name="Network error during\nauth bootstrap" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_3b4538501f580b06" name="User retries">
+        <uml:source xmi:idref="_6e3c089c255334f6" />
+        <uml:target xmi:idref="_5aacbd2245537720" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_ad7ec8bd2dccab18">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_371e9cd3f28305ae" name="User retries" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_3dc7462021a55b5a" name="Logout">
+        <uml:source xmi:idref="_fb53b31e6c2818a8" />
+        <uml:target xmi:idref="_f6120ea51031ad14" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_364c3f99b75836ff">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_c6bbee60cfccc675" name="Logout" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_8c1ad20fa018e512" name="Token refresh needed\n(on 401 response)">
+        <uml:source xmi:idref="_fb53b31e6c2818a8" />
+        <uml:target xmi:idref="_5aacbd2245537720" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_8c6d1b72951d5c07">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_46a7bfc35e894f36" name="Token refresh needed\n(on 401 response)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_c4e774c46e705759" name="Offline-registration or\nmutations queued (202 Queued)">
+        <uml:source xmi:idref="_fb53b31e6c2818a8" />
+        <uml:target xmi:idref="_9fbc3a7190cdd4c6" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_021252c08f15db56">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_8b58a1f363c5a545" name="Offline-registration or\nmutations queued (202 Queued)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_6b767e36d89efbd9" name="OfflineSyncManager\nreplays queue successfully">
+        <uml:source xmi:idref="_9fbc3a7190cdd4c6" />
+        <uml:target xmi:idref="_fb53b31e6c2818a8" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_1194584e88f90264">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_b18f246a841db848" name="OfflineSyncManager\nreplays queue successfully" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_ce12e350d1159ad5" name="Queue replay fails\npermanently (max retries)">
+        <uml:source xmi:idref="_9fbc3a7190cdd4c6" />
+        <uml:target xmi:idref="_f6120ea51031ad14" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_82509963b6964982">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_c054b514a19963aa" name="Queue replay fails\npermanently (max retries)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_102d00af11281922" name="Manual retry">
+        <uml:source xmi:idref="_9fbc3a7190cdd4c6" />
+        <uml:target xmi:idref="_5aacbd2245537720" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_e1b9c63e2b9b5dab">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_57b2793d5f20ac45" name="Manual retry" />
+        </uml:trigger>
+      </uml:transition>
+    </uml:region>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_c74ad5a770eb5f18" body="App bootstrapping.\nChecking local storage.">
+      <uml:annotatedElement xmi:idref="_03c8ef71c835de5c" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_1b238c41c4811023" body="Waiting for API\nresponse.">
+      <uml:annotatedElement xmi:idref="_5aacbd2245537720" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_d01763e55dc075e3" body="JWT valid (online) or\nlegacy session (offline fallback).">
+      <uml:annotatedElement xmi:idref="_fb53b31e6c2818a8" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_6c094cfea90e46e2" body="Offline queue holds\npending auth/action requests.\nDisplayed to user as &quot;syncing&quot;.">
+      <uml:annotatedElement xmi:idref="_9fbc3a7190cdd4c6" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_80afc3c6bb5ab013" body="Network/validation error.\nRetry offered.">
+      <uml:annotatedElement xmi:idref="_6e3c089c255334f6" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_8d97392e33aaa633" body="No valid tokens.\nOnly public content.">
+      <uml:annotatedElement xmi:idref="_f6120ea51031ad14" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_67b206b3d13cb2e4" name="09-activity-diagram.06">
+  <uml:packagedElement xmi:type="uml:Activity" xmi:id="_46382f1bad4dbc54" name="09-activity-diagram.06">
+    <uml:node xmi:type="uml:InitialNode" xmi:id="_849eff48c519b77b" name="Contributor taps &quot;Generate Video&quot;" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_11cacc8bf27e0261" name="Contributor+?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_8bb533bd99a69a86" name="Show access denied" />
+    <uml:node xmi:type="uml:ActivityFinalNode" xmi:id="_76bbb0d22f7cbc00" name="Stop" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_7a2d0c9623842c49" name="Open VideoGenerationSheet" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_23951a55add1ea2c" name="Enter video prompt&lt;br/&gt;custom description" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_ff818d6313e9d9d7" name="Select story for video" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_bef2b7330ec21fa0" name="Preview prompt + story" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_748407868be77980" name="POST /api/media/videos/" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_debfd35a5ea4ee31" name="Job created?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_811097a09bb3bfdd" name="Show error" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_a3948735f6a755ea" name="Start status polling&lt;br/&gt;every 10 seconds" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_e00a1729d484acd3" name="Show progress indicator" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_a2042f5c87c99e02" name="GET /api/media/status/video/{id}/" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_f90f493f8685d14c" name="Job status?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_c5437bdcf9aa36c2" name="Wait 10 seconds" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_4f3467b1f18c7feb" name="Update progress %" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_b0b1f939fffed3f1" name="Show error message" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_216c1d685294ed11" name="Retry?" />
+    <uml:node xmi:type="uml:ActivityFinalNode" xmi:id="_8d2a3a1cfc92867b" name="Cancelled" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_b5fbe4d522913314" name="Video ready!" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_a779a5a8b0156b6c" name="Show VideoPlayerWidget" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_5c1372ba131c53cf" name="Play generated video" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_e0b8d1477eaab22f" name="User actions" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_d0de8b15c8eaadaf" name="Download video" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_c6ba807f4f82f363" name="Share video link" />
+    <uml:node xmi:type="uml:ActivityFinalNode" xmi:id="_0f1a944d149f1618" name="Video saved" />
+    <uml:node xmi:type="uml:ActivityFinalNode" xmi:id="_483585738ef4960f" name="Video shared" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_1749a547776dd548" source="_849eff48c519b77b" target="_11cacc8bf27e0261" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_cba19757b8db83b2" source="_11cacc8bf27e0261" target="_8bb533bd99a69a86">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_e5a9b60fcf88fab8">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_ad27f7ce4cb58d7f" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_7dd7b2ba9cee4a5d" source="_8bb533bd99a69a86" target="_76bbb0d22f7cbc00" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_c1e43a19fc6feddd" source="_11cacc8bf27e0261" target="_7a2d0c9623842c49">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_fbaaefbd53caf378">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_d0f81039a7cef4c7" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_f529d7d9bf26f604" source="_7a2d0c9623842c49" target="_23951a55add1ea2c" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_35afec2d276f50a1" source="_23951a55add1ea2c" target="_ff818d6313e9d9d7" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_90b68afc6d094d2f" source="_ff818d6313e9d9d7" target="_bef2b7330ec21fa0" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_c9759f8900f57504" source="_bef2b7330ec21fa0" target="_748407868be77980" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_2ebc8e95e5443e37" source="_748407868be77980" target="_debfd35a5ea4ee31" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_6483b7cd7ac06371" source="_debfd35a5ea4ee31" target="_811097a09bb3bfdd">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_391d66e9896d2d4b">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_523221163bf463c2" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_5dda166380fcc696" source="_811097a09bb3bfdd" target="_23951a55add1ea2c" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_a3edaeeacfee7a52" source="_debfd35a5ea4ee31" target="_a3948735f6a755ea">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_e000214f3263fc97">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_3dfd73b6f1f7f44e" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_3dd69fdce5a08cfd" source="_a3948735f6a755ea" target="_e00a1729d484acd3" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_6c2e32e46fc7b14d" source="_e00a1729d484acd3" target="_a2042f5c87c99e02" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_235c3394a4d113d0" source="_a2042f5c87c99e02" target="_f90f493f8685d14c" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_5e675085ac174a17" source="_f90f493f8685d14c" target="_c5437bdcf9aa36c2">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_4ed2d7afa40d1bf3">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_7b2a2757e01ae199" value="Pending" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_91fcfd974b2aa87e" source="_c5437bdcf9aa36c2" target="_a2042f5c87c99e02" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_246cf1cf9606624d" source="_f90f493f8685d14c" target="_4f3467b1f18c7feb">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_ee18e00e35632bb0">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_3f9942d4f59a3145" value="Processing" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_22df700e9c2b9ada" source="_4f3467b1f18c7feb" target="_e00a1729d484acd3" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_7e0651197ce5c388" source="_f90f493f8685d14c" target="_b0b1f939fffed3f1">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_d88e5896d28bba51">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_8bd5bd56d03615f7" value="Failed" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_decdffb379900e1c" source="_b0b1f939fffed3f1" target="_216c1d685294ed11" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_c9803eb0210191ce" source="_216c1d685294ed11" target="_748407868be77980">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_270a0f34d8fca72b">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_389ed569ff5fcae7" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_f842187b4a202ccb" source="_216c1d685294ed11" target="_8d2a3a1cfc92867b">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_c4f6ab8e1fc18b94">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_106eb0f459ac4c15" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_1d4dd05c5f73f676" source="_f90f493f8685d14c" target="_b5fbe4d522913314">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_e23b6f12327a15ba">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_adf3ecfe263329d6" value="Completed" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_f0da6b25b79907c0" source="_b5fbe4d522913314" target="_a779a5a8b0156b6c" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_255d7cf6b06c0daa" source="_a779a5a8b0156b6c" target="_5c1372ba131c53cf" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_197781ba47367b9a" source="_5c1372ba131c53cf" target="_e0b8d1477eaab22f" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_81550ddcb34d3b0b" source="_e0b8d1477eaab22f" target="_d0de8b15c8eaadaf">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_5ba3f050edf2a140">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_dc5fc5d10f08a078" value="Download" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_be709a20462bd243" source="_e0b8d1477eaab22f" target="_c6ba807f4f82f363">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_9c95b2f891dd0b47">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_e9143106065d9528" value="Share" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_46be04f258560192" source="_e0b8d1477eaab22f" target="_23951a55add1ea2c">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_6b4a446591e44a7f">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_5bc0b1331d9d09f4" value="Regenerate" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_9c082e2aaf0dab10" source="_d0de8b15c8eaadaf" target="_0f1a944d149f1618" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_ee4a6fa401c7a681" source="_c6ba807f4f82f363" target="_483585738ef4960f" />
+  </uml:packagedElement>
+</uml:Model>

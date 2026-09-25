@@ -60,6 +60,12 @@ note right of Published : Live on platform.\nVisible to all users.
 note right of Rejected : Failed review.\nAuthor can revise.
 note right of Archived : Hidden from public.\nCan be restored.
 
+note right of Pending
+  GAP: pending -> published happens only
+  in the Django admin site; no approve/
+  reject API endpoint.
+end note
+
 @enduml
 
 ---
@@ -159,13 +165,15 @@ skinparam state {
   BorderColor #A80036
 }
 
-title User Authentication State Machine
+title User Authentication State Machine (mirrors AuthStatus)
 
 [*] --> Initial : App starts
 
 Initial --> Loading : Checking stored tokens
-Loading --> Authenticated : Valid tokens found
+Loading --> Authenticated : Valid tokens found (JWT or offline session)
 Loading --> Unauthenticated : No tokens / invalid
+Loading --> Error : Network error during\nauth bootstrap
+Error --> Loading : User retries
 
 Unauthenticated --> Loading : User logs in\n(credentials submitted)
 Unauthenticated --> Loading : User registers
@@ -174,12 +182,17 @@ Loading --> Authenticated : Login/Register success
 Loading --> Unauthenticated : Login/Register failure
 
 Authenticated --> Unauthenticated : Logout / token expired\n/ delete account
-
 Authenticated --> Loading : Token refresh needed\n(on 401 response)
+Authenticated --> PendingSync : Offline-registration or\nmutations queued (202 Queued)
+PendingSync --> Authenticated : OfflineSyncManager\nreplays queue successfully
+PendingSync --> Unauthenticated : Queue replay fails\npermanently (max retries)
+PendingSync --> Loading : Manual retry
 
 note right of Initial : App bootstrapping.\nChecking local storage.
 note right of Loading : Waiting for API\nresponse.
-note right of Authenticated : JWT tokens valid.\nFull feature access.
+note right of Authenticated : JWT valid (online) or\nlegacy session (offline fallback).
+note right of PendingSync : Offline queue holds\npending auth/action requests.\nShown as "syncing".
+note right of Error : Network/validation error.\nRetry offered.
 note right of Unauthenticated : No valid tokens.\nOnly public content.
 
 @enduml

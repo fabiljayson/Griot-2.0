@@ -1,0 +1,124 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_d81de7e08704e8bd" name="QR Code Scan → Artifact Detail Flow">
+  <uml:packagedElement xmi:type="uml:Interaction" xmi:id="_bd876cf7dad45274" name="QR Code Scan → Artifact Detail Flow">
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_868ac6674791f1a8" name="User" interaction="_bd876cf7dad45274" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_c7929ef03c147d4b" name="QR Scanner" interaction="_bd876cf7dad45274" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_029da77e31e0e80f" name="ArtifactDetailScreen" interaction="_bd876cf7dad45274" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_4439a2e1fe756be1" name="QR API Service" interaction="_bd876cf7dad45274" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_0c3a7eb604fa52d7" name="Django REST API" interaction="_bd876cf7dad45274" />
+    <uml:message xmi:type="uml:Message" xmi:id="_acb60af816316c3e" name="Open QR Scanner" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_45ed8ddb5b7cc7db" />
+      <uml:receiveEvent xmi:idref="_c968c3953236fe09" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a9cd4da124bc257a" name="Initialize camera" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_e5b4bbd1919ac4cd" />
+      <uml:receiveEvent xmi:idref="_c32106e666cfdccd" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_890b4387e4089333" name="Show scanner overlay" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_45030f609c0a6950" />
+      <uml:receiveEvent xmi:idref="_2e7f15789f56f6e8" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_572a66e3733e2bcd" name="Scan QR code" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_fe66c2b56869f6f6" />
+      <uml:receiveEvent xmi:idref="_9e191458a83c2847" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a5a722df4007d886" name="Decode QR → slug" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_58ec7088e1607b36" />
+      <uml:receiveEvent xmi:idref="_dd133ba7b73e7a4a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_26a6d6ccd2c84b73" name="lookupArtifact(slug)" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_a06a14bb8a244a24" />
+      <uml:receiveEvent xmi:idref="_e7345378f37ff9d6" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_f8589d467ced8b74" name="GET /api/artifacts/lookup/?slug={slug}" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_7ab18c22e34b1ad0" />
+      <uml:receiveEvent xmi:idref="_f908537725a95361" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_55684b43bdc1de93" name="Record QRCodeScan (device, IP, GPS)" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_6ce680ce3bda8d48" />
+      <uml:receiveEvent xmi:idref="_f9b6f67385d38f5e" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_3716de6915c206ca" name="Artifact detail JSON" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_2d8fc09127fb76a5" />
+      <uml:receiveEvent xmi:idref="_4936d6650e382ad4" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_8db05e6251471f80" name="Navigate to artifact" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_b76971102a5e2818" />
+      <uml:receiveEvent xmi:idref="_399acc8656886141" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_e28f087bb9145678" name="Display artifact info" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_36c409b76d74354a" />
+      <uml:receiveEvent xmi:idref="_b6afce84bd826f1f" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_4696df4ed408ee35" name="Show title, image, description" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_198a297dd3edd77d" />
+      <uml:receiveEvent xmi:idref="_f11de34394c7ba12" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_65cf337997db6176" name="fetchRelatedStories(artifactId)" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_cd1b0420006ac196" />
+      <uml:receiveEvent xmi:idref="_1e0965d9777e542b" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_61a08f4a73025a81" name="GET /api/artifacts/{id}/" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_9a3be2c176024a60" />
+      <uml:receiveEvent xmi:idref="_e96e85ec276df485" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_8f85bec636044525" name="Artifact with related stories" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_312667b9672de60d" />
+      <uml:receiveEvent xmi:idref="_4c219121cede5297" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_3cc5e8475f774c5d" name="Related stories list" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_595aef729634fead" />
+      <uml:receiveEvent xmi:idref="_440c374a863bc80c" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_daed758e03308c01" name="Show related stories" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_07c5f3c212974c12" />
+      <uml:receiveEvent xmi:idref="_0bda9934f924ab83" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_9a94378b2142fa21" name="Tap related story" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_3af0e6f4bb191814" />
+      <uml:receiveEvent xmi:idref="_eb306c60dfdeb711" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_22621266af4e30dd" name="Navigate to StoryDetailScreen" messageSort="synchCall" interaction="_bd876cf7dad45274">
+      <uml:sendEvent xmi:idref="_7560c2599bd1e611" />
+      <uml:receiveEvent xmi:idref="_7c2fa17408107f05" />
+    </uml:message>
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_45ed8ddb5b7cc7db" covered="_868ac6674791f1a8" message="_acb60af816316c3e" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c968c3953236fe09" covered="_c7929ef03c147d4b" message="_acb60af816316c3e" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e5b4bbd1919ac4cd" covered="_c7929ef03c147d4b" message="_a9cd4da124bc257a" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c32106e666cfdccd" covered="_c7929ef03c147d4b" message="_a9cd4da124bc257a" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_45030f609c0a6950" covered="_c7929ef03c147d4b" message="_890b4387e4089333" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_2e7f15789f56f6e8" covered="_868ac6674791f1a8" message="_890b4387e4089333" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_fe66c2b56869f6f6" covered="_868ac6674791f1a8" message="_572a66e3733e2bcd" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_9e191458a83c2847" covered="_c7929ef03c147d4b" message="_572a66e3733e2bcd" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_58ec7088e1607b36" covered="_c7929ef03c147d4b" message="_a5a722df4007d886" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_dd133ba7b73e7a4a" covered="_c7929ef03c147d4b" message="_a5a722df4007d886" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_a06a14bb8a244a24" covered="_c7929ef03c147d4b" message="_26a6d6ccd2c84b73" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e7345378f37ff9d6" covered="_4439a2e1fe756be1" message="_26a6d6ccd2c84b73" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7ab18c22e34b1ad0" covered="_4439a2e1fe756be1" message="_f8589d467ced8b74" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f908537725a95361" covered="_0c3a7eb604fa52d7" message="_f8589d467ced8b74" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6ce680ce3bda8d48" covered="_0c3a7eb604fa52d7" message="_55684b43bdc1de93" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f9b6f67385d38f5e" covered="_0c3a7eb604fa52d7" message="_55684b43bdc1de93" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_2d8fc09127fb76a5" covered="_0c3a7eb604fa52d7" message="_3716de6915c206ca" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_4936d6650e382ad4" covered="_4439a2e1fe756be1" message="_3716de6915c206ca" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b76971102a5e2818" covered="_4439a2e1fe756be1" message="_8db05e6251471f80" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_399acc8656886141" covered="_029da77e31e0e80f" message="_8db05e6251471f80" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_36c409b76d74354a" covered="_029da77e31e0e80f" message="_e28f087bb9145678" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b6afce84bd826f1f" covered="_029da77e31e0e80f" message="_e28f087bb9145678" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_198a297dd3edd77d" covered="_029da77e31e0e80f" message="_4696df4ed408ee35" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f11de34394c7ba12" covered="_868ac6674791f1a8" message="_4696df4ed408ee35" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_cd1b0420006ac196" covered="_029da77e31e0e80f" message="_65cf337997db6176" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_1e0965d9777e542b" covered="_4439a2e1fe756be1" message="_65cf337997db6176" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_9a3be2c176024a60" covered="_4439a2e1fe756be1" message="_61a08f4a73025a81" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e96e85ec276df485" covered="_0c3a7eb604fa52d7" message="_61a08f4a73025a81" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_312667b9672de60d" covered="_0c3a7eb604fa52d7" message="_8f85bec636044525" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_4c219121cede5297" covered="_4439a2e1fe756be1" message="_8f85bec636044525" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_595aef729634fead" covered="_4439a2e1fe756be1" message="_3cc5e8475f774c5d" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_440c374a863bc80c" covered="_029da77e31e0e80f" message="_3cc5e8475f774c5d" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_07c5f3c212974c12" covered="_029da77e31e0e80f" message="_daed758e03308c01" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_0bda9934f924ab83" covered="_868ac6674791f1a8" message="_daed758e03308c01" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_3af0e6f4bb191814" covered="_868ac6674791f1a8" message="_9a94378b2142fa21" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_eb306c60dfdeb711" covered="_029da77e31e0e80f" message="_9a94378b2142fa21" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7560c2599bd1e611" covered="_029da77e31e0e80f" message="_22621266af4e30dd" enclosingInteraction="_bd876cf7dad45274" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7c2fa17408107f05" covered="_029da77e31e0e80f" message="_22621266af4e30dd" enclosingInteraction="_bd876cf7dad45274" />
+  </uml:packagedElement>
+</uml:Model>

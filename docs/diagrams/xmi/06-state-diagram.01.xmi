@@ -1,0 +1,108 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_d0b547bfdfb2f8fc" name="Story Lifecycle State Machine">
+  <uml:packagedElement xmi:type="uml:StateMachine" xmi:id="_6ee706ecc596ec66" name="Story Lifecycle State Machine">
+    <uml:region xmi:type="uml:Region" xmi:id="_ec9457c658cf2aa5">
+      <uml:subvertex xmi:type="uml:State" xmi:id="_3c88909ba302ecf7" name="Draft" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_f9af197f38b1c631" name="Pending" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_11daaa60ad2de904" name="Archived" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_03203493dfb683f2" name="Published" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_fcaf89c379c2866a" name="Rejected" />
+      <uml:subvertex xmi:type="uml:Pseudostate" xmi:id="_309dbac7c381a976" kind="initial" />
+      <uml:transition xmi:type="uml:Transition" xmi:id="_5652f7a4810b4d17" name="Contributor creates story">
+        <uml:source xmi:idref="_309dbac7c381a976" />
+        <uml:target xmi:idref="_3c88909ba302ecf7" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_05b5cd03a7f90156">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_6a34db9f01f12be1" name="Contributor creates story" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_d37bde2dc6680d32" name="Submit for review">
+        <uml:source xmi:idref="_3c88909ba302ecf7" />
+        <uml:target xmi:idref="_f9af197f38b1c631" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_b347c0091deb30f4">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_99d4c9ba864eaed3" name="Submit for review" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_e7059dc4b259052d" name="Delete draft">
+        <uml:source xmi:idref="_3c88909ba302ecf7" />
+        <uml:target xmi:idref="_11daaa60ad2de904" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_6fae70d831eba913">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_85fa009f025cf5a8" name="Delete draft" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_c2bd0aa41adfa8d9" name="Admin">
+        <uml:source xmi:idref="_f9af197f38b1c631" />
+        <uml:target xmi:idref="_03203493dfb683f2" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_cf0364b2eb051d26">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_deacae97e0acb792" name="Admin" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_8d0c74830c46c149" name="Admin">
+        <uml:source xmi:idref="_f9af197f38b1c631" />
+        <uml:target xmi:idref="_fcaf89c379c2866a" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_06c776aa0bf1a341">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_126db6ed06c2cbfe" name="Admin" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_d89d9bf0c10334b9" name="Admin archives">
+        <uml:source xmi:idref="_f9af197f38b1c631" />
+        <uml:target xmi:idref="_11daaa60ad2de904" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_44713a4ec7e69310">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_d5b79acb01e9792e" name="Admin archives" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_62389dbab9f503c3" name="Admin archives">
+        <uml:source xmi:idref="_03203493dfb683f2" />
+        <uml:target xmi:idref="_11daaa60ad2de904" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_c8e03a2ef9fbb21c">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_16e93edb5b3bd7ed" name="Admin archives" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_2333e9340ae69858" name="Flagged &amp; removed">
+        <uml:source xmi:idref="_03203493dfb683f2" />
+        <uml:target xmi:idref="_fcaf89c379c2866a" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_1d34ec2410fe6b86">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_8eae5f66228dd754" name="Flagged &amp; removed" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_0fa6d69db9775bcb" name="Author revises">
+        <uml:source xmi:idref="_fcaf89c379c2866a" />
+        <uml:target xmi:idref="_3c88909ba302ecf7" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_81bf6b65571cfa52">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_f8d86a441a8a2927" name="Author revises" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_3a93a6c115ee7460" name="Admin archives">
+        <uml:source xmi:idref="_fcaf89c379c2866a" />
+        <uml:target xmi:idref="_11daaa60ad2de904" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_0398fd7df83865a2">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_51c1f2b892b5a2f6" name="Admin archives" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_ad57410f5302b135" name="Restore (admin)">
+        <uml:source xmi:idref="_11daaa60ad2de904" />
+        <uml:target xmi:idref="_3c88909ba302ecf7" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_fe0278182a772916">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_5a59bc55f49a54ce" name="Restore (admin)" />
+        </uml:trigger>
+      </uml:transition>
+    </uml:region>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_e8a01b0cb3ff3a5a" body="Story is being written.\nOnly visible to author.">
+      <uml:annotatedElement xmi:idref="_3c88909ba302ecf7" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_ed171f295234a899" body="Awaiting moderation.\nVisible to managers/admins.">
+      <uml:annotatedElement xmi:idref="_f9af197f38b1c631" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_e10b0f29e01b9d9f" body="Live on platform.\nVisible to all users.">
+      <uml:annotatedElement xmi:idref="_03203493dfb683f2" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_258cb3fae486871c" body="Failed review.\nAuthor can revise.">
+      <uml:annotatedElement xmi:idref="_fcaf89c379c2866a" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_b09a85efc571b5c1" body="Hidden from public.\nCan be restored.">
+      <uml:annotatedElement xmi:idref="_11daaa60ad2de904" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_a270823ca3bf18c6" body="GAP: pending → published happens\nonly in the Django admin site;\nno approve/reject API endpoint.">
+      <uml:annotatedElement xmi:idref="_f9af197f38b1c631" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

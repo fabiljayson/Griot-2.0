@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_62b1042962564ec3" name="Offline Request Queue State Machine">
+  <uml:packagedElement xmi:type="uml:StateMachine" xmi:id="_794166831cbc0a27" name="Offline Request Queue State Machine">
+    <uml:region xmi:type="uml:Region" xmi:id="_d28c7c17e28fd9d2">
+      <uml:subvertex xmi:type="uml:State" xmi:id="_b3ffe1e0cce50784" name="Pending" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_99c4a2987e315424" name="InProgress" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_5ae40fee30db44af" name="Completed" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_63831ed6ab900a46" name="Failed" />
+      <uml:subvertex xmi:type="uml:Pseudostate" xmi:id="_fe5199d3ac9cc833" kind="initial" />
+      <uml:subvertex xmi:type="uml:FinalState" xmi:id="_dd0e45c4c146087a" />
+      <uml:transition xmi:type="uml:Transition" xmi:id="_09cd817a679ec342" name="Request queued\n(device offline)">
+        <uml:source xmi:idref="_fe5199d3ac9cc833" />
+        <uml:target xmi:idref="_b3ffe1e0cce50784" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_8dc1c90d8556de27">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_c23689bc7dd91c26" name="Request queued\n(device offline)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_7ca169e37fe6e57c" name="Connectivity restored,\nsync starts">
+        <uml:source xmi:idref="_b3ffe1e0cce50784" />
+        <uml:target xmi:idref="_99c4a2987e315424" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_693d9df97236b3ad">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_c0b0a0d0eb5e42cb" name="Connectivity restored,\nsync starts" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_c763dda21711e248" name="Retry count &lt; max\n(after failure)">
+        <uml:source xmi:idref="_b3ffe1e0cce50784" />
+        <uml:target xmi:idref="_b3ffe1e0cce50784" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_2b951124e7ec6ca7">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_6a580a53a8be9a49" name="Retry count &lt; max\n(after failure)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_c8ce2ba4ccee0e3d" name="Server responds\n2xx success">
+        <uml:source xmi:idref="_99c4a2987e315424" />
+        <uml:target xmi:idref="_5ae40fee30db44af" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_445399a556ad69b5">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_7d5d32f69331072a" name="Server responds\n2xx success" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_459f5913b798aed1" name="Server error\nor network failure">
+        <uml:source xmi:idref="_99c4a2987e315424" />
+        <uml:target xmi:idref="_63831ed6ab900a46" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_db1e5ae3098eca0f">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_5df31cc920678b56" name="Server error\nor network failure" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_3bc01dcddbf14509" name="Retry\n(retry_count &lt; max)">
+        <uml:source xmi:idref="_63831ed6ab900a46" />
+        <uml:target xmi:idref="_99c4a2987e315424" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_46f753987de6bcd4">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_5f01d36d0fbd1349" name="Retry\n(retry_count &lt; max)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_2482603b87eb0420" name="Max retries reached,\nwait for next sync">
+        <uml:source xmi:idref="_63831ed6ab900a46" />
+        <uml:target xmi:idref="_b3ffe1e0cce50784" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_4ca96c1ef9dc89ce">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_6a9c4802c3a4ff67" name="Max retries reached,\nwait for next sync" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_243920eb5715607c">
+        <uml:source xmi:idref="_5ae40fee30db44af" />
+        <uml:target xmi:idref="_dd0e45c4c146087a" />
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_61491b5aa0ad61cc" name="Max retries exceeded\n(give up)">
+        <uml:source xmi:idref="_b3ffe1e0cce50784" />
+        <uml:target xmi:idref="_dd0e45c4c146087a" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_241f279dfb8f3642">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_9678798bb9dd0aa8" name="Max retries exceeded\n(give up)" />
+        </uml:trigger>
+      </uml:transition>
+    </uml:region>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_65bbfe0206c9646f" body="Stored in\noffline_requests table.\nMethod, path, body saved.">
+      <uml:annotatedElement xmi:idref="_b3ffe1e0cce50784" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_228cbd24cf98365c" body="Request being\nreplayed to server.">
+      <uml:annotatedElement xmi:idref="_99c4a2987e315424" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_02abecf72b859dc9" body="Successfully synced.\nReady for cleanup.">
+      <uml:annotatedElement xmi:idref="_5ae40fee30db44af" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_67c55f70ce63c5f3" body="Error message stored.\nRetry with backoff.">
+      <uml:annotatedElement xmi:idref="_63831ed6ab900a46" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

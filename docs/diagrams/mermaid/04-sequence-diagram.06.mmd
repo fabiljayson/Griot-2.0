@@ -1,0 +1,36 @@
+sequenceDiagram
+    title AI Video Generation (Luma AI) Flow
+
+    participant U as User
+    participant VGS as VideoGenerationSheet
+    participant VA as VideoApiService
+    participant VP as VideoStatusPoller
+    participant API as Django REST API
+    participant Luma as Luma AI API
+
+    U->>VGS: Tap "Generate Video"
+    VGS->>VGS: Show generation form
+    U->>VGS: Enter prompt & tap Generate
+    VGS->>VA: generateVideo(storyId, prompt)
+    VA->>API: POST /api/media/videos/
+    API->>Luma: Submit video generation job
+    Luma-->>API: Job ID
+    API-->>VA: 201 Created (job details)
+    VA-->>VGS: Job submitted
+
+    VGS->>VP: Start polling(jobId)
+    VP->>API: GET /api/media/status/video/{jobId}/
+
+    loop Polling (every 10s)
+        API-->>VP: {status: "processing", progress: 45%}
+        VP-->>VGS: Update status badge
+        VGS->>U: Show progress (45%)
+    end
+
+    API-->>VP: {status: "completed", video_url: "..."}
+    VP-->>VGS: Video ready!
+    VGS->>U: Show video player
+
+    U->>VGS: Tap play
+    VGS->>VGS: Open VideoPlayerWidget
+    VGS->>U: Play video

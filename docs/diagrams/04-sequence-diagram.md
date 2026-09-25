@@ -1,20 +1,25 @@
 # Sequence Diagrams — Griot 2.0
 
+> **Updated 2026-09-23:** Auth is **online-first** (`AuthRepository` →
+> `ServerAuthRepository` obtains real JWT pairs from `/api/auth/token/`; the
+> legacy SQLite/secure-storage session only kicks in as an offline fallback).
+
 ## 1. Authentication Flow
 
 ```mermaid
 sequenceDiagram
-    title Authentication Flow (Login + Token Refresh)
+    title Authentication Flow (Online-first Login + Token Refresh)
 
     participant U as User
     participant App as Flutter App
     participant AW as AuthWrapper
     participant AR as AuthRepository
+    participant SR as ServerAuthRepository
     participant AI as AuthInterceptor
     participant API as Django REST API
     participant DB as Database
 
-    Note over U,DB: === Login Flow ===
+    Note over U,DB: === Login Flow — online path ===
 
     U->>App: Open App
     App->>AW: Build AuthWrapper
@@ -24,13 +29,25 @@ sequenceDiagram
 
     U->>App: Enter credentials & tap Login
     App->>AR: login(username, password)
-    AR->>API: POST /api/auth/token/
-    API->>DB: Validate credentials
+    AR->>SR: login(username, password)
+    SR->>API: POST /api/auth/token/
+    API->>DB: Validate credentials (5/min throttle)
     DB-->>API: User found
-    API-->>AR: {access, refresh} tokens
-    AR->>AR: Store tokens securely
+    API-->>SR: {access, refresh} tokens (SimpleJWT 30m / 7d)
+    SR-->>AR: TokenPair
+    AR->>AR: Store tokens in secure storage
     AR-->>App: AuthState.authenticated
     App->>AW: Rebuild
+    AW->>U: Show HomeScreen
+
+    Note over U,DB: === Offline fallback path ===
+
+    U->>App: Login while offline (or API down)
+    App->>AR: login(username, password)
+    AR->>SR: login() — connection fails
+    SR-->>AR: Network error (AppError.network)
+    AR->>AR: Fall back to LocalAuthRepository
+    AR-->>App: AuthState.authenticated (offline session)
     AW->>U: Show HomeScreen
 
     Note over U,DB: === Subsequent Authenticated Request ===
@@ -44,17 +61,17 @@ sequenceDiagram
     API-->>App: 200 OK + stories JSON
     App->>U: Display story list
 
-    Note over U,DB: === Token Refresh on 401 ===
+    Note over U,DB: === Token Refresh on 401 (rotate + blacklist) ===
 
     App->>API: GET /api/stories/bookmarks/
     AI->>API: Bearer token (expired)
     API-->>AI: 401 Unauthorized
     AI->>AR: refreshTokens()
     AR->>API: POST /api/auth/token/refresh/
-    API->>DB: Validate refresh token
+    API->>DB: Validate + blacklist old refresh token
     DB-->>API: Valid refresh token
-    API-->>AR: New access token
-    AR->>AR: Update stored token
+    API-->>AR: New access + rotated refresh token
+    AR->>AR: Update stored tokens
     AI->>API: Retry GET /api/stories/bookmarks/ (new token)
     API-->>App: 200 OK + bookmarks JSON
     App->>U: Display bookmarks
@@ -64,19 +81,22 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    title Story Reading & Progress Tracking
+    title Story Reading & Progress Tracking (online-first + mirror)
 
     participant U as User
     participant SS as StoriesScreen
     participant SD as StoryDetailScreen
     participant SR as StoryRepository
     participant API as Django REST API
+    participant LSR as LocalStoryRepository (SQLite mirror)
     participant Cache as Story Cache
 
-    U->>SS: Open Stories
+    U->>SS: Open Stories (online)
     SS->>SR: fetchStories()
     SR->>API: GET /api/stories/
     API-->>SR: Stories list
+    SR->>LSR: Upsert all rows (slug-keyed mirror)
+    LSR-->>SR: Mirror updated
     SR-->>SS: Display stories
     U->>SS: Tap story card
 
@@ -85,33 +105,37 @@ sequenceDiagram
     SR->>API: GET /api/stories/{slug}/
     API-->>SR: Story detail
     API->>API: Increment view_count
+    SR->>LSR: Upsert story cover/content
     SR-->>SD: Display story content
     SD->>U: Render Markdown content
 
-    Note over U,Cache: === Reading Progress ===
+    Note over U,Cache: === Offline: last synced mirror served ===
+
+    U->>SS: Open Stories (offline)
+    SS->>SR: fetchStories()
+    SR->>API: GET /api/stories/ — connection fails
+    SR->>LSR: Read mirror from SQLite
+    LSR-->>SR: Cached stories (never-overwritten local data)
+    SR-->>SS: Display stories from mirror
+    U->>SD: Open saved story
+    SD->>Cache: getFromCache(storyId)
+    Cache-->>SD: Cached story content
+    SD->>U: Display from cache
+
+    Note over U,Cache: === Reading Progress (local-first, best-effort sync) ===
 
     U->>SD: Scroll down (25%)
     SD->>SR: updateProgress(slug, 25%)
-    SR->>API: POST /api/stories/{slug}/progress/
-    API-->>SR: Progress saved
-
-    U->>SD: Scroll to 50%
-    SD->>SR: updateProgress(slug, 50%)
-    SR->>API: POST /api/stories/{slug}/progress/
+    SR->>SR: Write to local ReadingProgressRepository
+    SR->>API: POST /api/stories/{slug}/progress/ (best-effort)
     API-->>SR: Progress saved
 
     U->>SD: Bookmark story
     SD->>SR: toggleBookmark(slug)
+    SR->>SR: Optimistic local write
     SR->>API: POST /api/stories/{slug}/bookmark/
     API-->>SR: {bookmarked: true}
     SR-->>SD: Update UI
-
-    Note over U,Cache: === Offline Fallback ===
-
-    U->>SD: Open saved story (offline)
-    SD->>Cache: getFromCache(storyId)
-    Cache-->>SD: Cached story content
-    SD->>U: Display from cache
 ```
 
 ## 3. QR Code Scan → Artifact Detail
@@ -151,63 +175,62 @@ sequenceDiagram
     AD->>AD: Navigate to StoryDetailScreen
 ```
 
-## 4. Gamification: Quiz Flow
+## 4. Gamification: Quiz Flow (local SQLite)
+
+> **Updated 2026-09-23:** on mobile, quizzes are served **locally** from SQLite
+> (`GamificationApiService` → `LocalGamificationRepository`). The Django
+> `/api/gamification/*` endpoints exist for the web client and are **not**
+> consumed by the Flutter app; `getLeaderboard()` returns `[]`.
 
 ```mermaid
 sequenceDiagram
-    title Gamification — Quiz Take & Grading Flow
+    title Gamification — Local Quiz Take & Grading Flow
 
     participant U as User
     participant GS as GamificationScreen
     participant QP as QuizPlayerWidget
     participant GA as GamificationApiService
-    participant API as Django REST API
-    participant DB as Database
+    participant LQ as LocalGamificationRepository (SQLite)
+    participant DB as Local Database
 
     U->>GS: Open Gamification
     GS->>GA: fetchQuizzes()
-    GA->>API: GET /api/gamification/quizzes/
-    API-->>GA: Quizzes list
+    GA->>LQ: listQuizzes()
+    LQ->>DB: SELECT from quizzes
+    DB-->>LQ: Seeded quiz rows
+    LQ-->>GA: Quiz list
     GA-->>GS: Display quizzes
 
     U->>GS: Select a quiz
     GS->>QP: Start QuizPlayer
 
     QP->>GA: startQuiz(quizId)
-    GA->>API: POST /api/gamification/quizzes/{id}/start/
-    API->>DB: Create QuizAttempt
-    DB-->>API: Attempt created
-    API-->>GA: Attempt details + questions
+    GA->>LQ: loadQuestions(quizId)
+    LQ->>DB: SELECT questions
+    DB-->>LQ: Questions (incl. correct_answer, local only)
+    LQ-->>GA: Question list
     GA-->>QP: Display first question
 
-    Note over U,DB: === Answer Questions ===
+    Note over U,DB: === Answer Questions (local grading) ===
 
     loop For each question
         U->>QP: Select answer (A/B/C/D)
-        QP->>GA: submitAnswer(questionId, answer)
-        GA->>API: POST /api/gamification/quizzes/{id}/submit_answer/
-        API->>DB: Record answer
-        API-->>GA: {is_correct, explanation}
-        GA-->>QP: Show result + explanation
+        QP->>GA: submitAnswer(question, option)
+        GA->>GA: Compare with correct_answer (local)
+        GA-->>QP: {is_correct, explanation}
         QP->>U: Display feedback
     end
 
-    Note over U,DB: === Finish & Grade ===
+    Note over U,DB: === Finish & Grade (local) ===
 
     U->>QP: Tap "Finish Quiz"
     QP->>GA: finishQuiz(quizId)
-    GA->>API: POST /api/gamification/quizzes/{id}/finish/
-    API->>DB: Calculate score
-    API->>API: Check if passed (>= passing_score)
+    GA->>LQ: recordAttempt(score, result)
+    LQ->>DB: upsert into attempts table
+    DB-->>LQ: Attempt saved locally
+    LQ-->>GA: Result
 
-    alt Quiz Passed
-        API->>DB: Award XP to UserProfile
-        API->>DB: Check badge eligibility
-        API->>DB: Award eligible badges
-    end
-
-    API-->>GA: Attempt result + XP earned
-    GA-->>QP: Display score, XP, badges
+    GA-->>QP: Display score
     QP->>U: Show results screen
 ```
 

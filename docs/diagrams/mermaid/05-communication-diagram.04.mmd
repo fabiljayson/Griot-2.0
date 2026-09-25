@@ -1,0 +1,25 @@
+flowchart LR
+    subgraph "Flutter Client"
+        U["User"]
+        QR["QRScannerWidget"]
+        AD["ArtifactDetailScreen"]
+        QAS["QrApiService"]
+        AC["ApiClient"]
+    end
+
+    subgraph "Backend API"
+        AV["ArtifactViewSet"]
+        AM["Artifact Model"]
+        QS["QRCodeScan Model"]
+    end
+
+    U -- "1. scan QR code" --> QR
+    QR -- "2. decode slug" --> QR
+    QR -- "3. lookupArtifact(slug)" --> QAS
+    QAS -- "4. GET /api/artifacts/lookup/" --> AC
+    AC -- "5. request" --> AV
+    AV -- "6. find artifact" --> AM
+    AV -- "7. record scan" --> QS
+    AV -- "8. artifact JSON" --> QAS
+    QAS -- "9. navigate" --> AD
+    AD -- "10. display info" --> U

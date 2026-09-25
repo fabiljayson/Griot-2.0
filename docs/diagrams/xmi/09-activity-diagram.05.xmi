@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_72c71b97e1333ad3" name="09-activity-diagram.05">
+  <uml:packagedElement xmi:type="uml:Activity" xmi:id="_44cf0c22b84346ee" name="09-activity-diagram.05">
+    <uml:node xmi:type="uml:InitialNode" xmi:id="_ee8941bbe6dad4d6" name="User opens QR Scanner" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_4a0e8fb03e1aeec6" name="Initialize camera" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_da088d342d467788" name="Show scanner overlay&lt;br/&gt;with African border motif" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_6958a1422f4e1e4f" name="Waiting for scan..." />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_2322aef0badb2477" name="QR code detected" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_6daabd2c34552f29" name="Decode QR → slug/ID" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_cfb9e38393ffd510" name="Show loading indicator" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_e690b63c8f0bc763" name="GET /api/artifacts/lookup/" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_cf17a2faeaa433f7" name="Artifact&lt;br/&gt;found?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_45eacd35624960a9" name="Show &quot;Artifact not found&quot;" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_76c0d7a8a5e7e807" name="Record QR scan&lt;br/&gt;device, IP, GPS" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_55ee558ca6140e27" name="Load artifact details" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_ba43173eaa7f92ba" name="Show ArtifactDetailScreen&lt;br/&gt;title, image, description,&lt;br/&gt;culture, region, materials" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_9c006d0a454e9c96" name="Load related stories" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_3013fa549d091a02" name="Related&lt;br/&gt;stories?" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_b194bda48e4d28ca" name="Display related&lt;br/&gt;story cards" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_4ad6243c7d4afc73" name="Show &quot;No related stories&quot;" />
+    <uml:node xmi:type="uml:DecisionNode" xmi:id="_3b8db5570b39ab89" name="User action" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_c8606d37a0e00811" name="Navigate to&lt;br/&gt;StoryDetailScreen" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_2d7ec70e52b13086" name="Play TTS narration&lt;br/&gt;for artifact" />
+    <uml:node xmi:type="uml:OpaqueAction" xmi:id="_4f876bff331557f2" name="Share artifact&lt;br/&gt;to social platform" />
+    <uml:node xmi:type="uml:ActivityFinalNode" xmi:id="_01c076d5e3cb0bdd" name="Story opened" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_3e4c80612822e213" source="_ee8941bbe6dad4d6" target="_4a0e8fb03e1aeec6" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_59303ae16d669141" source="_4a0e8fb03e1aeec6" target="_da088d342d467788" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_13db257ea198311c" source="_da088d342d467788" target="_6958a1422f4e1e4f" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_6d3be900c379de52" source="_6958a1422f4e1e4f" target="_2322aef0badb2477" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_59ba770357a6b8d9" source="_2322aef0badb2477" target="_6daabd2c34552f29" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_f3f5b3e27bddc5c8" source="_6daabd2c34552f29" target="_cfb9e38393ffd510" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_cf05ba1b41785180" source="_cfb9e38393ffd510" target="_e690b63c8f0bc763" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_e363ca777b1eb236" source="_e690b63c8f0bc763" target="_cf17a2faeaa433f7" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_73c6730d01367032" source="_cf17a2faeaa433f7" target="_45eacd35624960a9">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_3ac33c324bae4cf7">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_678ea58c2611d5d1" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_e33112641bf69789" source="_45eacd35624960a9" target="_6958a1422f4e1e4f" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_5e21ac759f769ece" source="_cf17a2faeaa433f7" target="_76c0d7a8a5e7e807">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_526a07614c729f45">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_79558b065ff5e1b8" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_4fa0b515bcdc6c79" source="_76c0d7a8a5e7e807" target="_55ee558ca6140e27" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_bf8ec24c8d8cc956" source="_55ee558ca6140e27" target="_ba43173eaa7f92ba" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_8eec710dd910ec5e" source="_ba43173eaa7f92ba" target="_9c006d0a454e9c96" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_82f60e13730d1b7b" source="_9c006d0a454e9c96" target="_3013fa549d091a02" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_f4fc9b1aaf06863a" source="_3013fa549d091a02" target="_b194bda48e4d28ca">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_d9673694a1699706">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_81b0fa9bcc7f5cc5" value="Yes" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_b433c1b009bfb533" source="_3013fa549d091a02" target="_4ad6243c7d4afc73">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_3e92ab9e8467fa71">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_49a48156ba1ad917" value="No" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_45afffe08ba1fe80" source="_b194bda48e4d28ca" target="_3b8db5570b39ab89" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_a0de4f672581043b" source="_3b8db5570b39ab89" target="_c8606d37a0e00811">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_c1fea9e3eaf9428c">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_8ce22bfae00b5ddb" value="Tap story" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_57a4e784e422cdbd" source="_3b8db5570b39ab89" target="_2d7ec70e52b13086">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_4acdee0e6955ea0d">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_854d14306b4d4cde" value="Play audio" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_1554f59cb8e579f9" source="_3b8db5570b39ab89" target="_4f876bff331557f2">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_891e87ae130638ef">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_364f6b93550d05a6" value="Share" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_246defcfd43cfe22" source="_3b8db5570b39ab89" target="_6958a1422f4e1e4f">
+      <uml:guard xmi:type="uml:Constraint" xmi:id="_1d6cb2aaa213b6ca">
+        <uml:specification xmi:type="uml:LiteralString" xmi:id="_1edbe64acfbb7619" value="Back" />
+      </uml:guard>
+    </uml:edge>
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_1907f8c2143e6b59" source="_c8606d37a0e00811" target="_01c076d5e3cb0bdd" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_08f41fd5f87ef681" source="_2d7ec70e52b13086" target="_3b8db5570b39ab89" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_97f87e037ab32055" source="_4f876bff331557f2" target="_3b8db5570b39ab89" />
+    <uml:edge xmi:type="uml:ControlFlow" xmi:id="_52a920e299555b0c" source="_4ad6243c7d4afc73" target="_3b8db5570b39ab89" />
+  </uml:packagedElement>
+</uml:Model>

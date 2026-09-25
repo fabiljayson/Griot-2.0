@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_dfda4ad31e24fe81" name="05-communication-diagram.03">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_320a7a03fc4ef6b9" name="Flutter Client">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_ddf3255e2c108684" name="User" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_e1acd513b7439bcb" name="App Widget" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_84fd33f767e0eb3c" name="OfflineQueueInterceptor" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_efb24116f6d42024" name="ConnectivityService" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_2427a428280a7496" name="OfflineRequestRepo" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_830b1b145a9fb701" name="OfflineSyncManager" />
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_df327d499f037978" name="ApiClient" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_f90d0da533bfd3ac" name="Backend API">
+    <uml:packagedElement xmi:type="uml:Component" xmi:id="_e274b76368231a61" name="Django REST Views" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_73befdfea8d576ec" name="1. bookmark story">
+    <uml:client xmi:idref="_ddf3255e2c108684" />
+    <uml:supplier xmi:idref="_e1acd513b7439bcb" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_262c844633a842c1" name="2. POST bookmark/">
+    <uml:client xmi:idref="_e1acd513b7439bcb" />
+    <uml:supplier xmi:idref="_84fd33f767e0eb3c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_55fe50d105d77f49" name="3. isOnline?">
+    <uml:client xmi:idref="_84fd33f767e0eb3c" />
+    <uml:supplier xmi:idref="_efb24116f6d42024" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_3e8ca6bd8a97634e" name="4. false">
+    <uml:client xmi:idref="_efb24116f6d42024" />
+    <uml:supplier xmi:idref="_84fd33f767e0eb3c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_77e726fa2876e96d" name="5. saveRequest()">
+    <uml:client xmi:idref="_84fd33f767e0eb3c" />
+    <uml:supplier xmi:idref="_2427a428280a7496" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_0344b1afd9f437a6" name="6. 202 Queued">
+    <uml:client xmi:idref="_84fd33f767e0eb3c" />
+    <uml:supplier xmi:idref="_e1acd513b7439bcb" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_71c7181af429cd87" name="7. show queued msg">
+    <uml:client xmi:idref="_e1acd513b7439bcb" />
+    <uml:supplier xmi:idref="_ddf3255e2c108684" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_12120593a2144ce8" name="8. connectivity restored">
+    <uml:client xmi:idref="_efb24116f6d42024" />
+    <uml:supplier xmi:idref="_830b1b145a9fb701" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_48a70bead7959c4d" name="9. getPending()">
+    <uml:client xmi:idref="_830b1b145a9fb701" />
+    <uml:supplier xmi:idref="_2427a428280a7496" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_80414f194fd161bc" name="10. pending list">
+    <uml:client xmi:idref="_2427a428280a7496" />
+    <uml:supplier xmi:idref="_830b1b145a9fb701" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2aa1cc4384f19bdc" name="11. replay POST bookmark/">
+    <uml:client xmi:idref="_830b1b145a9fb701" />
+    <uml:supplier xmi:idref="_df327d499f037978" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_46fb470a471184c6" name="12. HTTP request">
+    <uml:client xmi:idref="_df327d499f037978" />
+    <uml:supplier xmi:idref="_e274b76368231a61" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f31824cb5075a899" name="13. 201 Created">
+    <uml:client xmi:idref="_e274b76368231a61" />
+    <uml:supplier xmi:idref="_830b1b145a9fb701" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_588507aa2e3d42ad" name="14. markCompleted()">
+    <uml:client xmi:idref="_830b1b145a9fb701" />
+    <uml:supplier xmi:idref="_2427a428280a7496" />
+  </uml:packagedElement>
+</uml:Model>

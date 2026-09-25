@@ -1,0 +1,68 @@
+sequenceDiagram
+    title Authentication Flow (Online-first Login + Token Refresh)
+
+    participant U as User
+    participant App as Flutter App
+    participant AW as AuthWrapper
+    participant AR as AuthRepository
+    participant SR as ServerAuthRepository
+    participant AI as AuthInterceptor
+    participant API as Django REST API
+    participant DB as Database
+
+    Note over U,DB: === Login Flow — online path ===
+
+    U->>App: Open App
+    App->>AW: Build AuthWrapper
+    AW->>AR: Check stored tokens
+    AR-->>AW: No tokens found
+    AW->>U: Show LoginScreen
+
+    U->>App: Enter credentials & tap Login
+    App->>AR: login(username, password)
+    AR->>SR: login(username, password)
+    SR->>API: POST /api/auth/token/
+    API->>DB: Validate credentials (5/min throttle)
+    DB-->>API: User found
+    API-->>SR: {access, refresh} tokens (SimpleJWT 30m / 7d)
+    SR-->>AR: TokenPair
+    AR->>AR: Store tokens in secure storage
+    AR-->>App: AuthState.authenticated
+    App->>AW: Rebuild
+    AW->>U: Show HomeScreen
+
+    Note over U,DB: === Offline fallback path ===
+
+    U->>App: Login while offline (or API down)
+    App->>AR: login(username, password)
+    AR->>SR: login() — connection fails
+    SR-->>AR: Network error (AppError.network)
+    AR->>AR: Fall back to LocalAuthRepository
+    AR-->>App: AuthState.authenticated (offline session)
+    AW->>U: Show HomeScreen
+
+    Note over U,DB: === Subsequent Authenticated Request ===
+
+    U->>App: Navigate to Stories
+    App->>API: GET /api/stories/
+    AI->>AI: Inject Bearer token
+    AI->>API: GET /api/stories/ (with token)
+    API->>DB: Query stories
+    DB-->>API: Stories list
+    API-->>App: 200 OK + stories JSON
+    App->>U: Display story list
+
+    Note over U,DB: === Token Refresh on 401 (rotate + blacklist) ===
+
+    App->>API: GET /api/stories/bookmarks/
+    AI->>API: Bearer token (expired)
+    API-->>AI: 401 Unauthorized
+    AI->>AR: refreshTokens()
+    AR->>API: POST /api/auth/token/refresh/
+    API->>DB: Validate + blacklist old refresh token
+    DB-->>API: Valid refresh token
+    API-->>AR: New access + rotated refresh token
+    AR->>AR: Update stored tokens
+    AI->>API: Retry GET /api/stories/bookmarks/ (new token)
+    API-->>App: 200 OK + bookmarks JSON
+    App->>U: Display bookmarks

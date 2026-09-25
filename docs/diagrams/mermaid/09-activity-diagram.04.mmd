@@ -1,0 +1,52 @@
+flowchart TD
+    Start([App detects connectivity change]) --> IsOnline{Device<br/>online?}
+
+    IsOnline -->|No| QueueMode[Enter offline mode]
+    QueueMode --> ShowOffline[Show "Offline" indicator]
+
+    ShowOffline --> UserAction{User action}
+
+    UserAction -->|API request| CheckMethod{HTTP method?}
+    CheckMethod -->|GET| TryCache[Try local cache]
+    TryCache --> CacheHit{Cache hit?}
+    CacheHit -->|Yes| ReturnCache[Return cached data]
+    CacheHit -->|No| ShowErrorMsg[Show "No data available"]
+
+    CheckMethod -->|POST/PUT/PATCH/DELETE| QueueRequest[Queue request<br/>in offline_requests]
+    QueueRequest --> ShowQueued[Show "Queued for sync"]
+    ShowQueued --> UserAction
+
+    IsOnline -->|Yes| CheckPending{Pending<br/>queued requests?}
+
+    CheckPending -->|No| NormalMode[Normal online mode]
+    NormalMode --> UserAction2[Handle user actions normally]
+
+    CheckPending -->|Yes| StartSync[Start sync process]
+    StartSync --> FetchPending[Fetch all pending requests]
+    FetchPending --> HasReqs{Requests<br/>found?}
+
+    HasReqs -->|No| SyncDone[Sync complete]
+    HasReqs -->|Yes| ProcessReqs[Process requests<br/>in order]
+
+    ProcessReqs --> ExecReq[Execute request<br/>via ApiClient]
+    ExecReq --> ReqSuccess{Server<br/>response 2xx?}
+
+    ReqSuccess -->|Yes| MarkComplete[Mark request completed]
+    ReqSuccess -->|No| CheckRetries{Retry count<br/>< max?}
+
+    CheckRetries -->|Yes| IncrementRetry[Increment retry count<br/>Apply backoff delay]
+    IncrementRetry --> ProcessReqs
+
+    CheckRetries -->|No| MarkFailed[Mark request failed]
+
+    MarkComplete --> MoreReqs{More<br/>requests?}
+    MarkFailed --> MoreReqs
+
+    MoreReqs -->|Yes| ProcessReqs
+    MoreReqs -->|No| SyncDone
+
+    SyncDone --> SyncUsers{Pending user<br/>registrations?}
+    SyncUsers -->|Yes| RegisterUsers[Sync offline registrations]
+    SyncUsers -->|No| NotifySync[Notify: "All synced"]
+    RegisterUsers --> NotifySync
+    NotifySync --> End([Sync complete])

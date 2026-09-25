@@ -1,0 +1,22 @@
+stateDiagram-v2
+    title Content Flag & Moderation State Machine
+
+    [*] --> NoFlags : Story published\n(no flags)
+
+    NoFlags --> Flagged : User flags story\n(cultural inaccuracy,\ninappropriate, etc.)
+
+    Flagged --> UnderReview : Manager/Admin\nviews queue
+
+    UnderReview --> Resolved_Keep : Action = dismiss\n(story kept)
+    UnderReview --> Resolved_Remove : Action = remove\n(story archived)
+
+    Resolved_Keep --> NoFlags : Flags cleared\n(story remains)
+    Resolved_Remove --> Archived : Story archived
+
+    Archived --> [*]
+
+    note right of NoFlags : All flags resolved.\nStory is clean.
+    note right of Flagged : Unresolved flags\nin moderation queue.
+    note right of UnderReview : Admin/Manager\nreviewing flags.
+    note right of Resolved_Keep : Flags dismissed.\nStory stays published.
+    note right of Resolved_Remove : Story archived.\nHidden from public.

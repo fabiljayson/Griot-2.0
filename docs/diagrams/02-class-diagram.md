@@ -5,6 +5,12 @@
 > parentheses are Django `@property` (or Dart getters) — the original document
 > showed several of them as methods. Corrections and remaining gaps are listed
 > in `01-use-case-diagram.md` → *Divergences*.
+>
+> **Updated 2026-09-23** to reflect the online-first mobile data layer
+> (Server/Offline auth repositories, story online-first + mirror), the
+> SQLite-backed gamification/library services, the `settings`, `artifacts`
+> and `discover` features, and the new core `navigation`/`debug`/`network`
+> classes.
 
 ## Backend Models (Django)
 
@@ -172,8 +178,7 @@ classDiagram
     Story "1" --> "*" StoryShare : has
     User "1" --> "*" ReadingProgress : tracks
     Story "1" --> "*" ReadingProgress : has
-    StoryCategory "1" --> "*" Story : categorizes
-    Story "*" --> "*" StoryCategory : belongs_to
+    StoryCategory "*" --> "*" Story : categories (M2M, related_name=stories)
 
     %% ─── QR Codes & Artifacts ─────────────────────────────
     class Artifact {
@@ -485,7 +490,12 @@ classDiagram
     class IsAdminOrManager {
         +has_permission(bool)
         %% role in (institution_manager, admin)
-        %% used by ALL six analytics endpoints
+        %% used by ALL seven analytics endpoints + story moderation
+    }
+
+    class IsAuthenticatedOrReadOnly {
+        +has_permission(bool)
+        %% SAFE_METHODS OR authenticated (gamification app; DRF default)
     }
 
     class IsStoryOwnerOrReadOnly {
@@ -503,6 +513,7 @@ classDiagram
     IsAdminOrManager --|> IsAuthenticated
     IsStoryOwnerOrReadOnly --|> IsAuthenticated
     IsOwnerOrReadOnly --|> IsAuthenticated
+    IsAuthenticatedOrReadOnly --|> IsAuthenticated
 
     note for IsAdminOrManager "Implemented gate is WIDER than the\ndocumented Admin-only rule for analytics."
 ```
@@ -528,6 +539,17 @@ classDiagram
         -bool _isRefreshing
         +onRequest() void
         +onError() void
+    }
+
+    class RetryInterceptor {
+        -int _maxRetries
+        +onError() void
+    }
+
+    class AppError {
+        <<sealed>>
+        -network / -auth / -validation / -offline / -unknown
+        +AppErrorMapper appErrorFromDio(dioException)
     }
 
     class ConnectivityService {
@@ -559,6 +581,7 @@ classDiagram
 
     ApiClient --> AuthInterceptor : uses
     ApiClient --> OfflineQueueInterceptor : uses
+    ApiClient --> RetryInterceptor : uses
     ApiClient --> ConnectivityService : depends
     OfflineSyncManager --> ConnectivityService : listens
     OfflineSyncManager --> ApiClient : replays requests
@@ -579,12 +602,43 @@ classDiagram
         +Future logout() void
     }
 
-    %% The mobile data layer is local-first: AuthRepository and
-    %% StoryRepository delegate to SQLite and make NO HTTP calls.
+    %% Auth is ONLINE-FIRST: when the API is reachable, real JWT pairs are
+    %% obtained from /api/auth/token/ and kept in secure storage so protected
+    %% endpoints (TTS narration, progress sync, …) work. When offline, the
+    %% legacy SQLite/secure-storage session is used so the app stays usable.
+    class AuthRepository {
+        +Future~bool~ isAuthenticated
+        +Future~String?~ accessToken
+        +Future~String?~ refreshToken
+        +Future clearTokens() void
+        +Future login(username,password) TokenPair
+        +Future register(...) UserModel
+        +Future refreshTokens() TokenPair
+        +Future getMe() UserModel
+        +Future updateProfile(...) UserModel
+        +Future deleteAccount() void
+        +Future logout() void
+    }
+
+    class ServerAuthRepository {
+        +Future login() TokenPair  %% POST /api/auth/token/
+        +Future getMe() UserModel  %% GET /api/users/me/
+        +Future register() UserModel  %% POST /api/auth/register/
+    }
+
     class LocalAuthRepository {
-        <<SQLite>>
+        <<SQLite + secure storage>>
         +Future~bool~ isAuthenticated
         +Future getMe() UserModel
+    }
+
+    class OfflineAuthRepository {
+        +registerQueued() Future  %% queues /api/auth/register/ for replay
+    }
+
+    class OfflineUserRepository {
+        <<SQLite>>
+        +upsertUserFromServer() Future
     }
 
     class LocalStoryRepository {
@@ -643,7 +697,9 @@ classDiagram
     }
 
     AuthProvider --> AuthRepository : uses
-    AuthRepository --> LocalAuthRepository : delegates to (no HTTP)
+    AuthRepository --> ServerAuthRepository : online-first (JWT)
+    AuthRepository --> LocalAuthRepository : offline fallback
+    AuthRepository --> OfflineAuthRepository : queues register while offline
     AuthWrapper --> AuthProvider : watches
     AuthInterceptor --> AuthRepository : uses
     ProfileScreen --> AuthProvider : watches
@@ -717,22 +773,41 @@ classDiagram
     }
 
     StoryListNotifier --> StoryRepository : uses
-    StoryRepository --> LocalStoryRepository : delegates to (no HTTP)
+    StoryRepository --> ApiClient : online-first (GET covers/media)
+    StoryRepository --> LocalStoryRepository : offline mirror (SQLite upsert)
     StoriesScreen --> StoryListNotifier : watches
     StoryDetailScreen --> StoryRepository : reads
     StoryFormScreen --> StoryRepository : saves
     StoryCard --> StoryModel : displays
 
-    %% Only these features still reach the network, via ApiClient.
+    %% Network reach. Story/auth now go online-first via ApiClient; the
+    %% gamification and library services are LOCAL SQLite facades only.
     class ApiClientConsumer {
-        <<feature services>>
-        +admin_api_service  -> /api/analytics
-        +audio_api_service  -> /api/media
-        +video_api_service  -> /api/media
-        +qr_api_service     -> /api/artifacts
-        +sharing_service    -> /api/stories/{slug}/share
-        +offline_auth_repository -> /api/auth
+        <<feature services/packages>>
+        +admin_api_service     -> /api/analytics + /api/stories/moderation_queue/
+        +audio_api_service     -> /api/media/audio + status
+        +video_api_service     -> /api/media/videos + status
+        +qr_api_service        -> /api/artifacts/lookup/ + scans
+        +sharing_service       -> /api/stories/{slug}/share
+        +offline_auth_repository -> /api/auth/register (queued)
+        +story_repository      -> /api/stories (online-first mirror)
+        +artifacts_provider    -> /api/artifacts
+        +region_provider       -> /api/categories (discover)
     }
+
+    class GamificationApiService {
+        <<SQLite facade>>
+        +listQuizzes() / getQuiz() / submitAnswer() / finishQuiz()
+        +getLeaderboard() List  %% hardcoded []
+    }
+
+    class LibraryApiService {
+        <<SQLite facade>>
+        +getRecentStories() / getBookmarks() / getContinueReading()
+    }
+
+    GamificationApiService --> LocalGamificationRepository : delegates
+    LibraryApiService --> LocalLibraryRepository : delegates
 
     %% ─── Gamification ─────────────────────────────────────
     class GamificationScreen {
@@ -752,6 +827,144 @@ classDiagram
 
     GamificationScreen --> QuizPlayerWidget : contains
     GamificationScreen --> BadgeCard : displays
+
+    %% ─── State (sealed) ──────────────────────────────────
+    class StoryListState {
+        <<sealed>>
+        +InProgress()
+        +Ready()
+        +Failure()
+    }
+
+    class AuthStatus {
+        <<enumeration>>
+        initial
+        unauthenticated
+        authenticated
+        pendingSync
+        loading
+        error
+    }
+
+    StoryListNotifier --> StoryListState : emits
+    AuthProvider --> AuthStatus : tracks
+
+    %% ─── Navigation ──────────────────────────────────────
+    class AppRouter {
+        <<go_router>>
+        +String location
+        +goToStory(slug) void
+        +goToArtifact(slug) void
+        +routeTo(deepLinkKind, slug) void
+    }
+
+    class MainShell {
+        +int currentIndex
+        +destinationCount 5
+        +build() Widget
+    }
+
+    class AppDeepLink {
+        <<enumeration>>
+        story / artifact / quiz / profile / library / scan
+    }
+
+    AppRouter --> AppDeepLink : maps moved URL to route
+    MainShell --> AppRouter : hosts
+
+    %% ─── Settings (WhatsApp feedback) ────────────────────
+    class SettingsScreen {
+        +SwitchValue _audioSync
+        +build() Widget
+    }
+
+    class WhatsAppFeedbackService {
+        +openWhatsApp() Future  %% wa.me chat to developer contact
+    }
+
+    SettingsScreen --> WhatsAppFeedbackService : uses
+
+    %% ─── Admin dashboard consumers ───────────────────────
+    class AdminApiService {
+        +getDashboardSummary() DashboardSummary
+        +getUsers(search) List~AdminUser~
+        +getModerationQueue() List~ModerationItem~
+        +moderateStory(slug, action, notes) void
+    }
+
+    class AdminUser {
+        +int id
+        +String username
+        +String email
+        +String firstName
+        +String lastName
+        +String role
+        +String roleDisplay
+        +String institution
+        +String dateJoined
+        +bool isActive
+    }
+
+    class DashboardSummary {
+        +UserStats users
+        +StoryStats stories
+        +GamificationStats gamification
+        +QRStats qrCodes
+        +EngagementSummary engagement
+    }
+
+    AdminApiService --> ApiClient : uses
+    AdminApiService --> AdminUser : returns
+    AdminApiService --> DashboardSummary : returns
+
+    %% ─── Artifacts & Discover ────────────────────────────
+    class ArtifactsProvider {
+        +Future listArtifacts()  %% GET /api/artifacts/
+    }
+
+    class RegionModel {
+        +String slug
+        +String name
+        +String language
+        +String description
+    }
+
+    class RegionProvider {
+        +Future regions() List~RegionModel~  %% GET /api/categories/
+    }
+
+    ArtifactsProvider --> ApiClient : uses
+    RegionProvider --> ApiClient : uses
+
+    %% ─── Audio ───────────────────────────────────────────
+    class AudioApiService {
+        +generateNarration(storyId) void  %% POST /api/media/audio/
+        +checkStatus(jobId) void  %% GET /api/media/status/audio/{id}/
+    }
+
+    class AudioNarrationNotifier {
+        <<Riverpod>>
+        +play() / pause() / stop()
+    }
+
+    class OfflineAudioService {
+        +cacheAudio() / playCached()
+    }
+
+    %% ─── Video ───────────────────────────────────────────
+    class VideoApiService {
+        +createJob(storyId, prompt) void
+        +pollStatus(jobId) void
+    }
+
+    class VideoStatusPoller {
+        +Timer _timer
+        +start(jobId) void
+    }
+
+    VideoApiService --> ApiClient : uses
+    AudioApiService --> ApiClient : uses
+    VideoStatusPoller --> VideoApiService : polls
 ```
 
 ## Web UI Classes (Django `web` app)
@@ -770,7 +983,7 @@ classDiagram
     }
 
     class web_views {
-        <<module>>
+        <<module (thin)>>
         +home_view(request)
         +stories_view(request)
         +story_detail_view(request, slug)
@@ -785,6 +998,26 @@ classDiagram
         +admin_dashboard_view(request)
         +WebLoginView
         +WebLogoutView
+    }
+
+    class web_services {
+        <<module (business logic)>>
+        +home_data(user)
+        +stories_data(user, *, search, language, category_slug, region, sort)
+        +story_detail_data(user, slug)
+        +artifact_list_data(category)
+        +artifact_detail_data(user, request, slug)
+        +gamification_data(user)
+        +quiz_play_data(user, quiz_id)
+        +admin_dashboard_data()
+        +toggle_story_like(user, story)
+        +flag_story(user, story, reason, details)
+        +start_quiz(user, quiz)
+        +finish_quiz(user, quiz)
+        +moderate_story(user, story, action, notes)
+        +generate_story_audio(user, story, language)
+        +generate_story_video(user, story, prompt)
+        +register_user(*, username, email, password, password2, role)
     }
 
     class web_actions {
@@ -828,9 +1061,10 @@ classDiagram
     }
 
     web_actions --> web_views : redirects to
+    web_views --> web_services : delegates business logic
     web_views --> StoryTemplates : renders
     web_views --> WebUserSettings : reads per-user prefs
-    web_actions --> Story : same models as the API
-    web_actions --> AudioNarrationJob : generates via TTS
-    web_actions --> VideoGenerationJob : generates via Luma AI
+    web_services --> Story : same models as the API
+    web_services --> AudioNarrationJob : generates via TTS
+    web_services --> VideoGenerationJob : generates via Luma AI
 ```

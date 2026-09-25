@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_ffa2eac37431be08" name="AI Video/Audio Job State Machine">
+  <uml:packagedElement xmi:type="uml:StateMachine" xmi:id="_213fc83389dea5a0" name="AI Video/Audio Job State Machine">
+    <uml:region xmi:type="uml:Region" xmi:id="_ea9183139dd73189">
+      <uml:subvertex xmi:type="uml:State" xmi:id="_a7b038b19b8b68a5" name="Pending" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_748236e87db83731" name="Processing" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_3a5218cee4dd3326" name="Failed" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_3178b93f434487e1" name="Completed" />
+      <uml:subvertex xmi:type="uml:Pseudostate" xmi:id="_e0593e3361f75355" kind="initial" />
+      <uml:subvertex xmi:type="uml:FinalState" xmi:id="_1a94f9a9364bc005" />
+      <uml:transition xmi:type="uml:Transition" xmi:id="_d3e647f41cf5cbe2" name="Job submitted">
+        <uml:source xmi:idref="_e0593e3361f75355" />
+        <uml:target xmi:idref="_a7b038b19b8b68a5" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_fa2f4396bd06fe7d">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_7ea32b60c2120acc" name="Job submitted" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_fe2aa84709019c9f" name="External API starts\nprocessing">
+        <uml:source xmi:idref="_a7b038b19b8b68a5" />
+        <uml:target xmi:idref="_748236e87db83731" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_68dbf8e1565ea673">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_518885088c38ce0e" name="External API starts\nprocessing" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_1e97d2c92ecb17e8" name="API error or\nvalidation failure">
+        <uml:source xmi:idref="_a7b038b19b8b68a5" />
+        <uml:target xmi:idref="_3a5218cee4dd3326" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_d5089a2905f1215d">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_d85218a98d32d2a7" name="API error or\nvalidation failure" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_5142d69926485f1e" name="Generation\nfinished successfully">
+        <uml:source xmi:idref="_748236e87db83731" />
+        <uml:target xmi:idref="_3178b93f434487e1" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_7f35c361525d727a">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_dd109d31cdb03b07" name="Generation\nfinished successfully" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_4212c500efdd1f3f" name="API error or\ntimeout">
+        <uml:source xmi:idref="_748236e87db83731" />
+        <uml:target xmi:idref="_3a5218cee4dd3326" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_47641a950dfe846e">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_4581ac59b23b48a8" name="API error or\ntimeout" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_d312c4f900be7b03" name="User retries">
+        <uml:source xmi:idref="_3a5218cee4dd3326" />
+        <uml:target xmi:idref="_a7b038b19b8b68a5" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_99dabce384de5452">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_e29c2b08b97348b9" name="User retries" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_b35f45bd8677fa2a">
+        <uml:source xmi:idref="_3178b93f434487e1" />
+        <uml:target xmi:idref="_1a94f9a9364bc005" />
+      </uml:transition>
+    </uml:region>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_b672cceb90dc6440" body="Job queued.\nWaiting for external\nAPI to pick up.">
+      <uml:annotatedElement xmi:idref="_a7b038b19b8b68a5" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_352edb70370a95a2" body="Luma AI / TTS\nactively generating.\nProgress updating.">
+      <uml:annotatedElement xmi:idref="_748236e87db83731" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_cc300af340e7c067" body="Video URL / Audio URL\navailable for playback.">
+      <uml:annotatedElement xmi:idref="_3178b93f434487e1" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_c4f77add221605de" body="Error message stored.\nUser can retry.">
+      <uml:annotatedElement xmi:idref="_3a5218cee4dd3326" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

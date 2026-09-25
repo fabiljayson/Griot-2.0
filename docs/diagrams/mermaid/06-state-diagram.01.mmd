@@ -1,0 +1,27 @@
+stateDiagram-v2
+    title Story Lifecycle State Machine
+
+    [*] --> Draft : Contributor creates story
+
+    Draft --> Pending : Submit for review
+    Draft --> Archived : Delete draft
+
+    Pending --> Published : Admin/Manager approves
+    Pending --> Rejected : Admin/Manager rejects
+    Pending --> Archived : Admin archives
+
+    Published --> Archived : Admin archives
+    Published --> Rejected : Flagged & removed
+
+    Rejected --> Draft : Author revises
+    Rejected --> Archived : Admin archives
+
+    Archived --> Draft : Restore (admin)
+
+    note right of Draft : Story is being written.\nOnly visible to author.
+    note right of Pending : Awaiting moderation.\nVisible to managers/admins.
+    note right of Published : Live on platform.\nVisible to all users.
+    note right of Rejected : Failed review.\nAuthor can revise.
+    note right of Archived : Hidden from public.\nCan be restored.
+
+    note right of Pending : GAP: pending → published happens\nonly in the Django admin site;\nno approve/reject API endpoint.

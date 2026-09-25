@@ -1,0 +1,5 @@
+flowchart LR
+    Local["SQLite (dev / per-install)"] -->|manage.py sync_local_users| PG["PostgreSQL (prod)"]
+    Crawler["crawler/ (discover-cameroon.com)"] -->|runner.py| Json["backend/data/cameroon_content.json"]
+    Json -->|import_crawl_data| Artifact[(Artifact rows)]
+    Artifact --> PG

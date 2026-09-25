@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_3bd491f5b7b05838" name="Content Flag &amp; Moderation State Machine">
+  <uml:packagedElement xmi:type="uml:StateMachine" xmi:id="_e2df89caa367c789" name="Content Flag &amp; Moderation State Machine">
+    <uml:region xmi:type="uml:Region" xmi:id="_4d248a22acda1fba">
+      <uml:subvertex xmi:type="uml:State" xmi:id="_b3f49c09214da116" name="NoFlags" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_87081a401b234978" name="Flagged" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_335e6f75b0335db0" name="UnderReview" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_99e223b602e2730a" name="Resolved_Keep" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_0c957b46118f585e" name="Resolved_Remove" />
+      <uml:subvertex xmi:type="uml:State" xmi:id="_1307302b7765074e" name="Archived" />
+      <uml:subvertex xmi:type="uml:Pseudostate" xmi:id="_5c4c5834d7f1df30" kind="initial" />
+      <uml:subvertex xmi:type="uml:FinalState" xmi:id="_20d425fd1fc7a319" />
+      <uml:transition xmi:type="uml:Transition" xmi:id="_c515f3ccee50f77a" name="Story published\n(no flags)">
+        <uml:source xmi:idref="_5c4c5834d7f1df30" />
+        <uml:target xmi:idref="_b3f49c09214da116" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_98a7230de7f69953">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_9561fc35711ce4df" name="Story published\n(no flags)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_73dbc321f5ab6cb1" name="User flags story\n(cultural inaccuracy,\ninappropriate, etc.)">
+        <uml:source xmi:idref="_b3f49c09214da116" />
+        <uml:target xmi:idref="_87081a401b234978" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_6c769c238337a5ec">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_11b61baa923d0475" name="User flags story\n(cultural inaccuracy,\ninappropriate, etc.)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_dd27e2acab9ed461" name="Manager">
+        <uml:source xmi:idref="_87081a401b234978" />
+        <uml:target xmi:idref="_335e6f75b0335db0" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_33e2e8036c0af30b">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_783b46155f95caf3" name="Manager" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_55641af9d63cc929" name="Action = dismiss\n(story kept)">
+        <uml:source xmi:idref="_335e6f75b0335db0" />
+        <uml:target xmi:idref="_99e223b602e2730a" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_786d61c5f0886e3d">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_c498c3455026e384" name="Action = dismiss\n(story kept)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_40056a17380c0181" name="Action = remove\n(story archived)">
+        <uml:source xmi:idref="_335e6f75b0335db0" />
+        <uml:target xmi:idref="_0c957b46118f585e" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_d8ed93c6615d67c4">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_e324882267691c03" name="Action = remove\n(story archived)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_f8ccd03ae0e882ac" name="Flags cleared\n(story remains)">
+        <uml:source xmi:idref="_99e223b602e2730a" />
+        <uml:target xmi:idref="_b3f49c09214da116" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_772fdb1180421c34">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_0cb65b61a0c7e365" name="Flags cleared\n(story remains)" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_fe76db1a173e4853" name="Story archived">
+        <uml:source xmi:idref="_0c957b46118f585e" />
+        <uml:target xmi:idref="_1307302b7765074e" />
+        <uml:trigger xmi:type="uml:Trigger" xmi:id="_8b0e16c0d3f34d62">
+          <uml:event xmi:type="uml:SignalEvent" xmi:id="_c20070e3dce0a40e" name="Story archived" />
+        </uml:trigger>
+      </uml:transition>
+      <uml:transition xmi:type="uml:Transition" xmi:id="_bc84216d1865f279">
+        <uml:source xmi:idref="_1307302b7765074e" />
+        <uml:target xmi:idref="_20d425fd1fc7a319" />
+      </uml:transition>
+    </uml:region>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_c30dfcce9c2e7cb9" body="All flags resolved.\nStory is clean.">
+      <uml:annotatedElement xmi:idref="_b3f49c09214da116" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_8a2033839bd81bfa" body="Unresolved flags\nin moderation queue.">
+      <uml:annotatedElement xmi:idref="_87081a401b234978" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_c1ba7f0759c67664" body="Admin/Manager\nreviewing flags.">
+      <uml:annotatedElement xmi:idref="_335e6f75b0335db0" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_615c09fd9bace5e5" body="Flags dismissed.\nStory stays published.">
+      <uml:annotatedElement xmi:idref="_99e223b602e2730a" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_d43eb4050160a783" body="Story archived.\nHidden from public.">
+      <uml:annotatedElement xmi:idref="_0c957b46118f585e" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

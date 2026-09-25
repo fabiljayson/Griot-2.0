@@ -1,0 +1,240 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_5808a007d14671c6" name="Story Reading &amp; Progress Tracking (online-first + mirror)">
+  <uml:packagedElement xmi:type="uml:Interaction" xmi:id="_e20c87cab0d3e6fe" name="Story Reading &amp; Progress Tracking (online-first + mirror)">
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_580282b171da1885" name="User" interaction="_e20c87cab0d3e6fe" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_b08a0495ecc1b92a" name="StoriesScreen" interaction="_e20c87cab0d3e6fe" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_1abac7bdc147fe2a" name="StoryDetailScreen" interaction="_e20c87cab0d3e6fe" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_cd17ad93451dbeae" name="StoryRepository" interaction="_e20c87cab0d3e6fe" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_8cebe3646cd01c5c" name="Django REST API" interaction="_e20c87cab0d3e6fe" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_e650f7ede6794f5c" name="LocalStoryRepository (SQLite mirror)" interaction="_e20c87cab0d3e6fe" />
+    <uml:lifeline xmi:type="uml:Lifeline" xmi:id="_1de8d6e320c0cadd" name="Story Cache" interaction="_e20c87cab0d3e6fe" />
+    <uml:message xmi:type="uml:Message" xmi:id="_66ccc143348a082a" name="Open Stories (online)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_00543439610e982d" />
+      <uml:receiveEvent xmi:idref="_62794bf94d06f594" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_b04263865ddb3fe2" name="fetchStories()" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_24fbb9d211a9b61a" />
+      <uml:receiveEvent xmi:idref="_a7f315ee7b48c66e" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_102ac2961854465b" name="GET /api/stories/" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_75bdc0a8c24e0abd" />
+      <uml:receiveEvent xmi:idref="_2239ab190198bc90" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_bdd41d98692d8bbe" name="Stories list" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_29e723da633e83a3" />
+      <uml:receiveEvent xmi:idref="_2acb3d80738cffc4" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a89132c9ef74861c" name="Upsert all rows (slug-keyed mirror)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_efbc70ae14507487" />
+      <uml:receiveEvent xmi:idref="_043099c7895b60f3" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_1cd8bae188fcb870" name="Mirror updated" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_6ff58191873f2a3a" />
+      <uml:receiveEvent xmi:idref="_9c410373edd8abc9" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_2844167bc5ae6589" name="Display stories" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_ba076b34cf5ac9dd" />
+      <uml:receiveEvent xmi:idref="_19a72d8eee762a27" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_1bf9b60ed5ba17b9" name="Tap story card" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_98c4164d6a0eda14" />
+      <uml:receiveEvent xmi:idref="_e43c49af23ba0dce" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_4f05be9c51ff5d28" name="Navigate to StoryDetail" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_5e791b00c0e73a82" />
+      <uml:receiveEvent xmi:idref="_da7beb7a743ad1c6" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a7301b5fe7288990" name="fetchStory(slug)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_f8d2f46302222bb1" />
+      <uml:receiveEvent xmi:idref="_3b7f9458fdb69889" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_4dbf976561f705cd" name="GET /api/stories/{slug}/" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_276a9f6208aa7982" />
+      <uml:receiveEvent xmi:idref="_56c04edd31ee35e2" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_cd047524ed32a0f6" name="Story detail" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_91a54a4030f75579" />
+      <uml:receiveEvent xmi:idref="_b8a14a41c0ce6bb2" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_ffbd7639756989e9" name="Increment view_count" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_1e92b841ad12fede" />
+      <uml:receiveEvent xmi:idref="_db91adb2bf6e0f64" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_791222d9adfa36bc" name="Upsert story cover/content" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_79060fab2433ac14" />
+      <uml:receiveEvent xmi:idref="_6d887709d947b0a5" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_b3195d0fbd46349e" name="Display story content" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_6e4fc839bafcfc48" />
+      <uml:receiveEvent xmi:idref="_6d55edcb54a73472" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_8d47518a13bc71e8" name="Render Markdown content" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_36adca3bf08f11d2" />
+      <uml:receiveEvent xmi:idref="_bf2c10b0e4a561a2" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_7baeb48edb792dfc" name="Open Stories (offline)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_fa9b80b84327292c" />
+      <uml:receiveEvent xmi:idref="_198065f7fe2869cd" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_930ef1b73a6b55ed" name="fetchStories()" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_6f15faf7e162a195" />
+      <uml:receiveEvent xmi:idref="_bf2832e1eee725e6" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_91b6e7440d6c857c" name="GET /api/stories/ — connection fails" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_8d68842ffe1b04a8" />
+      <uml:receiveEvent xmi:idref="_b013c4bfa6f01d38" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_5e4e18d5a4eb2c5e" name="Read mirror from SQLite" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_58acc6ffa7637eb6" />
+      <uml:receiveEvent xmi:idref="_e4ba54041d408df4" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_338afaee12db296d" name="Cached stories (never-overwritten local data)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_70f4fbbb00af1b34" />
+      <uml:receiveEvent xmi:idref="_57f10c60bad05ed0" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_947e5363359de3c3" name="Display stories from mirror" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_3f760e773cabf817" />
+      <uml:receiveEvent xmi:idref="_4d176fcc310c52fc" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_257558768efd2715" name="Open saved story" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_80e7b5b1d73e0376" />
+      <uml:receiveEvent xmi:idref="_f3e8250833a396c0" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_76c5b5d9aae49708" name="getFromCache(storyId)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_7b585a9148bbe6cf" />
+      <uml:receiveEvent xmi:idref="_914868e54fd7cb12" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_a57758ccb1a9e747" name="Cached story content" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_c4af9632e05a65e0" />
+      <uml:receiveEvent xmi:idref="_8daf3577e94c6191" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_b102900415053851" name="Display from cache" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_7623f65575bc2898" />
+      <uml:receiveEvent xmi:idref="_e02422177980793a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_5c007fe853f1d4af" name="Scroll down (25%)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_87dc143b7dc0ae62" />
+      <uml:receiveEvent xmi:idref="_43b5bdfc235968f6" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_567630c6274f0650" name="updateProgress(slug, 25%)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_57c77728a7ebf209" />
+      <uml:receiveEvent xmi:idref="_6f1ce274167acf3d" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_9b49393f61bf496f" name="Write to local ReadingProgressRepository" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_e4475d5a361ba034" />
+      <uml:receiveEvent xmi:idref="_b9209e07263cff0a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_b17e1b385212ab2b" name="POST /api/stories/{slug}/progress/ (best-effort)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_3778b568e5d2d92b" />
+      <uml:receiveEvent xmi:idref="_bcd36f2a0cee1151" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_efb6351f226b5d8d" name="Progress saved" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_917b3af5b5b838a0" />
+      <uml:receiveEvent xmi:idref="_b6474ce8e624633e" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_61af1aa9c8053c8d" name="Bookmark story" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_4e3d0cd294dafc9f" />
+      <uml:receiveEvent xmi:idref="_b7f6d00e3af06c1b" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_8bc452416972ca94" name="toggleBookmark(slug)" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_0c520dfdc0d48455" />
+      <uml:receiveEvent xmi:idref="_eaecf134fa8ba334" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_956b40a5392b6a95" name="Optimistic local write" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_87dc7969fa0619e3" />
+      <uml:receiveEvent xmi:idref="_8ba8d3ef4b469d0e" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_6dc9f41b2443445d" name="POST /api/stories/{slug}/bookmark/" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_7f573111e047223a" />
+      <uml:receiveEvent xmi:idref="_174a4f70e1655862" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_8a85c7bebe19099f" name="{bookmarked: true}" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_d92c695360068029" />
+      <uml:receiveEvent xmi:idref="_5792e203b0cb7c4a" />
+    </uml:message>
+    <uml:message xmi:type="uml:Message" xmi:id="_fcf042b7cd718cc7" name="Update UI" messageSort="synchCall" interaction="_e20c87cab0d3e6fe">
+      <uml:sendEvent xmi:idref="_e6bc270bbc1713ec" />
+      <uml:receiveEvent xmi:idref="_26d464b0457abd47" />
+    </uml:message>
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_00543439610e982d" covered="_580282b171da1885" message="_66ccc143348a082a" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_62794bf94d06f594" covered="_b08a0495ecc1b92a" message="_66ccc143348a082a" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_24fbb9d211a9b61a" covered="_b08a0495ecc1b92a" message="_b04263865ddb3fe2" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_a7f315ee7b48c66e" covered="_cd17ad93451dbeae" message="_b04263865ddb3fe2" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_75bdc0a8c24e0abd" covered="_cd17ad93451dbeae" message="_102ac2961854465b" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_2239ab190198bc90" covered="_8cebe3646cd01c5c" message="_102ac2961854465b" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_29e723da633e83a3" covered="_8cebe3646cd01c5c" message="_bdd41d98692d8bbe" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_2acb3d80738cffc4" covered="_cd17ad93451dbeae" message="_bdd41d98692d8bbe" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_efbc70ae14507487" covered="_cd17ad93451dbeae" message="_a89132c9ef74861c" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_043099c7895b60f3" covered="_e650f7ede6794f5c" message="_a89132c9ef74861c" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6ff58191873f2a3a" covered="_e650f7ede6794f5c" message="_1cd8bae188fcb870" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_9c410373edd8abc9" covered="_cd17ad93451dbeae" message="_1cd8bae188fcb870" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_ba076b34cf5ac9dd" covered="_cd17ad93451dbeae" message="_2844167bc5ae6589" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_19a72d8eee762a27" covered="_b08a0495ecc1b92a" message="_2844167bc5ae6589" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_98c4164d6a0eda14" covered="_580282b171da1885" message="_1bf9b60ed5ba17b9" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e43c49af23ba0dce" covered="_b08a0495ecc1b92a" message="_1bf9b60ed5ba17b9" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_5e791b00c0e73a82" covered="_b08a0495ecc1b92a" message="_4f05be9c51ff5d28" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_da7beb7a743ad1c6" covered="_1abac7bdc147fe2a" message="_4f05be9c51ff5d28" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f8d2f46302222bb1" covered="_1abac7bdc147fe2a" message="_a7301b5fe7288990" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_3b7f9458fdb69889" covered="_cd17ad93451dbeae" message="_a7301b5fe7288990" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_276a9f6208aa7982" covered="_cd17ad93451dbeae" message="_4dbf976561f705cd" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_56c04edd31ee35e2" covered="_8cebe3646cd01c5c" message="_4dbf976561f705cd" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_91a54a4030f75579" covered="_8cebe3646cd01c5c" message="_cd047524ed32a0f6" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b8a14a41c0ce6bb2" covered="_cd17ad93451dbeae" message="_cd047524ed32a0f6" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_1e92b841ad12fede" covered="_8cebe3646cd01c5c" message="_ffbd7639756989e9" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_db91adb2bf6e0f64" covered="_8cebe3646cd01c5c" message="_ffbd7639756989e9" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_79060fab2433ac14" covered="_cd17ad93451dbeae" message="_791222d9adfa36bc" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6d887709d947b0a5" covered="_e650f7ede6794f5c" message="_791222d9adfa36bc" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6e4fc839bafcfc48" covered="_cd17ad93451dbeae" message="_b3195d0fbd46349e" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6d55edcb54a73472" covered="_1abac7bdc147fe2a" message="_b3195d0fbd46349e" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_36adca3bf08f11d2" covered="_1abac7bdc147fe2a" message="_8d47518a13bc71e8" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_bf2c10b0e4a561a2" covered="_580282b171da1885" message="_8d47518a13bc71e8" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_fa9b80b84327292c" covered="_580282b171da1885" message="_7baeb48edb792dfc" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_198065f7fe2869cd" covered="_b08a0495ecc1b92a" message="_7baeb48edb792dfc" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6f15faf7e162a195" covered="_b08a0495ecc1b92a" message="_930ef1b73a6b55ed" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_bf2832e1eee725e6" covered="_cd17ad93451dbeae" message="_930ef1b73a6b55ed" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_8d68842ffe1b04a8" covered="_cd17ad93451dbeae" message="_91b6e7440d6c857c" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b013c4bfa6f01d38" covered="_8cebe3646cd01c5c" message="_91b6e7440d6c857c" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_58acc6ffa7637eb6" covered="_cd17ad93451dbeae" message="_5e4e18d5a4eb2c5e" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e4ba54041d408df4" covered="_e650f7ede6794f5c" message="_5e4e18d5a4eb2c5e" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_70f4fbbb00af1b34" covered="_e650f7ede6794f5c" message="_338afaee12db296d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_57f10c60bad05ed0" covered="_cd17ad93451dbeae" message="_338afaee12db296d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_3f760e773cabf817" covered="_cd17ad93451dbeae" message="_947e5363359de3c3" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_4d176fcc310c52fc" covered="_b08a0495ecc1b92a" message="_947e5363359de3c3" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_80e7b5b1d73e0376" covered="_580282b171da1885" message="_257558768efd2715" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_f3e8250833a396c0" covered="_1abac7bdc147fe2a" message="_257558768efd2715" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7b585a9148bbe6cf" covered="_1abac7bdc147fe2a" message="_76c5b5d9aae49708" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_914868e54fd7cb12" covered="_1de8d6e320c0cadd" message="_76c5b5d9aae49708" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_c4af9632e05a65e0" covered="_1de8d6e320c0cadd" message="_a57758ccb1a9e747" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_8daf3577e94c6191" covered="_1abac7bdc147fe2a" message="_a57758ccb1a9e747" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7623f65575bc2898" covered="_1abac7bdc147fe2a" message="_b102900415053851" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e02422177980793a" covered="_580282b171da1885" message="_b102900415053851" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_87dc143b7dc0ae62" covered="_580282b171da1885" message="_5c007fe853f1d4af" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_43b5bdfc235968f6" covered="_1abac7bdc147fe2a" message="_5c007fe853f1d4af" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_57c77728a7ebf209" covered="_1abac7bdc147fe2a" message="_567630c6274f0650" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_6f1ce274167acf3d" covered="_cd17ad93451dbeae" message="_567630c6274f0650" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e4475d5a361ba034" covered="_cd17ad93451dbeae" message="_9b49393f61bf496f" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b9209e07263cff0a" covered="_cd17ad93451dbeae" message="_9b49393f61bf496f" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_3778b568e5d2d92b" covered="_cd17ad93451dbeae" message="_b17e1b385212ab2b" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_bcd36f2a0cee1151" covered="_8cebe3646cd01c5c" message="_b17e1b385212ab2b" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_917b3af5b5b838a0" covered="_8cebe3646cd01c5c" message="_efb6351f226b5d8d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b6474ce8e624633e" covered="_cd17ad93451dbeae" message="_efb6351f226b5d8d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_4e3d0cd294dafc9f" covered="_580282b171da1885" message="_61af1aa9c8053c8d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_b7f6d00e3af06c1b" covered="_1abac7bdc147fe2a" message="_61af1aa9c8053c8d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_0c520dfdc0d48455" covered="_1abac7bdc147fe2a" message="_8bc452416972ca94" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_eaecf134fa8ba334" covered="_cd17ad93451dbeae" message="_8bc452416972ca94" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_87dc7969fa0619e3" covered="_cd17ad93451dbeae" message="_956b40a5392b6a95" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_8ba8d3ef4b469d0e" covered="_cd17ad93451dbeae" message="_956b40a5392b6a95" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_7f573111e047223a" covered="_cd17ad93451dbeae" message="_6dc9f41b2443445d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_174a4f70e1655862" covered="_8cebe3646cd01c5c" message="_6dc9f41b2443445d" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_d92c695360068029" covered="_8cebe3646cd01c5c" message="_8a85c7bebe19099f" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_5792e203b0cb7c4a" covered="_cd17ad93451dbeae" message="_8a85c7bebe19099f" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_e6bc270bbc1713ec" covered="_cd17ad93451dbeae" message="_fcf042b7cd718cc7" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:fragment xmi:type="uml:MessageOccurrenceSpecification" xmi:id="_26d464b0457abd47" covered="_1abac7bdc147fe2a" message="_fcf042b7cd718cc7" enclosingInteraction="_e20c87cab0d3e6fe" />
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_83b5138ef693dc06" body="=== Offline: last synced mirror served ===">
+      <uml:annotatedElement xmi:idref="_580282b171da1885" />
+    </uml:ownedComment>
+    <uml:ownedComment xmi:type="uml:Comment" xmi:id="_7f3dca10fb423fe7" body="=== Reading Progress (local-first, best-effort sync) ===">
+      <uml:annotatedElement xmi:idref="_580282b171da1885" />
+    </uml:ownedComment>
+  </uml:packagedElement>
+</uml:Model>

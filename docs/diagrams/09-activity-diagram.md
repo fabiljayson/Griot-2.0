@@ -20,23 +20,33 @@ flowchart TD
     ValidateForm -->|No| ShowErrors[Show validation errors]
     ShowErrors --> FillForm
 
-    ValidateForm -->|Yes| SubmitReg[POST /api/auth/register/]
+    ValidateForm -->|Yes| OnlineNow{Online?}
+    OnlineNow -->|Yes| SubmitReg[POST /api/auth/register/<br/>via ServerAuthRepository]
+    OnlineNow -->|No| QueueReg[Queue registration<br/>offline_requests<br/>AuthStatus → pendingSync]
+    QueueReg --> ShowQueued[Show "Account saved —<br/>will sync when online"]
+    ShowQueued --> HomeScreen
+
     SubmitReg --> RegSuccess{Registration<br/>successful?}
 
     RegSuccess -->|No| ShowRegError[Show error message]
     ShowRegError --> FillForm
 
     RegSuccess -->|Yes| AutoLogin[Auto-login with credentials]
-    AutoLogin --> StoreTokens[Store JWT tokens<br/>access + refresh]
-    StoreTokens --> HomeScreen
+    AutoLogin --> StoreTokens[Store JWT tokens<br/>access + refresh (local)]
 
-    EnterCreds --> ValidateCreds[POST /api/auth/token/]
+    EnterCreds --> AuthOnline{Online?}
+    AuthOnline -->|Yes| ValidateCreds[POST /api/auth/token/]
+    AuthOnline -->|No| AuthFallback[LocalAuthRepository etc.<br/>serve cached session<br/>(AuthStatus → pendingSync)]
+    AuthFallback --> StoreTokens
+
     ValidateCreds --> CredsValid{Credentials<br/>valid?}
 
     CredsValid -->|No| ShowLoginError[Show error message]
     ShowLoginError --> EnterCreds
 
     CredsValid -->|Yes| StoreTokens
+
+    StoreTokens --> HomeScreen
 
     HomeScreen --> Welcome{First time?}
     Welcome -->|Yes| ShowTour[Show onboarding tour]
@@ -102,17 +112,16 @@ flowchart TD
     AuthCheck -->|Yes| CheckExisting{Existing in-<br/>progress attempt?}
 
     CheckExisting -->|Yes| ResumeAttempt[Resume attempt]
-    CheckExisting -->|No| StartQuiz[POST /quizzes/{id}/start/]
+    CheckExisting -->|No| StartQuiz[Start quiz — local SQLite<br/>via GamificationApiService →<br/>LocalGamificationRepository]
 
-    ResumeAttempt --> LoadQuestions[Load questions]
-    StartQuiz --> CreateAttempt[Create QuizAttempt]
+    ResumeAttempt --> LoadQuestions[Load questions (local)]
+    StartQuiz --> CreateAttempt[Create QuizAttempt (local)]
     CreateAttempt --> LoadQuestions
 
     LoadQuestions --> ShowQuestion[Display question<br/>with 4 options]
 
     ShowQuestion --> SelectAnswer[User selects answer]
-    SelectAnswer --> SubmitAnswer[POST /quizzes/{id}/submit_answer/]
-    SubmitAnswer --> GradeAnswer{Correct?}
+    SelectAnswer --> GradeAnswer{Correct?}
 
     GradeAnswer -->|Yes| ShowCorrect[Show ✓ + explanation]
     GradeAnswer -->|No| ShowIncorrect[Show ✗ + correct answer]
@@ -123,19 +132,19 @@ flowchart TD
     UpdateProgress --> MoreQuestions{More<br/>questions?}
 
     MoreQuestions -->|Yes| ShowQuestion
-    MoreQuestions -->|No| FinishQuiz[POST /quizzes/{id}/finish/]
+    MoreQuestions -->|No| FinishQuiz[Finish quiz — persist result<br/>locally; SQLite mirror]
 
     FinishQuiz --> CalculateScore[Calculate score]
     CalculateScore --> Passed{Score >=<br/>passing_score?}
 
-    Passed -->|Yes| AwardXP[ Award XP<br/>Update UserProfile]
+    Passed -->|Yes| AwardXP[Award XP — update<br/>local user profile]
     Passed -->|No| NoXP[No XP awarded]
 
     AwardXP --> CheckLevel{Level up?}
     CheckLevel -->|Yes| LevelUp[Increment level<br/>Show celebration]
     CheckLevel -->|No| CheckBadges
 
-    NoXP --> CheckBadges[Check badge eligibility]
+    NoXP --> CheckBadges[Check badge eligibility<br/>(leaderboard is local)]
 
     CheckBadges --> BadgesEarned{New badges?}
     BadgesEarned -->|Yes| AwardBadges[ Award badges<br/>+ XP]

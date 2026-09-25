@@ -1,0 +1,30 @@
+flowchart LR
+    subgraph "Flutter Client"
+        U["User"]
+        App["App Widget"]
+        OQI["OfflineQueueInterceptor"]
+        CS["ConnectivityService"]
+        ORepo["OfflineRequestRepo"]
+        OSM["OfflineSyncManager"]
+        AC["ApiClient"]
+    end
+
+    subgraph "Backend API"
+        API["Django REST Views"]
+    end
+
+    U -- "1. bookmark story" --> App
+    App -- "2. POST bookmark/" --> OQI
+    OQI -- "3. isOnline?" --> CS
+    CS -- "4. false" --> OQI
+    OQI -- "5. saveRequest()" --> ORepo
+    OQI -- "6. 202 Queued" --> App
+    App -- "7. show queued msg" --> U
+
+    CS -- "8. connectivity restored" --> OSM
+    OSM -- "9. getPending()" --> ORepo
+    ORepo -- "10. pending list" --> OSM
+    OSM -- "11. replay POST bookmark/" --> AC
+    AC -- "12. HTTP request" --> API
+    API -- "13. 201 Created" --> OSM
+    OSM -- "14. markCompleted()" --> ORepo

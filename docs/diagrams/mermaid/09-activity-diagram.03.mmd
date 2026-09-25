@@ -1,0 +1,55 @@
+flowchart TD
+    Start([User selects quiz]) --> AuthCheck{Authenticated?}
+
+    AuthCheck -->|No| PromptLogin[Prompt to login]
+    PromptLogin --> End1([Stop])
+
+    AuthCheck -->|Yes| CheckExisting{Existing in-<br/>progress attempt?}
+
+    CheckExisting -->|Yes| ResumeAttempt[Resume attempt]
+    CheckExisting -->|No| StartQuiz[Start quiz — local SQLite<br/>via GamificationApiService →<br/>LocalGamificationRepository]
+
+    ResumeAttempt --> LoadQuestions[Load questions (local)]
+    StartQuiz --> CreateAttempt[Create QuizAttempt (local)]
+    CreateAttempt --> LoadQuestions
+
+    LoadQuestions --> ShowQuestion[Display question<br/>with 4 options]
+
+    ShowQuestion --> SelectAnswer[User selects answer]
+    SelectAnswer --> GradeAnswer{Correct?}
+
+    GradeAnswer -->|Yes| ShowCorrect[Show ✓ + explanation]
+    GradeAnswer -->|No| ShowIncorrect[Show ✗ + correct answer]
+
+    ShowCorrect --> UpdateProgress[Update progress bar]
+    ShowIncorrect --> UpdateProgress
+
+    UpdateProgress --> MoreQuestions{More<br/>questions?}
+
+    MoreQuestions -->|Yes| ShowQuestion
+    MoreQuestions -->|No| FinishQuiz[Finish quiz — persist result<br/>locally; SQLite mirror]
+
+    FinishQuiz --> CalculateScore[Calculate score]
+    CalculateScore --> Passed{Score >=<br/>passing_score?}
+
+    Passed -->|Yes| AwardXP[Award XP — update<br/>local user profile]
+    Passed -->|No| NoXP[No XP awarded]
+
+    AwardXP --> CheckLevel{Level up?}
+    CheckLevel -->|Yes| LevelUp[Increment level<br/>Show celebration]
+    CheckLevel -->|No| CheckBadges
+
+    NoXP --> CheckBadges[Check badge eligibility<br/>(leaderboard is local)]
+
+    CheckBadges --> BadgesEarned{New badges?}
+    BadgesEarned -->|Yes| AwardBadges[ Award badges<br/>+ XP]
+    BadgesEarned -->|No| CheckCerts
+
+    AwardBadges --> CheckCerts{Certificate<br/>eligible?}
+    CheckCerts -->|Yes| IssueCert[Issue certificate<br/>Generate PDF]
+    CheckCerts -->|No| ShowResults
+
+    IssueCert --> ShowResults[Show results screen<br/>score, XP, badges, cert]
+    LevelUp --> ShowResults
+
+    ShowResults --> End2([Quiz complete])

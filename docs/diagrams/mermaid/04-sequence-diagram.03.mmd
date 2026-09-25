@@ -1,0 +1,32 @@
+sequenceDiagram
+    title QR Code Scan → Artifact Detail Flow
+
+    participant U as User
+    participant QS as QR Scanner
+    participant AD as ArtifactDetailScreen
+    participant QR as QR API Service
+    participant API as Django REST API
+
+    U->>QS: Open QR Scanner
+    QS->>QS: Initialize camera
+    QS->>U: Show scanner overlay
+
+    U->>QS: Scan QR code
+    QS->>QS: Decode QR → slug
+    QS->>QR: lookupArtifact(slug)
+    QR->>API: GET /api/artifacts/lookup/?slug={slug}
+    API->>API: Record QRCodeScan (device, IP, GPS)
+    API-->>QR: Artifact detail JSON
+    QR-->>AD: Navigate to artifact
+
+    AD->>AD: Display artifact info
+    AD->>U: Show title, image, description
+
+    AD->>QR: fetchRelatedStories(artifactId)
+    QR->>API: GET /api/artifacts/{id}/
+    API-->>QR: Artifact with related stories
+    QR-->>AD: Related stories list
+    AD->>U: Show related stories
+
+    U->>AD: Tap related story
+    AD->>AD: Navigate to StoryDetailScreen

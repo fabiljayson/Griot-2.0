@@ -1,0 +1,287 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_fa6bb0f193e17ecb" name="Griot 2.0 - Package Diagram">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_320a7a03fc4ef6b9" name="Flutter Client">
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_9bf08c401ea460de" name="core">
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_c1529688fc2deac9" name="constants">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_96c8564d1feb16a6" name="AppConstants" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_af994230d62af594" name="PreRegisteredAccounts" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_03d53cfcfd46ca8c" name="database">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_f126866bbd580773" name="AppDatabase" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_e0e2584abe00a467" name="LocalAuthRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_e8b1c7b03c0d36b5" name="LocalStoryRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_1ead6720c97b59aa" name="LocalGamificationRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_7ec3401d1a88bf50" name="LocalLibraryRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_61b6fd27ad2e14e1" name="OfflineRequestRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_367b976700a20331" name="OfflineUserRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_fb9510d8a4708574" name="StoryCacheRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_5b74deb88488ca3e" name="ReadingProgressRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_aecff8818154fd9f" name="SearchHistoryRepository" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_54eef78906d73cc6" name="debug">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_06ee4b1c36d14fe2" name="DebugLog" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_885a7e924d5ccd39" name="navigation">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_8f5f623027cc11ff" name="AppRouter" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_7dfc57c69ca7aa54" name="MainShell" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_22d687d0ed4139b8" name="AppDeepLink" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_8077ffa34b5566da" name="AuthPageRoute" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_1e331c8751cf434a" name="network">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_092652be8b402963" name="ApiClient" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_8e40c3c8e7965998" name="AuthInterceptor" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_96089df59cd049d1" name="RetryInterceptor" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_78f291e804117330" name="ConnectivityService" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_940dc0b3aa7d5a80" name="OfflineSyncManager" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_d5244ed4caa5a6e3" name="AppError" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_2e90c2827c90261a" name="HttpUtils" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_7c4efa682703f875" name="offline">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_03a7c98705b92871" name="OfflineProvider" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_198dff421aeab78d" name="OfflineFeature" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_7bbf10eb61efb6f8" name="OfflineErrorBuffer" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_5f4a7bf27acf324e" name="providers">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_2e20144f903ced63" name="DatabaseProviders" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_fec894bf80838289" name="OnboardingProvider" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_adbec727e6ebc11f" name="theme">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_711db9e65fdb75e5" name="AppColors" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_34bf6f310d9657ed" name="AppTheme" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_4a24cb9e94b98854" name="AppTypography" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_36f5bffc57fa7347" name="widgets">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_61c94d6f0e02bbc2" name="BrandWidgets" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_ae53b6ac641d0d13" name="GriotImage" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_ee90659d45822241" name="GriotLoader" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_8c51e5409983754e" name="AuthFormWidgets" />
+      </uml:packagedElement>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_d78ed67e10a81d5f" name="features">
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_7cbf26d0e2f1fccf" name="auth">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_22ee0a295cf5d85b" name="LoginScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_e1eab789b985b10e" name="RegisterScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_cbee90b3b2586858" name="ProfileScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_74cab646e7780211" name="AuthWrapper" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_0cac05c415e3eb64" name="AuthProvider" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_1d04bee3bf8e8ca4" name="AuthRepository" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_42417a935bba2912" name="ServerAuthRepository" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_120bad7b2ab1ec14" name="home">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_dff81bb2d98499dc" name="HomeScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_721aa034bc4acd5c" name="ConnectivityStatusWidget" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_0c1126c9303da6d8" name="OfflineStoryCounter" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_a7c155f0a5263387" name="stories">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_b4cdabe8c91c4f7b" name="StoriesScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_532b8b4226557e10" name="StoryDetailScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_c16f3e56fd05d8e5" name="StoryFormScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_7b80f3b2474f2944" name="StoryCard" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_882aebfc338ef464" name="StoryActions" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_6f5110ce8c05f11d" name="library">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_a7ded9c09355a9a6" name="LibraryScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_2f0acf230f02154e" name="ContinueReadingWidget" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_2fd3995e07d88aac" name="LibraryApiService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_82797726c27047d1" name="qr_scanner">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_e33bb0d173935fdc" name="QRScannerWidget" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_b8b229ccb28e4c02" name="ArtifactDetailScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_1da3944035dcdd80" name="QrApiService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_841884237dad4818" name="audio">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_b4e9181d642779ab" name="AudioPlayerSheet" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_5dd5cecb6642a5f1" name="AudioPlayerService" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_4dccb42cc83c0c2e" name="OfflineAudioService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_1c6b5e4218733ee0" name="video">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_afd344692ec83d44" name="VideoGenerationSheet" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_bda885c07d25e8ad" name="VideoPlayerWidget" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_9ec3236d1c72bd32" name="VideoStatusPoller" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_2000041abb03b27d" name="VideoApiService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_19e61f3999851895" name="gamification">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_d28dd1de2bf2fafc" name="GamificationScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_47f6b78cbd88472e" name="QuizScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_c35f7a33a498565a" name="QuizPlayerWidget" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_7187a20e3dac95b4" name="BadgeCard" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_c5741288d1669d1f" name="GamificationApiService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_97caaedadb81fe61" name="sharing">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_87712fb73e39c4ba" name="ShareSheet" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_38bf887607a05771" name="QuoteCard" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_c90816a1006f6833" name="SharingService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_31e61aaa59a9108b" name="settings">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_881b4adae6bc41d0" name="SettingsScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_d3eff66b9d51462c" name="WhatsAppFeedbackService" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_75adefabaf10cbc4" name="artifacts">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_c89f484e1082e4e1" name="ArtifactsScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_c1125f2298f5fa7b" name="ArtifactCard" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_38d21de49b65743f" name="ArtifactsProvider" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_4f524acd7766e86e" name="discover">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_7213aec68c2a0d57" name="RegionStoryScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_37474017c8dfd1e9" name="RegionCard" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_bffbfc93026b96e5" name="RegionProvider" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_47847655a3c4e4bd" name="RegionModel" />
+      </uml:packagedElement>
+      <uml:packagedElement xmi:type="uml:Package" xmi:id="_79cc0bf8e514f126" name="admin">
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_03747be443db74fd" name="AdminDashboardScreen" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_d7eedc493a8febae" name="AdminApiService" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_4a37330b0617f10b" name="GrowthChart" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_40f50f6e36b65734" name="ModerationWidgets" />
+        <uml:packagedElement xmi:type="uml:Class" xmi:id="_e429b334b9d5e73c" name="StatCard" />
+      </uml:packagedElement>
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_e596f3ecb60a3b11" name="Django REST API">
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_cca9dbebefed8d3f" name="users">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_9c75aa5386bd442a" name="User" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_2ae0aff1a363e6ad" name="UserRole" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_8c049fe2df4e29f7" name="RegisterView" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_bfeeec94caea4231" name="MeView" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_a094efe636057fcb" name="AuthTokenRefreshView" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_fe91266cded906d8" name="CustomTokenObtainPairView" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_dee95ff865f2d26c" name="stories">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_2c3593ec34109f70" name="Story" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_7b1118dc3d6a5629" name="StoryCategory" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_471feb8551e2bd36" name="StoryBookmark" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_880adfdc1f0da80b" name="StoryLike" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_6eb8dd306bd88122" name="StoryFlag" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_afcde22acc58d981" name="StoryShare" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_b5868a1e631a6f52" name="ReadingProgress" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_f93e4a1756927ced" name="StoryViewSet" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_aa1b286159525975" name="qr_codes">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_d47eed02aa826dca" name="Artifact" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_4e433808074237e7" name="QRCodeScan" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_39be14cecdf7d17a" name="QRCodeGenerator" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_8367b3e3e41d9f78" name="gamification">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_a61c21ea821531d0" name="Quiz" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_907602fff767f0be" name="QuizQuestion" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_408bb0bb88327317" name="QuizAttempt" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_9ed2752b1e3e63c1" name="Badge" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_657a606979061f41" name="UserBadge" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_858f356e527b4906" name="UserProfile" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_d6866c7f59989412" name="Certificate" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_1728737fc0b0e445" name="media_app">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_9c3db2c06094f487" name="VideoGenerationJob" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_618f2fac4954c5d3" name="AudioNarrationJob" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_0d3bc760b04aa44b" name="LumaAIService" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_46ae9c84e3895a19" name="TtsService" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_3070cdb41787abdd" name="BlurhashUtils" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_764517fa939227bd" name="api">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_233e2a6cbf566186" name="HealthViews" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_cf90f7d793302bdf" name="AdminUsersListView" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_8f77d98f723380ce" name="AnalyticsViews" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_d0dc026dc295d1ad" name="JsonFormatter" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_f6efbf99e4f00537" name="RequestLogMiddleware" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_6c8a73001ddf0dc2" name="SeedAllCommand" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_63a74bdf73be83a6" name="web">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_a66c393fb0362c38" name="WebViews" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_94a02deba5e06258" name="WebActions" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_1130d9caaeb4b443" name="WebServices" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_a8acabf4ea0afd70" name="WebTemplates" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_d343dfc5a8e42b0d" name="Crawler (ingestion tool)">
+    <uml:packagedElement xmi:type="uml:Package" xmi:id="_485c5146cd91cdb3" name="crawler">
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_4961ba0dbc6c2a02" name="Config" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_4ffdfc200bdcffe1" name="Session" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_6cb78a8b3c914286" name="Utils" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_9a0e8a079b75efb8" name="Extractors" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_86504179fbfd3bdf" name="Images" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_fcb6e36ba4653431" name="Runner" />
+      <uml:packagedElement xmi:type="uml:Class" xmi:id="_2c039ec4629bb570" name="CrawlSource" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_75aa3da313650751" name="External Services">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_318da6793fc6ae05" name="LumaAiAPI" />
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_31654bc9cf11ca30" name="TTSProvider" />
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_552d714a2a553e99" name="Sentry" />
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_01b413a5b42e03c0" name="WhatsApp" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f4d6faa2be963ad2" name="used by">
+    <uml:client xmi:idref="_9bf08c401ea460de" />
+    <uml:supplier xmi:idref="_d78ed67e10a81d5f" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_ce4782e3e2e3ad6a" name="online-first (JWT via ApiClient)">
+    <uml:client xmi:idref="_7cbf26d0e2f1fccf" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_2dcc77e089d2bb87" name="online-first + SQLite mirror">
+    <uml:client xmi:idref="_dee95ff865f2d26c" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_a6aed4a8533ce8eb" name="LOCAL SQLite facade">
+    <uml:client xmi:idref="_6f5110ce8c05f11d" />
+    <uml:supplier xmi:idref="_03d53cfcfd46ca8c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_39682f9e71236ec1" name="API lookup + record scan">
+    <uml:client xmi:idref="_82797726c27047d1" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_abf5f5e1820d1662" name="/api/media/audio + status">
+    <uml:client xmi:idref="_841884237dad4818" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_7f90f449aae79704" name="offline audio cache">
+    <uml:client xmi:idref="_841884237dad4818" />
+    <uml:supplier xmi:idref="_03d53cfcfd46ca8c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_d539364bd8f5f488" name="/api/media/videos + status">
+    <uml:client xmi:idref="_1c6b5e4218733ee0" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_f1cdf8b671575263" name="LOCAL SQLite facade">
+    <uml:client xmi:idref="_8367b3e3e41d9f78" />
+    <uml:supplier xmi:idref="_03d53cfcfd46ca8c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5ff2a6d16b1ed8d1" name="/api/stories/{slug}/share">
+    <uml:client xmi:idref="_97caaedadb81fe61" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_fecff11388b5ee63" name="/api/analytics/*">
+    <uml:client xmi:idref="_79cc0bf8e514f126" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_828a6094e4a4dc40" name="/api/artifacts">
+    <uml:client xmi:idref="_75adefabaf10cbc4" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_4f10237838ecb4a3" name="/api/categories">
+    <uml:client xmi:idref="_4f524acd7766e86e" />
+    <uml:supplier xmi:idref="_1e331c8751cf434a" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_5fca5b2456bf5d7d" name="wa.me chat (url_launcher)">
+    <uml:client xmi:idref="_31e61aaa59a9108b" />
+    <uml:supplier xmi:idref="_01b413a5b42e03c0" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_c7dd5f27a3f3490e" name="offline queue">
+    <uml:client xmi:idref="_1e331c8751cf434a" />
+    <uml:supplier xmi:idref="_03d53cfcfd46ca8c" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_e0b9221f79243ddb" name="error reporting (client)">
+    <uml:client xmi:idref="_7c4efa682703f875" />
+    <uml:supplier xmi:idref="_552d714a2a553e99" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_aaccf844babbb6b3" name="REST (mock if no LUMA_API_KEY)">
+    <uml:client xmi:idref="_1728737fc0b0e445" />
+    <uml:supplier xmi:idref="_318da6793fc6ae05" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_50dd08f7e24e1701" name="gTTS (no key required)">
+    <uml:client xmi:idref="_1728737fc0b0e445" />
+    <uml:supplier xmi:idref="_31654bc9cf11ca30" />
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Dependency" xmi:id="_b0a7aaac6e4fdadc" name="discover-cameroon.com → cameroon_content.json">
+    <uml:client xmi:idref="_485c5146cd91cdb3" />
+    <uml:supplier xmi:idref="_2c039ec4629bb570" />
+  </uml:packagedElement>
+</uml:Model>

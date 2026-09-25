@@ -1,0 +1,19 @@
+stateDiagram-v2
+    title AI Video/Audio Job State Machine
+
+    [*] --> Pending : Job submitted
+
+    Pending --> Processing : External API starts\nprocessing
+    Pending --> Failed : API error or\nvalidation failure
+
+    Processing --> Completed : Generation\nfinished successfully
+    Processing --> Failed : API error or\ntimeout
+
+    Failed --> Pending : User retries
+
+    Completed --> [*]
+
+    note right of Pending : Job queued.\nWaiting for external\nAPI to pick up.
+    note right of Processing : Luma AI / TTS\nactively generating.\nProgress updating.
+    note right of Completed : Video URL / Audio URL\navailable for playback.
+    note right of Failed : Error message stored.\nUser can retry.
