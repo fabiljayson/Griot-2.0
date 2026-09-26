@@ -39,6 +39,16 @@ services:
           property: connectionString
       - key: SENTRY_DSN
         sync: false
+      # Luma Dream Machine bills per generated video. Leaving this unset does
+      # NOT disable the feature — `get_luma_service()` falls back to
+      # MockLumaAIService, which reports jobs 'completed' while pointing
+      # `video_url` at an unplayable storage.example.com placeholder. Set a
+      # real key, or video generation silently produces nothing playable.
+      - key: LUMA_API_KEY
+        sync: false
+      # Rolling 24h cap on video generations started per user, to bound spend.
+      - key: VIDEO_GENERATIONS_PER_USER_PER_DAY
+        value: '5'
 
 databases:
   - name: griot-db
