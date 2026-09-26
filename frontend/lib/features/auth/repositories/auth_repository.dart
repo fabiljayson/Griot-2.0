@@ -4,13 +4,33 @@ import '../../../core/database/repositories/local_auth_repository.dart';
 import '../models/user_model.dart';
 import 'server_auth_repository.dart';
 
-/// Thrown when the backend rejects login credentials AND no matching local
+/// Thrown when the backend rejected login credentials AND no matching local
 /// account exists to fall back on.
 class InvalidCredentialsException implements Exception {
   const InvalidCredentialsException();
 
   @override
   String toString() => 'Invalid username or password.';
+}
+
+/// Thrown when the account was created on the backend but the follow-up
+/// sign-in did not complete.
+///
+/// The account exists at this point, so callers must never re-post the
+/// registration: the offline/pending-sync path does exactly that, and the
+/// replay used to come back as 'A user with this email already exists.' for
+/// an email the user had never used before.
+class RegistrationSignInFailedException implements Exception {
+  const RegistrationSignInFailedException({required this.user, this.cause});
+
+  /// The account as the backend now holds it.
+  final UserModel user;
+
+  /// The underlying failure, kept for logging rather than for display.
+  final Object? cause;
+
+  @override
+  String toString() => 'Account created, but sign-in did not complete.';
 }
 
 /// Repository handling authentication.
@@ -101,8 +121,15 @@ class AuthRepository {
   /// Register a new account.
   ///
   /// Online: creates the account on the backend, signs in, and persists a
-  /// real session before returning. Unreachable-server [DioException]s are
-  /// rethrown so the caller's offline path (pending-sync) can handle them.
+  /// real session before returning. Unreachable-server [DioException]s from
+  /// the create call are rethrown so the caller's offline path
+  /// (pending-sync) can handle them.
+  ///
+  /// Once the create call has returned, the account exists server-side. A
+  /// failure in the sign-in step is therefore reported as
+  /// [RegistrationSignInFailedException] rather than a transport error, so
+  /// the caller never mistakes it for "the server is unreachable" and replays
+  /// the registration.
   Future<UserModel> register({
     required String username,
     required String email,
@@ -123,22 +150,26 @@ class AuthRepository {
     final user = UserModel.fromJson(userData);
 
     // Auto sign-in to persist the real session.
-    final tokens = await _server.login(
-      username: user.username,
-      password: password,
-    );
-    await _local.saveRemoteSession(
-      serverUserId: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      institution: user.institution,
-      password: password,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    );
+    try {
+      final tokens = await _server.login(
+        username: user.username,
+        password: password,
+      );
+      await _local.saveRemoteSession(
+        serverUserId: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        institution: user.institution,
+        password: password,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      );
+    } catch (e) {
+      throw RegistrationSignInFailedException(user: user, cause: e);
+    }
     return user;
   }
 

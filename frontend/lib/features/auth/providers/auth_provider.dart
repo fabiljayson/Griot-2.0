@@ -155,12 +155,22 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         AuthState(status: AuthStatus.authenticated, user: user),
       );
       return AuthStatus.authenticated;
+    } on RegistrationSignInFailedException {
+      // The account exists on the backend. Never fall through to the offline
+      // path here: it re-posts the registration, and the replay used to come
+      // back as 'A user with this email already exists.'
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.error,
+          errorMessage:
+              'Your account was already created. Please Sign in to continue.',
+        ),
+      );
+      return AuthStatus.error;
     } on DioException catch (e) {
-      // Server unreachable — save the registration locally and let the
-      // OfflineSyncManager push it to the server when connectivity returns.
+      // The registration never reached the backend — safe to queue it
+      // locally and let the OfflineSyncManager push it when we reconnect.
       if (_isOfflineError(e)) {
-        // Server unreachable — save the registration locally and let the
-        // OfflineSyncManager push it to the server when connectivity returns.
         try {
           final offlineRepo = ref.read(offlineAuthProvider);
           await offlineRepo.register(

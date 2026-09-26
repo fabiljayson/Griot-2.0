@@ -33,6 +33,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   final _lastNameController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isSubmitting = false;
   UserRole _selectedRole = UserRole.visitor;
 
   late final AnimationController _animController;
@@ -60,35 +61,44 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   }
 
   Future<void> _handleRegister() async {
+    // The button only greys out after the next rebuild, and the confirm
+    // password field also submits on Done, so two taps in the same frame can
+    // both reach here. Guard on an explicit flag instead of on widget state.
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
-    final status = await ref
-        .read(authProvider.notifier)
-        .register(
-          username: _usernameController.text.trim(),
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          role: _selectedRole,
-        );
+    _isSubmitting = true;
+    try {
+      final status = await ref
+          .read(authProvider.notifier)
+          .register(
+            username: _usernameController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            role: _selectedRole,
+          );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (status == AuthStatus.pendingSync) {
-      // Offline: the account is saved locally and will sync later.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "You're offline — your account was saved and will be activated "
-            "when you're back online.",
+      if (status == AuthStatus.pendingSync) {
+        // Offline: the account is saved locally and will sync later.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "You're offline — your account was saved and will be activated "
+              "when you're back online.",
+            ),
           ),
-        ),
-      );
-      Navigator.of(context).pop();
-    } else if (status == AuthStatus.authenticated) {
-      // Online registration succeeded and auto-logged-in; drop back to the
-      // root, where AuthWrapper has already switched to the home screen.
-      Navigator.of(context).pop();
+        );
+        Navigator.of(context).pop();
+      } else if (status == AuthStatus.authenticated) {
+        // Online registration succeeded and auto-logged-in; drop back to the
+        // root, where AuthWrapper has already switched to the home screen.
+        Navigator.of(context).pop();
+      }
+    } finally {
+      _isSubmitting = false;
     }
   }
 

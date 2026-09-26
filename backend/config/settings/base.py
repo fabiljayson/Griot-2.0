@@ -158,6 +158,8 @@ REST_FRAMEWORK = {
         'auth': '5/min',     # auth endpoints (login, register, refresh)
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Turns a unique-constraint collision into a 400 instead of an opaque 500.
+    'EXCEPTION_HANDLER': 'config.exception_handler.api_exception_handler',
 }
 
 # --- drf-spectacular (OpenAPI 3.0 schema) ---

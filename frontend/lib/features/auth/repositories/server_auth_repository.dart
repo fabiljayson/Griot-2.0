@@ -88,6 +88,11 @@ class ServerAuthRepository {
   ///
   /// Returns the created user's profile map (the backend registers first and
   /// does not return tokens here — call [login] afterwards to sign in).
+  ///
+  /// This POST is retried by [_defaultDio] when the response is slow, which is
+  /// the common case while the backend cold-starts. That is safe because the
+  /// endpoint is idempotent on an exact replay: re-sending the same username,
+  /// email and password returns the existing account instead of failing.
   Future<Map<String, dynamic>> register({
     required String username,
     required String email,

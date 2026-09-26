@@ -59,10 +59,37 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
     def validate_email(self, value: str) -> str:
-        email = (value or '').strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError('A user with this email already exists.')
-        return email
+        return self.normalize_email(value)
+
+    @staticmethod
+    def normalize_email(value) -> str:
+        return (value or '').strip().lower()
+
+    def find_by_email(self, email):
+        """Return the account already holding this email, or None.
+
+        Email is not unique at the database level, so the match is
+        case-insensitive on the normalized value.
+        """
+        email = self.normalize_email(email)
+        if not email:
+            return None
+        return User.objects.filter(email__iexact=email).first()
+
+    def is_verbatim_replay(self, user, *, username, password) -> bool:
+        """True when this request repeats an already-committed registration.
+
+        The client re-sends the same body when the response outlasts its
+        timeout, which happens routinely while the hosted backend cold-starts.
+        Treating that replay as the same request keeps the account usable; a
+        mismatched username or password is a genuine conflict and must not be
+        treated as a replay.
+        """
+        if user is None:
+            return False
+        return user.username == (username or '').strip() and user.check_password(
+            password or ''
+        )
 
     def create(self, validated_data):
         password = validated_data.pop('password')

@@ -372,3 +372,43 @@ class ArtifactAudioGuideTests(WebSmokeTestCase):
             {'language': 'en'},
         )
         self.assertEqual(response.status_code, 403)
+
+
+class WebRegisterUserTests(TestCase):
+    """`web.services.register_user` shares `auth_user` with the API.
+
+    Email now carries a case-insensitive unique constraint, so the duplicate
+    check in the service is only a fast path. A racing insert must surface the
+    same friendly error rather than an unhandled IntegrityError (500).
+    """
+
+    def test_creates_a_user(self):
+        from web.services import register_user
+
+        user, errors = register_user(
+            username='newname',
+            email='New@Example.com',
+            password='hunter2secure',
+            password2='hunter2secure',
+            role='visitor',
+        )
+
+        self.assertEqual(errors, [])
+        self.assertIsNotNone(user)
+        self.assertEqual(user.email, 'new@example.com')
+
+    def test_duplicate_email_is_rejected(self):
+        from web.services import register_user
+
+        User.objects.create_user('first', email='taken@example.com', password='hunter2secure')
+
+        user, errors = register_user(
+            username='second',
+            email='TAKEN@example.com',
+            password='hunter2secure',
+            password2='hunter2secure',
+            role='visitor',
+        )
+
+        self.assertIsNone(user)
+        self.assertIn('A user with this email already exists.', errors)

@@ -12,6 +12,7 @@ from collections import OrderedDict
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.db.models import Count, F, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -1002,10 +1003,16 @@ def register_user(*, username, email, password, password2, role):
     if errors:
         return None, errors
 
-    user = User.objects.create_user(
-        username=username,
-        email=email,
-        password=password,
-        role=role,
-    )
+    try:
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            role=role,
+        )
+    except IntegrityError:
+        # Lost a race against a concurrent signup. The email has a
+        # case-insensitive unique constraint, so the check above is only a
+        # fast path and the database is the real arbiter.
+        return None, ['A user with this email already exists.']
     return user, []

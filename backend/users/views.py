@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
@@ -46,7 +47,16 @@ class AuthTokenRefreshView(TokenRefreshView):
 # Registration
 # ---------------------------------------------------------------------------
 class RegisterView(generics.CreateAPIView):
-    """POST /api/auth/register/ — create a Visitor or Contributor account."""
+    """POST /api/auth/register/ — create a Visitor or Contributor account.
+
+    The endpoint is idempotent on an exact replay of an already-committed
+    registration. The hosted backend sleeps on Render's free tier, so a
+    cold-start can push the 201 past the client's timeout; the client then
+    re-POSTs the identical body. That replay resolves to HTTP 200 with the
+    existing account instead of a misleading 'email already exists' 400. A
+    request whose username or password differs is a real conflict and still
+    gets the 400.
+    """
 
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -54,6 +64,26 @@ class RegisterView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+        data = request.data
+
+        existing = serializer.find_by_email(data.get('email'))
+        if existing is not None:
+            if not serializer.is_verbatim_replay(
+                existing,
+                username=data.get('username'),
+                password=data.get('password'),
+            ):
+                raise ValidationError(
+                    {'email': ['A user with this email already exists.']}
+                )
+            return Response(
+                {
+                    'user': UserSerializer(existing).data,
+                    'message': 'Account already exists. Sign in at /api/auth/token/.',
+                },
+                status=status.HTTP_200_OK,
+            )
+
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(

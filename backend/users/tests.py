@@ -1,5 +1,9 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.db import IntegrityError, connection, transaction
+from django.test import TransactionTestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -70,6 +74,45 @@ class RegisterTests(CacheIsolatedTestCase):
         })
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_replay_of_committed_registration_is_idempotent(self):
+        """A client that re-sends an identical register must not get a 400.
+
+        The hosted backend sleeps on Render's free tier. When it cold-starts
+        mid-request the response can outlast the client's timeout, so the
+        client re-POSTs the same body. The first POST already committed the
+        user, so the replay has to resolve to the existing account instead of
+        'A user with this email already exists.'
+        """
+        payload = {
+            'username': 'replay',
+            'email': 'replay@example.com',
+            'password': 'hunter2secure',
+        }
+        first = self.client.post(REGISTER_URL, payload)
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+
+        replay = self.client.post(REGISTER_URL, payload)
+
+        self.assertEqual(replay.status_code, status.HTTP_200_OK)
+        self.assertEqual(replay.data['user']['id'], first.data['user']['id'])
+        self.assertEqual(
+            User.objects.filter(email__iexact='replay@example.com').count(), 1
+        )
+
+    def test_replay_with_different_password_is_rejected(self):
+        """Idempotency must not become an account-takeover oracle."""
+        payload = {
+            'username': 'replay',
+            'email': 'replay@example.com',
+            'password': 'hunter2secure',
+        }
+        self.client.post(REGISTER_URL, payload)
+
+        resp = self.client.post(REGISTER_URL, {**payload, 'password': 'other-secret'})
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', resp.data)
+
     def test_weak_password_rejected(self):
         resp = self.client.post(REGISTER_URL, {
             'username': 'weak',
@@ -77,6 +120,170 @@ class RegisterTests(CacheIsolatedTestCase):
             'password': 'short',
         })
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class EmailUniquenessTests(CacheIsolatedTestCase):
+    """The database, not just the serializer, must reject a duplicate email.
+
+    `validate_email` is a check-then-act guard, so two concurrent requests can
+    both pass it. Without a unique constraint both rows land and the email is
+    permanently unusable. Case variants must collide too, because every lookup
+    in the codebase uses `email__iexact`.
+    """
+
+    def test_case_insensitive_duplicate_email_cannot_be_inserted(self):
+        User.objects.create_user('first', email='dupe@example.com', password='hunter2secure')
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            User.objects.create_user('second', email='DUPE@example.com', password='hunter2secure')
+
+        self.assertEqual(
+            User.objects.filter(email__iexact='dupe@example.com').count(), 1
+        )
+
+    def test_blank_emails_are_not_conflicting(self):
+        """`email` is blank=True, so several users may legitimately have none."""
+        User.objects.create_user('noemail1', email='', password='hunter2secure')
+        User.objects.create_user('noemail2', email='', password='hunter2secure')
+
+        self.assertEqual(User.objects.filter(email='').count(), 2)
+
+    def test_unique_violation_is_mapped_to_400_by_the_exception_handler(self):
+        """The handler is the last line of defence for a racing duplicate.
+
+        The endpoint cannot reach it — `validate_email` and the view's
+        `find_by_email` both reject a known address first — so the handler is
+        exercised directly here.
+        """
+        from config.exception_handler import api_exception_handler
+
+        User.objects.create_user('first', email='race@example.com', password='hunter2secure')
+
+        try:
+            with transaction.atomic():
+                User.objects.create_user(
+                    'second', email='RACE@example.com', password='hunter2secure'
+                )
+        except IntegrityError as exc:
+            response = api_exception_handler(exc, {})
+        else:  # pragma: no cover - the insert above must fail
+            self.fail('expected an IntegrityError')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        body = json.dumps(response.data)
+        self.assertNotIn('SELECT', body)
+        self.assertNotIn('INSERT', body)
+        self.assertNotIn('Traceback', body)
+
+
+class DuplicateEmailDedupeTests(TransactionTestCase):
+    """The data step that runs before the constraint is added.
+
+    Production may already hold duplicate addresses created by the retried
+    registration bug. If the dedupe is wrong the migration fails outright and
+    the deploy halts, so its behaviour is pinned here.
+
+    `TransactionTestCase` rather than the `APITestCase` base: SQLite refuses to
+    run its schema editor inside the transaction that `APITestCase` wraps each
+    test in, and this test has to add and drop the constraint. No HTTP is
+    involved, so nothing is lost by leaving the DRF client behind.
+    """
+
+    CONSTRAINT = 'uniq_user_email_case_insensitive'
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self._drop_constraint()
+
+    def tearDown(self):
+        # Only restore what a test left dropped; a test that re-added the
+        # constraint itself has already put the schema back.
+        if not self._constraint_present:
+            self._add_constraint()
+        super().tearDown()
+
+    def _drop_constraint(self):
+        constraint = next(
+            c for c in User._meta.constraints if c.name == self.CONSTRAINT
+        )
+        with connection.schema_editor() as editor:
+            editor.remove_constraint(User, constraint)
+        self._constraint_present = False
+
+    def _add_constraint(self):
+        constraint = next(
+            c for c in User._meta.constraints if c.name == self.CONSTRAINT
+        )
+        with connection.schema_editor() as editor:
+            editor.add_constraint(User, constraint)
+        self._constraint_present = True
+
+    def _resolve(self):
+        from importlib import import_module
+
+        from django.apps import apps as global_apps
+
+        module = import_module(
+            'users.migrations.0002_user_uniq_user_email_case_insensitive'
+        )
+
+        class _SchemaEditor:
+            connection = connection
+
+        module.resolve_duplicate_emails(global_apps, _SchemaEditor())
+
+    def test_keeps_earliest_account_and_clears_the_duplicate_email(self):
+        older = User.objects.create_user(
+            'older', email='shared@example.com', password='hunter2secure'
+        )
+        newer = User.objects.create_user(
+            'newer', email='SHARED@example.com', password='hunter2secure'
+        )
+
+        self._resolve()
+
+        older.refresh_from_db()
+        newer.refresh_from_db()
+        self.assertEqual(older.email, 'shared@example.com')
+        self.assertEqual(newer.email, '')
+        # Both accounts survive, so neither is locked out of signing in.
+        self.assertEqual(User.objects.filter(username__in=['older', 'newer']).count(), 2)
+
+    def test_constraint_applies_cleanly_after_dedupe(self):
+        """The whole migration sequence: duplicates in, constraint lands."""
+        User.objects.create_user(
+            'older', email='shared@example.com', password='hunter2secure'
+        )
+        User.objects.create_user(
+            'newer', email='SHARED@example.com', password='hunter2secure'
+        )
+
+        self._resolve()
+        self._add_constraint()
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            User.objects.create_user(
+                'third', email='ShArEd@example.com', password='hunter2secure'
+            )
+
+    def test_is_idempotent(self):
+        User.objects.create_user('solo', email='solo@example.com', password='hunter2secure')
+
+        self._resolve()
+        self._resolve()
+
+        self.assertEqual(
+            User.objects.get(username='solo').email, 'solo@example.com'
+        )
+
+    def test_blank_emails_are_left_alone(self):
+        User.objects.create_user('blank1', email='', password='hunter2secure')
+        User.objects.create_user('blank2', email='', password='hunter2secure')
+
+        self._resolve()
+
+        self.assertEqual(User.objects.filter(email='').count(), 2)
 
 
 class TokenTests(CacheIsolatedTestCase):

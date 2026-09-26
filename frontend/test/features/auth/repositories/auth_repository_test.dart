@@ -215,6 +215,39 @@ void main() {
         throwsA(isA<DioException>()),
       );
     });
+
+    test(
+        'should report a sign-in failure, not an unreachable server, when the '
+        'account was already created', () async {
+      when(
+        () => server.register(
+          username: 'nova',
+          email: 'nova@example.com',
+          password: 'secret123',
+          firstName: 'Nova',
+          lastName: 'Kuma',
+          role: UserRole.contributor,
+        ),
+      ).thenAnswer((_) async => _profileJson);
+      when(() => server.login(username: 'nova', password: 'secret123'))
+          .thenThrow(_dio(type: DioExceptionType.receiveTimeout));
+
+      await expectLater(
+        repo.register(
+          username: 'nova',
+          email: 'nova@example.com',
+          password: 'secret123',
+          firstName: 'Nova',
+          lastName: 'Kuma',
+          role: UserRole.contributor,
+        ),
+        throwsA(
+          isA<RegistrationSignInFailedException>()
+              .having((e) => e.user.email, 'email', 'nova@example.com')
+              .having((e) => e.cause, 'cause', isA<DioException>()),
+        ),
+      );
+    });
   });
 
   group('refreshTokens', () {

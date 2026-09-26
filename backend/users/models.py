@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class UserRole(models.TextChoices):
@@ -38,6 +39,20 @@ class User(AbstractUser):
         default='',
         help_text='Affiliated museum, archive, or institution (managers).',
     )
+
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            # Every email lookup in the codebase uses `email__iexact`, so the
+            # constraint has to be case-insensitive too — otherwise
+            # `A@x.com` and `a@x.com` both insert and the address becomes
+            # unusable. Blank emails are exempt because the column is
+            # `blank=True` and several users may legitimately have none.
+            models.UniqueConstraint(
+                Lower('email'),
+                condition=~models.Q(email=''),
+                name='uniq_user_email_case_insensitive',
+            ),
+        ]
 
     # --- Role helpers -------------------------------------------------------
 

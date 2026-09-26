@@ -1,32 +1,130 @@
 name: Keep Render backend awake
 
 # The backend runs on Render's free tier, which sleeps after ~15 minutes of
-# inactivity and can take 30-60+ seconds to cold-start. That cold start exceeds
-# the mobile/web clients' request timeouts, so the first login/sign-up attempts
-# each morning fail with "server unreachable". Pinging the cheap health
-# endpoint every 5 minutes keeps the service warm (Render counts any request as
-# activity), so users never hit a cold start during the day.
+# inactivity and takes 30-60+ seconds to cold-start. That cold start exceeds
+# the clients' request timeouts, so the first login/sign-up of the day fails.
 #
-# Free tier: the repo is public, so GitHub Actions minutes for scheduled
-# workflows cost nothing. 288 pings/day against /api/health/ is well under
-# Render's free egress limits.
+# WHY THIS IS NOT JUST A CRON JOB
+# GitHub's `schedule` trigger is best-effort, and `*/5 * * * *` is the floor.
+# Under load GitHub *drops* scheduled runs outright rather than delaying them,
+# community reports document multi-hour drift, and minute `:00` is the single
+# most contended slot on the platform. This file originally used `*/5` and
+# managed exactly two runs in five hours — so the service slept anyway, and
+# each run that did land was paying a 44s cold start instead of preventing one.
+#
+# So the cadence is driven by `workflow_dispatch` over the API, which is
+# queued normally and is not subject to the cron scheduler's drop behaviour.
+# Each run pings the backend and then dispatches the next one, so the chain
+# only needs cron to fire *once* to bootstrap. The schedule below is the
+# safety net: if the chain ever dies, cron restarts it within ~5 minutes.
+#
+# Spacing is 5 minutes, not 10, on purpose. Render sleeps at 15 minutes, so a
+# single lost run must not be able to cross that window.
+#
+# Free tier: the repo is public, so GitHub Actions minutes cost nothing.
 #
 # To stop the pings: delete this file, or disable the workflow in
 # GitHub > Actions.
 
 on:
   schedule:
-    # Every 5 minutes (GitHub Actions minimum) — 5 < 15-minute sleep window.
-    - cron: '*/5 * * * *'
+    # 3,8,13,...,58 — deliberately off :00, which is the busiest minute.
+    - cron: '3-59/5 * * * *'
   workflow_dispatch:
+    inputs:
+      chain:
+        description: 'Dispatch the next keep-alive run when this one finishes'
+        type: boolean
+        default: true
+      chain_depth:
+        description: 'Consecutive chained runs so far (safety cap)'
+        type: number
+        default: 0
 
 permissions:
   contents: read
+  # Required to dispatch the next run via the API.
+  actions: write
+
+# Queues rather than cancels, so a slow cold start can never fork the chain
+# into parallel runs.
+concurrency:
+  group: keep-render-awake
+  cancel-in-progress: false
+
+env:
+  HEALTH_URL: https://griot-backend-7ie7.onrender.com/api/health/
+  # Matches the gap Render allows before sleeping, with room for one lost run.
+  CHAIN_INTERVAL_SECONDS: '300'
+  # ~16 hours of chaining before the chain stops and waits for cron to restart
+  # it. A guard against an unattended loop, not a functional limit.
+  MAX_CHAIN_DEPTH: '200'
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
+    # Ping (up to 250s with both attempts) + the 300s handover sleep. Too tight
+    # a limit here would kill a run mid-sleep and sever the chain.
+    timeout-minutes: 15
     steps:
       - name: Ping Griot backend health endpoint
         run: |
-          curl -fsS --max-time 90 "https://griot-backend-7ie7.onrender.com/api/health/" >/dev/null
+          set -uo pipefail
+          # A cold start takes ~45s, so the budget has to clear that. Two
+          # attempts: a dropped run must not leave a 5-minute hole.
+          for attempt in 1 2; do
+            if curl -fsS --max-time 120 "$HEALTH_URL" >/dev/null; then
+              echo "keep-alive ok (attempt $attempt)"
+              exit 0
+            fi
+            echo "attempt $attempt failed" >&2
+            sleep 10
+          done
+          echo "keep-alive failed after 2 attempts" >&2
+          exit 1
+
+      - name: Hand over to the next run
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT: ${{ github.event_name }}
+          DISPATCH: ${{ inputs.chain == false && '0' || '1' }}
+          DEPTH: ${{ inputs.chain_depth }}
+        run: |
+          set -uo pipefail
+          if [ "$DISPATCH" != "1" ]; then
+            echo "chaining disabled for this run"
+            exit 0
+          fi
+
+          if [ "$EVENT" = "schedule" ]; then
+            # A cron run only bootstraps a chain when none is already alive.
+            # Without this check every 5-minute cron tick would start another
+            # chain, and the concurrency queue would grow without bound.
+            live=$(gh run list --workflow keep-render-awake.yml \
+                     --status in_progress --limit 10 --json databaseId --jq 'length')
+            queued=$(gh run list --workflow keep-render-awake.yml \
+                     --status queued --limit 10 --json databaseId --jq 'length')
+            # This run is itself in progress, so discount it.
+            if [ $((live + queued)) -gt 1 ]; then
+              echo "a chain is already alive (live=$live queued=$queued); cron stands down"
+              exit 0
+            fi
+            depth=0
+            echo "no chain alive; bootstrapping"
+          else
+            depth="${DEPTH:-0}"
+          fi
+
+          if [ "$depth" -ge "$MAX_CHAIN_DEPTH" ]; then
+            echo "chain depth $depth reached cap; leaving restart to cron"
+            exit 0
+          fi
+
+          echo "waiting ${CHAIN_INTERVAL_SECONDS}s before handing over"
+          sleep "$CHAIN_INTERVAL_SECONDS"
+
+          next=$((depth + 1))
+          gh workflow run keep-render-awake.yml \
+            -f chain=true -f chain_depth="$next"
+          echo "dispatched chained run depth=$next"
