@@ -25,14 +25,18 @@ class AudioApiService {
   ///
   /// Returns the completed job — [NarrationJobModel.audioUrl] holds the
   /// playable audio URL when [NarrationJobModel.isCompleted] is true.
+  ///
+  /// The endpoint synthesises synchronously server-side, so the timeout is
+  /// generous. Retry is switched off: a retried POST re-runs the whole
+  /// synthesis while the first attempt may still be in flight, and with the
+  /// shared 3x backoff a single timeout would otherwise stall the UI for
+  /// twelve minutes before surfacing anything.
   Future<NarrationJobModel> generateNarration({
     int? storyId,
     int? artifactId,
     String language = 'en',
     double speed = 1.0,
   }) async {
-    // gTTS generation is synchronous on the backend and makes many
-    // sequential chunk requests, so allow a generous receive timeout.
     final response = await _dio.post(
       '$_mediaPath/audio/',
       data: {
@@ -41,7 +45,10 @@ class AudioApiService {
         'language': language,
         'speed': speed,
       },
-      options: Options(receiveTimeout: const Duration(minutes: 3)),
+      options: Options(
+        receiveTimeout: const Duration(seconds: 90),
+        extra: const {'disableRetry': true},
+      ),
     );
     return NarrationJobModel.fromJson(response.data as Map<String, dynamic>);
   }

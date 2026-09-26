@@ -290,10 +290,12 @@ def story_detail_data(user, slug):
         'video_job': video_job,
         'can_generate_media': (
             user.is_authenticated
-            and user.role in ('contributor', 'institution_manager', 'admin')
             and (
                 user.role in ('institution_manager', 'admin')
                 or story.author_id == user.id
+                # Matches the media API: a published story is open to any
+                # signed-in user, a draft stays with its author.
+                or story.status == 'published'
             )
         ),
     }

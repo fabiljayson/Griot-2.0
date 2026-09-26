@@ -21,6 +21,7 @@ import '../../sharing/widgets/share_sheet.dart';
 import '../models/story_model.dart';
 import '../providers/story_provider.dart';
 import '../widgets/story_actions.dart';
+import '../widgets/story_video_section.dart';
 
 /// Story detail screen with interactive markdown reader.
 ///
@@ -285,6 +286,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.section),
                 ],
+
+                // --- AI video for this story ---
+                StoryVideoSection(story: story),
 
                 const SizedBox(height: AppSpacing.lg),
               ],

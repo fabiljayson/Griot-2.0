@@ -4,16 +4,17 @@ import 'package:griot_ai/features/auth/models/user_model.dart';
 
 /// Locks the client-side mirror of the backend's media-generation gate.
 ///
-/// The API requires Contributor-or-above **and** either authorship or a
-/// manager/admin role (`web/views.py::can_generate_media`,
-/// `media_app/views.py::VideoGenerationViewSet.create`). Role alone is not
-/// enough, which is why the story menu hides the entry on another author's
-/// story: it could only ever 403.
+/// The API opens generation on any **published** story to every signed-in
+/// user, and reserves drafts for the author and the managing roles
+/// (`media_app/views.py::VideoGenerationViewSet.create`). The client gate has
+/// to agree in both directions: stricter and it hides a working action,
+/// looser and it offers one that can only ever 403.
 void main() {
   UserModel userFor(UserRole role, {int id = 1}) =>
       UserModel(id: id, username: 'amara', role: role);
 
   const ownStoryAuthorId = 1;
+  const someoneElse = 99;
 
   group('canContribute', () {
     test('is false for a Visitor and true from Contributor upwards', () {
@@ -25,27 +26,48 @@ void main() {
   });
 
   group('canGenerateMediaFor', () {
-    test('Visitor may never generate media, even on their own story', () {
+    test('Visitor may generate media for a published story', () {
       expect(
-        userFor(
-          UserRole.visitor,
-        ).canGenerateMediaFor(authorId: ownStoryAuthorId),
+        userFor(UserRole.visitor).canGenerateMediaFor(
+          authorId: someoneElse,
+          isPublished: true,
+        ),
+        isTrue,
+        reason: 'a published story is open to every signed-in user',
+      );
+    });
+
+    test('Visitor may not generate media for another author\'s draft', () {
+      expect(
+        userFor(UserRole.visitor).canGenerateMediaFor(
+          authorId: someoneElse,
+          isPublished: false,
+        ),
         isFalse,
       );
     });
 
-    test('Contributor may generate media only for their own story', () {
-      final contributor = userFor(UserRole.contributor);
+    test('any role may generate media for their own story', () {
+      for (final role in UserRole.values) {
+        expect(
+          userFor(role).canGenerateMediaFor(
+            authorId: ownStoryAuthorId,
+            isPublished: false,
+          ),
+          isTrue,
+          reason: '$role owns their own story, draft or not',
+        );
+      }
+    });
 
+    test('Contributor may not generate media for another author\'s draft', () {
       expect(
-        contributor.canGenerateMediaFor(authorId: ownStoryAuthorId),
-        isTrue,
-        reason: 'a Contributor owns their own submissions',
-      );
-      expect(
-        contributor.canGenerateMediaFor(authorId: 99),
+        userFor(UserRole.contributor).canGenerateMediaFor(
+          authorId: someoneElse,
+          isPublished: false,
+        ),
         isFalse,
-        reason: 'role alone is not sufficient — ownership is also required',
+        reason: 'a draft stays private until it is published',
       );
     });
 
@@ -58,7 +80,10 @@ void main() {
           reason: '${role.label} owns their own story',
         );
         expect(
-          user.canGenerateMediaFor(authorId: 99),
+          user.canGenerateMediaFor(
+            authorId: someoneElse,
+            isPublished: false,
+          ),
           isTrue,
           reason: '${role.label} may act as moderator on any story',
         );

@@ -8,9 +8,11 @@ No API key is required; gTTS speaks by requesting Google Translate's
 public TTS endpoint. Long text is chunked internally by gTTS and the
 resulting MP3 segments are concatenated into a single file.
 """
+import contextlib
 import io
 import logging
 import re
+import socket
 import uuid
 from typing import Optional
 
@@ -53,6 +55,28 @@ _CHARS_PER_SECOND = 15
 
 class TTSGenerationError(Exception):
     """Raised when speech generation fails."""
+
+
+@contextlib.contextmanager
+def _socket_timeout(seconds: Optional[float]):
+    """
+    Bound blocking socket reads for the duration of the block.
+
+    gTTS 2.x drives ``requests`` internally and exposes no timeout argument,
+    so the only way to stop a hung Google endpoint from pinning a worker
+    indefinitely is to set the interpreter-wide default socket timeout. The
+    previous value is restored on the way out so nothing else is affected.
+    """
+    if not seconds:
+        yield
+        return
+
+    previous = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(seconds)
+    try:
+        yield
+    finally:
+        socket.setdefaulttimeout(previous)
 
 
 def strip_markdown(text: str) -> str:
@@ -230,7 +254,10 @@ class GTTSNarrationService:
         try:
             tts = gTTS(text=plain_text, lang=lang, slow=slow, tld=tld)
             buffer = io.BytesIO()
-            tts.write_to_fp(buffer)
+            with _socket_timeout(
+                getattr(settings, 'TTS_SOCKET_TIMEOUT', None)
+            ):
+                tts.write_to_fp(buffer)
             audio_bytes = buffer.getvalue()
         except Exception as exc:  # gtts raises gTTSError / request errors
             logger.exception('gTTS synthesis failed for lang=%s', lang)

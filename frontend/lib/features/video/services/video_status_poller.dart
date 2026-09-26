@@ -10,13 +10,10 @@ import 'video_api_service.dart';
 ///   - Then: 5s, 8s, 12s, 18s, 25s (capped)
 ///   - Stops when job completes, fails, or is cancelled.
 class VideoStatusPoller {
-  VideoStatusPoller._({
-    VideoApiService? apiService,
-  }) : _apiService = apiService ?? VideoApiService.instance;
+  VideoStatusPoller({VideoApiService? apiService})
+    : _apiService = apiService ?? VideoApiService();
 
   final VideoApiService _apiService;
-
-  static final VideoStatusPoller instance = VideoStatusPoller._();
 
   /// Active pollers keyed by job ID.
   final Map<int, Timer> _activePollers = {};

@@ -138,6 +138,13 @@ class StoryModel {
     return tags.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
   }
 
+  /// Whether this story is publicly visible.
+  ///
+  /// The media endpoints open generation on any published story, so the UI
+  /// needs the same notion of "public" rather than re-deriving it.
+  bool get isPublished =>
+      status == StoryStatus.published.value;
+
   /// Formatted view count (e.g., "1.2K").
   String get formattedViewCount => _formatCount(viewCount);
 

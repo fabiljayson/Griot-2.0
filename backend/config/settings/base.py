@@ -264,3 +264,24 @@ DEEP_LINK_BASE_URL = os.environ.get('DEEP_LINK_BASE_URL', SITE_URL)
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# ---------------------------------------------------------------------------
+# AI media generation (gTTS narration, Luma Dream Machine video)
+# ---------------------------------------------------------------------------
+# Luma bills per generation, so the key is read from the environment rather
+# than hardcoded. When it is absent `get_luma_service()` returns the mock
+# service, which keeps local dev and tests working without external calls.
+LUMA_API_KEY = os.environ.get('LUMA_API_KEY', '')
+
+# Bound spend: how many video jobs one user may start per day. The cap is
+# applied on top of the ownership rule so a wide-open policy cannot be
+# farmed for free renders.
+VIDEO_GENERATIONS_PER_USER_PER_DAY = int(
+    os.environ.get('VIDEO_GENERATIONS_PER_USER_PER_DAY', '5')
+)
+
+# gTTS talks to Google Translate's public endpoint over `requests`, which
+# exposes no timeout knob of its own. These bound the call so a hung socket
+# cannot pin a worker forever.
+TTS_MAX_CHARS = int(os.environ.get('TTS_MAX_CHARS', '3000'))
+TTS_SOCKET_TIMEOUT = float(os.environ.get('TTS_SOCKET_TIMEOUT', '20'))

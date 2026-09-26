@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -17,7 +20,7 @@ from .serializers import (
     VideoGenerationJobSerializer,
     VoiceSerializer,
 )
-from .services.luma_ai import get_luma_service
+from .services.luma_ai import LumaAIError, get_luma_service
 from .services.tts import (
     TTSGenerationError,
     build_artifact_script,
@@ -60,14 +63,38 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
 
         story = get_object_or_404(Story, id=data['story_id'])
 
-        # Check if user can generate video for this story
-        if story.author != request.user and request.user.role not in (
-            'admin',
-            'institution_manager',
+        # Any signed-in user may render a story that is already public; a
+        # draft stays private to its author and the managing roles. Mirrors
+        # the audio narration rule so the two features agree.
+        if (
+            story.author != request.user
+            and request.user.role not in ('admin', 'institution_manager')
+            and story.status != Story.Status.PUBLISHED
         ):
             raise DRFPermissionDenied(
-                'You can only generate videos for your own stories.'
+                'You can only generate videos for your own or published stories.'
             )
+
+        # Luma bills per generation, so cap how much one account can start
+        # per day regardless of the ownership rule above. The window is a
+        # rolling 24 hours, which needs no timezone handling and cannot be
+        # reset early by straddling midnight.
+        daily_cap = getattr(settings, 'VIDEO_GENERATIONS_PER_USER_PER_DAY', 5)
+        if daily_cap:
+            window_start = timezone.now() - timedelta(days=1)
+            started_today = VideoGenerationJob.objects.filter(
+                user=request.user, created_at__gte=window_start
+            ).count()
+            if started_today >= daily_cap:
+                return Response(
+                    {
+                        'detail': (
+                            'You have reached your daily video generation '
+                            f'limit of {daily_cap}. Please try again tomorrow.'
+                        )
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
 
         # Create the job
         job = VideoGenerationJob.objects.create(
@@ -77,15 +104,31 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
             status=VideoGenerationJob.Status.PENDING,
         )
 
-        # Submit to mock Luma AI service
+        # Submit to Luma AI (mock service when no key is configured).
         luma_service = get_luma_service()
-        result = luma_service.submit_video_generation(
-            prompt=data['prompt'],
-            duration=data.get('duration', 10),
-        )
+        try:
+            result = luma_service.submit_video_generation(
+                prompt=data['prompt'],
+                duration=data.get('duration', 10),
+            )
+        except LumaAIError as exc:
+            # The job row exists, so record why it died instead of leaving a
+            # permanently-pending job the user can never cancel.
+            job.status = VideoGenerationJob.Status.FAILED
+            job.error_message = str(exc)
+            job.save(update_fields=['status', 'error_message', 'updated_at'])
+            return Response(
+                {'detail': f'Video generation could not be started: {exc}'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Update job with Luma AI details
         job.luma_job_id = result['id']
+        if result.get('status') == VideoGenerationJob.Status.FAILED:
+            job.status = VideoGenerationJob.Status.FAILED
+            job.error_message = result.get('error', 'Luma AI rejected the request')
+        else:
+            job.status = VideoGenerationJob.Status.PROCESSING
         job.save()
 
         out_serializer = VideoGenerationJobSerializer(

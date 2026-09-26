@@ -174,6 +174,21 @@ class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
         artifactId: artifactId,
         language: language,
       );
+
+      // The backend answers 201 even when synthesis failed (it records the
+      // reason on the job rather than raising), so a failed job is a normal
+      // outcome here. Reporting it is the difference between "nothing
+      // happened" and a message the user can act on.
+      if (job.hasFailed) {
+        state = state.copyWith(
+          isGenerating: false,
+          lastJob: job,
+          errorMessage:
+              job.errorMessage ?? 'Speech generation failed. Please try again.',
+        );
+        return null;
+      }
+
       state = state.copyWith(isGenerating: false, lastJob: job);
 
       if (job.isCompleted && job.audioUrl.isNotEmpty) {
@@ -195,6 +210,14 @@ class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
   String _narrationErrorMessage(DioException e) {
     if (e.response?.statusCode == 401) {
       return 'Please sign in to generate narrations.';
+    }
+    // A timeout here means the server was still synthesising, not that the
+    // user's connection dropped — the shared mapper's "check your network"
+    // copy sends people off to debug the wrong thing.
+    if (e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionTimeout) {
+      return 'The server is taking too long to build this narration. '
+          'Please try again in a moment.';
     }
     return 'Failed to generate narration: ${AppErrorMapper.fromDio(e).message}';
   }

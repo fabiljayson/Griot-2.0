@@ -29,13 +29,17 @@ class StoryActionsMenu extends ConsumerWidget {
     final user = authState.maybeWhen(data: (s) => s.user, orElse: () => null);
     final isOnline = ref.watch(isCurrentlyOnlineProvider);
 
-    // Generation is a server-side job and the API additionally requires
-    // ownership, so Contributor-and-above alone is not enough to offer it —
-    // on another author's story the request could only ever 403. Mirrors the
-    // backend's `can_generate_media` gate.
+    // Generation is a server-side job, so it is only offered while the
+    // backend is reachable. The visibility rule mirrors the media API: a
+    // published story is open to any signed-in user, a draft to its author
+    // and the managing roles.
     final canGenerateVideo =
         isOnline &&
-        (user?.canGenerateMediaFor(authorId: story.author.id) ?? false);
+        (user?.canGenerateMediaFor(
+              authorId: story.author.id,
+              isPublished: story.isPublished,
+            ) ??
+            false);
 
     return PopupMenuButton<String>(
       icon: Icon(

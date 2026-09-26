@@ -4,7 +4,7 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -41,8 +41,13 @@ class VideoGenerationTests(APITestCase):
             'duration': 10,
         })
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(resp.data['status'], 'pending')
+        # Submitted to Luma, so it is in flight rather than merely queued.
+        self.assertEqual(resp.data['status'], 'processing')
         self.assertIn('luma_job_id', resp.data)
+        self.assertNotEqual(resp.data['luma_job_id'], '')
+        # The client reads these two keys to render the video.
+        self.assertIn('story', resp.data)
+        self.assertIn('video_url', resp.data)
     
     def test_list_video_jobs(self):
         # Create a job first
@@ -87,7 +92,9 @@ class VideoGenerationTests(APITestCase):
         job.refresh_from_db()
         self.assertEqual(job.status, VideoGenerationJob.Status.FAILED)
     
-    def test_cannot_generate_video_for_others_story(self):
+    def test_any_user_can_generate_video_for_a_published_story(self):
+        # Widened policy: a published story is open to any signed-in user,
+        # mirroring the audio narration rule.
         other_user = User.objects.create_user(
             'other',
             email='other@example.com',
@@ -99,13 +106,157 @@ class VideoGenerationTests(APITestCase):
             author=other_user,
             status=Story.Status.PUBLISHED,
         )
-        
+
         url = reverse('media:video-generation-list')
         resp = self.client.post(url, {
             'story_id': other_story.id,
             'prompt': 'Test prompt',
         })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['story'], other_story.id)
+
+    def test_cannot_generate_video_for_someone_elses_draft(self):
+        other_user = User.objects.create_user(
+            'other',
+            email='other@example.com',
+            password='hunter2secure',
+        )
+        draft = Story.objects.create(
+            title='Private Draft',
+            content='Not ready yet.',
+            author=other_user,
+            status=Story.Status.DRAFT,
+        )
+
+        url = reverse('media:video-generation-list')
+        resp = self.client.post(url, {
+            'story_id': draft.id,
+            'prompt': 'Test prompt',
+        })
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_author_can_generate_video_for_their_own_draft(self):
+        draft = Story.objects.create(
+            title='My Draft',
+            content='Mine.',
+            author=self.contributor,
+            status=Story.Status.DRAFT,
+        )
+
+        url = reverse('media:video-generation-list')
+        resp = self.client.post(url, {
+            'story_id': draft.id,
+            'prompt': 'Test prompt',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+    def test_anonymous_user_cannot_start_a_generation(self):
+        self.client.force_authenticate(None)
+        url = reverse('media:video-generation-list')
+        resp = self.client.post(url, {
+            'story_id': self.story.id,
+            'prompt': 'Test prompt',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @override_settings(VIDEO_GENERATIONS_PER_USER_PER_DAY=2)
+    def test_daily_cap_stops_unbounded_spend(self):
+        url = reverse('media:video-generation-list')
+        for _ in range(2):
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'prompt': 'Test prompt',
+            })
+            self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        resp = self.client.post(url, {
+            'story_id': self.story.id,
+            'prompt': 'One too many',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertIn('daily video generation', resp.data['detail'])
+        self.assertEqual(
+            VideoGenerationJob.objects.filter(user=self.contributor).count(), 2
+        )
+
+    @override_settings(VIDEO_GENERATIONS_PER_USER_PER_DAY=0)
+    def test_daily_cap_can_be_disabled(self):
+        url = reverse('media:video-generation-list')
+        for _ in range(4):
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'prompt': 'Test prompt',
+            })
+            self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+    def test_luma_submission_failure_marks_the_job_failed(self):
+        """A rejected submission must not leave a job pending forever."""
+        from .services.luma_ai import LumaAIError
+
+        failing = mock.Mock()
+        failing.submit_video_generation.side_effect = LumaAIError(
+            'Luma AI returned 402: payment required'
+        )
+
+        with mock.patch(
+            'media_app.views.get_luma_service', return_value=failing
+        ):
+            url = reverse('media:video-generation-list')
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'prompt': 'Test prompt',
+            })
+
+        self.assertEqual(resp.status_code, status.HTTP_502_BAD_GATEWAY)
+
+        job = VideoGenerationJob.objects.get(user=self.contributor)
+        self.assertEqual(job.status, VideoGenerationJob.Status.FAILED)
+        self.assertIn('payment required', job.error_message)
+
+    def test_completed_job_exposes_the_keys_the_client_reads(self):
+        """
+        The Flutter client parses `story` and `video_url`. When these were
+        named `story_id` / `url` on the client instead, every job parsed to
+        storyId 0 with an empty url, so `isReady` was never true and a
+        finished video could never play. Pin the wire contract.
+        """
+        from .services import luma_ai
+
+        job = VideoGenerationJob.objects.create(
+            user=self.contributor,
+            story=self.story,
+            prompt='Test prompt',
+            luma_job_id='luma_abc123',
+            status=VideoGenerationJob.Status.COMPLETED,
+            video_url='https://cdn.example.com/clip.mp4',
+            thumbnail_url='https://cdn.example.com/clip.jpg',
+            duration=5,
+        )
+
+        completed = mock.Mock()
+        completed.get_job_status.return_value = {
+            'id': 'luma_abc123',
+            'status': 'completed',
+            'video_url': 'https://cdn.example.com/clip.mp4',
+            'thumbnail_url': 'https://cdn.example.com/clip.jpg',
+            'duration': 5,
+        }
+
+        with mock.patch(
+            'media_app.views.get_luma_service', return_value=completed
+        ):
+            url = reverse('media:video-generation-status', kwargs={'pk': job.id})
+            resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'completed')
+        self.assertEqual(resp.data['story'], self.story.id)
+        self.assertEqual(
+            resp.data['video_url'], 'https://cdn.example.com/clip.mp4'
+        )
+        self.assertEqual(resp.data['duration'], 5)
+        self.assertNotIn('story_id', resp.data)
+        self.assertNotIn('url', resp.data)
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
@@ -258,6 +409,112 @@ class ServiceTests(APITestCase):
         self.assertEqual(resolve_language('en'), 'en')
         self.assertEqual(resolve_language('fr'), 'fr')
         self.assertEqual(resolve_language('ful'), 'en')  # unsupported -> en
+
+
+class TTSSocketTimeoutTests(SimpleTestCase):
+    """
+    gTTS exposes no timeout argument, so the synthesis is wrapped in a
+    process-wide default socket timeout. Without it a hung Google endpoint
+    pins a worker forever; with it the call fails and the job is marked failed
+    instead of hanging.
+    """
+
+    def test_timeout_is_applied_during_synthesis(self):
+        import socket
+
+        from .services.tts import _socket_timeout
+
+        before = socket.getdefaulttimeout()
+        with _socket_timeout(7.5):
+            self.assertEqual(socket.getdefaulttimeout(), 7.5)
+        self.assertEqual(socket.getdefaulttimeout(), before)
+
+    def test_previous_timeout_is_restored_even_on_failure(self):
+        import socket
+
+        from .services.tts import _socket_timeout
+
+        socket.setdefaulttimeout(3.0)
+        try:
+            with self.assertRaises(RuntimeError):
+                with _socket_timeout(9.0):
+                    raise RuntimeError('boom')
+            self.assertEqual(socket.getdefaulttimeout(), 3.0)
+        finally:
+            socket.setdefaulttimeout(None)
+
+    def test_missing_timeout_is_a_no_op(self):
+        import socket
+
+        from .services.tts import _socket_timeout
+
+        before = socket.getdefaulttimeout()
+        with _socket_timeout(None):
+            self.assertEqual(socket.getdefaulttimeout(), before)
+
+    @override_settings(TTS_SOCKET_TIMEOUT=5.0)
+    def test_synthesis_runs_inside_the_timeout_guard(self):
+        from .services import tts as tts_module
+
+        seen = {}
+
+        class ObservingGTTS:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def write_to_fp(self, fp):
+                import socket
+                seen['timeout'] = socket.getdefaulttimeout()
+                fp.write(b'fake-mp3')
+
+        with mock.patch.object(tts_module, 'gTTS', ObservingGTTS):
+            service = tts_module.GTTSNarrationService()
+            result = service.submit_narration(text='Hello there.')
+
+        self.assertEqual(result['status'], 'completed')
+        self.assertEqual(seen['timeout'], 5.0)
+
+
+class LumaServiceConfigurationTests(SimpleTestCase):
+    """
+    `get_luma_service()` reads `settings.LUMA_API_KEY`. The key was never
+    declared in any settings module, so the attribute never existed and the
+    live client could never be selected — every deployment silently ran the
+    mock, whose 'completed' jobs point at an unplayable placeholder URL.
+    """
+
+    def setUp(self):
+        import media_app.services.luma_ai as luma_module
+        self.module = luma_module
+        luma_module._service_instance = None
+        self.addCleanup(setattr, luma_module, '_service_instance', None)
+
+    @override_settings(LUMA_API_KEY='secret-live-key')
+    def test_live_service_selected_when_key_is_configured(self):
+        service = self.module.get_luma_service()
+        self.assertIsInstance(service, self.module.LiveLumaAIService)
+        self.assertEqual(service.api_key, 'secret-live-key')
+
+    @override_settings(LUMA_API_KEY='')
+    def test_mock_service_selected_without_a_key(self):
+        self.assertIsInstance(
+            self.module.get_luma_service(), self.module.MockLumaAIService
+        )
+
+    def test_settings_module_declares_the_key(self):
+        from django.conf import settings as django_settings
+
+        # Present but empty unless the environment supplies one.
+        self.assertTrue(hasattr(django_settings, 'LUMA_API_KEY'))
+
+    def test_settings_module_declares_tuning_knobs(self):
+        from django.conf import settings as django_settings
+
+        self.assertTrue(hasattr(django_settings, 'TTS_SOCKET_TIMEOUT'))
+        self.assertTrue(hasattr(django_settings, 'TTS_MAX_CHARS'))
+        self.assertTrue(
+            hasattr(django_settings, 'VIDEO_GENERATIONS_PER_USER_PER_DAY')
+        )
 
 
 class FakeGTTS:

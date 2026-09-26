@@ -65,6 +65,17 @@ class AudioPlayerService {
           break;
       }
     });
+
+    // Errors raised by the player itself (decoder failures, a source that
+    // dies mid-stream) never travel through `play()`, so without this the
+    // UI would keep showing a paused player with no explanation.
+    _player.errorStream.listen((playerError) {
+      _updateState(
+        isPlaying: false,
+        isBuffering: false,
+        errorMessage: _describePlaybackError(playerError),
+      );
+    });
   }
 
   void _updateState({
@@ -122,32 +133,76 @@ class AudioPlayerService {
   /// Load and play an audio track.
   Future<void> play(AudioModel audio) async {
     try {
-      _updateState(currentAudio: audio, isBuffering: true);
+      _updateState(currentAudio: audio, isBuffering: true, clearError: true);
 
       // Set playback speed
       await _player.setSpeed(audio.playbackSpeed);
 
       // Load the audio source
-      if (audio.url.isNotEmpty) {
-        // Resolve relative URLs (e.g. a bare '/media/audio/x.mp3') against
-        // the effective backend base, the same way [GriotImage] does.
-        final url = AppConstants.resolveMediaUrl(
-              audio.url,
-              baseUrl: AppConstants.effectiveBaseUrl,
-            ) ??
-            audio.url;
-        await _player.setUrl(url);
-      } else {
-        _updateState(errorMessage: 'No audio URL provided', clearAudio: true);
+      if (audio.url.isEmpty) {
+        _updateState(
+          isBuffering: false,
+          errorMessage: 'No audio URL provided',
+        );
         return;
       }
+
+      // Resolve relative URLs (e.g. a bare '/media/audio/x.mp3') against
+      // the effective backend base, the same way [GriotImage] does.
+      final url = AppConstants.resolveMediaUrl(
+            audio.url,
+            baseUrl: AppConstants.effectiveBaseUrl,
+          ) ??
+          audio.url;
+      await _player.setUrl(url);
 
       // Start playback
       await _player.play();
       _updateState(isBuffering: false);
     } catch (e) {
-      _updateState(errorMessage: 'Failed to play audio: $e', clearAudio: true);
+      // Keep `currentAudio` so the sheet still shows the track and can offer
+      // a retry. Clearing it made a failed load look like the audio had
+      // simply never existed.
+      _updateState(isBuffering: false, errorMessage: _describePlaybackError(e));
     }
+  }
+
+  /// Turn a playback failure into something a user can act on.
+  ///
+  /// `PlayerException.toString()` is just "($code) $message", where `code` is
+  /// a platform-specific integer (`NSError.code`, `ExoPlaybackException.type`
+  /// or `MediaError.code`) and so is not comparable across platforms. Match on
+  /// the message text for the two cases worth distinguishing and otherwise
+  /// stay generic rather than inventing a code we cannot rely on.
+  String _describePlaybackError(Object e) {
+    if (e is PlayerException) {
+      final message = (e.message ?? '').toLowerCase();
+      const networkHints = [
+        'network',
+        'unable to connect',
+        'connection',
+        'timed out',
+        'timeout',
+        'host',
+        'resolve',
+      ];
+      const decodeHints = [
+        'unsupported',
+        'decode',
+        'corrupt',
+        'format',
+        'codec',
+        'no such',
+      ];
+
+      if (networkHints.any(message.contains)) {
+        return 'Could not reach the audio. Please check your connection.';
+      }
+      if (decodeHints.any(message.contains)) {
+        return 'This audio file could not be played.';
+      }
+    }
+    return 'Audio playback failed. Please try again.';
   }
 
   /// Pause playback.

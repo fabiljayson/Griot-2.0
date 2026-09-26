@@ -7,6 +7,7 @@ class VideoModel {
     this.url = '',
     this.thumbnailUrl = '',
     this.duration = 0,
+    this.progressPercent = 0,
     this.status = VideoStatus.pending,
     this.lumaJobId = '',
     this.prompt = '',
@@ -21,6 +22,7 @@ class VideoModel {
   final String url;
   final String thumbnailUrl;
   final int duration; // in seconds
+  final int progressPercent; // 0-100, as reported by the backend
   final VideoStatus status;
   final String lumaJobId;
   final String prompt;
@@ -28,14 +30,20 @@ class VideoModel {
   final String? completedAt;
   final String? errorMessage;
 
+  /// Read the backend contract: `story` (the FK id) and `video_url`.
+  ///
+  /// The snake_case `story_id` / `url` keys are still accepted so payloads
+  /// persisted by an older build (offline queue, cached JSON) keep parsing
+  /// instead of silently degrading to storyId 0 and an empty url.
   factory VideoModel.fromJson(Map<String, dynamic> json) {
     return VideoModel(
       id: json['id'] as int? ?? 0,
-      storyId: json['story_id'] as int? ?? 0,
+      storyId: (json['story'] ?? json['story_id']) as int? ?? 0,
       storyTitle: json['story_title'] as String? ?? '',
-      url: json['url'] as String? ?? '',
+      url: (json['video_url'] ?? json['url']) as String? ?? '',
       thumbnailUrl: json['thumbnail_url'] as String? ?? '',
       duration: json['duration'] as int? ?? 0,
+      progressPercent: json['progress_percent'] as int? ?? 0,
       status: VideoStatus.fromString(json['status'] as String? ?? 'pending'),
       lumaJobId: json['luma_job_id'] as String? ?? '',
       prompt: json['prompt'] as String? ?? '',
@@ -52,6 +60,7 @@ class VideoModel {
         'url': url,
         'thumbnail_url': thumbnailUrl,
         'duration': duration,
+        'progress_percent': progressPercent,
         'status': status.value,
         'luma_job_id': lumaJobId,
         'prompt': prompt,
@@ -84,6 +93,7 @@ class VideoModel {
     String? url,
     String? thumbnailUrl,
     int? duration,
+    int? progressPercent,
     VideoStatus? status,
     String? lumaJobId,
     String? prompt,
@@ -100,6 +110,7 @@ class VideoModel {
       url: url ?? this.url,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       duration: duration ?? this.duration,
+      progressPercent: progressPercent ?? this.progressPercent,
       status: status ?? this.status,
       lumaJobId: lumaJobId ?? this.lumaJobId,
       prompt: prompt ?? this.prompt,

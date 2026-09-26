@@ -64,16 +64,19 @@ class UserModel {
   /// Whether this user may request narration / AI video for a story authored
   /// by [authorId].
   ///
-  /// Mirrors the backend's `can_generate_media` gate
-  /// (`web/views.py::story_detail_view`) and `IsStoryOwnerOrReadOnly`:
-  /// Contributor or above, *and* either the author or a manager/admin. Role
-  /// alone is not sufficient — the API also requires ownership, so a
-  /// Contributor on someone else's story must not see the entry.
-  bool canGenerateMediaFor({required int authorId}) =>
-      canContribute &&
-      (role == UserRole.institutionManager ||
-          role == UserRole.admin ||
-          id == authorId);
+  /// Mirrors `media_app.views`: a published story is open to any signed-in
+  /// user, while a draft or one still in review is limited to its author and
+  /// the managing roles. Keeping the two sides in step matters — a gate that
+  /// is stricter than the API just hides the feature, and one that is looser
+  /// offers an action that can only ever 403.
+  bool canGenerateMediaFor({
+    required int authorId,
+    bool isPublished = false,
+  }) =>
+      role == UserRole.institutionManager ||
+      role == UserRole.admin ||
+      id == authorId ||
+      isPublished;
 
   UserModel copyWith({
     int? id,

@@ -10,14 +10,16 @@ import '../models/video_model.dart';
 ///   - Polling job status
 ///   - Cancelling jobs
 ///   - Listing user's jobs
+///
+/// Every endpoint requires a signed-in user, so construct this with the
+/// authenticated Dio from `authenticatedApiClientProvider`. The bare
+/// `ApiClient.instance` fallback has no `AuthInterceptor` and every call
+/// made through it would be rejected with 401.
 class VideoApiService {
-  VideoApiService._({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
+  VideoApiService({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
 
   final Dio _dio;
 
-  static final VideoApiService instance = VideoApiService._();
-
-  /// Base path for media endpoints.
   static const _mediaPath = '/api/media';
 
   /// Create a video generation job.

@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/app_error.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../models/video_model.dart';
 import '../services/video_api_service.dart';
 import '../services/video_status_poller.dart';
@@ -45,9 +48,9 @@ class VideoGenerationState {
 
 /// Notifier for managing video generation jobs.
 class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
-  VideoGenerationNotifier()
-    : _apiService = VideoApiService.instance,
-      _poller = VideoStatusPoller.instance,
+  VideoGenerationNotifier({VideoApiService? apiService})
+    : _apiService = apiService ?? VideoApiService(),
+      _poller = VideoStatusPoller(apiService: apiService),
       super(const VideoGenerationState());
 
   final VideoApiService _apiService;
@@ -62,7 +65,7 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to load video jobs: $e',
+        errorMessage: 'Failed to load video jobs: ${_describe(e)}',
       );
     }
   }
@@ -83,6 +86,19 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
         aspectRatio: aspectRatio,
       );
 
+      // The backend answers 201 even when Luma refused the job, so a failed
+      // job is a real outcome here rather than an exception. Report it as an
+      // error instead of a cheerful "we'll notify you" message.
+      if (job.hasFailed) {
+        state = state.copyWith(
+          jobs: [job, ...state.jobs],
+          isCreating: false,
+          errorMessage:
+              job.errorMessage ?? 'Video generation could not be started.',
+        );
+        return null;
+      }
+
       // Add to local list and start polling.
       state = state.copyWith(jobs: [job, ...state.jobs], isCreating: false);
 
@@ -93,10 +109,19 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
     } catch (e) {
       state = state.copyWith(
         isCreating: false,
-        errorMessage: 'Failed to create video: $e',
+        errorMessage: 'Failed to create video: ${_describe(e)}',
       );
       return null;
     }
+  }
+
+  /// Turn a transport failure into a message worth showing a user.
+  ///
+  /// Raw `DioException.toString()` dumps the request options and is both
+  /// unreadable and noise-prone, so route it through the shared mapper.
+  String _describe(Object e) {
+    if (e is DioException) return AppErrorMapper.fromDio(e).message;
+    return e.toString();
   }
 
   /// Cancel a video generation job.
@@ -118,7 +143,7 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
 
       state = state.copyWith(jobs: updatedJobs);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to cancel: $e');
+      state = state.copyWith(errorMessage: 'Failed to cancel: ${_describe(e)}');
     }
   }
 
@@ -132,7 +157,7 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
         _startPollingForJob(updated);
       }
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to refresh: $e');
+      state = state.copyWith(errorMessage: 'Failed to refresh: ${_describe(e)}');
     }
   }
 
@@ -165,9 +190,13 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
 }
 
 /// Main video generation provider.
+///
+/// Wires the auth-aware client so the JWT is attached — the media endpoints
+/// reject anonymous callers with 401.
 final videoGenerationProvider =
     StateNotifierProvider<VideoGenerationNotifier, VideoGenerationState>((ref) {
-      return VideoGenerationNotifier();
+      final apiClient = ref.watch(authenticatedApiClientProvider);
+      return VideoGenerationNotifier(apiService: VideoApiService(dio: apiClient.dio));
     });
 
 /// Video for a specific story.
