@@ -224,7 +224,10 @@ class QuizzesHubTests(WebSmokeTestCase):
 
     def setUp(self):
         super().setUp()
-        self.quiz = Quiz.objects.create(story=self.story, passing_score=70)
+        # Publishing a story auto-provisions its quiz, so reuse that one and
+        # swap in the question this test needs.
+        self.quiz = self.story.quiz
+        self.quiz.questions.all().delete()
         QuizQuestion.objects.create(
             quiz=self.quiz,
             question_text='What does the baobab symbolise?',

@@ -422,7 +422,13 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
       await ref.read(quizzesProvider.future);
       if (!mounted) return;
 
-      final quizzes = ref.read(quizzesByStoryProvider(story.id));
+      final quizzes = ref.read(
+        quizzesByStoryProvider((
+          id: story.id,
+          slug: story.slug,
+          title: story.title,
+        )),
+      );
       if (quizzes.isEmpty) {
         setState(() => _isStartingQuiz = false);
         await _showNoQuizDialog();

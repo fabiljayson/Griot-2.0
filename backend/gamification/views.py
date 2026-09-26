@@ -46,11 +46,22 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = Quiz.objects.select_related('story').prefetch_related('questions')
-        if self.request.user.is_authenticated and self.request.user.role in (
-            'admin', 'institution_manager',
-        ):
-            return qs
-        return qs.filter(is_published=True)
+        is_staff = self.request.user.is_authenticated and (
+            self.request.user.role in ('admin', 'institution_manager')
+        )
+        if not is_staff:
+            qs = qs.filter(is_published=True)
+
+        # The story reader resolves a quiz by story id, so let it ask for
+        # exactly one story's quiz instead of downloading the whole catalogue.
+        story_id = self.request.query_params.get('story')
+        if story_id:
+            try:
+                story_id = int(story_id)
+            except (TypeError, ValueError):
+                return qs.none()
+            qs = qs.filter(story_id=story_id)
+        return qs
 
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):

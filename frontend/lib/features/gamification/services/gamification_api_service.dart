@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/database/repositories/local_gamification_repository.dart';
+import 'quiz_api_service.dart';
 
 /// Quiz question model.
 class QuizQuestionModel {
@@ -48,6 +51,7 @@ class QuizModel {
     this.description = '',
     this.storyId = 0,
     this.storyTitle = '',
+    this.storySlug = '',
     this.passingScore = 70,
     this.timeLimitMinutes = 0,
     this.questionCount = 0,
@@ -61,6 +65,14 @@ class QuizModel {
   final String description;
   final int storyId;
   final String storyTitle;
+
+  /// Slug of the story this quiz belongs to.
+  ///
+  /// Ids are only meaningful within one data source: the offline SQLite
+  /// catalogue numbers its own stories independently of the API, so matching a
+  /// quiz to a story by id alone can pair the wrong quiz with a story. The slug
+  /// is stable across both.
+  final String storySlug;
   final int passingScore;
   final int timeLimitMinutes;
   final int questionCount;
@@ -75,6 +87,7 @@ class QuizModel {
       description: json['description'] as String? ?? '',
       storyId: json['story'] as int? ?? 0,
       storyTitle: json['story_title'] as String? ?? '',
+      storySlug: json['story_slug'] as String? ?? '',
       passingScore: json['passing_score'] as int? ?? 70,
       timeLimitMinutes: json['time_limit_minutes'] as int? ?? 0,
       questionCount: json['question_count'] as int? ?? 0,
@@ -208,48 +221,140 @@ class QuizAttemptResult {
   }
 }
 
-/// Service for gamification operations — delegates entirely to local SQLite.
+/// Gamification service — server-backed, with the offline catalogue as backup.
+///
+/// The API is the source of truth: it owns the authoritative quiz for every
+/// published story, grades attempts, and awards XP and badges. The bundled
+/// SQLite catalogue is only consulted when the API cannot be reached, so a
+/// reader offline still has something to play.
+///
+/// Pass a [remote] to use the API. [instance] is the local-only default kept for
+/// callers that have no authenticated client to hand.
 class GamificationApiService {
-  GamificationApiService._({LocalGamificationRepository? local})
-    : _local = local ?? LocalGamificationRepository();
+  GamificationApiService({
+    LocalGamificationRepository? local,
+    QuizApiService? remote,
+  }) : _local = local ?? LocalGamificationRepository(),
+       _remote = remote;
 
   final LocalGamificationRepository _local;
+  final QuizApiService? _remote;
 
-  static final GamificationApiService instance = GamificationApiService._();
+  /// Local-only instance, for callers without an authenticated client.
+  static final GamificationApiService instance = GamificationApiService();
 
-  /// List all quizzes.
-  Future<List<QuizModel>> listQuizzes() => _local.listQuizzes();
+  /// Whether [error] means the request never reached the server.
+  ///
+  /// A status code proves the server answered, so only transport-level failures
+  /// count as being offline.
+  static bool _isOffline(DioException error) => switch (error.type) {
+        DioExceptionType.connectionError ||
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.receiveTimeout =>
+          true,
+        _ => false,
+      };
 
-  /// Get quiz detail with questions.
-  Future<QuizModel> getQuiz(int quizId) => _local.getQuiz(quizId);
+  /// Run [remote] and fall back to the offline catalogue when the request never
+  /// reached the server.
+  ///
+  /// Only transport failures fall back. A response the server actually sent —
+  /// 404, 401, 500 — is an answer about the quiz, and quietly replacing it with
+  /// a bundled quiz for some other story is how a reader ends up playing the
+  /// wrong quiz. Those propagate to the caller instead.
+  Future<T> _withOfflineFallback<T>(
+    Future<T> Function(QuizApiService remote) remoteCall,
+    Future<T> Function() localCall,
+  ) async {
+    final remote = _remote;
+    if (remote == null) return localCall();
+    try {
+      return await remoteCall(remote);
+    } on DioException catch (error) {
+      if (!_isOffline(error)) rethrow;
+      return localCall();
+    }
+  }
+
+  /// Quizzes, optionally narrowed to one story.
+  ///
+  /// [storyId] is the API's story id. Offline, the bundled catalogue is keyed
+  /// by its own story ids, so callers should pair this with the story slug (see
+  /// [QuizModel.storySlug]) rather than trusting the id alone.
+  Future<List<QuizModel>> listQuizzes({int? storyId}) {
+    return _withOfflineFallback(
+      (remote) => remote.listQuizzes(storyId: storyId),
+      () => _local.listQuizzes(),
+    );
+  }
+
+  /// Quiz detail with its questions.
+  Future<QuizModel> getQuiz(int quizId) {
+    return _withOfflineFallback(
+      (remote) => remote.getQuiz(quizId),
+      () => _local.getQuiz(quizId),
+    );
+  }
 
   /// Start a quiz attempt.
-  Future<Map<String, dynamic>> startQuiz(int quizId) =>
-      _local.startQuiz(quizId);
+  Future<Map<String, dynamic>> startQuiz(int quizId) {
+    return _withOfflineFallback(
+      (remote) => remote.startQuiz(quizId),
+      () => _local.startQuiz(quizId),
+    );
+  }
 
-  /// Submit an answer.
+  /// Submit an answer for grading.
   Future<QuizAttemptResult> submitAnswer({
     required int quizId,
     required int questionId,
     required String selectedAnswer,
-  }) => _local.submitAnswer(
-    quizId: quizId,
-    questionId: questionId,
-    selectedAnswer: selectedAnswer,
-  );
+  }) {
+    return _withOfflineFallback(
+      (remote) => remote.submitAnswer(
+        quizId: quizId,
+        questionId: questionId,
+        selectedAnswer: selectedAnswer,
+      ),
+      () => _local.submitAnswer(
+        quizId: quizId,
+        questionId: questionId,
+        selectedAnswer: selectedAnswer,
+      ),
+    );
+  }
 
-  /// Finish a quiz attempt.
+  /// Finish and grade a quiz attempt.
   Future<Map<String, dynamic>> finishQuiz(
     int quizId, {
     Map<int, String> answers = const {},
-  }) => _local.finishQuiz(quizId, answers: answers);
+  }) {
+    return _withOfflineFallback(
+      (remote) => remote.finishQuiz(quizId),
+      () => _local.finishQuiz(quizId, answers: answers),
+    );
+  }
 
   /// List all badges.
-  Future<List<BadgeModel>> listBadges() => _local.listBadges();
+  Future<List<BadgeModel>> listBadges() {
+    return _withOfflineFallback(
+      (remote) => remote.listBadges(),
+      () => _local.listBadges(),
+    );
+  }
 
   /// Get user's gamification profile.
-  Future<GamificationProfileModel> getProfile() => _local.getProfile();
+  Future<GamificationProfileModel> getProfile() {
+    return _withOfflineFallback(
+      (remote) => remote.getProfile(),
+      () => _local.getProfile(),
+    );
+  }
 
-  /// Get leaderboard (simplified — returns empty for local mode).
+  /// Leaderboard rows.
+  ///
+  /// Not part of the reader's quiz flow yet, so it stays empty rather than
+  /// inventing an endpoint the app does not have.
   Future<List<Map<String, dynamic>>> getLeaderboard() async => [];
 }

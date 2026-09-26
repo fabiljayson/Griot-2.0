@@ -33,6 +33,7 @@ class QuizDetailSerializer(serializers.ModelSerializer):
 
     questions = QuizQuestionSerializer(many=True, read_only=True)
     story_title = serializers.CharField(source='story.title', read_only=True)
+    story_slug = serializers.CharField(source='story.slug', read_only=True)
     question_count = serializers.IntegerField(read_only=True)
     xp_reward = serializers.IntegerField(read_only=True)
 
@@ -44,6 +45,7 @@ class QuizDetailSerializer(serializers.ModelSerializer):
             'description',
             'story',
             'story_title',
+            'story_slug',
             'passing_score',
             'time_limit_minutes',
             'question_count',
@@ -58,6 +60,7 @@ class QuizListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for quiz list views."""
 
     story_title = serializers.CharField(source='story.title', read_only=True)
+    story_slug = serializers.CharField(source='story.slug', read_only=True)
     question_count = serializers.IntegerField(read_only=True)
     xp_reward = serializers.IntegerField(read_only=True)
     best_score = serializers.SerializerMethodField()
@@ -69,6 +72,7 @@ class QuizListSerializer(serializers.ModelSerializer):
             'title',
             'story',
             'story_title',
+            'story_slug',
             'passing_score',
             'question_count',
             'xp_reward',

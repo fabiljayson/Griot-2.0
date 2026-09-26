@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_provider.dart';
 import '../services/gamification_api_service.dart';
+import '../services/quiz_api_service.dart';
 
 /// State for quiz playing.
 class QuizPlayerState {
@@ -63,9 +65,7 @@ class QuizPlayerState {
 
 /// Notifier for quiz player.
 class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
-  QuizPlayerNotifier()
-    : _apiService = GamificationApiService.instance,
-      super(const QuizPlayerState());
+  QuizPlayerNotifier(this._apiService) : super(const QuizPlayerState());
 
   final GamificationApiService _apiService;
 
@@ -170,37 +170,71 @@ class QuizPlayerNotifier extends StateNotifier<QuizPlayerState> {
   }
 }
 
+/// Gamification service bound to the authenticated client.
+///
+/// Quizzes are graded and rewarded server-side, so every quiz call needs the
+/// signed-in user's token. When the API is unreachable the service transparently
+/// falls back to the offline catalogue.
+final gamificationApiServiceProvider = Provider<GamificationApiService>((ref) {
+  final apiClient = ref.watch(authenticatedApiClientProvider);
+  return GamificationApiService(
+    remote: QuizApiService(dio: apiClient.dio),
+  );
+});
+
 /// Quiz player provider.
 final quizPlayerProvider =
     StateNotifierProvider<QuizPlayerNotifier, QuizPlayerState>((ref) {
-      return QuizPlayerNotifier();
+      return QuizPlayerNotifier(ref.watch(gamificationApiServiceProvider));
     });
 
 /// Gamification profile provider.
 final gamificationProfileProvider = FutureProvider<GamificationProfileModel>((
   ref,
 ) async {
-  final apiService = GamificationApiService.instance;
-  return apiService.getProfile();
+  return ref.watch(gamificationApiServiceProvider).getProfile();
 });
 
 /// Badges provider.
 final badgesProvider = FutureProvider<List<BadgeModel>>((ref) async {
-  final apiService = GamificationApiService.instance;
-  return apiService.listBadges();
+  return ref.watch(gamificationApiServiceProvider).listBadges();
 });
 
 /// Quizzes provider.
 final quizzesProvider = FutureProvider<List<QuizModel>>((ref) async {
-  final apiService = GamificationApiService.instance;
-  return apiService.listQuizzes();
+  return ref.watch(gamificationApiServiceProvider).listQuizzes();
 });
 
-/// Quizzes filtered to a specific story, used by the story-reader "Take Quiz"
-/// CTA. Derived from [quizzesProvider] so it stays in sync without a new
-/// endpoint.
-final quizzesByStoryProvider = Provider.autoDispose
-    .family<List<QuizModel>, int>((ref, storyId) {
+/// Identifies the story a quiz must belong to.
+///
+/// The id alone is not enough: the offline catalogue numbers its own stories
+/// from 1, so an id-only match pairs the API's story 1 with an unrelated bundled
+/// quiz. [slug] and [title] are unique across both data sources, so one of them
+/// has to agree before a quiz is offered.
+typedef StoryQuizKey = ({int id, String slug, String title});
+
+/// Whether [quiz] was authored for [story].
+///
+/// The slug is the strongest signal and is preferred when both sides have one.
+/// The title is the fallback, which keeps the reader working against a backend
+/// that predates `story_slug` while the two deploys are in flight.
+///
+/// When neither can confirm the pairing the answer is no: offering a quiz we
+/// cannot attribute to the story is exactly the bug this guards against.
+bool _belongsToStory(QuizModel quiz, StoryQuizKey story) {
+  if (quiz.storyId != story.id) return false;
+  if (quiz.storySlug.isNotEmpty && story.slug.isNotEmpty) {
+    return quiz.storySlug == story.slug;
+  }
+  if (quiz.storyTitle.isNotEmpty && story.title.isNotEmpty) {
+    return quiz.storyTitle == story.title;
+  }
+  return false;
+}
+
+/// Quizzes belonging to one story, used by the story reader's "Take Quiz" CTA.
+final quizzesByStoryProvider =
+    Provider.autoDispose.family<List<QuizModel>, StoryQuizKey>((ref, story) {
       final quizzes = ref.watch(quizzesProvider).value ?? const <QuizModel>[];
-      return quizzes.where((quiz) => quiz.storyId == storyId).toList();
+      return quizzes.where((quiz) => _belongsToStory(quiz, story)).toList();
     });
