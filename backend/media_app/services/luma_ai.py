@@ -23,6 +23,26 @@ logger = logging.getLogger(__name__)
 LUMA_API_BASE = 'https://api.lumalabs.ai/dream-machine/v1'
 
 
+def _normalise_progress(value, state: str) -> int:
+    """Coerce a provider progress value to an integer 0-100.
+
+    Luma has reported ``progress`` as both a 0..1 fraction and a 0..100
+    percentage across API versions, so scale by magnitude instead of assuming
+    one. Anything missing, non-numeric or out of range falls back to a value
+    derived from the state, because a stuck 0% is worse than an estimate: the
+    client renders it as a progress bar and the user watches a dead meter.
+    """
+    if state == 'completed':
+        return 100
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return {'queued': 0, 'in_progress': 50}.get(state, 0)
+    # Note the explicit `and`: `0 < value <= 1` would chain as
+    # `(0 < value) and (0 <= 1)`, which is true for every input.
+    if 0 < value <= 1:
+        value = value * 100
+    return max(0, min(100, round(value)))
+
+
 class LumaAIError(Exception):
     """Raised when the Luma AI API returns an error."""
 
@@ -106,6 +126,10 @@ class LiveLumaAIService(LumaAIService):
             'video_url': '',
             'thumbnail_url': '',
             'duration': 0,
+            # Normalised to 0-100. Luma has reported this as both a 0..1
+            # fraction and a 0..100 percentage across API versions, so scale
+            # by magnitude rather than assuming one.
+            'progress': _normalise_progress(data.get('progress'), state),
             'created_at': data.get('created_at', ''),
             'completed_at': data.get('completed_at'),
         }
@@ -163,21 +187,32 @@ class MockLumaAIService(LumaAIService):
         # Simulate random progress for demo purposes
         if job.status == VideoGenerationJob.Status.PENDING and random.random() > 0.6:
             job.status = VideoGenerationJob.Status.PROCESSING
-            job.save(update_fields=['status', 'updated_at'])
+            job.progress_percent = 50
+            job.save(update_fields=['status', 'progress_percent', 'updated_at'])
         elif job.status == VideoGenerationJob.Status.PROCESSING and random.random() > 0.7:
             job.status = VideoGenerationJob.Status.COMPLETED
             job.video_url = f'https://storage.example.com/videos/{job_id}.mp4'
             job.thumbnail_url = f'https://storage.example.com/thumbnails/{job_id}.jpg'
             job.duration = random.randint(5, 15)
+            job.progress_percent = 100
             job.completed_at = timezone_now()
             job.save(update_fields=[
                 'status', 'video_url', 'thumbnail_url', 'duration',
-                'completed_at', 'updated_at',
+                'progress_percent', 'completed_at', 'updated_at',
             ])
+        elif job.status == VideoGenerationJob.Status.PROCESSING:
+            # Crawl toward 95 so the client's progress bar visibly moves. Left
+            # at 0 it reads as a hung request rather than a rendering video.
+            elapsed = (timezone_now() - job.created_at).total_seconds()
+            creep = min(95, 50 + int(elapsed // 10) * 5)
+            if creep > job.progress_percent:
+                job.progress_percent = creep
+                job.save(update_fields=['progress_percent', 'updated_at'])
 
         return {
             'id': job_id,
             'status': job.status,
+            'progress': job.progress_percent,
             'video_url': job.video_url,
             'thumbnail_url': job.thumbnail_url,
             'duration': job.duration,

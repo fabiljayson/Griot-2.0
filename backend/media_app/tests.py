@@ -676,3 +676,112 @@ class AudioNarrationCachingTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(resp.data['status'], 'completed')
         service.submit_narration.assert_called_once()
+
+class VideoProgressTests(APITestCase):
+    """Render progress must actually reach the client.
+
+    The status action originally copied status/video_url/thumbnail_url/duration
+    but never progress, and no service reported it, so `progress_percent` was
+    pinned at 0 for the entire render — including on a *completed* job. The
+    story screen renders that number, so the user watched a dead meter.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'progress_user',
+            email='progress@example.com',
+            password='hunter2secure',
+            role='contributor',
+        )
+        self.story = Story.objects.create(
+            title='Progress Story',
+            content='A story used to check progress reporting.',
+            author=self.user,
+            status=Story.Status.PUBLISHED,
+        )
+        self.client.force_authenticate(self.user)
+
+    def _job(self, **kwargs):
+        defaults = {
+            'user': self.user,
+            'story': self.story,
+            'luma_job_id': 'luma_progress_1',
+            'status': VideoGenerationJob.Status.PROCESSING,
+            'progress_percent': 0,
+        }
+        defaults.update(kwargs)
+        return VideoGenerationJob.objects.create(**defaults)
+
+    def _status_with(self, luma_status):
+        job = self._job()
+        service = mock.Mock()
+        service.get_job_status.return_value = luma_status
+        with mock.patch('media_app.views.get_luma_service', return_value=service):
+            resp = self.client.get(
+                reverse('media:video-generation-status', args=[job.id])
+            )
+        job.refresh_from_db()
+        return resp, job
+
+    def test_completion_forces_progress_to_100(self):
+        resp, job = self._status_with({
+            'status': 'completed',
+            'video_url': 'https://example.com/v.mp4',
+            'thumbnail_url': 'https://example.com/t.jpg',
+            'duration': 7,
+            'progress': 0,
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(job.progress_percent, 100)
+        self.assertEqual(resp.data['progress_percent'], 100)
+        self.assertIsNotNone(job.completed_at)
+
+    def test_completion_ignores_a_stale_zero_progress(self):
+        # The exact production symptom: completed while progress stayed 0.
+        _, job = self._status_with({
+            'status': 'completed',
+            'video_url': 'https://example.com/v.mp4',
+            'progress': 0,
+        })
+        self.assertEqual(job.progress_percent, 100)
+
+    def test_in_progress_progress_is_persisted(self):
+        _, job = self._status_with({
+            'status': 'in_progress',
+            'progress': 0.42,
+            'video_url': '',
+        })
+        self.assertEqual(job.progress_percent, 42)
+        self.assertIsNotNone(job.started_at)
+
+    def test_progress_is_clamped_and_survives_garbage(self):
+        _, job = self._status_with({'status': 'in_progress', 'progress': 9000})
+        self.assertEqual(job.progress_percent, 100)
+
+        _, job = self._status_with({'status': 'in_progress', 'progress': 'n/a'})
+        self.assertEqual(job.progress_percent, 50)
+
+        _, job = self._status_with({'status': 'in_progress', 'progress': None})
+        self.assertEqual(job.progress_percent, 50)
+
+    def test_fractional_and_percentage_forms_agree(self):
+        from media_app.services.luma_ai import _normalise_progress
+
+        self.assertEqual(_normalise_progress(0.42, 'in_progress'), 42)
+        self.assertEqual(_normalise_progress(42, 'in_progress'), 42)
+        self.assertEqual(_normalise_progress(1.0, 'in_progress'), 100)
+        self.assertEqual(_normalise_progress(0, 'queued'), 0)
+        self.assertEqual(_normalise_progress(None, 'completed'), 100)
+        self.assertEqual(_normalise_progress(True, 'in_progress'), 50)
+        self.assertEqual(_normalise_progress(-5, 'in_progress'), 0)
+
+    def test_pending_promotes_to_processing_on_poll(self):
+        job = self._job(status=VideoGenerationJob.Status.PENDING)
+        service = mock.Mock()
+        service.get_job_status.return_value = {
+            'status': 'in_progress', 'progress': 10, 'video_url': '',
+        }
+        with mock.patch('media_app.views.get_luma_service', return_value=service):
+            self.client.get(reverse('media:video-generation-status', args=[job.id]))
+        job.refresh_from_db()
+        self.assertEqual(job.status, VideoGenerationJob.Status.PROCESSING)

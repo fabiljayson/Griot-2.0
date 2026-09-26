@@ -20,7 +20,7 @@ from .serializers import (
     VideoGenerationJobSerializer,
     VoiceSerializer,
 )
-from .services.luma_ai import LumaAIError, get_luma_service
+from .services.luma_ai import LumaAIError, _normalise_progress, get_luma_service
 from .services.tts import (
     TTSGenerationError,
     build_artifact_script,
@@ -176,9 +176,23 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 job.video_url = luma_status.get('video_url', '')
                 job.thumbnail_url = luma_status.get('thumbnail_url', '')
                 job.duration = luma_status.get('duration', 0)
+                job.progress_percent = 100
+                if not job.completed_at:
+                    job.completed_at = timezone.now()
             elif luma_status.get('status') == 'failed':
                 job.status = VideoGenerationJob.Status.FAILED
                 job.error_message = luma_status.get('error', 'Unknown error')
+            else:
+                # Persist progress while rendering. Without this the field
+                # stays 0 for the whole render and the client's progress bar
+                # reads as a hung request.
+                job.progress_percent = _normalise_progress(
+                    luma_status.get('progress'), luma_status.get('status', '')
+                )
+                if job.status == VideoGenerationJob.Status.PENDING:
+                    job.status = VideoGenerationJob.Status.PROCESSING
+                if not job.started_at:
+                    job.started_at = timezone.now()
 
             job.save()
 
