@@ -1,130 +1,194 @@
 name: Keep Render backend awake
 
 # The backend runs on Render's free tier, which sleeps after ~15 minutes of
-# inactivity and takes 30-60+ seconds to cold-start. That cold start exceeds
-# the clients' request timeouts, so the first login/sign-up of the day fails.
+# inactivity and needs 45-60s to cold-start. That cold start blows past the
+# clients' request timeouts, so the first real request of the day fails.
 #
-# WHY THIS IS NOT JUST A CRON JOB
-# GitHub's `schedule` trigger is best-effort, and `*/5 * * * *` is the floor.
-# Under load GitHub *drops* scheduled runs outright rather than delaying them,
-# community reports document multi-hour drift, and minute `:00` is the single
-# most contended slot on the platform. This file originally used `*/5` and
-# managed exactly two runs in five hours — so the service slept anyway, and
-# each run that did land was paying a 44s cold start instead of preventing one.
+# WHY THERE IS NO SELF-CHAINING LOOP HERE
 #
-# So the cadence is driven by `workflow_dispatch` over the API, which is
-# queued normally and is not subject to the cron scheduler's drop behaviour.
-# Each run pings the backend and then dispatches the next one, so the chain
-# only needs cron to fire *once* to bootstrap. The schedule below is the
-# safety net: if the chain ever dies, cron restarts it within ~5 minutes.
+# The previous version ended each run by calling `gh workflow run` to queue
+# the next one, which needed a PAT and a depth counter, and which had never
+# actually executed a single time. Two separate reasons, both learned the hard
+# way:
 #
-# Spacing is 5 minutes, not 10, on purpose. Render sleeps at 15 minutes, so a
-# single lost run must not be able to cross that window.
+#   1. A self-chaining run is one more thing that can fail silently, and this
+#      repo proved it does. The chain was committed at 13:17Z; the only two
+#      runs on record happened at 06:10Z and 11:21Z, so both predate the code
+#      and neither one ever ran the handover step. Zero `workflow_dispatch`
+#      runs have ever existed.
+#   2. The chain was dead on arrival anyway. The guard was
+#      `${{ inputs.chain == false && '0' || '1' }}`, but on a `schedule` event
+#      `inputs` is null and GitHub casts `null == false` to `0 == 0`, i.e.
+#      true. Every cron run therefore dispatched nothing and stood down. Only
+#      a manual dispatch with `chain=true` would have started the chain.
+#
+# So: no chain, no PAT, no depth counter. One run pings on a loop for the
+# length of the cron interval and exits. The invariant is simply "some run is
+# pinging every 60 seconds while it is alive", and cron restarts one every 5
+# minutes. Nothing to break, and nothing to hand over.
+#
+# A run is deliberately SHORTER than the cron interval. That is what keeps
+# `cancel-in-progress: false` safe: runs can never queue up behind each other,
+# so there is no slow-drain pile-up and no cancelled-mid-ping race.
+#
+# A FAILED PING IS NOT A MONITOR FAILURE
+#
+# A refused connection or a timeout means Render is asleep, and the ping
+# already did its job by waking it -- `curl --retry` absorbs that. What is
+# actually worth paging someone for is a reachable-but-broken backend, so
+# only that fails the job, and only after retries.
 #
 # Free tier: the repo is public, so GitHub Actions minutes cost nothing.
 #
-# To stop the pings: delete this file, or disable the workflow in
+# HONEST LIMITATION: `schedule` is best-effort. GitHub documents that
+# scheduled runs are dropped under load rather than delayed, and can slip on
+# the order of an hour. This workflow cannot alert you about its own silence.
+# For alerting, point a free UptimeRobot (or healthchecks.io) monitor at
+# HEALTH_URL as well -- an outside scheduler is the only thing that can tell
+# you this file stopped running.
+#
+# To stop the pings: delete this file, or disable the workflow under
 # GitHub > Actions.
 
 on:
   schedule:
-    # 3,8,13,...,58 — deliberately off :00, which is the busiest minute.
-    - cron: '3-59/5 * * * *'
+    # 4,9,14,...,59 -- deliberately off :00, the most contended minute.
+    - cron: '4-59/5 * * * *'
   workflow_dispatch:
-    inputs:
-      chain:
-        description: 'Dispatch the next keep-alive run when this one finishes'
-        type: boolean
-        default: true
-      chain_depth:
-        description: 'Consecutive chained runs so far (safety cap)'
-        type: number
-        default: 0
 
 permissions:
   contents: read
-  # Required to dispatch the next run via the API.
-  actions: write
 
-# Queues rather than cancels, so a slow cold start can never fork the chain
-# into parallel runs.
+# Safe because a run finishes before the next tick. Never let two runs
+# overlap; that would only duplicate pings.
 concurrency:
   group: keep-render-awake
   cancel-in-progress: false
 
 env:
   HEALTH_URL: https://griot-backend-7ie7.onrender.com/api/health/
-  # Matches the gap Render allows before sleeping, with room for one lost run.
-  CHAIN_INTERVAL_SECONDS: '300'
-  # ~16 hours of chaining before the chain stops and waits for cron to restart
-  # it. A guard against an unattended loop, not a functional limit.
-  MAX_CHAIN_DEPTH: '200'
+  # Render sleeps at ~15 min. Pinging every 60s leaves a ~14x safety margin.
+  PING_INTERVAL_SECONDS: '60'
+  # Total time one run spends pinging. Must stay under the 5-minute cron
+  # interval so runs never overlap or queue.
+  PING_DURATION_SECONDS: '240'
+  # Cold starts measured at 44.8s, so a single attempt is not enough.
+  PING_MAX_TIME_SECONDS: '120'
+  PING_ATTEMPTS: '3'
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
-    # Ping (up to 250s with both attempts) + the 300s handover sleep. Too tight
-    # a limit here would kill a run mid-sleep and sever the chain.
-    timeout-minutes: 15
+    # Hard backstop. Worst case is one cold start (120s x 3 attempts) plus the
+    # ping window; this is only reached if something hangs.
+    timeout-minutes: 12
     steps:
       - name: Ping Griot backend health endpoint
-        run: |
-          set -uo pipefail
-          # A cold start takes ~45s, so the budget has to clear that. Two
-          # attempts: a dropped run must not leave a 5-minute hole.
-          for attempt in 1 2; do
-            if curl -fsS --max-time 120 "$HEALTH_URL" >/dev/null; then
-              echo "keep-alive ok (attempt $attempt)"
-              exit 0
-            fi
-            echo "attempt $attempt failed" >&2
-            sleep 10
-          done
-          echo "keep-alive failed after 2 attempts" >&2
-          exit 1
-
-      - name: Hand over to the next run
-        if: always()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EVENT: ${{ github.event_name }}
-          DISPATCH: ${{ inputs.chain == false && '0' || '1' }}
-          DEPTH: ${{ inputs.chain_depth }}
+          GH_STEP_SUMMARY: ${{ github.step_summary }}
         run: |
-          set -uo pipefail
-          if [ "$DISPATCH" != "1" ]; then
-            echo "chaining disabled for this run"
-            exit 0
-          fi
+          set -Eeuo pipefail
 
-          if [ "$EVENT" = "schedule" ]; then
-            # A cron run only bootstraps a chain when none is already alive.
-            # Without this check every 5-minute cron tick would start another
-            # chain, and the concurrency queue would grow without bound.
-            live=$(gh run list --workflow keep-render-awake.yml \
-                     --status in_progress --limit 10 --json databaseId --jq 'length')
-            queued=$(gh run list --workflow keep-render-awake.yml \
-                     --status queued --limit 10 --json databaseId --jq 'length')
-            # This run is itself in progress, so discount it.
-            if [ $((live + queued)) -gt 1 ]; then
-              echo "a chain is already alive (live=$live queued=$queued); cron stands down"
-              exit 0
+          log() { printf '%s keepalive: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
+
+          # curl's --write-out and its body both land on stdout, so the body
+          # has to go to a file for the status code to be readable on its own.
+          body_file="$(mktemp)"
+          err_file="$(mktemp)"
+          trap 'rm -f -- "$body_file" "$err_file"' EXIT
+
+          : "${HEALTH_URL:?HEALTH_URL is required}"
+          : "${PING_INTERVAL_SECONDS:?PING_INTERVAL_SECONDS is required}"
+          : "${PING_DURATION_SECONDS:?PING_DURATION_SECONDS is required}"
+          : "${PING_MAX_TIME_SECONDS:?PING_MAX_TIME_SECONDS is required}"
+          : "${PING_ATTEMPTS:?PING_ATTEMPTS is required}"
+
+          command -v curl >/dev/null 2>&1 || {
+            log 'FATAL curl is not installed on this runner'
+            exit 1
+          }
+
+          log "watching $HEALTH_URL for ${PING_DURATION_SECONDS}s"
+
+          deadline=$(( SECONDS + PING_DURATION_SECONDS ))
+          ping=0
+          woken=0
+
+          while (( SECONDS < deadline )); do
+            ping=$(( ping + 1 ))
+            started=$SECONDS
+
+            # A non-zero exit here means asleep, unreachable or slow. --retry
+            # covers all three; anything that survives it is a real outage.
+            if http_code=$(curl \
+                --silent --show-error \
+                --max-time "$PING_MAX_TIME_SECONDS" \
+                --retry "$PING_ATTEMPTS" \
+                --retry-delay 5 \
+                --retry-max-time 300 \
+                --retry-connrefused \
+                --retry-all-errors \
+                --output "$body_file" \
+                --write-out '%{http_code}' \
+                "$HEALTH_URL" 2>"$err_file"); then
+              body="$(cat "$body_file")"
+              # curl succeeded. A 2xx is the only genuinely healthy answer.
+              if [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+                took=$(( SECONDS - started ))
+                if (( took > 30 )); then
+                  log "ping $ping ok (${took}s -- backend was asleep, now awake)"
+                  woken=1
+                else
+                  log "ping $ping ok (${took}s)"
+                fi
+              else
+                log "ping $ping UNHEALTHY: HTTP $http_code -- ${body%%$'\n'*}"
+                if [[ -n "${GH_STEP_SUMMARY:-}" ]]; then
+                  {
+                    echo '## Keep-alive: backend unhealthy'
+                    echo
+                    echo "Ping \`$ping\` of \`$HEALTH_URL\` returned **HTTP $http_code**."
+                    echo
+                    echo '```'
+                    printf '%s' "$body" | head -c 2000
+                    echo
+                    echo '```'
+                  } >>"$GH_STEP_SUMMARY"
+                fi
+                exit 1
+              fi
+            else
+              # Unreachable even after retries: worth waking someone.
+              detail="$(cat "$err_file")"
+              log "ping $ping FAILED after ${PING_ATTEMPTS} attempts: ${detail%%$'\n'*}"
+              if [[ -n "${GH_STEP_SUMMARY:-}" ]]; then
+                {
+                  echo '## Keep-alive: backend unreachable'
+                  echo
+                  echo "\`$HEALTH_URL\` did not respond after ${PING_ATTEMPTS} attempts."
+                  echo
+                  echo '```'
+                  printf '%s' "$detail" | head -c 2000
+                  echo
+                  echo '```'
+                } >>"$GH_STEP_SUMMARY"
+              fi
+              exit 1
             fi
-            depth=0
-            echo "no chain alive; bootstrapping"
-          else
-            depth="${DEPTH:-0}"
+
+            remaining=$(( deadline - SECONDS ))
+            (( remaining <= 0 )) && break
+            sleep_for=$(( remaining < PING_INTERVAL_SECONDS ? remaining : PING_INTERVAL_SECONDS ))
+            sleep "$sleep_for"
+          done
+
+          log "done: $ping pings in $(( SECONDS ))s (cold start paid: $woken)"
+          if [[ -n "${GH_STEP_SUMMARY:-}" ]]; then
+            {
+              echo '## Keep-alive: ok'
+              echo
+              echo "- \`$ping\` pings to \`$HEALTH_URL\` over $(( SECONDS ))s"
+              [[ "$woken" == '1' ]] && echo '- Backend was asleep and has been woken'
+              echo '- No follow-up needed.'
+            } >>"$GH_STEP_SUMMARY"
           fi
-
-          if [ "$depth" -ge "$MAX_CHAIN_DEPTH" ]; then
-            echo "chain depth $depth reached cap; leaving restart to cron"
-            exit 0
-          fi
-
-          echo "waiting ${CHAIN_INTERVAL_SECONDS}s before handing over"
-          sleep "$CHAIN_INTERVAL_SECONDS"
-
-          next=$((depth + 1))
-          gh workflow run keep-render-awake.yml \
-            -f chain=true -f chain_depth="$next"
-          echo "dispatched chained run depth=$next"
