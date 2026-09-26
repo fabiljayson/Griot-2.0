@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+  <p>
+    This message will be delivered to every active reader in their notification
+    inbox. There is no undo: use the notifications list to review what has
+    already been sent.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      {{ form.as_p }}
+    </fieldset>
+    <input type="submit" value="Send to all readers" class="default">
+  </form>
+{% endblock %}

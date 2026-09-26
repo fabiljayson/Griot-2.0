@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
 
 
 class Quiz(models.Model):
@@ -282,6 +281,13 @@ class UserProfile(models.Model):
     current_streak = models.PositiveIntegerField(default=0)
     longest_streak = models.PositiveIntegerField(default=0)
     last_active_date = models.DateField(null=True, blank=True)
+    # The reader's own timezone, so "today" means their today. A streak decided
+    # in UTC expires eight hours early for a reader in Cameroon (UTC+1).
+    timezone = models.CharField(
+        max_length=64,
+        default='Africa/Douala',
+        help_text='IANA zone used to decide which calendar day activity counts on.',
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -314,23 +320,6 @@ class UserProfile(models.Model):
         while self.total_xp >= self.level * 100:
             self.level += 1
         self.save(update_fields=['total_xp', 'level', 'updated_at'])
-
-    def update_streak(self):
-        """Update the daily reading streak."""
-        today = timezone.now().date()
-        if self.last_active_date == today:
-            return  # Already counted today
-
-        if self.last_active_date == today - timezone.timedelta(days=1):
-            self.current_streak += 1
-        elif self.last_active_date != today:
-            self.current_streak = 1
-
-        self.longest_streak = max(self.longest_streak, self.current_streak)
-        self.last_active_date = today
-        self.save(update_fields=[
-            'current_streak', 'longest_streak', 'last_active_date', 'updated_at',
-        ])
 
 
 class Certificate(models.Model):

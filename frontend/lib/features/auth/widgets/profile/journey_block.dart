@@ -11,9 +11,9 @@ import 'mini_stat.dart';
 
 /// Level, XP progress and reading streak — the reference screen's hero block.
 ///
-/// Every value comes from the local gamification store; nothing is mocked. The
-/// weekly strip is derived from the stored streak (the last N days were read),
-/// so it cannot show activity the reader did not have.
+/// Every value comes from the server's gamification profile; nothing is mocked.
+/// The weekly strip is drawn from the reader's real last active day, so it can
+/// only mark days they were actually here.
 class JourneyBlock extends ConsumerWidget {
   const JourneyBlock({super.key});
 
@@ -83,7 +83,15 @@ class JourneyBlock extends ConsumerWidget {
                 // the value never overlaps or truncates.
                 ProgressRow(fraction: profile.xpProgress, showValue: false),
                 const SizedBox(height: AppSpacing.lg),
-                WeekStrip(streak: profile.currentStreak),
+                WeekStrip(
+                  streak: profile.currentStreak,
+                  lastActiveDate: profile.lastActiveDate,
+                  activeToday: profile.activeToday,
+                ),
+                if (profile.currentStreak > 0 && !profile.activeToday) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  StreakAtRiskPrompt(streak: profile.currentStreak),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 Row(
                   children: [
@@ -145,33 +153,147 @@ class JourneyUnavailable extends StatelessWidget {
   }
 }
 
-/// Seven-day strip: the days the stored streak covers, up to today.
+/// The seven calendar days ending today, marked only where the reader was
+/// actually active.
+///
+/// The previous version lit the last N weekday slots up to today, which was
+/// wrong twice over: it ignored the reader's last active day, so a three-day run
+/// that ended three weeks ago still showed Monday-to-Wednesday ticked, and it
+/// mixed a weekday index with a count of days, so on a Monday a three-day streak
+/// lit Tuesday and Wednesday — days that had not happened yet.
+///
+/// A day counts as active when it falls inside the run ending on
+/// [lastActiveDate]: within [streak] days of it, and not after it.
 class WeekStrip extends StatelessWidget {
-  const WeekStrip({super.key, required this.streak});
+  const WeekStrip({
+    super.key,
+    required this.streak,
+    required this.lastActiveDate,
+    required this.activeToday,
+  });
 
+  /// Length of the current run, or 0 once a day has been missed.
   final int streak;
 
-  static const _labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  /// The reader's most recent active day, or null if never active.
+  final DateTime? lastActiveDate;
+
+  /// Whether today already counts. False with a non-zero [streak] means the run
+  /// is still alive but expires at the reader's midnight.
+  final bool activeToday;
+
+  static const _weekdayInitials = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  /// The days to render, oldest first, ending today.
+  static List<DateTime> _window([DateTime? now]) {
+    final today = _dateOnly(now ?? DateTime.now());
+    return [
+      for (var offset = 6; offset >= 0; offset--)
+        today.subtract(Duration(days: offset)),
+    ];
+  }
+
+  static DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
+
+  @visibleForTesting
+  static List<bool> litDays({
+    required int streak,
+    required DateTime? lastActiveDate,
+    DateTime? now,
+  }) {
+    if (streak <= 0 || lastActiveDate == null) {
+      return List.filled(7, false);
+    }
+    final window = _window(now);
+    final today = window.last;
+    final last = _dateOnly(lastActiveDate);
+    // A last active day in the future means the device and the server disagree
+    // about the date, so nothing here can be trusted. Marking nothing is the
+    // only claim that cannot turn out to be false.
+    if (last.isAfter(today)) return List.filled(7, false);
+
+    return [
+      for (final day in window)
+        !day.isAfter(last) && last.difference(day).inDays < streak,
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final todayIndex = DateTime.now().weekday - 1; // 0 = Monday
-    final lit = streak.clamp(0, 7);
-    final firstLit = todayIndex + 1 - lit;
+    final days = _window();
+    final lit = litDays(
+      streak: streak,
+      lastActiveDate: lastActiveDate,
+      now: days.last,
+    );
+    final today = days.last;
 
     return Row(
       children: [
-        for (var i = 0; i < _labels.length; i++) ...[
+        for (var i = 0; i < days.length; i++) ...[
           if (i > 0) const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: DayDot(
-              label: _labels[i],
-              isToday: i == todayIndex,
-              isLit: i >= firstLit && i <= todayIndex,
+              label: _weekdayInitials[days[i].weekday - 1],
+              isToday: days[i] == today,
+              isLit: lit[i],
             ),
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Shown when a run is still alive but today has not been logged yet.
+///
+/// The streak dies at the reader's own midnight, not at a fixed hour, so the
+/// copy points at an activity they can take right now rather than a deadline.
+class StreakAtRiskPrompt extends StatelessWidget {
+  const StreakAtRiskPrompt({super.key, required this.streak});
+
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.bronzeTint.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        border: Border.all(color: AppColors.bronze.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(AppIcons.fire, size: 20, color: AppColors.bronzeDark),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Keep your $streak-day streak alive',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Read a few lines or take a quiz today to keep it going.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

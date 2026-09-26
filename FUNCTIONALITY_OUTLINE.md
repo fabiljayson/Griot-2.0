@@ -265,7 +265,8 @@
 - **QuizQuestion** — options A–D, `correct_answer`, `explanation`, `difficulty`.
 - **QuizAttempt** — `score`, `correct_count`, `passed`, `xp_earned`, `answers` (JSON).
 - **Badge** / **UserBadge** — achievements (reading/quiz/social/exploration/special).
-- **UserProfile** — `total_xp`, `level`, streaks, stories read/completed.
+- **UserProfile** — `total_xp`, `level`, streaks, stories read/completed,
+  `timezone` (IANA zone deciding which calendar day activity counts on).
 - **Certificate** — heritage certificates with `pdf_url`, `certificate_number`.
 
 ### API Endpoints
@@ -278,7 +279,37 @@
 | CRUD | `/api/gamification/user-badges/` | Earned badges | Authenticated |
 | CRUD | `/api/gamification/certificates/` | Certificates | Authenticated/Admin |
 | GET | `/api/gamification/profile/` | User gamification profile | Authenticated |
+| POST | `/api/gamification/activity/` | Count today as active; returns the profile and syncs the inbox | Authenticated |
 | GET | `/api/gamification/leaderboard/` | Leaderboard | Authenticated |
+
+---
+
+### 🔔 Notifications
+
+The reader inbox, alongside gamification because the daily streak nudge and the
+activity ping that delivers it are the same feature.
+
+| Feature | Details |
+|---|---|
+| **Notification Bell** | Home header bell with an unread badge (capped at 99+) |
+| **Inbox** | Newest-first list grouped by day, with per-kind icons and unread dots |
+| **New Story Alerts** | Sent when a story becomes published, keyed so a re-publish never doubles up |
+| **Trending Digest** | Weekly recap of the most-engaged stories, one per reader per ISO week |
+| **Streak Nudges** | Daily reminder when a live streak is about to expire, once per reader-local day |
+| **Announcements** | Admin broadcasts land in every active reader's inbox |
+| **Offline Behaviour** | None by design — a message is only shown if the server sent it |
+
+#### API Endpoints
+
+| Method | Path | Description | Access |
+|--------|------|-------------|--------|
+| GET | `/api/notifications/` | Inbox, newest first, with the unread count | Owner |
+| GET | `/api/notifications/{id}/` | Single message | Owner |
+| PATCH | `/api/notifications/{id}/` | Mark read (cannot be un-read) | Owner |
+| GET | `/api/notifications/unread-count/` | Badge count only | Owner |
+| POST | `/api/notifications/{id}/mark-read/` | Mark one message read | Owner |
+| POST | `/api/notifications/mark-all-read/` | Clear the badge | Owner |
+| POST | `/api/notifications/broadcast/` | Send an announcement to every active reader | Admin |
 
 ---
 
@@ -399,6 +430,7 @@ frontend/lib/
     ├── gamification/                  # Quizzes, badges, leaderboard
     ├── home/                          # Home screen, connectivity widget
     ├── library/                       # Continue reading, bookmarks
+    ├── notifications/                # Bell badge, inbox, activity ping
     ├── qr_scanner/                    # QR scanner, artifact detail
     ├── sharing/                       # Share button, quote card, trending
     ├── stories/                       # Story list, detail, form

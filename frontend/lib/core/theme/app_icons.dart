@@ -35,6 +35,7 @@ abstract final class AppIcons {
   static const IconData autorenew = Icons.autorenew_outlined;
   static const IconData bedtime_outlined = Icons.bedtime_outlined;
   static const IconData bolt_outlined = Icons.bolt_outlined;
+  static const IconData campaign = Icons.campaign_outlined;
   static const IconData business_outlined = Icons.business_outlined;
   static const IconData calendar_today = Icons.calendar_today_outlined;
   static const IconData chat_bubble = Icons.chat_bubble_outline;
@@ -64,6 +65,9 @@ abstract final class AppIcons {
   static const IconData lock_outline = Icons.lock_outline;
   static const IconData logout = Icons.logout_outlined;
   static const IconData menu_book_outlined = Icons.menu_book_outlined;
+  // Filled variant is the unread state: colour alone must not carry it.
+  static const IconData notifications = Icons.notifications;
+  static const IconData notifications_none = Icons.notifications_none;
   static const IconData chevron_right = Icons.chevron_right;
   static const IconData more_horiz = Icons.more_horiz;
   static const IconData more_vert = Icons.more_vert;

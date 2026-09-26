@@ -42,6 +42,7 @@ urlpatterns = [
 
     # Phase 6: gamification, quizzes & certification.
     path('gamification/', include('gamification.urls')),
+    path('notifications/', include('notifications.urls')),
 
     # Phase 9: Admin analytics dashboard.
     path('analytics/dashboard/', DashboardSummaryView.as_view(), name='analytics-dashboard'),

@@ -157,6 +157,9 @@ class GamificationProfileModel {
     this.quizzesPassed = 0,
     this.currentStreak = 0,
     this.longestStreak = 0,
+    this.activeToday = false,
+    this.lastActiveDate,
+    this.timezone = 'Africa/Douala',
     this.xpForNextLevel = 100,
     this.xpProgress = 0.0,
     this.badgesCount = 0,
@@ -169,12 +172,38 @@ class GamificationProfileModel {
   final int storiesRead;
   final int storiesCompleted;
   final int quizzesPassed;
+  /// The streak still standing today, which the API reports as 0 once a day
+  /// has been missed. It is not the raw stored run: a reader who last opened
+  /// the app three weeks ago has no current streak, whatever the database
+  /// still remembers about their best run.
   final int currentStreak;
+
+  /// The reader's longest run ever, which does not decay.
   final int longestStreak;
+
+  /// Whether today already counts towards the streak. False with a non-zero
+  /// [currentStreak] means the run is still alive but expires at the reader's
+  /// midnight — the case the "keep it alive" prompt is for.
+  final bool activeToday;
+
+  /// The reader's last active day as `yyyy-MM-dd`, or null if never active.
+  final DateTime? lastActiveDate;
+
+  /// The IANA zone the server decides "today" in.
+  final String timezone;
   final int xpForNextLevel;
   final double xpProgress;
   final int badgesCount;
   final List<dynamic> recentBadges;
+
+  /// Parses the API's `yyyy-MM-dd` day, tolerating both string and epoch forms.
+  static DateTime? _parseDate(Object? raw) {
+    if (raw == null) return null;
+    if (raw is int) {
+      return DateTime.fromMillisecondsSinceEpoch(raw * 1000);
+    }
+    return DateTime.tryParse(raw as String);
+  }
 
   factory GamificationProfileModel.fromJson(Map<String, dynamic> json) {
     return GamificationProfileModel(
@@ -186,6 +215,9 @@ class GamificationProfileModel {
       quizzesPassed: json['quizzes_passed'] as int? ?? 0,
       currentStreak: json['current_streak'] as int? ?? 0,
       longestStreak: json['longest_streak'] as int? ?? 0,
+      activeToday: json['active_today'] as bool? ?? false,
+      lastActiveDate: _parseDate(json['last_active_date'] as String?),
+      timezone: json['timezone'] as String? ?? 'Africa/Douala',
       xpForNextLevel: json['xp_for_next_level'] as int? ?? 100,
       xpProgress: (json['xp_progress'] as num?)?.toDouble() ?? 0.0,
       badgesCount: json['badges_count'] as int? ?? 0,
@@ -350,6 +382,19 @@ class GamificationApiService {
       (remote) => remote.getProfile(),
       () => _local.getProfile(),
     );
+  }
+
+  /// Log that the reader was present today, and hand back the device's IANA
+  /// timezone name when the platform can supply one.
+  ///
+  /// Deliberately has no offline fallback: unlike a quiz catalogue there is no
+  /// bundled truth to fall back to, and a locally-recorded day would claim
+  /// attendance the server never saw. Failing is correct here — the next resume
+  /// pings again.
+  Future<void> recordActivity({String? timezone}) async {
+    final remote = _remote;
+    if (remote == null) return;
+    await remote.recordActivity(timezone: timezone);
   }
 
   /// Leaderboard rows.

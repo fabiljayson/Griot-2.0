@@ -26,6 +26,7 @@ from gamification.models import (
     UserBadge,
     UserProfile,
 )
+from gamification.services.streaks import record_activity
 from media_app.models import AudioNarrationJob, VideoGenerationJob
 from media_app.services.luma_ai import get_luma_service
 from media_app.services.tts import (
@@ -599,8 +600,10 @@ def record_progress(user, story, percent):
         profile.stories_read += 1
     elif profile.stories_read == 0:
         profile.stories_read = 1
-    profile.update_streak()
     profile.save(update_fields=['stories_read', 'stories_completed'])
+    # Reading is activity, so it extends the streak. Done after the counter save
+    # because record_activity re-reads and re-writes the same row under a lock.
+    record_activity(user)
 
 
 # ---------------------------------------------------------------------------

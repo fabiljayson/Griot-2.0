@@ -112,7 +112,8 @@ AfricanTellerApp (MaterialApp)
 | `stories` | Stories, categories, bookmarks, likes, flags, reading progress, shares |
 | `qr_codes` | Artifacts, QR code generation, scan tracking, deep links |
 | `artifacts` | **NEW:** Artifact model with auto QR generation, category, location |
-| `gamification` | Quizzes, attempts, badges, user profiles, certificates, leaderboard |
+| `gamification` | Quizzes, attempts, badges, user profiles, certificates, leaderboard, reading streaks |
+| `notifications` | Per-reader inbox: new-story, trending digest, streak nudges, admin broadcasts |
 | `media_app` | AI video generation (Luma AI), TTS narration jobs |
 | `api` | Health probes, analytics dashboard, observability middleware, seeding |
 
@@ -155,8 +156,16 @@ AfricanTellerApp (MaterialApp)
 - **`QuizQuestion`** — options A–D, `correct_answer`, `explanation`, `difficulty`.
 - **`QuizAttempt`** — `score`, `correct_count`, `passed`, `xp_earned`, `answers` (JSON).
 - **`Badge`** / **`UserBadge`** — achievements (reading/quiz/social/exploration/special).
-- **`UserProfile`** — `total_xp`, `level`, streaks, stories read/completed.
+- **`UserProfile`** — `total_xp`, `level`, streaks, stories read/completed,
+  `timezone` (IANA zone deciding which calendar day activity counts on).
 - **`Certificate`** — heritage certificates with `pdf_url`, `certificate_number`.
+
+#### `notifications.*`
+- **`Notification`** — one row per reader: `kind`
+  (`new_story | trending | streak | badge | announcement | system`), `title`,
+  `body`, `is_read`/`read_at`, plus `story` (live link) with `story_title`/
+  `story_slug` snapshot. `dedupe_key` is unique per user, so every fan-out is
+  safe to retry.
 
 #### `media_app.*`
 - **`VideoGenerationJob`** — Luma AI Dream Machine job (`luma_job_id`,
@@ -220,7 +229,24 @@ All under `/api/`. JWT auth via SimpleJWT; default pagination (20/page).
 | CRUD | `/api/gamification/user-badges/` | Earned badges | Authenticated |
 | CRUD | `/api/gamification/certificates/` | Certificates | Authenticated/Admin |
 | GET | `/api/gamification/profile/` | User gamification profile | Authenticated |
+| POST | `/api/gamification/activity/` | Count today as active; returns the profile and syncs the inbox | Authenticated |
 | GET | `/api/gamification/leaderboard/` | Leaderboard | Authenticated |
+
+#### Notifications (`notifications`)
+| Method | Path | Description | Access |
+|--------|------|-------------|--------|
+| GET | `/api/notifications/` | Inbox, newest first, with the unread count | Owner |
+| GET | `/api/notifications/{id}/` | Single message | Owner |
+| PATCH | `/api/notifications/{id}/` | Mark read (cannot be un-read) | Owner |
+| GET | `/api/notifications/unread-count/` | Badge count only | Owner |
+| POST | `/api/notifications/{id}/mark-read/` | Mark one message read | Owner |
+| POST | `/api/notifications/mark-all-read/` | Clear the badge | Owner |
+| POST | `/api/notifications/broadcast/` | Send an announcement to every active reader | Admin |
+
+Recurring sends (weekly trending digest, daily streak nudge) are keyed per week
+and per reader-local day, so they run from the activity ping on app open rather
+than a scheduler — Render's free tier has no cron. `manage.py
+send_scheduled_notifications` runs the same two sends for backfills.
 
 #### Media (`media_app`)
 | Method | Path | Description | Access |
@@ -353,6 +379,7 @@ lib/
     ├── audio/      audio_player_sheet, audio_player_service
     ├── video/      video_generation_sheet, video_player_widget
     ├── gamification/ gamification_screen, quiz_player_widget, badge_card
+    ├── notifications/ notification_bell, notifications_screen, daily_activity_pinger
     ├── sharing/    share_button, quote_card, trending_stories_widget
     └── admin/      admin_dashboard_screen, analytics models, services
 ```
@@ -427,7 +454,8 @@ repositories/services, screens, widgets) following a consistent convention.
 │   ├── users/               # custom User, JWT auth, roles
 │   ├── stories/             # stories, bookmarks, flags, progress, categories
 │   ├── qr_codes/            # artifacts, QR generation, scans, deep links
-│   ├── gamification/        # quizzes, badges, profiles, certificates
+│   ├── gamification/        # quizzes, badges, profiles, certificates, streaks
+│   ├── notifications/       # reader inbox, digests, streak nudges, broadcasts
 │   ├── media_app/           # Luma AI video, TTS narration
 │   └── api/                 # health, analytics, logging, middleware, seeding
 ├── frontend/                # Flutter app (iOS / Android / Web PWA)

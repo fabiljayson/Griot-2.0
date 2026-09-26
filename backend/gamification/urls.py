@@ -15,5 +15,6 @@ router.register(r'certificates', views.CertificateViewSet, basename='certificate
 urlpatterns = [
     path('', include(router.urls)),
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
+    path('activity/', views.RecordActivityView.as_view(), name='record-activity'),
     path('leaderboard/', views.LeaderboardView.as_view(), name='leaderboard'),
 ]

@@ -38,6 +38,7 @@ dependencies:
   sentry_flutter: ^9.30.0
   hooks_riverpod: ^2.6.1
   url_launcher: ^6.3.2
+  flutter_timezone: ^5.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

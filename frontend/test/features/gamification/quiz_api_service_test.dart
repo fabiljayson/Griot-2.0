@@ -166,4 +166,30 @@ void main() {
       expect(result['xp_earned'], 90);
     });
   });
+
+  group('QuizApiService.recordActivity', () {
+    test('sends the device timezone so the server keeps the right calendar',
+        () async {
+      final adapter = _FakeHttpAdapter(const {'current_streak': 3});
+      final service = QuizApiService(dio: _dioFor(adapter));
+
+      await service.recordActivity(timezone: 'Africa/Douala');
+
+      final request = adapter.requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/api/gamification/activity/');
+      expect(request.data, {'timezone': 'Africa/Douala'});
+    });
+
+    test('omits the key entirely when the platform has no zone name', () async {
+      final adapter = _FakeHttpAdapter(const {'current_streak': 3});
+      final service = QuizApiService(dio: _dioFor(adapter));
+
+      await service.recordActivity();
+
+      // An empty or null zone must not reach the server as a value it would
+      // have to reject: leaving it out lets the stored zone stand.
+      expect(adapter.requests.single.data, <String, dynamic>{});
+    });
+  });
 }

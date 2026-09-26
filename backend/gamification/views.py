@@ -1,7 +1,7 @@
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -14,6 +14,7 @@ from .models import (
     UserBadge,
     UserProfile,
 )
+from .services import streaks
 from .serializers import (
     BadgeSerializer,
     CertificateSerializer,
@@ -178,19 +179,17 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
             (attempt.completed_at - attempt.started_at).total_seconds()
         )
 
-        # Award XP if passed
+        # Award XP if passed. Attempting a quiz is activity either way, so the
+        # streak advances even when the reader did not pass.
         if attempt.passed:
             attempt.xp_earned = quiz.xp_reward
-            # Update user profile
-            profile, _ = UserProfile.objects.get_or_create(user=request.user)
-            profile.add_xp(quiz.xp_reward)
-            profile.quizzes_passed += 1
-            profile.total_quiz_xp += quiz.xp_reward
-            profile.save(update_fields=[
-                'quizzes_passed', 'total_quiz_xp', 'updated_at',
-            ])
+            streaks.grant_xp_and_stats(
+                request.user, xp=quiz.xp_reward, quizzes_passed=1
+            )
             # Check for badge eligibility
             self._check_badges(request.user)
+        else:
+            streaks.record_activity(request.user)
 
         attempt.save()
 
@@ -266,6 +265,50 @@ class UserProfileView(generics.RetrieveAPIView):
     def get_object(self):
         profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         return profile
+
+
+class ActivitySerializer(serializers.Serializer):
+    """Body of the activity ping.
+
+    ``timezone`` is the device's IANA zone. The streak is decided on the
+    reader's calendar, so without it a reader east of UTC has their day counted
+    against the wrong date for part of every evening.
+    """
+
+    timezone = serializers.CharField(required=False, allow_blank=True, max_length=64)
+
+
+class RecordActivityView(generics.CreateAPIView):
+    """POST /api/gamification/activity/ — count today as an active day.
+
+    Sent when the app opens, which is what makes "any activity keeps a streak"
+    true: reading is not the only way to show up, and a reader who opens the app
+    but does not finish a story should not silently lose a run.
+
+    Idempotent, and returns the whole profile so the client can reconcile its
+    streak display in the same round trip that advanced it.
+    """
+
+    serializer_class = ActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        payload = self.get_serializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        streaks.record_activity(
+            request.user, timezone_name=payload.validated_data.get('timezone')
+        )
+        # The reader is here, so deliver whatever is waiting for them. Idempotent,
+        # and it is the only place a reader who never opens the app is skipped —
+        # which costs nothing, since they could not have read it either way.
+        from notifications import services as notification_services
+
+        notification_services.sync_for_user(request.user)
+
+        profile = UserProfile.objects.get(user=request.user)
+        return Response(
+            UserProfileSerializer(profile).data, status=status.HTTP_200_OK
+        )
 
 
 class LeaderboardView(generics.ListAPIView):

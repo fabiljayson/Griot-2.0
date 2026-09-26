@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'stories',
     'qr_codes',
     'gamification',
+    'notifications',
     'media_app',
     'api',
     'web',

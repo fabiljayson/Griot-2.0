@@ -44,6 +44,22 @@ class QuizApiService {
     return QuizModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  /// Log that the reader opened the app today.
+  ///
+  /// Any activity keeps a streak alive, so the app-open ping is what a reader
+  /// who only browses still counts. The server dedupes by the reader's local
+  /// calendar day, so calling this on every launch and every resume is safe.
+  ///
+  /// [timezone] is the device's IANA zone name. The server keeps the streak's
+  /// "today" in this zone, so passing it is what stops the streak from rolling
+  /// over at the wrong hour for a reader abroad.
+  Future<void> recordActivity({String? timezone}) async {
+    await _dio.post(
+      '$_path/activity/',
+      data: {'timezone': ?timezone},
+    );
+  }
+
   /// Start (or resume) the current user's attempt at [quizId].
   Future<Map<String, dynamic>> startQuiz(int quizId) async {
     final response = await _dio.post('$_path/quizzes/$quizId/start/');

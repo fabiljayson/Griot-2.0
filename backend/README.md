@@ -34,7 +34,8 @@ backend/
 ├── stories/           # Story repository & reader engine
 ├── qr_codes/          # Canonical artifact model, QR engine & import command
 ├── artifacts/         # RETIRED: migration-history shell only (see artifacts/README.md)
-├── gamification/      # Quizzes, badges & certificates
+├── gamification/      # Quizzes, badges, certificates & reading streaks
+├── notifications/     # Reader inbox: new-story, trending digest, streak nudges
 ├── media_app/         # Luma AI video & TTS narration jobs
 ├── api/               # Top-level API routing, health, analytics, seeding
 ├── web/               # Server-rendered web UI (session auth, mirrors mobile)

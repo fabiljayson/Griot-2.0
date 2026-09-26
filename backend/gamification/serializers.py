@@ -9,6 +9,7 @@ from .models import (
     UserBadge,
     UserProfile,
 )
+from .services import streaks
 
 
 class QuizQuestionSerializer(serializers.ModelSerializer):
@@ -186,6 +187,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     badges_count = serializers.SerializerMethodField()
     recent_badges = serializers.SerializerMethodField()
+    # The streak a reader can still see today, rather than the run stored as of
+    # their last visit. See UserProfileSerializer.get_current_streak.
+    current_streak = serializers.SerializerMethodField()
+    # Whether today already counts, which drives the 'keep it alive' prompt.
+    active_today = serializers.SerializerMethodField()
+    last_active_date = serializers.DateField(read_only=True)
+    timezone = serializers.CharField(read_only=True)
 
     class Meta:
         model = UserProfile
@@ -200,12 +208,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'total_quiz_xp',
             'current_streak',
             'longest_streak',
+            'active_today',
+            'last_active_date',
+            'timezone',
             'xp_for_next_level',
             'xp_progress',
             'badges_count',
             'recent_badges',
             'updated_at',
         ]
+
+    def get_current_streak(self, obj):
+        """The streak still standing today, not the run as of the last visit.
+
+        A stored streak outlives its own conditions: without this the profile of
+        someone who last read three weeks ago still claimed a live streak, and
+        the week strip lit up days they were never there.
+        """
+        return streaks.live_streak(obj)
+
+    def get_active_today(self, obj):
+        """Whether today already counts, which drives the 'keep it alive' prompt."""
+        return streaks.is_active_today(obj)
 
     def get_badges_count(self, obj):
         return UserBadge.objects.filter(user=obj.user).count()

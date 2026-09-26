@@ -15,6 +15,7 @@ import '../auth/screens/profile_screen.dart';
 import '../auth/widgets/role_badge.dart';
 import '../discover/discover_feature.dart';
 import '../library/widgets/continue_reading_widget.dart';
+import '../notifications/widgets/notification_bell.dart';
 import '../stories/models/story_model.dart';
 import '../stories/providers/story_provider.dart';
 import '../stories/screens/stories_screen.dart';
@@ -281,7 +282,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Row(
             children: [
               const Expanded(child: GriotLogo(size: 44, light: true)),
-              if (user != null)
+              if (user != null) ...[
+                const NotificationBell(),
                 IconButton(
                   tooltip: 'Profile',
                   onPressed: () {
@@ -292,6 +294,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   icon: const Icon(AppIcons.account_circle_outlined),
                   color: AppColors.ivory,
                 ),
+              ],
             ],
           ),
           if (user != null) ...[

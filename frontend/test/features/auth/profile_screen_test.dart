@@ -102,7 +102,26 @@ void main() {
     expect(find.text('Folktales'), findsOneWidget);
     expect(find.text('Myths'), findsOneWidget);
 
-    // Existing account sections are still present below.
+    // The profile has a live streak and today is not logged yet, so the journey
+    // block asks for today's activity.
+    expect(find.text('Keep your 5-day streak alive'), findsOneWidget);
+
+    // Existing account sections are still present below. They sit past the
+    // fold of the test viewport, and the screen is a lazy CustomScrollView, so
+    // scroll to them rather than asserting on rows that were never built. The
+    // outer vertical scrollable is the first Scrollable inside the screen's
+    // CustomScrollView (the explore rail's horizontal list is nested beneath).
+    final verticalScroll = find
+        .descendant(
+          of: find.byType(CustomScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('Sign Out'),
+      200,
+      scrollable: verticalScroll,
+    );
     expect(find.text('Account Information'), findsOneWidget);
     expect(find.text('Sign Out'), findsOneWidget);
   });

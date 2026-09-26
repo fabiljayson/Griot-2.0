@@ -1,4 +1,9 @@
+from datetime import datetime, timedelta
+from unittest.mock import patch
+from zoneinfo import ZoneInfo
+
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -6,6 +11,7 @@ from rest_framework.test import APITestCase
 from stories.models import Story
 
 from .models import Badge, Quiz, QuizAttempt, QuizQuestion, UserBadge, UserProfile
+from .services import streaks
 from .services.quiz_provisioner import ensure_quizzes_for_published_stories
 
 User = get_user_model()
@@ -491,3 +497,331 @@ class StoryQuizProvisioningTests(APITestCase):
 
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['story'], first.pk)
+
+
+WAT = ZoneInfo('Africa/Douala')
+UTC = ZoneInfo('UTC')
+
+
+def at(year, month, day, hour=12, minute=0, tz=WAT):
+    """An aware datetime in [tz], for driving the clock in a test."""
+    return datetime(year, month, day, hour, minute, tzinfo=tz)
+
+
+class StreakActivityTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'streaker', email='streaker@example.com', password='hunter2secure'
+        )
+        self.profile = UserProfile.objects.create(user=self.user)
+
+    @patch('django.utils.timezone.now')
+    def test_first_activity_starts_a_streak_at_one(self, now):
+        now.return_value = at(2026, 3, 10)
+
+        streaks.record_activity(self.user)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 1)
+        self.assertEqual(self.profile.longest_streak, 1)
+        self.assertEqual(self.profile.last_active_date, datetime(2026, 3, 10).date())
+
+    @patch('django.utils.timezone.now')
+    def test_second_activity_same_day_does_not_double_count(self, now):
+        now.return_value = at(2026, 3, 10, 8)
+        streaks.record_activity(self.user)
+        now.return_value = at(2026, 3, 10, 23)
+        streaks.record_activity(self.user)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 1)
+        self.assertEqual(self.profile.longest_streak, 1)
+
+    @patch('django.utils.timezone.now')
+    def test_consecutive_day_extends_the_run(self, now):
+        now.return_value = at(2026, 3, 10)
+        streaks.record_activity(self.user)
+        now.return_value = at(2026, 3, 11)
+        streaks.record_activity(self.user)
+        now.return_value = at(2026, 3, 12)
+        streaks.record_activity(self.user)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 3)
+        self.assertEqual(self.profile.longest_streak, 3)
+
+    @patch('django.utils.timezone.now')
+    def test_a_missed_day_restarts_at_one(self, now):
+        now.return_value = at(2026, 3, 10)
+        streaks.record_activity(self.user)
+        now.return_value = at(2026, 3, 11)
+        streaks.record_activity(self.user)
+        # Two days later: the 11th was missed.
+        now.return_value = at(2026, 3, 13)
+        streaks.record_activity(self.user)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 1)
+        # The old run is still the record.
+        self.assertEqual(self.profile.longest_streak, 2)
+
+    @patch('django.utils.timezone.now')
+    def test_late_evening_read_lands_on_the_readers_own_day(self, now):
+        """The bug this module exists for: UTC dated 23:30 in Cameroon to the
+        previous day, breaking a streak the reader had actually kept."""
+        now.return_value = at(2026, 3, 10, 23, 30, tz=WAT)
+        streaks.record_activity(self.user)
+        now.return_value = at(2026, 3, 11, 23, 30, tz=WAT)
+        streaks.record_activity(self.user)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.last_active_date, datetime(2026, 3, 11).date())
+        self.assertEqual(self.profile.current_streak, 2)
+
+    @patch('django.utils.timezone.now')
+    def test_same_instant_is_a_different_day_for_readers_in_different_zones(self, now):
+        """00:30 on the 12th in UTC is already the 12th in Cameroon, but the
+        11th in New York. Each reader's streak follows their own clock."""
+        instant = at(2026, 3, 12, 0, 30, tz=UTC)
+
+        now.return_value = instant
+        douala = User.objects.create_user('douala', password='hunter2secure')
+        douala_profile = UserProfile.objects.create(user=douala, timezone='Africa/Douala')
+
+        now.return_value = instant
+        new_york = User.objects.create_user('ny', password='hunter2secure')
+        ny_profile = UserProfile.objects.create(
+            user=new_york, timezone='America/New_York'
+        )
+
+        streaks.record_activity(douala)
+        streaks.record_activity(new_york)
+
+        douala_profile.refresh_from_db()
+        ny_profile.refresh_from_db()
+        self.assertEqual(
+            douala_profile.last_active_date, datetime(2026, 3, 12).date()
+        )
+        self.assertEqual(
+            ny_profile.last_active_date, datetime(2026, 3, 11).date()
+        )
+
+    @patch('django.utils.timezone.now')
+    def test_unknown_timezone_falls_back_to_the_default_zone(self, now):
+        now.return_value = at(2026, 3, 12, 0, 30, tz=UTC)
+        streaks.record_activity(self.user, timezone_name='Mars/Olympus_Mons')
+
+        self.profile.refresh_from_db()
+        # Africa/Douala is UTC+1, so 00:30 UTC is 01:30 on the 12th there.
+        self.assertEqual(self.profile.last_active_date, datetime(2026, 3, 12).date())
+        self.assertEqual(self.profile.timezone, 'Africa/Douala')
+
+
+class LiveStreakTests(TestCase):
+    """A stored streak stops being true once a day is missed."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'lapsed', email='lapsed@example.com', password='hunter2secure'
+        )
+        self.today = datetime(2026, 3, 20).date()
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            current_streak=5,
+            longest_streak=9,
+            last_active_date=self.today - timedelta(days=2),
+        )
+
+    def test_a_missed_yesterday_reports_no_live_streak(self):
+        self.assertEqual(streaks.live_streak(self.profile, self.today), 0)
+
+    def test_activity_yesterday_keeps_the_streak_live_today(self):
+        self.profile.last_active_date = self.today - timedelta(days=1)
+        self.assertEqual(streaks.live_streak(self.profile, self.today), 5)
+
+    def test_activity_today_keeps_the_streak_live(self):
+        self.profile.last_active_date = self.today
+        self.assertEqual(streaks.live_streak(self.profile, self.today), 5)
+
+    def test_the_stored_run_is_untouched_by_going_live_zero(self):
+        streaks.live_streak(self.profile, self.today)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 5)
+        self.assertEqual(self.profile.longest_streak, 9)
+
+    def test_no_activity_ever_is_not_a_live_streak(self):
+        self.profile.last_active_date = None
+        self.assertEqual(streaks.live_streak(self.profile, self.today), 0)
+
+    def test_active_today_reflects_the_readers_own_day(self):
+        self.profile.last_active_date = self.today
+        self.assertTrue(streaks.is_active_today(self.profile, self.today))
+        self.profile.last_active_date = self.today - timedelta(days=1)
+        self.assertFalse(streaks.is_active_today(self.profile, self.today))
+
+
+class StreakAtRiskTests(TestCase):
+    def setUp(self):
+        self.today = datetime(2026, 3, 20).date()
+
+    def _profile(self, username, streak, days_ago):
+        user = User.objects.create_user(username, password='hunter2secure')
+        return UserProfile.objects.create(
+            user=user,
+            current_streak=streak,
+            last_active_date=self.today - timedelta(days=days_ago),
+        )
+
+    def test_at_risk_when_a_live_streak_has_no_activity_today(self):
+        self.assertTrue(streaks.streak_at_risk(self._profile('a', 4, 1), self.today))
+
+    def test_not_at_risk_once_active_today(self):
+        self.assertFalse(streaks.streak_at_risk(self._profile('b', 4, 0), self.today))
+
+    def test_not_at_risk_when_the_run_is_already_broken(self):
+        self.assertFalse(streaks.streak_at_risk(self._profile('c', 4, 2), self.today))
+
+    def test_not_at_risk_for_a_reader_with_no_streak(self):
+        self.assertFalse(streaks.streak_at_risk(self._profile('d', 0, 1), self.today))
+
+    @patch('django.utils.timezone.now')
+    def test_only_outstanding_live_streaks_are_selected(self, now):
+        now.return_value = at(2026, 3, 20, 9)
+        self._profile('pending', 3, 1)
+        self._profile('done', 3, 0)
+        self._profile('broken', 3, 5)
+        self._profile('none', 0, 1)
+
+        selected = {
+            profile.user.username for profile in streaks.users_at_risk_today()
+        }
+        self.assertEqual(selected, {'pending'})
+
+
+class GrantXpAndStatsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'grader', email='grader@example.com', password='hunter2secure'
+        )
+        self.profile = UserProfile.objects.create(user=self.user)
+
+    @patch('django.utils.timezone.now')
+    def test_awarding_xp_also_advances_the_streak(self, now):
+        now.return_value = at(2026, 4, 1, 10)
+
+        streaks.grant_xp_and_stats(self.user, xp=90, quizzes_passed=1)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.total_xp, 90)
+        self.assertEqual(self.profile.quizzes_passed, 1)
+        self.assertEqual(self.profile.total_quiz_xp, 90)
+        self.assertEqual(self.profile.current_streak, 1)
+
+    @patch('django.utils.timezone.now')
+    def test_level_advances_when_xp_crosses_the_threshold(self, now):
+        now.return_value = at(2026, 4, 1, 10)
+        streaks.grant_xp_and_stats(self.user, xp=250, quizzes_passed=1)
+
+        self.profile.refresh_from_db()
+        # 250 XP at 100 XP per level is level 3.
+        self.assertEqual(self.profile.level, 3)
+
+
+class TimezonePersistenceTests(TestCase):
+    """The stored zone must only ever be overwritten by a real IANA name.
+
+    Flutter's `DateTime.timeZoneName` reports abbreviations such as ``WAT``, not
+    IANA names, so an unguarded assignment would rewrite a correct stored zone
+    to the default on every launch.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'zonekeeper', email='zone@example.com', password='hunter2secure'
+        )
+
+    @patch('django.utils.timezone.now')
+    def test_abbreviation_does_not_clobber_a_real_stored_zone(self, now):
+        now.return_value = at(2026, 3, 12, 9)
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            timezone='Europe/London',
+            current_streak=4,
+            last_active_date=datetime(2026, 3, 11).date(),
+        )
+
+        streaks.record_activity(self.user, timezone_name='WAT')
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.timezone, 'Europe/London')
+        # The day still counts even though the zone name was useless.
+        self.assertEqual(self.profile.current_streak, 5)
+        self.assertEqual(self.profile.last_active_date, datetime(2026, 3, 12).date())
+
+    @patch('django.utils.timezone.now')
+    def test_blank_zone_does_not_clobber_a_stored_zone(self, now):
+        now.return_value = at(2026, 3, 12, 9)
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            timezone='Asia/Douala',
+            current_streak=2,
+            last_active_date=datetime(2026, 3, 11).date(),
+        )
+
+        streaks.record_activity(self.user, timezone_name='')
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.timezone, 'Asia/Douala')
+
+    @patch('django.utils.timezone.now')
+    def test_a_real_zone_is_persisted(self, now):
+        now.return_value = at(2026, 3, 12, 9)
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            timezone='Africa/Douala',
+            current_streak=3,
+            last_active_date=datetime(2026, 3, 11).date(),
+        )
+
+        streaks.record_activity(self.user, timezone_name='Europe/London')
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.timezone, 'Europe/London')
+
+    @patch('django.utils.timezone.now')
+    def test_garbage_zone_still_advances_the_streak(self, now):
+        now.return_value = at(2026, 3, 12, 9)
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            timezone='Europe/London',
+            current_streak=1,
+            last_active_date=datetime(2026, 3, 11).date(),
+        )
+
+        streaks.record_activity(self.user, timezone_name='GMT+1')
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 2)
+        self.assertEqual(self.profile.last_active_date, datetime(2026, 3, 12).date())
+
+    @patch('django.utils.timezone.now')
+    def test_repeat_ping_with_a_bad_zone_keeps_the_good_zone(self, now):
+        """The regression that matters: every launch must be safe.
+
+        A real app pings on every start and resume, so a client that cannot name
+        its zone must not erode a good stored zone one launch at a time.
+        """
+        now.return_value = at(2026, 3, 12, 9)
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            timezone='Europe/London',
+            current_streak=4,
+            last_active_date=datetime(2026, 3, 11).date(),
+        )
+
+        for _ in range(3):
+            streaks.record_activity(self.user, timezone_name='WAT')
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.timezone, 'Europe/London')
+        self.assertEqual(self.profile.current_streak, 5)
