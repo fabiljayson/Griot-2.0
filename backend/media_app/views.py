@@ -1,6 +1,3 @@
-from datetime import timedelta
-
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -12,6 +9,7 @@ from rest_framework.response import Response
 from qr_codes.models import Artifact
 from stories.models import Story
 
+from . import quota
 from .models import AudioNarrationJob, VideoGenerationJob
 from .serializers import (
     AudioNarrationCreateSerializer,
@@ -76,25 +74,19 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
             )
 
         # Luma bills per generation, so cap how much one account can start
-        # per day regardless of the ownership rule above. The window is a
-        # rolling 24 hours, which needs no timezone handling and cannot be
-        # reset early by straddling midnight.
-        daily_cap = getattr(settings, 'VIDEO_GENERATIONS_PER_USER_PER_DAY', 5)
-        if daily_cap:
-            window_start = timezone.now() - timedelta(days=1)
-            started_today = VideoGenerationJob.objects.filter(
-                user=request.user, created_at__gte=window_start
-            ).count()
-            if started_today >= daily_cap:
-                return Response(
-                    {
-                        'detail': (
-                            'You have reached your daily video generation '
-                            f'limit of {daily_cap}. Please try again tomorrow.'
-                        )
-                    },
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                )
+        # per day regardless of the ownership rule above. Shared with the web
+        # actions via media_app.quota so the two paths cannot drift.
+        daily_cap = quota.video_cap()
+        if not quota.video_within_cap(request.user):
+            return Response(
+                {
+                    'detail': (
+                        'You have reached your daily video generation '
+                        f'limit of {daily_cap}. Please try again tomorrow.'
+                    )
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
         # Create the job
         job = VideoGenerationJob.objects.create(
@@ -318,25 +310,19 @@ class AudioNarrationViewSet(viewsets.ModelViewSet):
 
         # Only a job that actually synthesizes counts against the cap, so the
         # cache hit above stays free and re-reading a story is never throttled.
-        # Rolling 24 hours rather than a calendar day, so the allowance cannot
-        # be reset early by straddling midnight.
-        daily_cap = getattr(settings, 'AUDIO_NARRATIONS_PER_USER_PER_DAY', 10)
-        if daily_cap:
-            window_start = timezone.now() - timedelta(days=1)
-            started_today = AudioNarrationJob.objects.filter(
-                user=request.user, created_at__gte=window_start
-            ).count()
-            if started_today >= daily_cap:
-                return Response(
-                    {
-                        'detail': (
-                            'You have reached your daily audio narration '
-                            f'limit of {daily_cap}. Narrations already '
-                            'generated for you are still available.'
-                        )
-                    },
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                )
+        # Shared with the web actions via media_app.quota.
+        daily_cap = quota.audio_cap()
+        if not quota.audio_within_cap(request.user):
+            return Response(
+                {
+                    'detail': (
+                        'You have reached your daily audio narration '
+                        f'limit of {daily_cap}. Narrations already '
+                        'generated for you are still available.'
+                    )
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
         # Create job
         job = AudioNarrationJob.objects.create(

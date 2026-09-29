@@ -414,4 +414,10 @@ class WebRegisterUserTests(TestCase):
         )
 
         self.assertIsNone(user)
-        self.assertIn('A user with this email already exists.', errors)
+        # F-03: rejected with a generic message that does not reveal *which*
+        # field collided, so the form cannot be used to probe for accounts.
+        # (The message may still mention both field names — what matters is
+        # that it does not single one of them out as the colliding one.)
+        self.assertTrue(any('already exists' in e for e in errors))
+        self.assertFalse(any('That username is taken' in e for e in errors))
+        self.assertFalse(any('email already exists' in e for e in errors))

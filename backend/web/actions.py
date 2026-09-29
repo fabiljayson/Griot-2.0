@@ -19,6 +19,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from config.rate_limit import rate_limit
+
 from gamification.models import Quiz, QuizQuestion
 from qr_codes.models import Artifact
 from stories.models import Story
@@ -345,6 +347,7 @@ def set_language(request):
 # ---------------------------------------------------------------------------
 # Session registration — mirrors POST /api/auth/register/
 # ---------------------------------------------------------------------------
+@rate_limit('web_register', methods=('POST',), key_by='ip')
 def register(request):
     if request.method == 'POST':
         user, errors = register_user(
@@ -363,6 +366,10 @@ def register(request):
 
         auth_login(request, user)
         messages.success(request, f'Welcome to Griot AI, {user.username}!')
+        # NOTE: deliberately *not* resetting the register budget on success.
+        # Unlike login, a successful registration is itself the abuse signal
+        # here — clearing the budget each time would let a caller mint unlimited
+        # accounts (each success resets the counter) and would defeat the cap.
         return HttpResponseRedirect(_safe_next(request, reverse('web:home')))
 
     return render(request, 'web/auth/register.html')

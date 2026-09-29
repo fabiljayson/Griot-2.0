@@ -111,7 +111,11 @@ class RegisterTests(CacheIsolatedTestCase):
         resp = self.client.post(REGISTER_URL, {**payload, 'password': 'other-secret'})
 
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('email', resp.data)
+        # Still refused, but the response must not name the colliding field:
+        # identifying "email" turns this endpoint into a membership oracle
+        # (F-03). A generic refusal is enough to reject the replay.
+        self.assertIn('detail', resp.data)
+        self.assertNotIn('email', resp.data)
 
     def test_weak_password_rejected(self):
         resp = self.client.post(REGISTER_URL, {
@@ -120,6 +124,33 @@ class RegisterTests(CacheIsolatedTestCase):
             'password': 'short',
         })
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_long_but_common_password_rejected(self):
+        """F-04: `min_length=8` on the field was the only check in force, so a
+        password long enough to clear the length rule was still accepted even
+        though AUTH_PASSWORD_VALIDATORS configures CommonPasswordValidator.
+        These pass the length rule and must still be refused."""
+        for password in ('password1', 'qwerty123', 'letmein1'):
+            with self.subTest(password=password):
+                resp = self.client.post(REGISTER_URL, {
+                    'username': f'weak_{password}',
+                    'email': f'{password}@example.com',
+                    'password': password,
+                })
+                self.assertEqual(
+                    resp.status_code, status.HTTP_400_BAD_REQUEST,
+                    f'API accepted {password!r}, which the configured '
+                    f'password validators reject',
+                )
+
+    def test_strong_password_accepted(self):
+        """A compliant password still registers (guards against over-blocking)."""
+        resp = self.client.post(REGISTER_URL, {
+            'username': 'stronguser',
+            'email': 'strong@example.com',
+            'password': 'Correct-Horse-9',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
 
 
 class RegistrationDoesNotLeakPII(CacheIsolatedTestCase):

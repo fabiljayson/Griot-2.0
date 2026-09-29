@@ -23,6 +23,9 @@ from django.contrib.auth import views as auth_views
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.decorators import method_decorator
+
+from config.rate_limit import rate_limit, reset_client_budget
 
 from .auth import DEFAULT_LOGIN_REDIRECT
 from .services import (
@@ -202,6 +205,20 @@ class WebLoginView(auth_views.LoginView):
 
     template_name = 'web/auth/login.html'
     redirect_authenticated_user = True
+
+    # DRF's `auth: 5/min` throttle does not reach plain Django views, so this
+    # endpoint was previously unthrottled (unlimited online password guessing).
+    # Only the POST attempt counts; rendering the form is free.
+    @method_decorator(rate_limit('web_login', methods=('POST',)))
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        """Clear the attempt budget on success, so a user who mistyped once is
+        not locked out of their own account for the rest of the window."""
+        response = super().form_valid(form)
+        reset_client_budget('web_login', self.request)
+        return response
 
     def get_success_url(self):
         next_url = self.get_redirect_url()

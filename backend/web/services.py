@@ -9,8 +9,10 @@ site and the mobile app always behave identically.
 
 from collections import OrderedDict
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.db.models import Count, F, Q, Sum
@@ -18,6 +20,8 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from api.analytics import get_dashboard_summary
+from config.client_ip import get_client_ip
+from config.rate_limit import client_identifier, first_in_window
 from gamification.models import (
     Badge,
     Certificate,
@@ -26,7 +30,9 @@ from gamification.models import (
     UserBadge,
     UserProfile,
 )
+from gamification.services.quiz_xp import already_earned_quiz_xp
 from gamification.services.streaks import record_activity
+from media_app import quota
 from media_app.models import AudioNarrationJob, VideoGenerationJob
 from media_app.services.luma_ai import get_luma_service
 from media_app.services.tts import (
@@ -353,12 +359,22 @@ def artifact_detail_data(user, request, slug):
         Artifact.objects.filter(is_published=True).prefetch_related('stories'),
         slug=slug,
     )
-    artifact.scans.create(
-        user=user if user.is_authenticated else None,
-        device_type='Web',
-        ip_address=request.META.get('REMOTE_ADDR'),
-        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
-    )
+    # F-05: this is a read path but it wrote a row on *every* GET, so a
+    # pre-authenticated crawler or a reload loop could inflate scan analytics
+    # without bound (and grow the table). Collapse repeats per artifact within
+    # a window: the analytic signal is "this artifact was viewed", so recording
+    # more than one row per viewer per window adds no information. Cached so
+    # the repeat never reaches the database.
+    scan_identity = f'{artifact.pk}:{client_identifier(request)}'
+    if first_in_window(
+        'artifact_scan', scan_identity, settings.SCAN_DEDUPE_WINDOW_SECONDS,
+    ):
+        artifact.scans.create(
+            user=user if user.is_authenticated else None,
+            device_type='Web',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        )
     related_stories = artifact.stories.filter(status=Story.Status.PUBLISHED)[:4]
 
     narration_job = artifact.audio_narrations.filter(
@@ -664,12 +680,22 @@ def finish_quiz(user, quiz):
     )
 
     if attempt.passed:
-        attempt.xp_earned = quiz.xp_reward
+        # Resolved before the payout branch below: the badge sweep needs
+        # profile.total_xp / quizzes_passed on every passing attempt, including
+        # a retake that was not paid.
         profile, _ = UserProfile.objects.get_or_create(user=user)
-        profile.add_xp(quiz.xp_reward)
-        profile.quizzes_passed += 1
-        profile.total_quiz_xp += quiz.xp_reward
-        profile.save(update_fields=['quizzes_passed', 'total_quiz_xp'])
+
+        if already_earned_quiz_xp(user, quiz, exclude_attempt=attempt):
+            # F-06: already paid for this quiz. A retake still records the
+            # attempt and still extends the streak, it just does not pay out
+            # again, so the reward cannot be farmed.
+            attempt.xp_earned = 0
+        else:
+            attempt.xp_earned = quiz.xp_reward
+            profile.add_xp(quiz.xp_reward)
+            profile.quizzes_passed += 1
+            profile.total_quiz_xp += quiz.xp_reward
+            profile.save(update_fields=['quizzes_passed', 'total_quiz_xp'])
 
         earned_ids = UserBadge.objects.filter(user=user).values_list(
             'badge_id', flat=True,
@@ -795,6 +821,17 @@ def generate_story_audio(user, story, language):
     if not narration_text.strip():
         return 'There is no text available to narrate.', 'error'
 
+    # Cache miss, so this synthesis is about to spend a real outbound call.
+    # The API applies the same rolling-24h ceiling (shared via media_app.quota);
+    # without it the web form was an uncapped path to Google TTS and to disk.
+    if not quota.audio_within_cap(user):
+        return (
+            f'You have reached your daily audio limit of '
+            f'{quota.audio_cap()}. Narrations already generated for you are '
+            f'still available.',
+            'error',
+        )
+
     job = AudioNarrationJob.objects.create(
         user=user,
         story=story,
@@ -847,6 +884,16 @@ def generate_artifact_audio(user, artifact, language):
     narration_text = build_artifact_script(artifact)
     if not narration_text.strip():
         return 'There is no text available to narrate.', 'error'
+
+    # Cache miss, so this is a real outbound synthesis — apply the same
+    # rolling-24h cap the API enforces (shared via media_app.quota).
+    if not quota.audio_within_cap(user):
+        return (
+            f'You have reached your daily audio limit of '
+            f'{quota.audio_cap()}. Narrations already generated for you are '
+            f'still available.',
+            'error',
+        )
 
     primary_story = artifact.stories.filter(
         status=Story.Status.PUBLISHED,
@@ -904,6 +951,16 @@ def generate_story_video(user, story, prompt):
     ).first()
     if active is not None:
         return 'A video is already being generated for this story.', 'info'
+
+    # The in-flight guard above is per story, so looping over several stories
+    # — or simply waiting for a job to leave PENDING — would otherwise start
+    # unbounded paid Luma renders. Same rolling-24h cap as the API.
+    if not quota.video_within_cap(user):
+        return (
+            f'You have reached your daily video limit of '
+            f'{quota.video_cap()}. Please try again tomorrow.',
+            'error',
+        )
 
     job = VideoGenerationJob.objects.create(
         user=user,
@@ -996,14 +1053,38 @@ def register_user(*, username, email, password, password2, role):
     errors = []
     if not username:
         errors.append('Username is required.')
+
+    # F-03: an attacker cannot use this form to test whether a given username or
+    # email is registered. Telling a caller *which* field collided, and whether
+    # it collided at all, turns an open signup form into a membership oracle for
+    # any account on the platform. One generic message for both collisions; the
+    # per-field detail is dropped rather than softened, since a message like
+    # "that looks like an existing username" is just as revealing.
+    # The legitimate user resolves the ambiguity by trying a different value.
+    GENERIC_COLLISION = 'An account with those details already exists. Try a different username or email.'
     if User.objects.filter(username__iexact=username).exists():
-        errors.append('That username is taken.')
+        errors.append(GENERIC_COLLISION)
     if email and User.objects.filter(email__iexact=email).exists():
-        errors.append('A user with this email already exists.')
+        errors.append(GENERIC_COLLISION)
+
+    # Length/format problems are the *submitter's own* input, not a fact about
+    # another account, so those stay specific — they help rather than enumerate.
     if len(password) < 8:
         errors.append('Password must be at least 8 characters.')
     if password != password2:
         errors.append('Passwords do not match.')
+
+    if not errors:
+        # F-04: AUTH_PASSWORD_VALIDATORS is configured in settings but was
+        # never called from anywhere, so a length check was the only policy in
+        # force and every password in the common-breach list was accepted. Run
+        # the real validators now; they cover similarity to the username/email
+        # as well as the breach list, and re-run on every attribute change via
+        # this single entry point.
+        try:
+            validate_password(password, user=None)
+        except DjangoValidationError as exc:
+            errors.extend(exc.messages)
 
     if errors:
         return None, errors
@@ -1018,6 +1099,7 @@ def register_user(*, username, email, password, password2, role):
     except IntegrityError:
         # Lost a race against a concurrent signup. The email has a
         # case-insensitive unique constraint, so the check above is only a
-        # fast path and the database is the real arbiter.
-        return None, ['A user with this email already exists.']
+        # fast path and the database is the real arbiter. Report the same
+        # generic message so the race does not re-open the enumeration oracle.
+        return None, [GENERIC_COLLISION]
     return user, []

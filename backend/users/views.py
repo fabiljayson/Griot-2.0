@@ -80,8 +80,19 @@ class RegisterView(generics.CreateAPIView):
                 username=data.get('username'),
                 password=data.get('password'),
             ):
+                # Do not confirm *which* field collided. Naming `email` turns
+                # this endpoint into a membership oracle for the whole user
+                # table: the DRF `username` uniqueness check below is a second,
+                # independent way to ask the same question. Both are
+                # deliberately indistinguishable, so the response says only
+                # that the account could not be created.
                 raise ValidationError(
-                    {'email': ['A user with this email already exists.']}
+                    {
+                        'detail': (
+                            'Unable to create account with the provided '
+                            'details.'
+                        )
+                    }
                 )
             # Reached only with the account's exact username *and* password, so
             # the caller is not learning anything they could not get from

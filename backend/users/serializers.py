@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -94,6 +96,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user.username == (username or '').strip() and user.check_password(
             password or ''
         )
+
+    def validate_password(self, value: str) -> str:
+        """Run the project's real password policy.
+
+        ``min_length=8`` on the field was the only check in force, so every
+        password in the common-breach list was accepted over the API even
+        though ``AUTH_PASSWORD_VALIDATORS`` is configured in settings. Delegate
+        to Django so this path enforces the same policy as the web form.
+        """
+        try:
+            validate_password(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(list(exc.messages)) from exc
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop('password')

@@ -305,6 +305,24 @@ AUDIO_NARRATIONS_PER_USER_PER_DAY = int(
     os.environ.get('AUDIO_NARRATIONS_PER_USER_PER_DAY', '10')
 )
 
+# Budget for the server-rendered web login and registration forms. DRF's
+# throttle rates do not reach plain Django views, so these two endpoints were
+# unthrottled while the API's `auth` scope was capped at 5/min. Kept as a
+# separate setting (rather than reusing the DRF dict) because the two are
+# enforced by different machinery: see config/rate_limit.py.
+WEB_AUTH_ATTEMPTS_PER_MIN = int(
+    os.environ.get('WEB_AUTH_ATTEMPTS_PER_MIN', '5')
+)
+
+# Artifact view scans are a read-path side effect. One row per viewer per window
+# is enough signal for engagement analytics, so a reload loop or crawler cannot
+# inflate the count or grow the table unboundedly. The trade-off is deliberate:
+# a genuinely repeat-viewing user inside the window is folded into the earlier
+# scan rather than logged twice.
+SCAN_DEDUPE_WINDOW_SECONDS = int(
+    os.environ.get('SCAN_DEDUPE_WINDOW_SECONDS', '3600')
+)
+
 # gTTS talks to Google Translate's public endpoint over `requests`, which
 # exposes no timeout knob of its own. These bound the call so a hung socket
 # cannot pin a worker forever.

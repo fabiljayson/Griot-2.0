@@ -14,7 +14,7 @@ from .models import (
     UserBadge,
     UserProfile,
 )
-from .services import streaks
+from .services import quiz_xp, streaks
 from .serializers import (
     BadgeSerializer,
     CertificateSerializer,
@@ -181,13 +181,24 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Award XP if passed. Attempting a quiz is activity either way, so the
         # streak advances even when the reader did not pass.
+        #
+        # The reward is first-pass-only (see gamification.services.quiz_xp):
+        # without this guard the web flow and this one both paid out on every
+        # passing retake, which is unlimited XP from a single quiz.
+        already_paid = quiz_xp.already_earned_quiz_xp(
+            request.user, quiz, exclude_attempt=attempt,
+        )
         if attempt.passed:
-            attempt.xp_earned = quiz.xp_reward
-            streaks.grant_xp_and_stats(
-                request.user, xp=quiz.xp_reward, quizzes_passed=1
-            )
-            # Check for badge eligibility
-            self._check_badges(request.user)
+            if already_paid:
+                attempt.xp_earned = 0
+                streaks.record_activity(request.user)
+            else:
+                attempt.xp_earned = quiz.xp_reward
+                streaks.grant_xp_and_stats(
+                    request.user, xp=quiz.xp_reward, quizzes_passed=1
+                )
+                # Check for badge eligibility
+                self._check_badges(request.user)
         else:
             streaks.record_activity(request.user)
 
