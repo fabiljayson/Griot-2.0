@@ -17,7 +17,48 @@ class OfflineRequestRepository {
 
   Future<Database> get _db async => _database.database;
 
+  /// Header names that must never be written to the database.
+  ///
+  /// A queued request is replayed later through the same Dio instance, and
+  /// `AuthInterceptor.onRequest` overwrites `Authorization` with the token
+  /// that is valid *at replay time*. Persisting the one that was current when
+  /// the request was queued buys nothing and costs a lot: the `offline_requests`
+  /// table is plain SQLite with no encryption, it is included in unencrypted
+  /// device backups, and a row can sit there for days. Anyone who can read the
+  /// file gets a bearer token for the backend — and unlike a password, the
+  /// token needs no cracking, and may well still be valid.
+  ///
+  /// Compared case-insensitively: HTTP header names are not case-sensitive, so
+  /// `authorization` and `Authorization` are the same header to any server.
+  static const Set<String> _strippedHeaders = {
+    'authorization',
+    'proxy-authorization',
+    'cookie',
+    'set-cookie',
+    'x-api-key',
+    'x-auth-token',
+  };
+
+  /// Copy of [headers] with credential-bearing entries removed.
+  ///
+  /// Drops the whole entry rather than blanking the value, so a stripped header
+  /// cannot be mistaken for a present-but-empty one.
+  static Map<String, dynamic>? _sanitizeHeaders(Map<String, dynamic>? headers) {
+    if (headers == null) return null;
+
+    final sanitized = <String, dynamic>{};
+    for (final entry in headers.entries) {
+      if (_strippedHeaders.contains(entry.key.toLowerCase())) continue;
+      sanitized[entry.key] = entry.value;
+    }
+    return sanitized;
+  }
+
   /// Queue a request for later execution when offline.
+  ///
+  /// Credential headers are removed before the row is written — see
+  /// [_strippedHeaders]. Replay re-attaches the current token, so this does not
+  /// weaken the request.
   Future<OfflineRequest> saveRequest({
     required String method,
     required String path,
@@ -25,11 +66,12 @@ class OfflineRequestRepository {
     Map<String, dynamic>? headers,
   }) async {
     final db = await _db;
+    final safeHeaders = _sanitizeHeaders(headers);
     final request = OfflineRequest(
       method: method,
       path: path,
       body: body != null ? jsonEncode(body) : null,
-      headers: headers != null ? jsonEncode(headers) : null,
+      headers: safeHeaders != null ? jsonEncode(safeHeaders) : null,
       createdAt: DateTime.now(),
     );
 

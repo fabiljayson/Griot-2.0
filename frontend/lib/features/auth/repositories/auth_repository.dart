@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/database/repositories/local_auth_repository.dart';
+import '../../../core/database/repositories/offline_user_repository.dart';
 import '../models/user_model.dart';
 import 'server_auth_repository.dart';
 
@@ -41,12 +43,20 @@ class RegistrationSignInFailedException implements Exception {
 /// server is unreachable the legacy local SQLite/secure-storage session is
 /// used so the app remains usable offline.
 class AuthRepository {
-  AuthRepository({LocalAuthRepository? localAuth, ServerAuthRepository? server})
-    : _local = localAuth ?? LocalAuthRepository(),
-      _server = server ?? ServerAuthRepository();
+  AuthRepository({
+    LocalAuthRepository? localAuth,
+    ServerAuthRepository? server,
+    AppDatabase? database,
+    OfflineUserRepository? offlineUsers,
+  }) : _local = localAuth ?? LocalAuthRepository(),
+       _server = server ?? ServerAuthRepository(),
+       _database = database ?? AppDatabase.instance,
+       _offlineUsers = offlineUsers ?? OfflineUserRepository();
 
   final LocalAuthRepository _local;
   final ServerAuthRepository _server;
+  final AppDatabase _database;
+  final OfflineUserRepository _offlineUsers;
 
   // --- Token management ---
 
@@ -69,9 +79,18 @@ class AuthRepository {
 
   /// Login with username and password.
   ///
-  /// Tries the backend first. On unreachable server or rejected credentials
-  /// for an account that only exists locally, falls back to the offline
-  /// SQLite session so existing devices keep working.
+  /// The backend is authoritative. Only when it is genuinely unreachable — no
+  /// network, DNS failure, timeout — does this fall back to the offline
+  /// SQLite account, so a reader who registered without connectivity can still
+  /// get in.
+  ///
+  /// A 401 is a decision, not an outage. The server reached, read the
+  /// credentials, and refused them; honouring a matching local account anyway
+  /// would let someone whose server account was disabled, deleted, or had its
+  /// password changed continue to sign in on a device that cached the old
+  /// credential. A revocation on the server has to be revocation everywhere, so
+  /// this path returns [InvalidCredentialsException] and lets the caller sign
+  /// the reader out.
   Future<TokenPair> login({
     required String username,
     required String password,
@@ -91,27 +110,22 @@ class AuthRepository {
         lastName: profile['last_name'] as String? ?? '',
         role: UserRole.fromString(profile['role'] as String? ?? 'visitor'),
         institution: profile['institution'] as String? ?? '',
-        password: password,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       );
       return tokens;
     } on DioException catch (e) {
-      if (_isServerUnreachable(e)) {
-        // Offline: fall back to the legacy local account.
-        await _local.login(username: username, password: password);
-        return _localPair();
+      if (e.response?.statusCode == 401) {
+        // Server-side rejection is final. Clear any local session so a stale
+        // cached credential cannot be used after the reader is turned away.
+        await _local.clearTokens();
+        throw const InvalidCredentialsException();
       }
 
-      if (e.response?.statusCode == 401) {
-        // Server is reachable but rejected the credentials. Still honour a
-        // matching local account (hybrid), otherwise surface a clear error.
-        try {
-          await _local.login(username: username, password: password);
-          return await _localPair();
-        } on Exception {
-          throw const InvalidCredentialsException();
-        }
+      if (_isServerUnreachable(e)) {
+        // Offline: fall back to the local account.
+        await _local.login(username: username, password: password);
+        return _localPair();
       }
 
       rethrow;
@@ -163,7 +177,6 @@ class AuthRepository {
         lastName: user.lastName,
         role: user.role,
         institution: user.institution,
-        password: password,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       );
@@ -209,8 +222,28 @@ class AuthRepository {
   /// Delete the current user's account.
   Future<void> deleteAccount() => _local.deleteAccount();
 
-  /// Logout by clearing stored tokens.
-  Future<void> logout() => _local.logout();
+  /// Logout by clearing stored tokens and everything tied to the account.
+  ///
+  /// Dropping the tokens alone left the reader's name, email, search history,
+  /// queued requests and quiz history in the database, so the next person to
+  /// open the app on a shared device saw them. [AppDatabase.wipeUserScopedData]
+  /// clears the database side; [OfflineUserRepository.clearAll] drops the
+  /// passwords held in secure storage for registrations still awaiting sync.
+  ///
+  /// Public content and per-story reading position are kept, so the library
+  /// still works offline for whoever signs in next.
+  ///
+  /// Deliberately not the same path as [clearTokens]: a 401 is a recoverable
+  /// expiry, and wiping a reader's offline state over a transient network
+  /// error would be far worse than leaving it.
+  Future<void> logout() async {
+    // Tokens first: whatever the cleanup below does, the session must not
+    // survive a sign-out, and each step is independent so one failure cannot
+    // leave the rest undone.
+    await _local.logout();
+    await _offlineUsers.clearAll();
+    await _database.wipeUserScopedData();
+  }
 
   // --- Helpers ---
 

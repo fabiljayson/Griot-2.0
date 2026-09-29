@@ -27,6 +27,16 @@ DEBUG = False
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
 
+# Proxies whose `X-Forwarded-For` header is believed. `X-Forwarded-For` is a
+# plain request header, so a value is only honoured when the socket peer is one
+# of these addresses; otherwise a client could write any IP into the scan and
+# view analytics. Empty by default — the transport-level `REMOTE_ADDR` is the
+# real peer and is used as-is. Comma-separated.
+TRUSTED_PROXY_IPS = [
+    ip.strip() for ip in os.environ.get('DJANGO_TRUSTED_PROXY_IPS', '').split(',')
+    if ip.strip()
+]
+
 # ---------------------------------------------------------------------------
 # Application definition
 # ---------------------------------------------------------------------------
@@ -157,6 +167,9 @@ REST_FRAMEWORK = {
         'anon': '120/min',   # general anonymous API traffic
         'user': '600/min',   # authenticated API traffic
         'auth': '5/min',     # auth endpoints (login, register, refresh)
+        # Unauthenticated metrics: six COUNT() queries per hit, so it gets its
+        # own budget rather than sharing the general anonymous one.
+        'metrics': '10/min',
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # Turns a unique-constraint collision into a 400 instead of an opaque 500.
@@ -279,6 +292,17 @@ LUMA_API_KEY = os.environ.get('LUMA_API_KEY', '')
 # farmed for free renders.
 VIDEO_GENERATIONS_PER_USER_PER_DAY = int(
     os.environ.get('VIDEO_GENERATIONS_PER_USER_PER_DAY', '5')
+)
+
+# The same bound for audio narration, which is not billed per call but is not
+# free either: each job is a synchronous request out to Google Translate's
+# public TTS endpoint plus an MP3 written to MEDIA_ROOT. Left uncapped, the
+# general API throttle (600 requests/minute) is all that stands between one
+# account and several GB of audio, and between this deployment and being cut
+# off from an endpoint we do not pay for. Cached narrations are reused before
+# this cap is consulted, so re-reading a story never costs quota.
+AUDIO_NARRATIONS_PER_USER_PER_DAY = int(
+    os.environ.get('AUDIO_NARRATIONS_PER_USER_PER_DAY', '10')
 )
 
 # gTTS talks to Google Translate's public endpoint over `requests`, which

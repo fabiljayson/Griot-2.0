@@ -201,7 +201,6 @@ void main() {
             )).thenAnswer((_) async => const OfflineUser(
               username: 'tester',
               email: 'tester@example.com',
-              password: 'pass123',
             ));
 
         final status = await container

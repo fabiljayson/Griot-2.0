@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/database/repositories/local_story_repository.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/connectivity_service.dart';
+import '../../../core/security/secure_storage_factory.dart';
 import '../models/story_model.dart';
 
 /// Repository handling Story API calls with an offline mirror.
@@ -266,7 +266,7 @@ class StoryRepository {
   Future<List<StoryModel>> getMyStories() async {
     if (_offline) {
       final userIdStr =
-          await const FlutterSecureStorage().read(key: 'current_user_id');
+          await SecureStorageFactory.instance.read(key: 'current_user_id');
       final userId = int.tryParse(userIdStr ?? '') ?? 0;
       return _local.getMyStories(userId);
     }
@@ -282,7 +282,7 @@ class StoryRepository {
     } on DioException {
       // Offline: locally-created stories only.
       final userIdStr =
-          await const FlutterSecureStorage().read(key: 'current_user_id');
+          await SecureStorageFactory.instance.read(key: 'current_user_id');
       final userId = int.tryParse(userIdStr ?? '') ?? 0;
       return _local.getMyStories(userId);
     }

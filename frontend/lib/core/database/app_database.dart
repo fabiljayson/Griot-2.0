@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../constants/app_constants.dart';
 import '../constants/story_assets.dart';
+import '../security/local_credential_hasher.dart';
 import 'seed/seed_badges.dart';
 import 'seed/seed_quizzes.dart';
 import 'seed/seed_stories.dart';
@@ -119,7 +122,6 @@ class AppDatabase {
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         username      TEXT NOT NULL UNIQUE,
         email         TEXT NOT NULL UNIQUE,
-        password      TEXT NOT NULL,
         first_name    TEXT DEFAULT '',
         last_name     TEXT DEFAULT '',
         role          TEXT NOT NULL DEFAULT 'visitor',
@@ -210,7 +212,7 @@ class AppDatabase {
           id            INTEGER PRIMARY KEY AUTOINCREMENT,
           username      TEXT NOT NULL UNIQUE,
           email         TEXT NOT NULL UNIQUE,
-          password      TEXT NOT NULL,
+          password_hash TEXT,
           first_name    TEXT DEFAULT '',
           last_name     TEXT DEFAULT '',
           role          TEXT NOT NULL DEFAULT 'visitor',
@@ -283,8 +285,11 @@ class AppDatabase {
         'CREATE INDEX idx_local_stories_region ON local_stories (region)',
       );
 
-      // Seed default user and categories, then stories.
-      await _seedDefaultUser(db);
+      // Seed categories and stories. Demo *users* are debug-only — see
+      // `_seedDefaultUser`.
+      if (!kReleaseMode) {
+        await _seedDefaultUser(db);
+      }
       await _seedCategories(db);
       await _seedStories(db);
     }
@@ -402,11 +407,261 @@ class AppDatabase {
       //    coming soon". Link every unlinked quiz to its story.
       await _linkUnlinkedQuizzes(db);
     }
+
+    if (oldVersion < 8) {
+      // v8 — remove the plaintext credential columns.
+      //
+      // `local_users.password` held the sign-in secret verbatim so offline
+      // login could compare it, and `offline_users.password` held the secret
+      // for registrations queued to replay against the server. Any process able
+      // to read the database file — a rooted device, an `adb backup` pull, a
+      // copied app container — recovered real credentials, including ones that
+      // are also valid on the Django backend.
+      //
+      // `local_users` gains `password_hash` so offline sign-in still works
+      // without storing the secret; see `LocalCredentialHasher`. `offline_users`
+      // keeps nothing, because replaying a registration genuinely needs the
+      // plaintext — that secret is held in platform secure storage keyed by row
+      // id instead, so the database is not a credential store.
+      //
+      // `local_stories.author_id` is a foreign key onto `local_users`, so
+      // dropping the old table mid-migration trips the FK check. `PRAGMA
+      // defer_foreign_keys` postpones enforcement to COMMIT, by which point the
+      // replacement table exists and the copied ids still resolve. It is used
+      // rather than `foreign_keys=OFF` because that pragma is a no-op inside the
+      // transaction sqflite runs migrations in.
+      await db.execute('PRAGMA defer_foreign_keys = ON');
+
+      await _dropLocalUserPasswordColumn(db);
+      await _dropOfflineUserPasswordColumn(db);
+      // The demo accounts seeded by v4 shipped known passwords and granted an
+      // admin role; shipping them is a backdoor, so clear out any an earlier
+      // install created.
+      await _removeSeededDemoUsers(db);
+      // Requests queued before this version persisted a bearer token into
+      // `offline_requests`. Scrub them in place.
+      await _purgeQueuedAuthHeaders(db);
+
+      await db.execute('PRAGMA defer_foreign_keys = OFF');
+    }
+  }
+
+  /// Rebuild `local_users` without `password`, adding `password_hash`.
+  ///
+  /// The table is recreated rather than altered with `DROP COLUMN`, which
+  /// needs SQLite 3.35; the bundled web build runs an older wasm. Copying the
+  /// non-secret columns across also scrubs the plaintext passwords as a side
+  /// effect, which is the point of the migration.
+  ///
+  /// `password_hash` is left NULL for every existing row, so anyone who had a
+  /// local account must reset it — the alternative would be a fallback that
+  /// accepts the old plaintext, which reintroduces the leak.
+  Future<void> _dropLocalUserPasswordColumn(Database db) async {
+    if (!await _hasTable(db, 'local_users')) return;
+
+    await db.execute('''
+      CREATE TABLE local_users_v8 (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        username      TEXT NOT NULL UNIQUE,
+        email         TEXT NOT NULL UNIQUE,
+        password_hash TEXT,
+        first_name    TEXT DEFAULT '',
+        last_name     TEXT DEFAULT '',
+        role          TEXT NOT NULL DEFAULT 'visitor',
+        institution   TEXT DEFAULT '',
+        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    ''');
+
+    await db.execute('''
+      INSERT INTO local_users_v8
+        (id, username, email, first_name, last_name, role, institution, created_at)
+      SELECT
+        id, username, email, first_name, last_name, role, institution, created_at
+      FROM local_users
+    ''');
+
+    await db.execute('DROP TABLE local_users');
+    await db.execute('ALTER TABLE local_users_v8 RENAME TO local_users');
+  }
+
+  /// Rebuild `offline_users` without `password`.
+  ///
+  /// Any pending registration loses its secret here. It is surfaced as a failed
+  /// registration the user can retry, rather than being silently replayed from
+  /// a value that was on disk in the clear.
+  Future<void> _dropOfflineUserPasswordColumn(Database db) async {
+    if (!await _hasTable(db, 'offline_users')) return;
+
+    await db.execute('''
+      CREATE TABLE offline_users_v8 (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        username      TEXT NOT NULL UNIQUE,
+        email         TEXT NOT NULL UNIQUE,
+        first_name    TEXT DEFAULT '',
+        last_name     TEXT DEFAULT '',
+        role          TEXT NOT NULL DEFAULT 'visitor',
+        institution   TEXT DEFAULT '',
+        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+        status        TEXT NOT NULL DEFAULT 'pending',
+        server_user_id INTEGER,
+        error_message TEXT
+      )
+    ''');
+
+    // Read the source shape first. A partial install (see the v6-repair test)
+    // can be missing columns, and a migration that assumes the full v3 shape
+    // would abort the whole upgrade and leave the app unusable.
+    final present = await _columnNames(db, 'offline_users');
+
+    // Queued rows can no longer be replayed; mark them so the sync loop reports
+    // them instead of retrying a registration whose secret is gone. This runs
+    // against the *source* table, before the copy, so the replacement rows
+    // inherit the new status.
+    if (present.contains('status')) {
+      // If the source has no `error_message`, the replacement's NULL default is
+      // fine — the sync loop's own failure path supplies the reason.
+      final message = present.contains('error_message')
+          ? ", error_message = 'Registration was queued before this update "
+              "and must be retried'"
+          : '';
+      await db.execute('''
+        UPDATE offline_users
+        SET status = 'failed'$message
+        WHERE status IN ('pending', 'syncing')
+      ''');
+    }
+
+    final copied = [
+      'id',
+      'username',
+      'email',
+      'first_name',
+      'last_name',
+      'role',
+      'institution',
+      'created_at',
+      'status',
+      'server_user_id',
+      'error_message',
+    ].where(present.contains).toList();
+
+    if (copied.contains('username') && copied.contains('email')) {
+      final list = copied.join(', ');
+      await db.execute(
+        'INSERT INTO offline_users_v8 ($list) SELECT $list FROM offline_users',
+      );
+    }
+
+    await db.execute('DROP TABLE offline_users');
+    await db.execute('ALTER TABLE offline_users_v8 RENAME TO offline_users');
+
+    await db.execute(
+      'CREATE INDEX idx_offline_users_status ON offline_users (status)',
+    );
+  }
+
+  /// Column names of [table], in declaration order.
+  Future<Set<String>> _columnNames(Database db, String table) async {
+    final rows = await db.rawQuery('PRAGMA table_info($table)');
+    return rows.map((r) => r['name'] as String).toSet();
+  }
+
+  /// Strip credential headers from already-queued offline requests.
+  ///
+  /// `OfflineRequestRepository.saveRequest` no longer writes them, but rows
+  /// queued by an earlier build still hold a bearer token in plain SQLite.
+  /// Replay re-attaches the current token, so removing the stale one costs
+  /// nothing.
+  Future<void> _purgeQueuedAuthHeaders(Database db) async {
+    if (!await _hasTable(db, 'offline_requests')) return;
+
+    const stripped = {
+      'authorization',
+      'proxy-authorization',
+      'cookie',
+      'set-cookie',
+      'x-api-key',
+      'x-auth-token',
+    };
+
+    final rows = await db.query('offline_requests');
+    for (final row in rows) {
+      final raw = row['headers'] as String?;
+      if (raw == null || raw.isEmpty) continue;
+
+      Object? decoded;
+      try {
+        decoded = jsonDecode(raw);
+      } on FormatException {
+        // Unreadable rather than merely stale. Drop the value rather than
+        // guess: the row keeps its body and is still replayable, and the
+        // interceptor supplies the auth header regardless.
+        await db.update(
+          'offline_requests',
+          {'headers': null},
+          where: 'id = ?',
+          whereArgs: [row['id']],
+        );
+        continue;
+      }
+
+      if (decoded is! Map) continue;
+
+      final cleaned = <String, dynamic>{};
+      for (final entry in decoded.entries) {
+        if (stripped.contains(entry.key.toString().toLowerCase())) continue;
+        cleaned[entry.key.toString()] = entry.value;
+      }
+
+      if (cleaned.length == decoded.length) continue;
+
+      await db.update(
+        'offline_requests',
+        {'headers': jsonEncode(cleaned)},
+        where: 'id = ?',
+        whereArgs: [row['id']],
+      );
+    }
+  }
+
+  /// Delete the demo accounts that earlier versions seeded into `local_users`.
+  ///
+  /// Keyed on the exact usernames and emails v4 inserted, so a real account a
+  /// reader happened to register under one of those names is left alone.
+  Future<void> _removeSeededDemoUsers(Database db) async {
+    // A partial install may never have reached the step that creates this
+    // table; there is nothing to clean up, and a DELETE against a missing
+    // table would abort the whole upgrade.
+    if (!await _hasTable(db, 'local_users')) return;
+
+    const demoUsernames = <String>['admin', 'visitor1', 'contributor1'];
+    const demoEmails = <String>[
+      'admin@griot-ai.com',
+      'visitor1@griot-ai.com',
+      'contributor1@griot-ai.com',
+    ];
+
+    final placeholders = List.filled(demoUsernames.length, '?').join(', ');
+    await db.delete(
+      'local_users',
+      where: 'username IN ($placeholders)',
+      whereArgs: demoUsernames,
+    );
+
+    final emailPlaceholders = List.filled(demoEmails.length, '?').join(', ');
+    await db.delete(
+      'local_users',
+      where: 'email IN ($emailPlaceholders)',
+      whereArgs: demoEmails,
+    );
   }
 
   /// True when [name] exists as a table in the current database.
-  Future<bool> _hasTable(Database db, String name) async {
-    final rows = await db.query(
+  /// [executor] is a `DatabaseExecutor` rather than a `Database` so this also
+  /// works inside a transaction, where only a `Transaction` is available.
+  Future<bool> _hasTable(DatabaseExecutor executor, String name) async {
+    final rows = await executor.query(
       'sqlite_master',
       columns: ['name'],
       where: 'type = ? AND name = ?',
@@ -474,37 +729,63 @@ class AppDatabase {
     }
   }
 
-  /// Seed a default local user for immediate offline login.
+  /// Seed demo accounts so a developer can sign in without a backend.
+  ///
+  /// Debug builds only. `kReleaseMode` is a compile-time constant, so the
+  /// guard at the call site makes this method — and the known credentials
+  /// below it — unreachable and tree-shaken from a release build. The literals
+  /// are still in this source file, so a release APK must never be built from a
+  /// tree where this call site is reachable.
+  ///
+  /// These are known-credential accounts and one carries the `admin` role, so
+  /// shipping them would be a backdoor rather than a demo convenience.
   Future<void> _seedDefaultUser(Database db) async {
-    await db.insert('local_users', {
-      'username': 'admin',
-      'email': 'admin@griot-ai.com',
-      'password': 'admin123',
-      'first_name': 'Super',
-      'last_name': 'Admin',
-      'role': 'admin',
-      'institution': '',
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    if (kReleaseMode) return;
 
-    await db.insert('local_users', {
-      'username': 'visitor1',
-      'email': 'visitor1@griot-ai.com',
-      'password': 'visitor123',
-      'first_name': 'Amara',
-      'last_name': 'Nkomo',
-      'role': 'visitor',
-      'institution': '',
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    const demoAccounts = <({String username, String email, String password, String first, String last, String role})>[
+      (
+        username: 'admin',
+        email: 'admin@griot-ai.com',
+        password: 'admin123',
+        first: 'Super',
+        last: 'Admin',
+        role: 'admin',
+      ),
+      (
+        username: 'visitor1',
+        email: 'visitor1@griot-ai.com',
+        password: 'visitor123',
+        first: 'Amara',
+        last: 'Nkomo',
+        role: 'visitor',
+      ),
+      (
+        username: 'contributor1',
+        email: 'contributor1@griot-ai.com',
+        password: 'contributor123',
+        first: 'Nana',
+        last: 'Yemo',
+        role: 'contributor',
+      ),
+    ];
 
-    await db.insert('local_users', {
-      'username': 'contributor1',
-      'email': 'contributor1@griot-ai.com',
-      'password': 'contributor123',
-      'first_name': 'Nana',
-      'last_name': 'Yemo',
-      'role': 'contributor',
-      'institution': '',
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    for (final account in demoAccounts) {
+      await db.insert(
+        'local_users',
+        {
+          'username': account.username,
+          'email': account.email,
+          // Hashed like any other local account, so the demo path exercises the
+          // same offline verification a real sign-in does.
+          'password_hash': LocalCredentialHasher.hash(account.password),
+          'first_name': account.first,
+          'last_name': account.last,
+          'role': account.role,
+          'institution': '',
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
   }
 
   /// Seed default story categories.
@@ -646,6 +927,41 @@ class AppDatabase {
         whereArgs: [quizId],
       );
     }
+  }
+
+  /// Tables holding data that belongs to a person rather than to the library.
+  ///
+  /// Everything here is either account identity, something the reader typed,
+  /// or a request they authored. The remaining tables (`local_stories`,
+  /// `local_categories`, `local_quizzes`, `local_quiz_questions`,
+  /// `local_badges`, `story_cache`, `reading_progress`) are public content or
+  /// per-story state with no account attached, and are deliberately kept: they
+  /// are what makes the app readable with no connection, and wiping them would
+  /// punish the next person to sign in for the previous person's privacy.
+  static const List<String> _userScopedTables = [
+    'local_users',
+    'offline_users',
+    'local_user_gamification',
+    'local_quiz_attempts',
+    'search_history',
+    'offline_requests',
+  ];
+
+  /// Remove everything [userScopedTables] names, in one transaction.
+  ///
+  /// Used on sign-out and on account deletion. Signing out used to remove only
+  /// the tokens, which left the reader's name, email, searches, queued requests
+  /// and progress behind for whoever picked up the device next. Offline
+  /// registrations need a matching pass over secure storage
+  /// (`OfflineUserRepository.clearAll`) to drop the passwords held there.
+  Future<void> wipeUserScopedData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final table in _userScopedTables) {
+        if (!await _hasTable(txn, table)) continue;
+        await txn.delete(table);
+      }
+    });
   }
 
   Future<void> close() async {

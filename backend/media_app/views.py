@@ -316,6 +316,28 @@ class AudioNarrationViewSet(viewsets.ModelViewSet):
             )
             return Response(out_serializer.data, status=status.HTTP_200_OK)
 
+        # Only a job that actually synthesizes counts against the cap, so the
+        # cache hit above stays free and re-reading a story is never throttled.
+        # Rolling 24 hours rather than a calendar day, so the allowance cannot
+        # be reset early by straddling midnight.
+        daily_cap = getattr(settings, 'AUDIO_NARRATIONS_PER_USER_PER_DAY', 10)
+        if daily_cap:
+            window_start = timezone.now() - timedelta(days=1)
+            started_today = AudioNarrationJob.objects.filter(
+                user=request.user, created_at__gte=window_start
+            ).count()
+            if started_today >= daily_cap:
+                return Response(
+                    {
+                        'detail': (
+                            'You have reached your daily audio narration '
+                            f'limit of {daily_cap}. Narrations already '
+                            'generated for you are still available.'
+                        )
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+
         # Create job
         job = AudioNarrationJob.objects.create(
             user=request.user,

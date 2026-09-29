@@ -5,6 +5,8 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from config.client_ip import get_client_ip
+
 from .models import Artifact, QRCodeScan
 from .serializers import (
     ArtifactCreateUpdateSerializer,
@@ -162,10 +164,7 @@ class ArtifactViewSet(viewsets.ModelViewSet):
         return Response(QRCodeScanSerializer(scans, many=True).data)
 
     def _get_client_ip(self, request):
-        x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded:
-            return x_forwarded.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR')
+        return get_client_ip(request)
 
 
 class ArtifactLookupByDeepLinkView(generics.GenericAPIView):
@@ -234,7 +233,4 @@ class QRCodeRedirectView(generics.GenericAPIView):
         return Response(ArtifactDetailSerializer(artifact).data)
 
     def _get_client_ip(self, request):
-        x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded:
-            return x_forwarded.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR')
+        return get_client_ip(request)

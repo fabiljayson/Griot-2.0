@@ -210,4 +210,176 @@ void main() {
       );
     }
   });
+
+  group('v8 removes the plaintext credential columns', () {
+    Future<Set<String>> columnsOf(Database db, String table) async {
+      final rows = await db.rawQuery('PRAGMA table_info($table)');
+      return rows.map((r) => r['name'] as String).toSet();
+    }
+
+    test('a fresh install has no password column on either user table',
+        () async {
+      final db = await AppDatabase.instance.database;
+
+      final local = await columnsOf(db, 'local_users');
+      expect(local, isNot(contains('password')));
+      expect(local, contains('password_hash'));
+
+      final offline = await columnsOf(db, 'offline_users');
+      expect(offline, isNot(contains('password')));
+    });
+
+    test('a fresh install stores no plaintext password anywhere', () async {
+      final db = await AppDatabase.instance.database;
+
+      // Debug builds seed demo accounts; they must be hashed like any other
+      // local account rather than carrying the password itself.
+      final rows = await db.query(
+        'local_users',
+        columns: ['username', 'password_hash'],
+      );
+      for (final row in rows) {
+        final hash = row['password_hash'] as String?;
+        if (hash == null) continue;
+        expect(
+          hash,
+          startsWith(r'pbkdf2_sha256$'),
+          reason: '${row['username']} is not hashed',
+        );
+        expect(hash, isNot(contains('123')));
+      }
+    });
+
+    test(
+        'an upgraded install drops the stored plaintext but keeps the account',
+        () async {
+      // A device from before v8: full v4/v3 shape, with a real reader account
+      // whose password is sitting in the clear.
+      final old = await databaseFactory.openDatabase(
+        dbPath,
+        options: OpenDatabaseOptions(
+          version: 7,
+          onCreate: (db, _) async {
+            await db.execute('''
+              CREATE TABLE local_users (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                username      TEXT NOT NULL UNIQUE,
+                email         TEXT NOT NULL UNIQUE,
+                password      TEXT NOT NULL,
+                first_name    TEXT DEFAULT '',
+                last_name     TEXT DEFAULT '',
+                role          TEXT NOT NULL DEFAULT 'visitor',
+                institution   TEXT DEFAULT '',
+                created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+              )
+            ''');
+            await db.execute('''
+              CREATE TABLE offline_users (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                username      TEXT NOT NULL UNIQUE,
+                email         TEXT NOT NULL UNIQUE,
+                password      TEXT NOT NULL,
+                first_name    TEXT DEFAULT '',
+                last_name     TEXT DEFAULT '',
+                role          TEXT NOT NULL DEFAULT 'visitor',
+                institution   TEXT DEFAULT '',
+                created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                status        TEXT NOT NULL DEFAULT 'pending',
+                server_user_id INTEGER,
+                error_message TEXT
+              )
+            ''');
+            await db.execute(
+              "INSERT INTO local_users "
+              "(username, email, password, first_name, last_name, role) "
+              "VALUES ('amara', 'amara@example.com', 'plaintext-secret', "
+              "'Amara', 'Nkomo', 'visitor')",
+            );
+            await db.execute(
+              "INSERT INTO offline_users "
+              "(username, email, password, status) "
+              "VALUES ('queued', 'queued@example.com', 'queued-secret', "
+              "'pending')",
+            );
+          },
+        ),
+      );
+      await old.close();
+
+      final db = await AppDatabase.instance.database;
+
+      expect(await columnsOf(db, 'local_users'), isNot(contains('password')));
+
+      // The reader's account survives; only the secret is gone.
+      final kept = await db.query(
+        'local_users',
+        where: 'username = ?',
+        whereArgs: ['amara'],
+      );
+      expect(kept, hasLength(1));
+      expect(kept.first['email'], 'amara@example.com');
+      // NULL means "no local password" — the reader must reset rather than
+      // fall back to accepting the old plaintext.
+      expect(kept.first['password_hash'], isNull);
+
+      // The secret is genuinely gone from the file, not merely hidden behind a
+      // different column name.
+      final dump = await db.rawQuery('SELECT * FROM local_users');
+      expect(dump.toString(), isNot(contains('plaintext-secret')));
+
+      // A queued registration cannot be replayed, so it is reported as failed
+      // rather than retried with a secret that is no longer available.
+      final queued = await db.query('offline_users');
+      expect(queued, hasLength(1));
+      expect(queued.first['status'], 'failed');
+      expect(await columnsOf(db, 'offline_users'), isNot(contains('password')));
+      expect((await db.rawQuery('SELECT * FROM offline_users')).toString(),
+          isNot(contains('queued-secret')));
+    });
+
+    test('v8 deletes the demo accounts seeded by earlier versions', () async {
+      final old = await databaseFactory.openDatabase(
+        dbPath,
+        options: OpenDatabaseOptions(
+          version: 7,
+          onCreate: (db, _) async {
+            await db.execute('''
+              CREATE TABLE local_users (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                username      TEXT NOT NULL UNIQUE,
+                email         TEXT NOT NULL UNIQUE,
+                password      TEXT NOT NULL,
+                first_name    TEXT DEFAULT '',
+                last_name     TEXT DEFAULT '',
+                role          TEXT NOT NULL DEFAULT 'visitor',
+                institution   TEXT DEFAULT '',
+                created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+              )
+            ''');
+            for (final row in [
+              ('admin', 'admin@griot-ai.com'),
+              ('visitor1', 'visitor1@griot-ai.com'),
+              ('contributor1', 'contributor1@griot-ai.com'),
+              ('amara', 'amara@example.com'),
+            ]) {
+              await db.execute(
+                'INSERT INTO local_users (username, email, password) '
+                "VALUES ('${row.$1}', '${row.$2}', 'admin123')",
+              );
+            }
+          },
+        ),
+      );
+      await old.close();
+
+      final db = await AppDatabase.instance.database;
+      final remaining = await db.query('local_users', columns: ['username']);
+
+      expect(
+        remaining.map((r) => r['username']),
+        ['amara'],
+        reason: 'known-credential demo accounts must not survive the upgrade',
+      );
+    });
+  });
 }

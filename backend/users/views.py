@@ -66,6 +66,13 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         data = request.data
 
+        # The replay lookup runs before `is_valid()` on purpose: the
+        # serializer's own `username` uniqueness check would reject the replay
+        # of a committed registration with a 400, which is the exact false
+        # "email already exists" that the idempotency below exists to avoid.
+        # `find_by_email` normalizes defensively, so a JSON body carrying
+        # `email` as a list or a number is treated as "no address" and falls
+        # through to normal validation instead of raising.
         existing = serializer.find_by_email(data.get('email'))
         if existing is not None:
             if not serializer.is_verbatim_replay(
@@ -76,6 +83,9 @@ class RegisterView(generics.CreateAPIView):
                 raise ValidationError(
                     {'email': ['A user with this email already exists.']}
                 )
+            # Reached only with the account's exact username *and* password, so
+            # the caller is not learning anything they could not get from
+            # `POST /api/auth/token/` followed by `GET /api/users/me/`.
             return Response(
                 {
                     'user': UserSerializer(existing).data,
@@ -132,7 +142,10 @@ class MeView(APIView):
     def delete(self, request):
         username = request.user.username
         request.user.delete()
-        return Response(
-            {'message': f'Account "{username}" and associated data deleted.'},
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        # A 204 response carries no body by definition. Returning one anyway
+        # produced a response that every client library treats differently:
+        # `fetch` on the web throws on a 204 that has a body, and several HTTP
+        # stacks strip the body *and* log a protocol warning. The 204 itself
+        # already means "done" — the username in the message added nothing the
+        # client did not already know.
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -100,13 +100,27 @@ class OfflineSyncManager {
 
     await _offlineUserRepository.markSyncing(offlineUser.id!);
 
+    // The password is not on the row; it is read back from secure storage. A
+    // null here means the secret is gone (pre-v8 registration, or cleared
+    // secure storage), so the registration cannot be replayed — fail it with a
+    // reason the reader can act on rather than POSTing an empty password.
+    final pendingPassword = await _offlineUserRepository
+        .readPendingPassword(offlineUser.id!);
+    if (pendingPassword == null) {
+      await _offlineUserRepository.markFailed(
+        offlineUser.id!,
+        'Queued registration is missing its password; please register again',
+      );
+      return;
+    }
+
     try {
       final response = await _apiClient.dio.post(
         '/api/auth/register/',
         data: {
           'username': offlineUser.username,
           'email': offlineUser.email,
-          'password': offlineUser.password,
+          'password': pendingPassword,
           'first_name': offlineUser.firstName,
           'last_name': offlineUser.lastName,
           'role': offlineUser.role,

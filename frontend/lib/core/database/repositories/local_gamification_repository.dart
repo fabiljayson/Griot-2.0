@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../features/gamification/services/gamification_api_service.dart';
+import '../../security/secure_storage_factory.dart';
 import '../app_database.dart';
 
 /// Repository for local gamification operations against SQLite.
@@ -14,7 +15,7 @@ class LocalGamificationRepository {
     AppDatabase? database,
     FlutterSecureStorage? secureStorage,
   }) : _database = database ?? AppDatabase.instance,
-       _storage = secureStorage ?? const FlutterSecureStorage();
+       _storage = secureStorage ?? SecureStorageFactory.instance;
 
   final AppDatabase _database;
   final FlutterSecureStorage _storage;

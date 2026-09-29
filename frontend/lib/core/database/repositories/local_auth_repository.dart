@@ -2,6 +2,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../features/auth/models/user_model.dart';
+import '../../security/local_credential_hasher.dart';
+import '../../security/secure_storage_factory.dart';
 import '../app_database.dart';
 
 /// Repository for local authentication against the SQLite database.
@@ -13,7 +15,7 @@ class LocalAuthRepository {
     AppDatabase? database,
     FlutterSecureStorage? secureStorage,
   })  : _database = database ?? AppDatabase.instance,
-        _storage = secureStorage ?? const FlutterSecureStorage();
+        _storage = secureStorage ?? SecureStorageFactory.instance;
 
   final AppDatabase _database;
   final FlutterSecureStorage _storage;
@@ -61,6 +63,10 @@ class LocalAuthRepository {
   ///
   /// Synchronises the matching `local_users` row so offline browsing and
   /// profiles keep working, then stores the real token pair.
+  ///
+  /// The account was just authenticated against the server, which is where the
+  /// credential is actually authoritative, so [password] is only used to
+  /// refresh the local hash and is never written to the database.
   Future<void> saveRemoteSession({
     required int serverUserId,
     required String username,
@@ -69,7 +75,6 @@ class LocalAuthRepository {
     String lastName = '',
     UserRole role = UserRole.visitor,
     String institution = '',
-    required String password,
     required String accessToken,
     required String refreshToken,
   }) async {
@@ -101,7 +106,10 @@ class LocalAuthRepository {
     } else {
       await db.insert('local_users', {
         'username': username,
-        'password': password,
+        // A server-backed account authenticates with its JWT, so no local
+        // password is set — `password_hash` stays NULL and offline login for
+        // this row is not offered.
+        'password_hash': null,
         ...fields,
       });
     }
@@ -119,6 +127,11 @@ class LocalAuthRepository {
   // ── Authentication ──
 
   /// Login with username and password against the local `local_users` table.
+  ///
+  /// The row is fetched by username alone and the password is checked against
+  /// the stored PBKDF2 hash, so the secret is never used as a `WHERE` value —
+  /// which would both put it in the query log and make verification a plain
+  /// string compare.
   Future<UserModel> login({
     required String username,
     required String password,
@@ -126,8 +139,8 @@ class LocalAuthRepository {
     final db = await _db;
     final rows = await db.query(
       'local_users',
-      where: 'username = ? AND password = ?',
-      whereArgs: [username, password],
+      where: 'username = ?',
+      whereArgs: [username],
       limit: 1,
     );
 
@@ -136,6 +149,12 @@ class LocalAuthRepository {
     }
 
     final row = rows.first;
+    if (!LocalCredentialHasher.verify(password, row['password_hash'] as String?)) {
+      // Covers a wrong password, an account that exists only on the server
+      // (no local hash), and a row whose hash failed to parse.
+      throw Exception('Invalid username or password');
+    }
+
     final userId = row['id'] as int;
     await _saveSyntheticTokens(userId);
 
@@ -166,7 +185,7 @@ class LocalAuthRepository {
     final id = await db.insert('local_users', {
       'username': username,
       'email': email,
-      'password': password,
+      'password_hash': LocalCredentialHasher.hash(password),
       'first_name': firstName ?? '',
       'last_name': lastName ?? '',
       'role': role.value,
@@ -229,12 +248,10 @@ class LocalAuthRepository {
     final userIdStr = await _storage.read(key: _keyCurrentUserId);
     if (userIdStr == null) throw Exception('No authenticated user');
 
-    final db = await _db;
-    await db.delete(
-      'local_users',
-      where: 'id = ?',
-      whereArgs: [int.parse(userIdStr)],
-    );
+    // A deleted account must leave as little behind as a signed-out one: the
+    // old path removed only the `local_users` row and left gamification, quiz
+    // attempts, pending registrations and queued requests on the device.
+    await _database.wipeUserScopedData();
     await clearTokens();
   }
 

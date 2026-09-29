@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
@@ -12,11 +11,20 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'app.dart';
 import 'core/constants/app_constants.dart';
+import 'core/debug/debug_log.dart';
 import 'core/navigation/app_router.dart';
 import 'core/offline/offline_error_buffer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Fail fast on a misconfigured release build rather than at the first
+  // request. A release compiled without `--dart-define=API_BASE_URL=https://…`
+  // keeps the emulator loopback default; Android blocks that at the network
+  // layer and iOS blocks it via ATS, so either way the app would ship with no
+  // working API origin. Throwing here makes the mistake a build-time failure
+  // instead of a support ticket.
+  AppConstants.assertCleartextBaseUrlIsSafe();
 
   // Phase 9 — Web offline support. On the web the sqflite plugin has no
   // native implementation, so swap in the sqflite_common_ffi_web factory,
@@ -74,7 +82,7 @@ Future<void> _initDeepLinks() async {
   appLinks.uriLinkStream.listen(
     _handleDeepLink,
     onError: (Object e) {
-      developer.log('Deep link stream error: $e', name: 'DeepLink');
+      debugLog('Deep link stream error: $e');
     },
   );
 
@@ -83,7 +91,7 @@ Future<void> _initDeepLinks() async {
     final initial = await appLinks.getInitialLink();
     if (initial != null) _handleDeepLink(initial);
   } catch (e) {
-    developer.log('Failed to get initial link: $e', name: 'DeepLink');
+    debugLog('Failed to get initial link: $e');
   }
 }
 
@@ -96,6 +104,12 @@ Future<void> _initDeepLinks() async {
 /// - https://griot-ai.org/qr/{slug} — the link printed on museum QR labels
 /// - https://griot-ai.org/stories?region={slug} — opens a region
 void _handleDeepLink(Uri uri) {
-  developer.log('Deep link received: $uri', name: 'DeepLink');
+  // `developer.log` is not stripped from release builds the way `debugLog` is.
+  // A deep link is attacker-supplied — any app or web page can fire one at this
+  // app — so logging the raw URI shipped user-controlled text straight into
+  // release device logs, which are readable by anyone with file access and are
+  // frequently attached to bug reports. Nothing actionable in the URI is lost:
+  // `AppRouter.handle` still parses it, and debug builds still log it.
+  debugLog('Deep link received: $uri');
   AppRouter.handle(uri);
 }

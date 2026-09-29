@@ -4,10 +4,21 @@ Management command to create the platform admin and demo users.
 Usage:
     python manage.py seed_users
     python manage.py seed_users --password 'change-me'
+
+The fallback password is published in this repository, so the command refuses
+to run anywhere except a developer machine unless an explicit password is
+supplied. See config.safety for the exact rule.
 """
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
+from config.safety import (
+    INSECURE_DEFAULT_PASSWORD,
+    assert_safe_environment,
+    is_production,
+    require_explicit_password,
+)
 
 User = get_user_model()
 
@@ -23,13 +34,38 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        password = options['password'] or 'demo12345'
-        if not options['password']:
-            self.stdout.write(
-                self.style.WARNING(
-                    'Using the default demo password (demo12345) - pass '
-                    '--password to set a secure one. Only for local dev!')
-            )
+        assert_safe_environment(
+            'seed_users',
+            reason=(
+                'it creates an is_superuser admin account with a password '
+                'that is public in this repository.'
+            ),
+        )
+
+        password = options['password']
+        if not password:
+            if is_production():
+                # `assert_safe_environment` already let us through, so this
+                # is the deliberate override path. The demo password is still
+                # refused: opting in to the command is not opting in to a
+                # published credential.
+                password = require_explicit_password('seed_users', password)
+                self.stdout.write(
+                    self.style.WARNING(
+                        'Seeding a hosted database. Rotate every seeded '
+                        'password before traffic reaches it.'
+                    )
+                )
+            else:
+                password = INSECURE_DEFAULT_PASSWORD
+                self.stdout.write(
+                    self.style.WARNING(
+                        f'Using the default demo password ({INSECURE_DEFAULT_PASSWORD}) '
+                        f'- pass --password to set a secure one. Only for local dev!'
+                    )
+                )
+        elif password == INSECURE_DEFAULT_PASSWORD and is_production():
+            require_explicit_password('seed_users', password)
 
         users = {
             'admin': {

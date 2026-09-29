@@ -50,6 +50,10 @@ flutter config --no-analytics --no-version-check --enable-web
 log_info "Building Flutter web (API_BASE_URL=$API_BASE_URL)"
 cd "$REPO_ROOT/frontend"
 flutter pub get
-flutter build web --release --dart-define="API_BASE_URL=$API_BASE_URL"
+# RELEASE_BUILD=true arms AppConstants.assertCleartextBaseUrlIsSafe(), so a
+# cleartext origin fails the build instead of shipping.
+flutter build web --release \
+  --dart-define="API_BASE_URL=$API_BASE_URL" \
+  --dart-define=RELEASE_BUILD=true
 
 log_info "Flutter web build complete"

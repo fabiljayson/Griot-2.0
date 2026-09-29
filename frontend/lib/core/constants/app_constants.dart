@@ -16,10 +16,30 @@ abstract final class AppConstants {
   ///
   /// Override at build/run time:
   ///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
+  ///
+  /// ## Shipping a release build
+  ///
+  /// The compiled-in default is `http://10.0.2.2:8000`, a loopback address
+  /// that is unreachable outside an emulator. A release build must therefore
+  /// pass the real origin:
+  ///
+  ///   flutter build apk --release \
+  ///     --dart-define=API_BASE_URL=https://api.example.org \
+  ///     --dart-define=RELEASE_BUILD=true
+  ///
+  /// `RELEASE_BUILD` additionally refuses to start on a cleartext origin.
+  /// [assertCleartextBaseUrlIsSafe] is the enforcement point, and
+  /// `assertProductionConfiguration` in `main.dart` calls it at startup. Do not
+  /// ship a build without it: iOS has no ATS exception for this host, so a
+  /// cleartext default is blocked by the platform and a release build reaches
+  /// the network with no working URL.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: _defaultApiBaseUrl,
   );
+
+  /// Whether this build was compiled with `--dart-define=RELEASE_BUILD=true`.
+  static const bool isReleaseBuild = bool.fromEnvironment('RELEASE_BUILD');
 
   /// Effective base URL.
   ///
@@ -28,6 +48,32 @@ abstract final class AppConstants {
   /// compiled in via --dart-define.
   static String get effectiveBaseUrl =>
       kIsWeb && apiBaseUrl == _defaultApiBaseUrl ? _webApiBaseUrl : apiBaseUrl;
+
+  /// True when [url] is a cleartext origin.
+  static bool isCleartextUrl(String url) {
+    final uri = Uri.tryParse(url);
+    return uri != null && uri.scheme == 'http';
+  }
+
+  /// Fail fast when a release build is configured to talk to a cleartext API.
+  ///
+  /// Android fails closed on its own — `network_security_config.xml` already
+  /// rejects cleartext — but iOS has no equivalent exception, so on that
+  /// platform this is the only signal that the build is misconfigured. It also
+  /// catches the case where a release build was compiled without
+  /// `API_BASE_URL` and is about to run against the emulator loopback.
+  static void assertCleartextBaseUrlIsSafe() {
+    if (!isReleaseBuild) return;
+    final url = effectiveBaseUrl;
+    if (isCleartextUrl(url)) {
+      throw StateError(
+        'Refusing to start: release build compiled with a cleartext API base '
+        'URL ($url). Rebuild with '
+        '--dart-define=API_BASE_URL=https://<origin> '
+        '--dart-define=RELEASE_BUILD=true',
+      );
+    }
+  }
 
   /// Django `MEDIA_URL`.
   static const String mediaPath = '/media/';
@@ -84,13 +130,37 @@ abstract final class AppConstants {
   /// v6 added the cover-image backfill for seeded stories.
   /// v7 repairs installs that were created without the `local_*` content
   /// schema and links seeded quizzes to their story.
-  static const int databaseVersion = 7;
+  static const int databaseVersion = 8;
 
   /// Developer shown in the WhatsApp feedback prefilled draft.
   static const String developerName = 'Fabil Jayson';
 
   /// Public WhatsApp number the feedback deep link opens.
-  static const String feedbackWhatsAppNumber = '237692996791';
+  ///
+  /// Injectable at build time so the value is not welded into the source and a
+  /// future maintainer does not have to edit and rebuild a release to point
+  /// feedback at a different address:
+  ///
+  ///   flutter build apk --dart-define=FEEDBACK_WHATSAPP_NUMBER=237692996791
+  ///
+  /// The default is the current public number. This is contact information, not
+  /// a secret — it is validated for shape by [isValidWhatsAppNumber] before it
+  /// reaches a URL, because the value is interpolated straight into a
+  /// `wa.me` link and an unvalidated string containing `?`, `#` or `/` would
+  /// change the URL's structure rather than its path.
+  static const String feedbackWhatsAppNumber = String.fromEnvironment(
+    'FEEDBACK_WHATSAPP_NUMBER',
+    defaultValue: '237692996791',
+  );
+
+  /// True when [number] is a plausible E.164 WhatsApp number.
+  static bool isValidWhatsAppNumber(String number) {
+    final trimmed = number.trim();
+    // E.164: a leading '+' is optional in practice, then 8–15 digits. No
+    // spaces, separators or other punctuation, which is what would let a
+    // malformed value rewrite the surrounding URL.
+    return RegExp(r'^\+?\d{8,15}$').hasMatch(trimmed);
+  }
 
   /// Message pre-filled in WhatsApp when feedback is requested.
   ///

@@ -53,7 +53,6 @@ void _stubSaveRemoteSession(_MockLocal local) {
       lastName: 'Kuma',
       role: UserRole.contributor,
       institution: '',
-      password: 'secret123',
       accessToken: 'eyJ.access.1',
       refreshToken: 'eyJ.refresh.1',
     ),
@@ -98,7 +97,6 @@ void main() {
             lastName: 'Kuma',
             role: UserRole.contributor,
             institution: '',
-            password: 'secret123',
             accessToken: 'eyJ.access.1',
             refreshToken: 'eyJ.refresh.1',
           ),
@@ -126,8 +124,7 @@ void main() {
         () async {
       when(() => server.login(username: 'nova', password: 'wrong'))
           .thenThrow(_dio(statusCode: 401));
-      when(() => local.login(username: 'nova', password: 'wrong'))
-          .thenThrow(Exception('Invalid username or password'));
+      when(() => local.clearTokens()).thenAnswer((_) async {});
 
       expect(
         () => repo.login(username: 'nova', password: 'wrong'),
@@ -135,18 +132,36 @@ void main() {
       );
     });
 
-    test('should keep working on 401 when a matching local account exists',
-        () async {
+    test(
+        'a 401 must not be rescued by a matching local account, so a revoked '
+        'server account cannot keep signing in on a cached device', () async {
       when(() => server.login(username: 'nova', password: 'pass'))
           .thenThrow(_dio(statusCode: 401));
       when(() => local.login(username: 'nova', password: 'pass'))
           .thenAnswer((_) async => const UserModel(id: 5, username: 'nova'));
-      when(() => local.accessToken).thenAnswer((_) async => 'local_token_5');
-      when(() => local.refreshToken).thenAnswer((_) async => 'local_refresh_5');
+      when(() => local.clearTokens()).thenAnswer((_) async {});
 
-      final tokens = await repo.login(username: 'nova', password: 'pass');
+      await expectLater(
+        repo.login(username: 'nova', password: 'pass'),
+        throwsA(isA<InvalidCredentialsException>()),
+      );
 
-      expect(tokens.accessToken, 'local_token_5');
+      // The local credential is never consulted, so a cached offline account
+      // cannot override the server's refusal.
+      verifyNever(() => local.login(username: 'nova', password: 'pass'));
+    });
+
+    test('a 401 clears any cached session for the rejected user', () async {
+      when(() => server.login(username: 'nova', password: 'pass'))
+          .thenThrow(_dio(statusCode: 401));
+      when(() => local.clearTokens()).thenAnswer((_) async {});
+
+      await expectLater(
+        repo.login(username: 'nova', password: 'pass'),
+        throwsA(isA<InvalidCredentialsException>()),
+      );
+
+      verify(() => local.clearTokens()).called(1);
     });
   });
 
@@ -186,7 +201,6 @@ void main() {
           lastName: 'Kuma',
           role: UserRole.contributor,
           institution: '',
-          password: 'secret123',
           accessToken: _realTokens.accessToken,
           refreshToken: _realTokens.refreshToken,
         ),

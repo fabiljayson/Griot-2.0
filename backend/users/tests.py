@@ -122,6 +122,128 @@ class RegisterTests(CacheIsolatedTestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+class RegistrationDoesNotLeakPII(CacheIsolatedTestCase):
+    """The registration endpoint must not become a directory lookup.
+
+    `RegisterView` re-resolves an existing account on an exact replay, which
+    means a request carrying a known email can hit a branch that serializes that
+    account. The branch is gated on the correct username *and* password, so the
+    response is only ever available to someone who already holds the credential
+    — but the gate is the whole control, and a regression here would republish
+    first name, last name, role, institution and join date to an anonymous
+    caller who guessed an address. These tests pin the gate shut.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.victim = User.objects.create_user(
+            'victim',
+            email='victim@example.com',
+            password='hunter2secure',
+            first_name='Amara',
+            last_name='Okonkwo',
+        )
+        self.victim.institution = 'Museum of the Delta'
+        self.victim.save()
+
+    def _assert_no_pii(self, payload):
+        resp = self.client.post(REGISTER_URL, payload)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        body = json.dumps(resp.data)
+        for leak in ('Amara', 'Okonkwo', 'Museum of the Delta', 'date_joined'):
+            self.assertNotIn(leak, body)
+
+    def test_known_email_with_wrong_password_leaks_nothing(self):
+        self._assert_no_pii({
+            'username': 'victim',
+            'email': 'victim@example.com',
+            'password': 'guessing',
+        })
+
+    def test_known_email_with_known_username_but_wrong_password_leaks_nothing(self):
+        # The closest an attacker gets: the username is public, the password is
+        # not. This is the case that must still return nothing.
+        self._assert_no_pii({
+            'username': 'victim',
+            'email': 'victim@example.com',
+            'password': 'hunter2secureX',
+        })
+
+    def test_known_email_with_a_different_username_leaks_nothing(self):
+        self._assert_no_pii({
+            'username': 'attacker',
+            'email': 'victim@example.com',
+            'password': 'hunter2secure',
+        })
+
+
+class RegistrationRejectsMalformedEmailWithoutCrashing(CacheIsolatedTestCase):
+    """A non-string `email` must be a 400, not a 500.
+
+    The view used to run its replay lookup on raw `request.data` before calling
+    `is_valid()`, and the lookup normalizes with `.strip()`. A JSON body
+    carrying `email` as a list or a number therefore reached `.strip()` as a
+    list/int and raised AttributeError — an unauthenticated 500 that also skips
+    the serializer's own field validation entirely.
+    """
+
+    def _post_json(self, payload):
+        return self.client.post(
+            REGISTER_URL,
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+
+    def test_email_as_list_is_rejected_cleanly(self):
+        resp = self._post_json({
+            'username': 'listy',
+            'email': ['a@example.com', 'b@example.com'],
+            'password': 'hunter2secure',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', resp.data)
+        self.assertFalse(User.objects.filter(username='listy').exists())
+
+    def test_email_as_number_is_rejected_cleanly(self):
+        resp = self._post_json({
+            'username': 'numeric',
+            'email': 5,
+            'password': 'hunter2secure',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', resp.data)
+        self.assertFalse(User.objects.filter(username='numeric').exists())
+
+    def test_malformed_email_does_not_bypass_password_policy(self):
+        """A body that fails email validation must not create an account."""
+        resp = self._post_json({
+            'username': 'sneaky',
+            'email': ['a@example.com'],
+            'password': 'short',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.filter(username='sneaky').exists())
+
+    def test_replay_path_still_works_after_validation_reorder(self):
+        """Idempotent replay must survive validating first.
+
+        The credential in the replay body is validated (min length 8) exactly as
+        in a fresh registration, so reordering the checks cannot have made a
+        legitimate replay start failing.
+        """
+        payload = {
+            'username': 'reorder',
+            'email': 'reorder@example.com',
+            'password': 'hunter2secure',
+        }
+        first = self.client.post(REGISTER_URL, payload)
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+
+        replay = self.client.post(REGISTER_URL, payload)
+        self.assertEqual(replay.status_code, status.HTTP_200_OK)
+        self.assertEqual(replay.data['user']['id'], first.data['user']['id'])
+
+
 class EmailUniquenessTests(CacheIsolatedTestCase):
     """The database, not just the serializer, must reject a duplicate email.
 

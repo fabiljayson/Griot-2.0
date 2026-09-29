@@ -2,12 +2,17 @@
 ///
 /// This allows users to create accounts without internet connectivity.
 /// The registration is stored locally and synced to the server when online.
+///
+/// Carries no password. Replaying a queued registration does need the
+/// plaintext, but it is held in platform secure storage keyed by [id] and read
+/// back on demand — see `OfflineUserRepository.readPendingPassword`. Keeping it
+/// on this row would put the credential in the SQLite file, where a rooted
+/// device or an `adb backup` pull could recover it.
 class OfflineUser {
   const OfflineUser({
     this.id,
     required this.username,
     required this.email,
-    required this.password,
     this.firstName = '',
     this.lastName = '',
     this.role = 'visitor',
@@ -21,7 +26,6 @@ class OfflineUser {
   final int? id;
   final String username;
   final String email;
-  final String password;
   final String firstName;
   final String lastName;
   final String role;
@@ -35,7 +39,6 @@ class OfflineUser {
         if (id != null) 'id': id,
         'username': username,
         'email': email,
-        'password': password,
         'first_name': firstName,
         'last_name': lastName,
         'role': role,
@@ -50,7 +53,6 @@ class OfflineUser {
         id: map['id'] as int?,
         username: map['username'] as String,
         email: map['email'] as String,
-        password: map['password'] as String,
         firstName: map['first_name'] as String? ?? '',
         lastName: map['last_name'] as String? ?? '',
         role: map['role'] as String? ?? 'visitor',
@@ -67,7 +69,6 @@ class OfflineUser {
     int? id,
     String? username,
     String? email,
-    String? password,
     String? firstName,
     String? lastName,
     String? role,
@@ -81,7 +82,6 @@ class OfflineUser {
         id: id ?? this.id,
         username: username ?? this.username,
         email: email ?? this.email,
-        password: password ?? this.password,
         firstName: firstName ?? this.firstName,
         lastName: lastName ?? this.lastName,
         role: role ?? this.role,

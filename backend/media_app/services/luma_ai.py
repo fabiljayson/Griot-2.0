@@ -82,6 +82,11 @@ class LiveLumaAIService(LumaAIService):
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
         })
+        # A hung socket on the Luma API must not pin a worker forever. The cap
+        # is conservative for the short "generate 5s video" calls and generous
+        # for the polling GETs; it keeps the system from going out to lunch if
+        # the network stalls. In tests the mock service is used.
+        self._session.timeout = (10, 30)  # (connect, read)
 
     def submit_video_generation(
         self,
@@ -97,7 +102,17 @@ class LiveLumaAIService(LumaAIService):
         if image_url:
             payload['image_url'] = image_url
 
-        resp = self._session.post(f'{LUMA_API_BASE}/generations', json=payload)
+        try:
+            resp = self._session.post(f'{LUMA_API_BASE}/generations', json=payload)
+        except http_requests.RequestException as exc:
+            # A timeout, DNS failure or reset is an upstream failure, not a bug
+            # in this project. Left unhandled it surfaces as a 500 from the
+            # view, which tells the caller nothing and hides the real cause;
+            # translated here the view can record the job as failed and answer
+            # 502 the way it already does for an HTTP error from Luma.
+            logger.warning('Luma AI submit transport error: %s', exc)
+            raise LumaAIError(f'Could not reach Luma AI: {exc}') from exc
+
         if resp.status_code >= 400:
             logger.error('Luma AI submit failed: %s %s', resp.status_code, resp.text)
             raise LumaAIError(f'Luma AI returned {resp.status_code}: {resp.text}')
@@ -110,7 +125,21 @@ class LiveLumaAIService(LumaAIService):
         }
 
     def get_job_status(self, job_id: str) -> dict:
-        resp = self._session.get(f'{LUMA_API_BASE}/generations/{job_id}')
+        # The polling view calls this on every status refresh. A transport
+        # error here must degrade to a still-pending job rather than a 500:
+        # the render is still running on Luma's side, and failing the request
+        # would both break the client's poll loop and lose the progress already
+        # recorded. `status` is deliberately left as 'in_progress' so the view
+        # takes its existing non-terminal branch.
+        try:
+            resp = self._session.get(f'{LUMA_API_BASE}/generations/{job_id}')
+        except http_requests.RequestException as exc:
+            logger.warning('Luma AI status transport error: %s', exc)
+            return {
+                'error': f'Could not reach Luma AI: {exc}',
+                'status': 'in_progress',
+            }
+
         if resp.status_code == 404:
             return {'error': 'Job not found', 'status': 'unknown'}
         if resp.status_code >= 400:
@@ -144,7 +173,12 @@ class LiveLumaAIService(LumaAIService):
         return result
 
     def cancel_job(self, job_id: str) -> dict:
-        resp = self._session.delete(f'{LUMA_API_BASE}/generations/{job_id}')
+        try:
+            resp = self._session.delete(f'{LUMA_API_BASE}/generations/{job_id}')
+        except http_requests.RequestException as exc:
+            logger.warning('Luma AI cancel transport error: %s', exc)
+            return {'error': f'Could not reach Luma AI: {exc}'}
+
         if resp.status_code >= 400:
             return {'error': f'Cancel failed: {resp.status_code}'}
         return {'id': job_id, 'status': 'cancelled', 'message': 'Job cancelled'}

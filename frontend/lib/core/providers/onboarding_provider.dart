@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../security/secure_storage_factory.dart';
 
 /// Provider to check and manage onboarding completion status.
 ///
@@ -20,7 +20,7 @@ class OnboardingNotifier extends StateNotifier<bool?> {
   OnboardingNotifier({bool? initialCompleted}) : super(initialCompleted);
 
   static const _key = 'onboarding_completed';
-  final _storage = const FlutterSecureStorage();
+  final _storage = SecureStorageFactory.instance;
 
   /// Check if onboarding has been completed.
   Future<void> checkStatus() async {

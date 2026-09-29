@@ -1,5 +1,7 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../security/secure_storage_factory.dart';
 import '../app_database.dart';
 import '../models/offline_user.dart';
 
@@ -7,15 +9,33 @@ import '../models/offline_user.dart';
 ///
 /// Manages user registrations that were created offline and need to be
 /// synced to the server when connectivity is restored.
+///
+/// A queued registration still has to hand its plaintext password to the
+/// server on replay, so that value is kept in platform secure storage
+/// (Keychain / Keystore) under a key derived from the row id. The SQLite row
+/// holds only non-secret metadata. Deleting the row without clearing the secure
+/// key would strand a credential that nothing references, so
+/// [markSynced], [markFailed] and [clearAll] all remove it.
 class OfflineUserRepository {
-  OfflineUserRepository({AppDatabase? database})
-      : _database = database ?? AppDatabase.instance;
+  OfflineUserRepository({
+    AppDatabase? database,
+    FlutterSecureStorage? secureStorage,
+  })  : _database = database ?? AppDatabase.instance,
+        _storage = secureStorage ?? SecureStorageFactory.instance;
 
   final AppDatabase _database;
+  final FlutterSecureStorage _storage;
+
+  static const _passwordKeyPrefix = 'pending_registration_password_';
+
+  String _passwordKey(int userId) => '$_passwordKeyPrefix$userId';
 
   Future<Database> get _db async => _database.database;
 
   /// Save a new offline user registration.
+  ///
+  /// [password] is written to secure storage under the new row's id and is not
+  /// stored in the database.
   Future<OfflineUser> saveUser({
     required String username,
     required String email,
@@ -29,7 +49,6 @@ class OfflineUserRepository {
     final user = OfflineUser(
       username: username,
       email: email,
-      password: password,
       firstName: firstName,
       lastName: lastName,
       role: role,
@@ -43,8 +62,19 @@ class OfflineUserRepository {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
+    await _storage.write(key: _passwordKey(id), value: password);
+
     return user.copyWith(id: id);
   }
+
+  /// The plaintext password for a queued registration, or null if it is gone.
+  ///
+  /// Null means the registration cannot be replayed — the row may predate the
+  /// v8 migration that moved secrets out of the database, or the secure entry
+  /// may have been cleared. Callers should surface that to the user instead of
+  /// sending an empty password to the server.
+  Future<String?> readPendingPassword(int userId) =>
+      _storage.read(key: _passwordKey(userId));
 
   /// Get all pending user registrations.
   ///
@@ -110,6 +140,9 @@ class OfflineUserRepository {
   }
 
   /// Mark a user as synced with the server user ID.
+  ///
+  /// The registration is now redundant, so its stored password is dropped —
+  /// the account exists on the server with its own hashed copy.
   Future<void> markSynced(int userId, int serverUserId) async {
     final db = await _db;
     await db.update(
@@ -121,9 +154,14 @@ class OfflineUserRepository {
       where: 'id = ?',
       whereArgs: [userId],
     );
+    await _storage.delete(key: _passwordKey(userId));
   }
 
   /// Mark a user as failed with an error message.
+  ///
+  /// The password is kept so a transient failure can still be retried, but only
+  /// while the failure is one the sync loop will retry. Callers that consider
+  /// the registration unrecoverable should delete the row, which drops it.
   Future<void> markFailed(int userId, String errorMessage) async {
     final db = await _db;
     await db.update(
@@ -165,8 +203,15 @@ class OfflineUserRepository {
   }
 
   /// Clear all offline users (for logout or manual sync reset).
+  ///
+  /// Also removes every stored pending password, since the rows that referenced
+  /// them are gone.
   Future<void> clearAll() async {
     final db = await _db;
+    final rows = await db.query('offline_users', columns: ['id']);
+    for (final row in rows) {
+      await _storage.delete(key: _passwordKey(row['id'] as int));
+    }
     await db.delete('offline_users');
   }
 }

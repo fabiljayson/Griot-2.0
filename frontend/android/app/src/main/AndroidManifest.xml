@@ -8,7 +8,14 @@
         android:label="Griot AI"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- allowBackup above keeps this app's data out of Google backup and
+             off other devices. dataExtractionRules is listed as well because
+             some OEM builds honour device-to-device transfer even when
+             allowBackup is false; see res/xml/data_extraction_rules.xml for
+             what is being kept out and why. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

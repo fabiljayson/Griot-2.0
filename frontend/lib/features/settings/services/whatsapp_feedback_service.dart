@@ -24,11 +24,25 @@ abstract final class WhatsAppFeedbackService {
       );
 
   /// Opens WhatsApp with [message] pre-filled for [number].
+  ///
+  /// [number] is validated before it is placed in the URL. The value is
+  /// interpolated into a `wa.me` link, so a string containing `?`, `#` or `/`
+  /// would silently rewrite the URL's structure — turning a mistyped build
+  /// constant into a request to a different host or path. Rejecting it here is
+  /// cheaper than debugging that.
   static Future<bool> openFeedback({
     required String number,
     required String message,
   }) async {
-    final uri = Uri.parse(composeUrl(number: number, message: message));
+    if (!AppConstants.isValidWhatsAppNumber(number)) {
+      debugLog(
+        '[WhatsAppFeedbackService] refusing to open feedback: '
+        '"$number" is not a valid E.164 number',
+      );
+      return false;
+    }
+
+    final uri = Uri.parse(composeUrl(number: number.trim(), message: message));
     try {
       return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {

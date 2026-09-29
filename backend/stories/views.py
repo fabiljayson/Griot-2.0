@@ -5,6 +5,8 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from config.client_ip import get_client_ip
+
 from .models import (
     ReadingProgress,
     Story,
@@ -169,8 +171,17 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        # Increment view count
-        Story.objects.filter(pk=instance.pk).update(view_count=instance.view_count + 1)
+        # Increment the view count with an F() expression so the read and the
+        # write happen in one statement inside the database. The previous form
+        # (`view_count=instance.view_count + 1`) read the value in Python and
+        # wrote it back, so two concurrent readers of the same story both read
+        # N and both wrote N+1 — one view was silently lost every time, and a
+        # deliberate burst of parallel requests could pin the count arbitrarily
+        # low. `refresh_from_db` then picks up whatever the atomic update
+        # actually committed.
+        Story.objects.filter(pk=instance.pk).update(
+            view_count=F('view_count') + 1
+        )
         instance.refresh_from_db()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -462,10 +473,7 @@ class StoryViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def _get_client_ip(self, request):
-        x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded:
-            return x_forwarded.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR')
+        return get_client_ip(request)
 
 
 # ---------------------------------------------------------------------------

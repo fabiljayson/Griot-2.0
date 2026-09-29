@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nothing this app stores on the device should leave it, and none of it is
+  worth restoring somewhere else: accounts live on the server, and the local
+  SQLite file is a cache plus an outbound request queue that the app rebuilds
+  by resyncing.
+
+  Two specific reasons this is off rather than "encrypted and therefore fine":
+
+  1. The offline request queue and the local user rows are plain SQLite. A
+     backup taken by an older build can still contain a plaintext password
+     column, and that backup file sits in the user's cloud account where the
+     app can no longer protect it. The v8 migration scrubs the column on the
+     device; it cannot reach copies already uploaded.
+
+  2. flutter_secure_storage keeps its values encrypted under an RSA key held
+     in the device's Android Keystore, which is never uploaded. So a restored
+     copy carries ciphertext the new device cannot decrypt. That is not a leak,
+     but it is a restore that silently fails to restore the session, which is
+     worse for the reader than not restoring at all.
+
+  Excluding every domain also covers future additions: anything written under
+  the app's data directory is off limits by default, rather than relying on
+  this list staying in step with new features.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

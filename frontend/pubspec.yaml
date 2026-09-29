@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  crypto: ^3.0.7
   flutter_riverpod: ^2.6.1
   dio: ^5.11.0
   dio_smart_retry: ^7.0.1

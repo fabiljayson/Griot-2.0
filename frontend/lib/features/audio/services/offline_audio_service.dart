@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../../../core/network/http_utils.dart';
+import '../../../core/network/media_downloader.dart';
 import '../../../core/debug/debug_log.dart';
 
 /// Service for playing audio files offline.
@@ -73,8 +73,14 @@ class OfflineAudioService {
   Future<String> _cacheAudioFile(String url) async {
     try {
       final cacheDir = await _cacheDirectory;
-      final fileName = 'audio_${url.hashCode}.mp3';
-      final filePath = '${cacheDir.path}/$fileName';
+      // SHA-256 of the URL, not `url.hashCode`: Dart's String hashCode is not
+      // stable across runs and collides, which let two different stories share
+      // one cached file and play each other's narration.
+      final filePath = MediaDownloader.resolveCachePath(
+        cacheDir.path,
+        url,
+        extension: 'mp3',
+      );
 
       // Check if already cached
       final file = File(filePath);
@@ -83,12 +89,8 @@ class OfflineAudioService {
         return filePath;
       }
 
-      // Download the file
-      final httpClient = HttpClient();
-      final request = await httpClient.getUrl(Uri.parse(url));
-      final response = await request.close();
-      final bytes = await consolidateHttpClientResponseBytes(response);
-      await file.writeAsBytes(bytes);
+      // Bounded, timed, HTTPS-only, API-host-only, streamed to disk.
+      await MediaDownloader.download(url, file);
 
       _cachedFiles[url] = filePath;
       return filePath;

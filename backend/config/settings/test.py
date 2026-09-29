@@ -23,6 +23,10 @@ REST_FRAMEWORK = {  # noqa: F405
         'anon': '10000/min',
         'user': '10000/min',
         'auth': '10000/min',
+        # Must exist even at 10000/min: DRF resolves the rate for every scope a
+        # view declares, and an unlisted scope is an ImproperlyConfigured at
+        # request time rather than a skipped throttle.
+        'metrics': '10000/min',
     },
 }
 

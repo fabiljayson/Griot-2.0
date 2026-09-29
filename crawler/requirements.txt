@@ -1,4 +1,8 @@
-requests>=2.31.0
+# Floors, not pins. Every one of these was raised past a version with a known
+# advisory, so an install that satisfies them is not sitting on a CVE:
+#   requests  >=2.33.0  CVE-2026-25645 (extract_zipped_paths)
+#   lxml      >=6.0.0   floor sat below the current major
+requests>=2.33.0
 beautifulsoup4>=4.12.0
 httpx>=0.25.0
-lxml>=5.0.0
+lxml>=6.0.0

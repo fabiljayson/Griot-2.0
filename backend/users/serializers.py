@@ -63,13 +63,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def normalize_email(value) -> str:
-        return (value or '').strip().lower()
+        if not isinstance(value, str):
+            return ''
+        return value.strip().lower()
 
     def find_by_email(self, email):
         """Return the account already holding this email, or None.
 
         Email is not unique at the database level, so the match is
-        case-insensitive on the normalized value.
+        case-insensitive on the normalized value. A non-string input is treated
+        as "no address" rather than normalized, so a caller that reaches here
+        before validation cannot turn a malformed body into an exception.
         """
         email = self.normalize_email(email)
         if not email:

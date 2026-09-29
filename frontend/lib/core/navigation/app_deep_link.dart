@@ -27,6 +27,27 @@ class AppDeepLink {
   /// Query string values, when the link carried any (e.g. `region`).
   static const String regionQueryKey = 'region';
 
+  /// Longest slug accepted, matching the backend's `SlugField(max_length=250)`.
+  ///
+  /// A deep link is attacker-supplied: any installed app or any web page can
+  /// fire one at this app. The slug is then used as a route argument and sent
+  /// to the API, so an unbounded or control-character-laden value is worth
+  /// refusing at the door rather than passing along.
+  static const int maxSlugLength = 250;
+
+  /// Whether [slug] is shaped like a slug the backend could have produced.
+  ///
+  /// Django's `SlugField` allows Unicode letters and numbers plus `-` and `_`.
+  /// Anything else — spaces, `/`, `..`, quotes, control characters, newlines —
+  /// is rejected here so a link cannot smuggle a path or log-injection payload
+  /// through the slug argument.
+  static bool isValidSlug(String slug) {
+    if (slug.isEmpty || slug.length > maxSlugLength) return false;
+    return _slugPattern.hasMatch(slug);
+  }
+
+  static final RegExp _slugPattern = RegExp(r'^[\p{L}\p{N}_\-]+$', unicode: true);
+
   /// Parse [uri], returning null when it points at nothing the app can open.
   static AppDeepLink? parse(Uri? uri) {
     if (uri == null) return null;
@@ -44,7 +65,7 @@ class AppDeepLink {
     if (segments.isEmpty) {
       final region = uri.queryParameters[regionQueryKey];
       if (region != null && region.isNotEmpty) {
-        return AppDeepLink(kind: DeepLinkKind.region, value: region);
+        return _validOrNull(DeepLinkKind.region, region);
       }
       return null;
     }
@@ -55,7 +76,7 @@ class AppDeepLink {
     if (collection == 'stories') {
       final region = uri.queryParameters[regionQueryKey];
       if (region != null && region.isNotEmpty) {
-        return AppDeepLink(kind: DeepLinkKind.region, value: region);
+        return _validOrNull(DeepLinkKind.region, region);
       }
       return null;
     }
@@ -63,8 +84,14 @@ class AppDeepLink {
     return _fromCollection(collection, rest);
   }
 
+  /// Build a link, or null when [slug] is not a usable slug.
+  static AppDeepLink? _validOrNull(DeepLinkKind kind, String slug) {
+    if (!isValidSlug(slug)) return null;
+    return AppDeepLink(kind: kind, value: slug);
+  }
+
   static AppDeepLink? _fromCollection(String collection, String slug) {
-    if (slug.isEmpty) return null;
+    if (!isValidSlug(slug)) return null;
 
     return switch (collection) {
       'story' || 'stories' => AppDeepLink(

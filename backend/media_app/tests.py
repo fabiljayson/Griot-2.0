@@ -284,6 +284,20 @@ class AudioNarrationTests(APITestCase):
         self.artifact.stories.add(self.story)
         self.client.force_authenticate(self.contributor)
 
+    def _other_story(self, n):
+        """A distinct published story.
+
+        A completed narration is reused across readers keyed on
+        (story, language), so a quota test has to vary the story to make each
+        request reach the generator instead of being served from cache.
+        """
+        return Story.objects.create(
+            title=f'Test Story {n}',
+            content=f'Content for narration quota test {n}.',
+            author=self.contributor,
+            status=Story.Status.PUBLISHED,
+        )
+
     def _mock_tts_service(self):
         """Patch the TTS service so tests never hit the network."""
         service = mock.Mock()
@@ -345,6 +359,101 @@ class AudioNarrationTests(APITestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data['results']), 1)
+
+    @override_settings(AUDIO_NARRATIONS_PER_USER_PER_DAY=2)
+    def test_daily_cap_stops_unbounded_generation(self):
+        """Narration is not billed, but each job calls out to a free third-party
+        endpoint and writes an MP3, so the general API throttle is too loose a
+        only bound."""
+        # Completed narrations are reused across readers keyed on
+        # (story, language), so each request needs its own story to reach the
+        # generator rather than being served from cache.
+        others = [self._other_story(n) for n in range(3)]
+        url = reverse('media:audio-narration-list')
+        with self._mock_tts_service():
+            for story in others[:2]:
+                resp = self.client.post(url, {
+                    'story_id': story.id,
+                    'language': 'en',
+                })
+                self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+            resp = self.client.post(url, {
+                'story_id': others[2].id,
+                'language': 'en',
+            })
+
+        self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertIn('daily audio narration', resp.data['detail'])
+        self.assertEqual(
+            AudioNarrationJob.objects.filter(user=self.contributor).count(), 2
+        )
+
+    @override_settings(AUDIO_NARRATIONS_PER_USER_PER_DAY=0)
+    def test_daily_cap_can_be_disabled(self):
+        url = reverse('media:audio-narration-list')
+        with self._mock_tts_service():
+            for story in [self._other_story(n) for n in range(4)]:
+                resp = self.client.post(url, {
+                    'story_id': story.id,
+                    'language': 'en',
+                })
+                self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+    @override_settings(AUDIO_NARRATIONS_PER_USER_PER_DAY=1)
+    def test_cached_narration_does_not_consume_quota(self):
+        """Replaying an existing narration costs nothing, so it must stay
+        available once the reader has spent their allowance — otherwise a
+        finished story becomes unplayable the next day."""
+        url = reverse('media:audio-narration-list')
+        with self._mock_tts_service():
+            first = self.client.post(url, {
+                'story_id': self.story.id,
+                'language': 'en',
+            })
+            self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+
+            # Allowance now spent; the same request must still be served from
+            # the completed job rather than rejected.
+            replay = self.client.post(url, {
+                'story_id': self.story.id,
+                'language': 'en',
+            })
+
+        self.assertEqual(replay.status_code, status.HTTP_200_OK)
+        self.assertEqual(replay.data['id'], first.data['id'])
+        self.assertEqual(
+            AudioNarrationJob.objects.filter(user=self.contributor).count(), 1
+        )
+
+    @override_settings(AUDIO_NARRATIONS_PER_USER_PER_DAY=1)
+    def test_cap_is_measured_per_user(self):
+        """One account exhausting its allowance must not lock everyone else
+        out of narration."""
+        url = reverse('media:audio-narration-list')
+        mine, theirs = self._other_story(1), self._other_story(2)
+        with self._mock_tts_service():
+            self.client.post(url, {'story_id': mine.id, 'language': 'en'})
+            blocked = self.client.post(url, {
+                'story_id': self._other_story(3).id, 'language': 'en',
+            })
+            self.assertEqual(blocked.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+            other = User.objects.create_user(
+                'narrator2',
+                email='narrator2@example.com',
+                password='hunter2secure',
+                role='contributor',
+            )
+            self.client.force_authenticate(other)
+            allowed = self.client.post(url, {
+                'story_id': theirs.id, 'language': 'en',
+            })
+
+        self.assertEqual(allowed.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            AudioNarrationJob.objects.filter(user=other).count(), 1
+        )
 
 
 class ServiceTests(APITestCase):

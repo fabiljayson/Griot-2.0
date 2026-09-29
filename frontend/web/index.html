@@ -18,6 +18,65 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+
+  <!--
+    Content-Security-Policy.
+
+    The page previously had none, which meant an injected <script> or an
+    attacker-controlled URL had the same standing as the app's own code. On a
+    client-side app that is the difference between "a stored token leaked" and
+    "no token to leak": secure storage on the web keeps its AES key next to the
+    ciphertext in localStorage, so the only thing standing between an XSS and a
+    live session is refusing to execute injected script.
+
+    Directives, and why each is here:
+
+      default-src 'self'        — deny-by-default. Nothing loads unless named.
+      script-src 'self'         — no 'unsafe-inline', no 'unsafe-eval'. This is
+                                   the load-bearing directive: it is what makes
+                                   the splash script external and what stops an
+                                   injected inline handler running.
+      worker-src 'self' blob:   — sqflite_common_ffi_web runs SQLite compiled to
+                                   WASM in a SharedWorker, and the worker is
+                                   created from a blob URL.
+      connect-src               — the API origin, plus 'self'. WebSocket is
+                                   needed because the app falls back to a socket
+                                   when fetch is unavailable. 'unsafe-eval' is
+                                   required by the Dart→JS runtime, which
+                                   materialises the compiled program through
+                                   eval; there is no way to remove it without
+                                   changing the build to WASM.
+      img-src / media-src       — 'self', data: and blob: for locally-created
+                                   story covers and cached narration.
+      object-src 'none'         — no plugins, ever.
+      base-uri 'self'           — blocks <base> hijacking, which would
+                                   otherwise re-point every relative script
+                                   and form target in the page.
+      frame-ancestors 'none'    — clickjacking.
+      form-action 'self'        — a form cannot be posted off-origin.
+      upgrade-insecure-requests— any cleartext subresource is upgraded, so a
+                                   mixed-content fetch cannot silently downgrade.
+
+    Adjust: when the API is served from a specific origin, add it to
+    connect-src explicitly rather than loosening the directive. The 'self'
+    entry covers the common case where the API and the web app share an origin.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: blob:;
+    media-src 'self' data: blob:;
+    font-src 'self' data:;
+    connect-src 'self' ws: wss: blob: data:;
+    worker-src 'self' blob:;
+    manifest-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    frame-ancestors 'none';
+    form-action 'self';
+    upgrade-insecure-requests;
+  ">
   <meta name="description" content="Griot AI — a digital heritage platform for Cameroon's oral traditions.">
   <meta name="theme-color" content="#1E2B58">
 
@@ -211,28 +270,10 @@
   -->
   <script src="flutter_bootstrap.js" async></script>
 
-  <script>
-    // Keep the branded splash on screen for at least 5 seconds, then fade it
-    // away once Flutter has drawn its first frame. A safety timeout guarantees
-    // the page is never hidden behind the splash even if the app stalls.
-    (function () {
-      var MIN_MS = 5000;
-      var FADE_MS = 450;
-      var startedAt = Date.now();
-      var el = document.getElementById('griot-splash');
-      if (!el) return;
-
-      function hide() {
-        var wait = Math.max(0, MIN_MS - (Date.now() - startedAt));
-        setTimeout(function () {
-          el.style.opacity = '0';
-          setTimeout(function () { el.hidden = true; }, FADE_MS);
-        }, wait);
-      }
-
-      window.addEventListener('flutter-first-frame', hide);
-      setTimeout(hide, 20000); // safety: never trap the user
-    })();
-  </script>
+  <!--
+    External rather than inline: the Content-Security-Policy above allows no
+    inline script, so this is what lets `script-src` stay at 'self'.
+  -->
+  <script src="splash.js" defer></script>
 </body>
 </html>
