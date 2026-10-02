@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../network/connectivity_service.dart';
 import '../network/offline_sync_manager.dart';
 import '../providers/database_providers.dart';
+import 'offline_status_banner.dart';
 
 /// Widget that wraps the app to provide offline functionality.
 ///
@@ -33,7 +34,18 @@ class _OfflineProviderState extends ConsumerState<OfflineProvider> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    // This widget exists to "provide offline functionality" — until now it
+    // built nothing: connectivity and the sync manager were initialised and
+    // then the child was returned untouched, so a queued write, a dead
+    // backend and a working offline library were all indistinguishable to the
+    // reader. The banner is what makes the state legible; it renders nothing
+    // at all while everything is healthy.
+    return Column(
+      children: [
+        const OfflineStatusBanner(),
+        Expanded(child: widget.child),
+      ],
+    );
   }
 }
 

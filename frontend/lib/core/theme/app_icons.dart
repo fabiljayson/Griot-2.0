@@ -99,6 +99,9 @@ abstract final class AppIcons {
   static const IconData wifi = Icons.wifi_outlined;
   static const IconData wifi_off = Icons.wifi_off_outlined;
 
+  /// Pending-sync indicator for the offline banner.
+  static const IconData cloud_sync_rounded = Icons.cloud_sync_rounded;
+
   // --- Media playback ---
   static const IconData forward_10 = Icons.forward_10_outlined;
   static const IconData headphones = Icons.headphones_outlined;

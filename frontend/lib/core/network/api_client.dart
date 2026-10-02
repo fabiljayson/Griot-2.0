@@ -1,3 +1,4 @@
+import 'api_reachability.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 
@@ -6,6 +7,15 @@ import '../database/repositories/offline_request_repository.dart';
 import 'auth_interceptor.dart';
 import 'connectivity_service.dart';
 import '../debug/debug_log.dart';
+
+/// Shared [ApiReachability] instance used by every [ApiClient] built without an
+/// explicit one.
+///
+/// Mutable and global on purpose: reachability is a fact about the one backend
+/// this app talks to, not a property of an individual client. Set it once
+/// during startup so the anonymous and authenticated clients agree; tests set
+/// and restore it around the client they construct.
+ApiReachability? apiReachabilityOverride;
 
 /// Shared Dio instance for all API calls.
 ///
@@ -20,6 +30,7 @@ class ApiClient {
     AuthInterceptor? authInterceptor,
     OfflineRequestRepository? offlineRepository,
     ConnectivityService? connectivityService,
+    ApiReachability? reachability,
     String? baseUrl,
   }) {
     dio = Dio(
@@ -33,6 +44,7 @@ class ApiClient {
 
     _offlineRepository = offlineRepository ?? OfflineRequestRepository();
     _connectivityService = connectivityService;
+    _reachability = reachability ?? apiReachabilityOverride ?? ApiReachability();
 
     // Auth interceptor (if provided) — injects Bearer tokens and refreshes.
     if (authInterceptor != null) {
@@ -60,19 +72,33 @@ class ApiClient {
         connectivityService: _connectivityService,
       ),
     );
+
+    // Reachability tracker. Registered last so it observes the final outcome
+    // after retry and offline-queue interception: by the time a request
+    // reaches here it either got a response or genuinely failed to reach the
+    // server. Without this the app has no way to tell "phone is on Wi-Fi" from
+    // "the Render free-tier backend is asleep", which is the normal state of
+    // that deployment for most of the day.
+    dio.interceptors.add(ApiReachabilityInterceptor(_reachability));
   }
 
   static final ApiClient instance = ApiClient._();
 
   /// Create an ApiClient with auth interceptor for authenticated requests.
+  ///
+  /// [reachability] defaults to the shared [apiReachabilityOverride] so the
+  /// authenticated client and [instance] report into one tracker — otherwise
+  /// the two would disagree and the banner would flap between them.
   static ApiClient withAuth({
     required AuthInterceptor authInterceptor,
     ConnectivityService? connectivityService,
+    ApiReachability? reachability,
     String? baseUrl,
   }) {
     return ApiClient._(
       authInterceptor: authInterceptor,
       connectivityService: connectivityService,
+      reachability: reachability,
       baseUrl: baseUrl,
     );
   }
@@ -80,6 +106,10 @@ class ApiClient {
   late final Dio dio;
   late final OfflineRequestRepository _offlineRepository;
   ConnectivityService? _connectivityService;
+
+  /// Where transport outcomes are recorded. Never null: every client reports
+  /// somewhere, and tests substitute their own.
+  late final ApiReachability _reachability;
 
   /// Queue a request for later execution when offline.
   Future<void> queueOfflineRequest({
