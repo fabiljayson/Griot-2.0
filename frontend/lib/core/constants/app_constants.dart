@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Global constants for the Griot AI app.
 abstract final class AppConstants {
@@ -11,6 +12,9 @@ abstract final class AppConstants {
   /// Backend base URL when running on Flutter web (the emulator loopback is
   /// unreachable from a browser).
   static const String _webApiBaseUrl = 'http://localhost:8000';
+
+  /// Backend base URL when running as a desktop application.
+  static const String _desktopApiBaseUrl = 'http://127.0.0.1:8000';
 
   /// Backend base URL.
   ///
@@ -46,8 +50,29 @@ abstract final class AppConstants {
   /// `10.0.2.2` only resolves inside the Android emulator; a browser cannot
   /// reach it, so web falls back to localhost unless an explicit base URL was
   /// compiled in via --dart-define.
-  static String get effectiveBaseUrl =>
-      kIsWeb && apiBaseUrl == _defaultApiBaseUrl ? _webApiBaseUrl : apiBaseUrl;
+  static String get effectiveBaseUrl => resolveApiBaseUrl(
+    configuredBaseUrl: apiBaseUrl,
+    isWeb: kIsWeb,
+    platform: defaultTargetPlatform,
+  );
+
+  /// Resolves the default development host for the current Flutter target.
+  ///
+  /// Explicitly configured API URLs always take precedence.
+  static String resolveApiBaseUrl({
+    required String configuredBaseUrl,
+    required bool isWeb,
+    required TargetPlatform platform,
+  }) {
+    if (configuredBaseUrl != _defaultApiBaseUrl) return configuredBaseUrl;
+    if (isWeb) return _webApiBaseUrl;
+    if (platform == TargetPlatform.linux ||
+        platform == TargetPlatform.macOS ||
+        platform == TargetPlatform.windows) {
+      return _desktopApiBaseUrl;
+    }
+    return configuredBaseUrl;
+  }
 
   /// True when [url] is a cleartext origin.
   static bool isCleartextUrl(String url) {
@@ -130,7 +155,7 @@ abstract final class AppConstants {
   /// v6 added the cover-image backfill for seeded stories.
   /// v7 repairs installs that were created without the `local_*` content
   /// schema and links seeded quizzes to their story.
-  static const int databaseVersion = 8;
+  static const int databaseVersion = 9;
 
   /// Developer shown in the WhatsApp feedback prefilled draft.
   static const String developerName = 'Fabil Jayson';

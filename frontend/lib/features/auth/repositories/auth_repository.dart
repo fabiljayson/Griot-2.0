@@ -6,8 +6,7 @@ import '../../../core/database/repositories/offline_user_repository.dart';
 import '../models/user_model.dart';
 import 'server_auth_repository.dart';
 
-/// Thrown when the backend rejected login credentials AND no matching local
-/// account exists to fall back on.
+/// Thrown when the backend rejects the login credentials.
 class InvalidCredentialsException implements Exception {
   const InvalidCredentialsException();
 
@@ -37,11 +36,11 @@ class RegistrationSignInFailedException implements Exception {
 
 /// Repository handling authentication.
 ///
-/// Auth is online-first: when the backend is reachable, real JWT pairs are
+/// Auth uses the backend as its only credential authority. Real JWT pairs are
 /// obtained from `/api/auth/token/` and stored in secure storage so
-/// authenticated endpoints (TTS narration, gamification, …) work. When the
-/// server is unreachable the legacy local SQLite/secure-storage session is
-/// used so the app remains usable offline.
+/// authenticated endpoints (TTS narration, gamification, …) work. Local
+/// storage mirrors the server profile for offline content, but never
+/// authenticates a login or registration.
 class AuthRepository {
   AuthRepository({
     LocalAuthRepository? localAuth,
@@ -79,18 +78,10 @@ class AuthRepository {
 
   /// Login with username and password.
   ///
-  /// The backend is authoritative. Only when it is genuinely unreachable — no
-  /// network, DNS failure, timeout — does this fall back to the offline
-  /// SQLite account, so a reader who registered without connectivity can still
-  /// get in.
-  ///
   /// A 401 is a decision, not an outage. The server reached, read the
-  /// credentials, and refused them; honouring a matching local account anyway
-  /// would let someone whose server account was disabled, deleted, or had its
-  /// password changed continue to sign in on a device that cached the old
-  /// credential. A revocation on the server has to be revocation everywhere, so
-  /// this path returns [InvalidCredentialsException] and lets the caller sign
-  /// the reader out.
+  /// credentials, and refused them, so the cached session is cleared and the
+  /// caller receives [InvalidCredentialsException]. Other server errors are
+  /// propagated; local credentials are never used as a fallback.
   Future<TokenPair> login({
     required String username,
     required String password,
@@ -103,7 +94,6 @@ class AuthRepository {
 
       final profile = await _server.me(tokens.accessToken);
       await _local.saveRemoteSession(
-        serverUserId: profile['id'] as int? ?? 0,
         username: username,
         email: profile['email'] as String? ?? '',
         firstName: profile['first_name'] as String? ?? '',
@@ -122,22 +112,15 @@ class AuthRepository {
         throw const InvalidCredentialsException();
       }
 
-      if (_isServerUnreachable(e)) {
-        // Offline: fall back to the local account.
-        await _local.login(username: username, password: password);
-        return _localPair();
-      }
-
       rethrow;
     }
   }
 
   /// Register a new account.
   ///
-  /// Online: creates the account on the backend, signs in, and persists a
-  /// real session before returning. Unreachable-server [DioException]s from
-  /// the create call are rethrown so the caller's offline path
-  /// (pending-sync) can handle them.
+  /// Creates the account on the backend, signs in, and persists a real session
+  /// before returning. Server connection errors are propagated to the caller;
+  /// no local account is created or queued.
   ///
   /// Once the create call has returned, the account exists server-side. A
   /// failure in the sign-in step is therefore reported as
@@ -170,7 +153,6 @@ class AuthRepository {
         password: password,
       );
       await _local.saveRemoteSession(
-        serverUserId: user.id,
         username: user.username,
         email: user.email,
         firstName: user.firstName,
@@ -253,12 +235,5 @@ class AuthRepository {
       accessToken: await _local.accessToken ?? '',
       refreshToken: await _local.refreshToken ?? '',
     );
-  }
-
-  bool _isServerUnreachable(DioException e) {
-    return e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.receiveTimeout;
   }
 }

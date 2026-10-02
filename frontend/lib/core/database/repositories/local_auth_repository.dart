@@ -14,8 +14,8 @@ class LocalAuthRepository {
   LocalAuthRepository({
     AppDatabase? database,
     FlutterSecureStorage? secureStorage,
-  })  : _database = database ?? AppDatabase.instance,
-        _storage = secureStorage ?? SecureStorageFactory.instance;
+  }) : _database = database ?? AppDatabase.instance,
+       _storage = secureStorage ?? SecureStorageFactory.instance;
 
   final AppDatabase _database;
   final FlutterSecureStorage _storage;
@@ -53,9 +53,7 @@ class LocalAuthRepository {
   /// the synthetic `local_token_*` markers used for offline-only sessions).
   Future<bool> get hasServerSession async {
     final token = await _storage.read(key: _keyAccessToken);
-    return token != null &&
-        token.isNotEmpty &&
-        !token.startsWith('local_');
+    return token != null && token.isNotEmpty && !token.startsWith('local_');
   }
 
   /// Persist a real backend session so authenticated API calls (e.g. TTS
@@ -64,11 +62,9 @@ class LocalAuthRepository {
   /// Synchronises the matching `local_users` row so offline browsing and
   /// profiles keep working, then stores the real token pair.
   ///
-  /// The account was just authenticated against the server, which is where the
-  /// credential is actually authoritative, so [password] is only used to
-  /// refresh the local hash and is never written to the database.
+  /// The backend is authoritative for credentials, so this local profile
+  /// mirror never stores a password hash for server-backed accounts.
   Future<void> saveRemoteSession({
-    required int serverUserId,
     required String username,
     required String email,
     String firstName = '',
@@ -95,16 +91,17 @@ class LocalAuthRepository {
       'institution': institution,
     };
 
+    final int localUserId;
     if (existing.isNotEmpty) {
-      final id = existing.first['id'] as int;
+      localUserId = existing.first['id'] as int;
       await db.update(
         'local_users',
         fields,
         where: 'id = ?',
-        whereArgs: [id],
+        whereArgs: [localUserId],
       );
     } else {
-      await db.insert('local_users', {
+      localUserId = await db.insert('local_users', {
         'username': username,
         // A server-backed account authenticates with its JWT, so no local
         // password is set — `password_hash` stays NULL and offline login for
@@ -116,7 +113,7 @@ class LocalAuthRepository {
 
     await _storage.write(key: _keyAccessToken, value: accessToken);
     await _storage.write(key: _keyRefreshToken, value: refreshToken);
-    await _storage.write(key: _keyCurrentUserId, value: '$serverUserId');
+    await _storage.write(key: _keyCurrentUserId, value: '$localUserId');
   }
 
   /// Replace the existing access token (after a successful refresh).
@@ -149,7 +146,10 @@ class LocalAuthRepository {
     }
 
     final row = rows.first;
-    if (!LocalCredentialHasher.verify(password, row['password_hash'] as String?)) {
+    if (!LocalCredentialHasher.verify(
+      password,
+      row['password_hash'] as String?,
+    )) {
       // Covers a wrong password, an account that exists only on the server
       // (no local hash), and a row whose hash failed to parse.
       throw Exception('Invalid username or password');

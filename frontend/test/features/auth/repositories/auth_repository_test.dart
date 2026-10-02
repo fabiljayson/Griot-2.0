@@ -46,7 +46,6 @@ const _realTokens = TokenPair(
 void _stubSaveRemoteSession(_MockLocal local) {
   when(
     () => local.saveRemoteSession(
-      serverUserId: 11,
       username: 'nova',
       email: 'nova@example.com',
       firstName: 'Nova',
@@ -75,11 +74,12 @@ void main() {
       'should persist a real session and return the JWT pair when online',
       () async {
         _stubSaveRemoteSession(local);
-        when(() => server.login(username: 'nova', password: 'secret123'))
-            .thenAnswer((_) async => _realTokens);
-        when(() => server.me('eyJ.access.1')).thenAnswer(
-          (_) async => _profileJson,
-        );
+        when(
+          () => server.login(username: 'nova', password: 'secret123'),
+        ).thenAnswer((_) async => _realTokens);
+        when(
+          () => server.me('eyJ.access.1'),
+        ).thenAnswer((_) async => _profileJson);
 
         final tokens = await repo.login(
           username: 'nova',
@@ -90,7 +90,6 @@ void main() {
         expect(tokens.refreshToken, 'eyJ.refresh.1');
         verify(
           () => local.saveRemoteSession(
-            serverUserId: 11,
             username: 'nova',
             email: 'nova@example.com',
             firstName: 'Nova',
@@ -104,41 +103,45 @@ void main() {
       },
     );
 
-    test('should fall back to the local account when offline', () async {
-      when(() => server.login(username: 'nova', password: 'secret123'))
-          .thenThrow(_dio(type: DioExceptionType.connectionError));
-      when(() => local.login(username: 'nova', password: 'secret123'))
-          .thenAnswer((_) async => const UserModel(id: 5, username: 'nova'));
-      when(() => local.accessToken).thenAnswer((_) async => 'local_token_5');
-      when(() => local.refreshToken).thenAnswer((_) async => 'local_refresh_5');
+    test(
+      'should surface server connection errors without local login',
+      () async {
+        when(
+          () => server.login(username: 'nova', password: 'secret123'),
+        ).thenThrow(_dio(type: DioExceptionType.connectionError));
 
-      final tokens = await repo.login(username: 'nova', password: 'secret123');
+        await expectLater(
+          repo.login(username: 'nova', password: 'secret123'),
+          throwsA(isA<DioException>()),
+        );
 
-      expect(tokens.accessToken, 'local_token_5');
-      expect(tokens.refreshToken, 'local_refresh_5');
-      verify(() => local.login(username: 'nova', password: 'secret123'))
-          .called(1);
-    });
-
-    test('should surface invalid credentials on 401 with no local account',
-        () async {
-      when(() => server.login(username: 'nova', password: 'wrong'))
-          .thenThrow(_dio(statusCode: 401));
-      when(() => local.clearTokens()).thenAnswer((_) async {});
-
-      expect(
-        () => repo.login(username: 'nova', password: 'wrong'),
-        throwsA(isA<InvalidCredentialsException>()),
-      );
-    });
+        verifyNever(() => local.login(username: 'nova', password: 'secret123'));
+      },
+    );
 
     test(
-        'a 401 must not be rescued by a matching local account, so a revoked '
+      'should surface invalid credentials on 401 with no local account',
+      () async {
+        when(
+          () => server.login(username: 'nova', password: 'wrong'),
+        ).thenThrow(_dio(statusCode: 401));
+        when(() => local.clearTokens()).thenAnswer((_) async {});
+
+        expect(
+          () => repo.login(username: 'nova', password: 'wrong'),
+          throwsA(isA<InvalidCredentialsException>()),
+        );
+      },
+    );
+
+    test('a 401 must not be rescued by a matching local account, so a revoked '
         'server account cannot keep signing in on a cached device', () async {
-      when(() => server.login(username: 'nova', password: 'pass'))
-          .thenThrow(_dio(statusCode: 401));
-      when(() => local.login(username: 'nova', password: 'pass'))
-          .thenAnswer((_) async => const UserModel(id: 5, username: 'nova'));
+      when(
+        () => server.login(username: 'nova', password: 'pass'),
+      ).thenThrow(_dio(statusCode: 401));
+      when(
+        () => local.login(username: 'nova', password: 'pass'),
+      ).thenAnswer((_) async => const UserModel(id: 5, username: 'nova'));
       when(() => local.clearTokens()).thenAnswer((_) async {});
 
       await expectLater(
@@ -152,8 +155,9 @@ void main() {
     });
 
     test('a 401 clears any cached session for the rejected user', () async {
-      when(() => server.login(username: 'nova', password: 'pass'))
-          .thenThrow(_dio(statusCode: 401));
+      when(
+        () => server.login(username: 'nova', password: 'pass'),
+      ).thenThrow(_dio(statusCode: 401));
       when(() => local.clearTokens()).thenAnswer((_) async {});
 
       await expectLater(
@@ -178,8 +182,9 @@ void main() {
           role: UserRole.contributor,
         ),
       ).thenAnswer((_) async => _profileJson);
-      when(() => server.login(username: 'nova', password: 'secret123'))
-          .thenAnswer((_) async => _realTokens);
+      when(
+        () => server.login(username: 'nova', password: 'secret123'),
+      ).thenAnswer((_) async => _realTokens);
 
       final user = await repo.register(
         username: 'nova',
@@ -194,7 +199,6 @@ void main() {
       expect(user.role, UserRole.contributor);
       verify(
         () => local.saveRemoteSession(
-          serverUserId: 11,
           username: 'nova',
           email: 'nova@example.com',
           firstName: 'Nova',
@@ -207,31 +211,32 @@ void main() {
       ).called(1);
     });
 
-    test('should rethrow a server unreachable error for the offline path',
-        () async {
-      when(
-        () => server.register(
-          username: 'nova',
-          email: 'nova@example.com',
-          password: 'secret123',
-          firstName: '',
-          lastName: '',
-          role: UserRole.visitor,
-        ),
-      ).thenThrow(_dio(type: DioExceptionType.connectionError));
-
-      expect(
-        () => repo.register(
-          username: 'nova',
-          email: 'nova@example.com',
-          password: 'secret123',
-        ),
-        throwsA(isA<DioException>()),
-      );
-    });
-
     test(
-        'should report a sign-in failure, not an unreachable server, when the '
+      'should surface server connection errors without local registration',
+      () async {
+        when(
+          () => server.register(
+            username: 'nova',
+            email: 'nova@example.com',
+            password: 'secret123',
+            firstName: '',
+            lastName: '',
+            role: UserRole.visitor,
+          ),
+        ).thenThrow(_dio(type: DioExceptionType.connectionError));
+
+        expect(
+          () => repo.register(
+            username: 'nova',
+            email: 'nova@example.com',
+            password: 'secret123',
+          ),
+          throwsA(isA<DioException>()),
+        );
+      },
+    );
+
+    test('should report a sign-in failure, not an unreachable server, when the '
         'account was already created', () async {
       when(
         () => server.register(
@@ -243,8 +248,9 @@ void main() {
           role: UserRole.contributor,
         ),
       ).thenAnswer((_) async => _profileJson);
-      when(() => server.login(username: 'nova', password: 'secret123'))
-          .thenThrow(_dio(type: DioExceptionType.receiveTimeout));
+      when(
+        () => server.login(username: 'nova', password: 'secret123'),
+      ).thenThrow(_dio(type: DioExceptionType.receiveTimeout));
 
       await expectLater(
         repo.register(
@@ -276,21 +282,25 @@ void main() {
       expect(tokens.accessToken, 'local_token_5');
     });
 
-    test('should refresh a real session and persist the new access token',
-        () async {
-      when(() => local.refreshToken).thenAnswer((_) async => 'eyJ.refresh.1');
-      when(() => server.refresh('eyJ.refresh.1')).thenAnswer(
-        (_) async => const TokenPair(
-          accessToken: 'eyJ.access.2',
-          refreshToken: 'eyJ.refresh.1',
-        ),
-      );
-      when(() => local.saveAccessToken('eyJ.access.2')).thenAnswer((_) async {});
+    test(
+      'should refresh a real session and persist the new access token',
+      () async {
+        when(() => local.refreshToken).thenAnswer((_) async => 'eyJ.refresh.1');
+        when(() => server.refresh('eyJ.refresh.1')).thenAnswer(
+          (_) async => const TokenPair(
+            accessToken: 'eyJ.access.2',
+            refreshToken: 'eyJ.refresh.1',
+          ),
+        );
+        when(
+          () => local.saveAccessToken('eyJ.access.2'),
+        ).thenAnswer((_) async {});
 
-      final tokens = await repo.refreshTokens();
+        final tokens = await repo.refreshTokens();
 
-      expect(tokens.accessToken, 'eyJ.access.2');
-      verify(() => local.saveAccessToken('eyJ.access.2')).called(1);
-    });
+        expect(tokens.accessToken, 'eyJ.access.2');
+        verify(() => local.saveAccessToken('eyJ.access.2')).called(1);
+      },
+    );
   });
 }

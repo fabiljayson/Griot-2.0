@@ -81,18 +81,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
       if (!mounted) return;
 
-      if (status == AuthStatus.pendingSync) {
-        // Offline: the account is saved locally and will sync later.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "You're offline — your account was saved and will be activated "
-              "when you're back online.",
-            ),
-          ),
-        );
-        Navigator.of(context).pop();
-      } else if (status == AuthStatus.authenticated) {
+      if (status == AuthStatus.authenticated) {
         // Online registration succeeded and auto-logged-in; drop back to the
         // root, where AuthWrapper has already switched to the home screen.
         Navigator.of(context).pop();

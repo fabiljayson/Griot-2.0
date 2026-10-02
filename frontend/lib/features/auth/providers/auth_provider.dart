@@ -8,7 +8,6 @@ import '../../../core/network/app_error.dart';
 import '../../../core/network/auth_interceptor.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
-import '../repositories/offline_auth_repository.dart';
 
 /// State of the authentication system.
 enum AuthStatus {
@@ -21,8 +20,7 @@ enum AuthStatus {
   /// User is authenticated.
   authenticated,
 
-  /// Registration was saved locally while offline and is awaiting sync to
-  /// the server. The account is not usable until sync completes.
+  /// Retained for compatibility with previously queued registrations.
   pendingSync,
 
   /// Loading state (login, register, etc.).
@@ -123,10 +121,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   /// Register a new account.
   ///
-  /// Online: registers, auto-logs-in, and returns [AuthStatus.authenticated].
-  /// Offline: the registration is saved locally (synced by the
-  /// OfflineSyncManager when connectivity returns) and the method returns
-  /// [AuthStatus.pendingSync] — the account can only be used once synced.
+  /// Registers with the backend, auto-logs-in, and returns
+  /// [AuthStatus.authenticated]. Server errors are returned to the UI; no
+  /// local registration is created or queued.
   Future<AuthStatus> register({
     required String username,
     required String email,
@@ -168,32 +165,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
       return AuthStatus.error;
     } on DioException catch (e) {
-      // The registration never reached the backend — safe to queue it
-      // locally and let the OfflineSyncManager push it when we reconnect.
-      if (_isOfflineError(e)) {
-        try {
-          final offlineRepo = ref.read(offlineAuthProvider);
-          await offlineRepo.register(
-            username: username,
-            email: email,
-            password: password,
-            firstName: firstName ?? '',
-            lastName: lastName ?? '',
-            role: role.value,
-          );
-          state = const AsyncData(AuthState(status: AuthStatus.pendingSync));
-          return AuthStatus.pendingSync;
-        } catch (offlineError) {
-          state = AsyncData(
-            AuthState(
-              status: AuthStatus.error,
-              errorMessage:
-                  'Could not save your account for offline activation. Please try again.',
-            ),
-          );
-          return AuthStatus.error;
-        }
-      }
       state = AsyncData(
         AuthState(
           status: AuthStatus.error,
@@ -275,13 +246,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         AuthState(status: AuthStatus.unauthenticated, user: current.user),
       );
     }
-  }
-
-  /// Whether [e] indicates the server could not be reached (offline).
-  bool _isOfflineError(DioException e) {
-    return e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout;
   }
 }
 

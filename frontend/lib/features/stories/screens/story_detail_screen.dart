@@ -12,6 +12,7 @@ import '../../../core/widgets/griot_image.dart';
 import '../../../core/widgets/griot_loader.dart';
 import '../../audio/models/narration_job_model.dart';
 import '../../audio/providers/audio_provider.dart';
+import '../../audio/widgets/audio_playback_indicator.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/sign_in_prompt.dart';
 import '../../gamification/providers/gamification_provider.dart';
@@ -253,6 +254,12 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
                 const SizedBox(height: AppSpacing.section),
 
                 // --- Cultural context ---
+                // Provenance qualifies everything below it: this is a
+                // rendering of someone's tradition, and the reader is
+                // entitled to know how we obtained it.
+                _StoryProvenanceSection(story: story),
+                const SizedBox(height: AppSpacing.section),
+
                 if (story.culturalContext.isNotEmpty) ...[
                   const _SectionTitle(
                     title: 'Cultural Context',
@@ -307,6 +314,12 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
     bool isAuthenticated,
   ) {
     final isNarrating = ref.watch(audioNarrationProvider).isGenerating;
+    final audioState = ref.watch(audioPlayerProvider);
+    final isCurrentNarration = audioState.currentAudio?.storyId == story.id;
+    final isStartingCurrentNarration =
+        isCurrentNarration && audioState.isBuffering;
+    final isPlayingCurrentNarration =
+        isCurrentNarration && audioState.isPlaying;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -319,23 +332,46 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
           children: [
             // Listen (text-to-speech narration).
             IconButton(
-              onPressed: isNarrating
+              onPressed: isNarrating || isStartingCurrentNarration
                   ? null
-                  : () => isAuthenticated
-                        ? _listenToStory(story)
-                        : _showLoginPrompt(context),
+                  : () {
+                      if (isCurrentNarration) {
+                        ref
+                            .read(audioPlayerProvider.notifier)
+                            .togglePlayPause();
+                      } else if (isAuthenticated) {
+                        _listenToStory(story);
+                      } else {
+                        _showLoginPrompt(context);
+                      }
+                    },
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.bronze.withValues(alpha: 0.12),
                 foregroundColor: AppColors.bronzeDark,
               ),
-              icon: isNarrating
+              icon: isNarrating || isStartingCurrentNarration
                   ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: GriotLoader.inline(color: AppColors.bronzeDark),
                     )
-                  : const Icon(AppIcons.headphones),
-              tooltip: isNarrating ? 'Generating narration…' : 'Listen',
+                  : isPlayingCurrentNarration
+                  ? const AudioPlaybackIndicator(
+                      isPlaying: true,
+                      color: AppColors.bronzeDark,
+                    )
+                  : Icon(
+                      isCurrentNarration
+                          ? AppIcons.play_arrow_rounded
+                          : AppIcons.headphones,
+                    ),
+              tooltip: isNarrating || isStartingCurrentNarration
+                  ? 'Starting narration…'
+                  : isPlayingCurrentNarration
+                  ? 'Pause narration'
+                  : isCurrentNarration
+                  ? 'Resume narration'
+                  : 'Listen',
             ),
             const SizedBox(width: AppSpacing.md),
 
@@ -632,6 +668,161 @@ class _ActionButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Where this story came from, and whether the people behind it agreed.
+///
+/// Deliberately states the awkward cases — "consent not yet requested",
+/// "consent withheld" — rather than hiding them. A reader who sees that we
+/// have not verified a story learns something true about the record, and can
+/// decide how much weight to give it.
+class _StoryProvenanceSection extends StatelessWidget {
+  const _StoryProvenanceSection({required this.story});
+
+  final StoryModel story;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionTitle(
+          title: 'Where this story comes from',
+          icon: AppIcons.museum_outlined,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (story.isSyntheticOrigin) ...[
+          _ProvenanceNotice(
+            text:
+                'Demonstration content. This text was written or collected for '
+                'this app as sample material. It was not recorded from a '
+                'community, and should not be cited as a community\'s account.',
+            color: AppColors.ochre,
+            icon: AppIcons.science_outlined,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        if (story.consentStatus == StoryConsent.withheld.value) ...[
+          _ProvenanceNotice(
+            text:
+                'Consent withheld. The people behind this story have not agreed '
+                'to its publication here. If you believe this is an error, '
+                'please report the story.',
+            color: AppColors.error,
+            icon: AppIcons.warning_amber_rounded,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ] else if (story.consentStatus ==
+            StoryConsent.grantedRestricted.value) ...[
+          _ProvenanceNotice(
+            text:
+                'Consent granted with restrictions. The source community agreed '
+                'to this publication on conditions we are still recording.',
+            color: AppColors.ochre,
+            icon: AppIcons.info_outline,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ] else if (!story.hasEstablishedConsent) ...[
+          Text(
+            'We have not yet recorded consent from the source community for '
+            'this version. Treat it as unverified.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        _ProvenanceRow(label: 'Origin', value: story.originLabel),
+        _ProvenanceRow(label: 'Licence', value: story.licenceLabel),
+        if (story.rightsHolder.isNotEmpty)
+          _ProvenanceRow(label: 'Rights holder', value: story.rightsHolder),
+        if (story.recordedAt != null && story.recordedAt!.isNotEmpty)
+          _ProvenanceRow(label: 'Recorded', value: story.recordedAt!),
+        if (story.attribution.isNotEmpty)
+          _ProvenanceRow(label: 'Credit', value: story.attribution),
+        if (story.provenanceNotes.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            story.provenanceNotes,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ProvenanceNotice extends StatelessWidget {
+  const _ProvenanceNotice({
+    required this.text,
+    required this.color,
+    required this.icon,
+  });
+
+  final String text;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AppCard(
+      color: color.withValues(alpha: 0.10),
+      borderColor: color.withValues(alpha: 0.35),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProvenanceRow extends StatelessWidget {
+  const _ProvenanceRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 104,
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodySmall)),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -17,6 +18,16 @@ import 'core/offline/offline_error_buffer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS) {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'org.africanteller.griot_ai.audio',
+      androidNotificationChannelName: 'Griot AI Audio',
+      androidNotificationOngoing: true,
+    );
+  }
 
   // Fail fast on a misconfigured release build rather than at the first
   // request. A release compiled without `--dart-define=API_BASE_URL=https://…`

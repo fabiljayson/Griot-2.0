@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart' show InkWell;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:griot_ai/app.dart';
+import 'package:griot_ai/features/audio/models/audio_model.dart';
+import 'package:griot_ai/features/audio/providers/audio_provider.dart';
+import 'package:griot_ai/features/audio/widgets/audio_player_sheet.dart';
 import 'package:griot_ai/core/network/connectivity_service.dart';
 import 'package:griot_ai/core/network/offline_sync_manager.dart';
 import 'package:griot_ai/core/providers/onboarding_provider.dart';
@@ -14,6 +18,7 @@ import 'package:griot_ai/features/auth/providers/auth_provider.dart';
 import 'package:griot_ai/features/auth/repositories/auth_repository.dart';
 import 'package:griot_ai/features/discover/models/region_model.dart';
 import 'package:griot_ai/features/discover/providers/region_provider.dart';
+import 'package:griot_ai/features/stories/screens/stories_screen.dart';
 
 /// Auth repository stub that bypasses secure storage.
 ///
@@ -34,6 +39,19 @@ class _FakeAuthRepository extends AuthRepository {
 
   @override
   Future<void> logout() async {}
+}
+
+class _PlayingAudioPlayerNotifier extends AudioPlayerNotifier {
+  _PlayingAudioPlayerNotifier() {
+    state = const AudioPlayerState(
+      currentAudio: AudioModel(
+        id: 42,
+        storyId: 1,
+        storyTitle: 'Test narration',
+      ),
+      isPlaying: true,
+    );
+  }
 }
 
 /// No-op connectivity service for tests (no platform channels).
@@ -82,6 +100,9 @@ void main() {
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+          audioPlayerProvider.overrideWith(
+            (ref) => _PlayingAudioPlayerNotifier(),
+          ),
           connectivityServiceProvider.overrideWithValue(
             _FakeConnectivityService(),
           ),
@@ -111,6 +132,20 @@ void main() {
 
     // Let the (mocked) auth check resolve so the home screen renders.
     await tester.pumpAndSettle();
+
+    expect(
+      find.ancestor(
+        of: find.byType(AudioPlayerSheet),
+        matching: find.byType(Overlay),
+      ),
+      findsOneWidget,
+    );
+    final storiesNavigationTarget = find
+        .ancestor(of: find.text('Stories').last, matching: find.byType(InkWell))
+        .first;
+    final playerRect = tester.getRect(find.byType(AudioPlayerSheet));
+    final navigationRect = tester.getRect(storiesNavigationTarget);
+    expect(playerRect.bottom, lessThanOrEqualTo(navigationRect.top));
 
     // Landing branding is visible — the GriotLogo renders "Griot " and
     // "AI" as separate TextSpans inside a single RichText.
@@ -165,5 +200,8 @@ void main() {
       scrollable: verticalScroll,
     );
     expect(find.text('Grassfields'), findsOneWidget);
+    await tester.tap(storiesNavigationTarget);
+    await tester.pumpAndSettle();
+    expect(find.byType(StoriesScreen), findsOneWidget);
   });
 }

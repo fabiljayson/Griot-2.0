@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:griot_ai/core/database/models/offline_user.dart';
 import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/auth/providers/auth_provider.dart';
 import 'package:griot_ai/features/auth/repositories/auth_repository.dart';
@@ -71,8 +70,7 @@ void main() {
     test('should fallback to unauthenticated when getMe fails', () async {
       when(() => mockRepo.isAuthenticated).thenAnswer((_) async => true);
       when(() => mockRepo.getMe()).thenThrow(Exception('expired'));
-      when(() => mockRepo.refreshTokens())
-          .thenAnswer((_) async => _tokenPair);
+      when(() => mockRepo.refreshTokens()).thenAnswer((_) async => _tokenPair);
       when(() => mockRepo.clearTokens()).thenAnswer((_) async {});
 
       await container.read(authProvider.future);
@@ -84,10 +82,12 @@ void main() {
 
     test('should login successfully', () async {
       when(() => mockRepo.isAuthenticated).thenAnswer((_) async => false);
-      when(() => mockRepo.login(
-            username: any(named: 'username'),
-            password: any(named: 'password'),
-          )).thenAnswer((_) async => _tokenPair);
+      when(
+        () => mockRepo.login(
+          username: any(named: 'username'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => _tokenPair);
       when(() => mockRepo.getMe()).thenAnswer((_) async => _fakeUser);
 
       await container.read(authProvider.future);
@@ -102,10 +102,12 @@ void main() {
 
     test('should set error state on login failure', () async {
       when(() => mockRepo.isAuthenticated).thenAnswer((_) async => false);
-      when(() => mockRepo.login(
-            username: any(named: 'username'),
-            password: any(named: 'password'),
-          )).thenThrow(Exception('Invalid credentials'));
+      when(
+        () => mockRepo.login(
+          username: any(named: 'username'),
+          password: any(named: 'password'),
+        ),
+      ).thenThrow(Exception('Invalid credentials'));
 
       await container.read(authProvider.future);
 
@@ -135,36 +137,41 @@ void main() {
     // --- Register ---
 
     group('register', () {
-      test(
-          'should not queue an offline registration when the account already '
+      test('should not queue an offline registration when the account already '
           'exists on the server', () async {
         when(() => mockRepo.isAuthenticated).thenAnswer((_) async => false);
         await container.read(authProvider.future);
 
-        when(() => mockRepo.register(
-              username: any(named: 'username'),
-              email: any(named: 'email'),
-              password: any(named: 'password'),
-              firstName: any(named: 'firstName'),
-              lastName: any(named: 'lastName'),
-              role: any(named: 'role'),
-            )).thenThrow(
-          RegistrationSignInFailedException(user: _fakeUser),
-        );
+        when(
+          () => mockRepo.register(
+            username: any(named: 'username'),
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            firstName: any(named: 'firstName'),
+            lastName: any(named: 'lastName'),
+            role: any(named: 'role'),
+          ),
+        ).thenThrow(RegistrationSignInFailedException(user: _fakeUser));
 
         final status = await container
             .read(authProvider.notifier)
-            .register(username: 'tester', email: 'tester@example.com', password: 'pass123');
+            .register(
+              username: 'tester',
+              email: 'tester@example.com',
+              password: 'pass123',
+            );
 
         expect(status, AuthStatus.error);
-        verifyNever(() => mockOfflineRepo.register(
-              username: any(named: 'username'),
-              email: any(named: 'email'),
-              password: any(named: 'password'),
-              firstName: any(named: 'firstName'),
-              lastName: any(named: 'lastName'),
-              role: any(named: 'role'),
-            ));
+        verifyNever(
+          () => mockOfflineRepo.register(
+            username: any(named: 'username'),
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            firstName: any(named: 'firstName'),
+            lastName: any(named: 'lastName'),
+            role: any(named: 'role'),
+          ),
+        );
         expect(readState()?.status, isNot(AuthStatus.pendingSync));
         expect(
           readState()?.errorMessage,
@@ -173,43 +180,49 @@ void main() {
         expect(readState()?.errorMessage, isNot(contains('Exception:')));
       });
 
-      test('should queue an offline registration when the server is unreachable',
-          () async {
-        when(() => mockRepo.isAuthenticated).thenAnswer((_) async => false);
-        await container.read(authProvider.future);
+      test(
+        'should not queue registration when the server is unreachable',
+        () async {
+          when(() => mockRepo.isAuthenticated).thenAnswer((_) async => false);
+          await container.read(authProvider.future);
 
-        when(() => mockRepo.register(
+          when(
+            () => mockRepo.register(
               username: any(named: 'username'),
               email: any(named: 'email'),
               password: any(named: 'password'),
               firstName: any(named: 'firstName'),
               lastName: any(named: 'lastName'),
               role: any(named: 'role'),
-            )).thenThrow(
-          DioException(
-            requestOptions: RequestOptions(path: '/api/auth/register/'),
-            type: DioExceptionType.connectionError,
-          ),
-        );
-        when(() => mockOfflineRepo.register(
+            ),
+          ).thenThrow(
+            DioException(
+              requestOptions: RequestOptions(path: '/api/auth/register/'),
+              type: DioExceptionType.connectionError,
+            ),
+          );
+          final status = await container
+              .read(authProvider.notifier)
+              .register(
+                username: 'tester',
+                email: 'tester@example.com',
+                password: 'pass123',
+              );
+
+          expect(status, AuthStatus.error);
+          expect(readState()?.status, AuthStatus.error);
+          verifyNever(
+            () => mockOfflineRepo.register(
               username: any(named: 'username'),
               email: any(named: 'email'),
               password: any(named: 'password'),
               firstName: any(named: 'firstName'),
               lastName: any(named: 'lastName'),
               role: any(named: 'role'),
-            )).thenAnswer((_) async => const OfflineUser(
-              username: 'tester',
-              email: 'tester@example.com',
-            ));
-
-        final status = await container
-            .read(authProvider.notifier)
-            .register(username: 'tester', email: 'tester@example.com', password: 'pass123');
-
-        expect(status, AuthStatus.pendingSync);
-        expect(readState()?.status, AuthStatus.pendingSync);
-      });
+            ),
+          );
+        },
+      );
     });
 
     // --- Clear error ---
@@ -218,10 +231,12 @@ void main() {
       when(() => mockRepo.isAuthenticated).thenAnswer((_) async => false);
       await container.read(authProvider.future);
 
-      when(() => mockRepo.login(
-            username: any(named: 'username'),
-            password: any(named: 'password'),
-          )).thenThrow(Exception('fail'));
+      when(
+        () => mockRepo.login(
+          username: any(named: 'username'),
+          password: any(named: 'password'),
+        ),
+      ).thenThrow(Exception('fail'));
 
       await container
           .read(authProvider.notifier)

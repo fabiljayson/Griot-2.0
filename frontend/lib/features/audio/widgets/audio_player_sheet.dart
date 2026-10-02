@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../models/audio_model.dart';
 import '../providers/audio_provider.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/navigation/app_router.dart';
+import 'audio_playback_indicator.dart';
 
 /// Persistent sticky audio player sheet.
 ///
@@ -41,7 +43,7 @@ class _MiniPlayer extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: () => _showFullPlayer(context),
+      onTap: _showFullPlayer,
       child: Container(
         height: 80,
         decoration: BoxDecoration(
@@ -76,8 +78,10 @@ class _MiniPlayer extends ConsumerWidget {
                         color: AppColors.bronze.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Center(
-                        child: Icon(AppIcons.headphones, size: 22),
+                      child: Center(
+                        child: audioState.isPlaying
+                            ? const AudioPlaybackIndicator(isPlaying: true)
+                            : const Icon(AppIcons.headphones, size: 22),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -139,6 +143,9 @@ class _MiniPlayer extends ConsumerWidget {
                       onPressed: () => ref
                           .read(audioPlayerProvider.notifier)
                           .togglePlayPause(),
+                      tooltip: audioState.isPlaying
+                          ? 'Pause narration'
+                          : 'Resume narration',
                     ),
 
                     // Skip forward
@@ -158,9 +165,13 @@ class _MiniPlayer extends ConsumerWidget {
     );
   }
 
-  void _showFullPlayer(BuildContext context) {
+  void _showFullPlayer() {
+    final navigatorContext =
+        AppRouter.navigatorKey.currentState?.overlay?.context;
+    if (navigatorContext == null) return;
+
     showModalBottomSheet(
-      context: context,
+      context: navigatorContext,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const _FullPlayerSheet(),

@@ -4,9 +4,11 @@ from .categories import CATEGORY_DATA
 from .stories_culture import SEED_STORIES_CULTURE
 from .stories_kingdoms import SEED_STORIES_KINGDOMS
 from .stories_nature import SEED_STORIES_NATURE
+from .stories_discovered import SEED_STORIES_DISCOVERED
 
 STORIES = [
     *SEED_STORIES_NATURE,
     *SEED_STORIES_KINGDOMS,
     *SEED_STORIES_CULTURE,
+    *SEED_STORIES_DISCOVERED,
 ]

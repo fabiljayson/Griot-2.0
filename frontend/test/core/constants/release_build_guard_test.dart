@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:griot_ai/core/constants/app_constants.dart';
 
@@ -35,6 +36,36 @@ void main() {
         AppConstants.isCleartextUrl(AppConstants.effectiveBaseUrl),
         isTrue,
         reason: 'expected the default base URL to be the cleartext loopback',
+      );
+    });
+
+    test('uses loopback for a Linux desktop default', () {
+      expect(
+        AppConstants.resolveApiBaseUrl(
+          configuredBaseUrl: 'http://10.0.2.2:8000',
+          isWeb: false,
+          platform: TargetPlatform.linux,
+        ),
+        'http://127.0.0.1:8000',
+      );
+    });
+
+    test('keeps the emulator host for Android and respects overrides', () {
+      expect(
+        AppConstants.resolveApiBaseUrl(
+          configuredBaseUrl: 'http://10.0.2.2:8000',
+          isWeb: false,
+          platform: TargetPlatform.android,
+        ),
+        'http://10.0.2.2:8000',
+      );
+      expect(
+        AppConstants.resolveApiBaseUrl(
+          configuredBaseUrl: 'https://api.example.org',
+          isWeb: false,
+          platform: TargetPlatform.linux,
+        ),
+        'https://api.example.org',
       );
     });
   });

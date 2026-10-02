@@ -97,8 +97,16 @@ flutter run
 # With custom backend URL
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
 
+# With a physical Android device over USB — works on any network, no firewall
+# rule needed. Run from the backend directory; it starts Django (if needed) and
+# maps the phone's 127.0.0.1:8000 onto it.
+../backend/scripts/dev_usb_setup.sh
+flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000
+
 # With a physical Android/iOS device on the same Wi-Fi network
-# Replace 10.5.50.13 with the computer running Django.
+# Replace 10.5.50.13 with the computer running Django. Some networks (guest or
+# captive-portal Wi-Fi) block device-to-device traffic entirely — use the USB
+# route above when that happens.
 DJANGO_LOCAL_IP=10.5.50.13 python manage.py runserver 0.0.0.0:8000
 flutter run --dart-define=API_BASE_URL=http://10.5.50.13:8000
 

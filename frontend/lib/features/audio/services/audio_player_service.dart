@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../models/audio_model.dart';
@@ -140,21 +141,31 @@ class AudioPlayerService {
 
       // Load the audio source
       if (audio.url.isEmpty) {
-        _updateState(
-          isBuffering: false,
-          errorMessage: 'No audio URL provided',
-        );
+        _updateState(isBuffering: false, errorMessage: 'No audio URL provided');
         return;
       }
 
       // Resolve relative URLs (e.g. a bare '/media/audio/x.mp3') against
       // the effective backend base, the same way [GriotImage] does.
-      final url = AppConstants.resolveMediaUrl(
+      final url =
+          AppConstants.resolveMediaUrl(
             audio.url,
             baseUrl: AppConstants.effectiveBaseUrl,
           ) ??
           audio.url;
-      await _player.setUrl(url);
+      await _player.setAudioSource(
+        AudioSource.uri(
+          Uri.parse(url),
+          tag: MediaItem(
+            id: '${audio.storyId}:${audio.id}',
+            album: AppConstants.appName,
+            title: audio.storyTitle,
+            artist: audio.narrator.isEmpty
+                ? AppConstants.appName
+                : audio.narrator,
+          ),
+        ),
+      );
 
       // Start playback
       await _player.play();

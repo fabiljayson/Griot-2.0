@@ -46,15 +46,17 @@ void main() {
     secureValues = <String, String>{};
     storage = _MockSecureStorage();
 
-    when(() => storage.write(
-          key: any(named: 'key'),
-          value: any(named: 'value'),
-          aOptions: any(named: 'aOptions'),
-          iOptions: any(named: 'iOptions'),
-          wOptions: any(named: 'wOptions'),
-          lOptions: any(named: 'lOptions'),
-          webOptions: any(named: 'webOptions'),
-        )).thenAnswer((invocation) async {
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+        aOptions: any(named: 'aOptions'),
+        iOptions: any(named: 'iOptions'),
+        wOptions: any(named: 'wOptions'),
+        lOptions: any(named: 'lOptions'),
+        webOptions: any(named: 'webOptions'),
+      ),
+    ).thenAnswer((invocation) async {
       final key = invocation.namedArguments[#key] as String;
       final value = invocation.namedArguments[#value] as String?;
       if (value == null) {
@@ -64,26 +66,30 @@ void main() {
       }
     });
 
-    when(() => storage.read(
-          key: any(named: 'key'),
-          aOptions: any(named: 'aOptions'),
-          iOptions: any(named: 'iOptions'),
-          wOptions: any(named: 'wOptions'),
-          lOptions: any(named: 'lOptions'),
-          webOptions: any(named: 'webOptions'),
-        )).thenAnswer((invocation) async {
+    when(
+      () => storage.read(
+        key: any(named: 'key'),
+        aOptions: any(named: 'aOptions'),
+        iOptions: any(named: 'iOptions'),
+        wOptions: any(named: 'wOptions'),
+        lOptions: any(named: 'lOptions'),
+        webOptions: any(named: 'webOptions'),
+      ),
+    ).thenAnswer((invocation) async {
       final key = invocation.namedArguments[#key] as String;
       return secureValues[key];
     });
 
-    when(() => storage.delete(
-          key: any(named: 'key'),
-          aOptions: any(named: 'aOptions'),
-          iOptions: any(named: 'iOptions'),
-          wOptions: any(named: 'wOptions'),
-          lOptions: any(named: 'lOptions'),
-          webOptions: any(named: 'webOptions'),
-        )).thenAnswer((invocation) async {
+    when(
+      () => storage.delete(
+        key: any(named: 'key'),
+        aOptions: any(named: 'aOptions'),
+        iOptions: any(named: 'iOptions'),
+        wOptions: any(named: 'wOptions'),
+        lOptions: any(named: 'lOptions'),
+        webOptions: any(named: 'webOptions'),
+      ),
+    ).thenAnswer((invocation) async {
       secureValues.remove(invocation.namedArguments[#key] as String);
     });
 
@@ -147,19 +153,21 @@ void main() {
       );
     });
 
-    test('the stored password never reaches the database in the clear',
-        () async {
-      const secret = 'SuperSecretPassphrase!';
-      await localAuth.register(
-        username: 'amara',
-        email: 'amara@example.com',
-        password: secret,
-      );
+    test(
+      'the stored password never reaches the database in the clear',
+      () async {
+        const secret = 'SuperSecretPassphrase!';
+        await localAuth.register(
+          username: 'amara',
+          email: 'amara@example.com',
+          password: secret,
+        );
 
-      final dump = await dumpDatabase();
-      expect(dump, isNot(contains(secret)));
-      expect(dump, isNot(contains(base64Of(secret))));
-    });
+        final dump = await dumpDatabase();
+        expect(dump, isNot(contains(secret)));
+        expect(dump, isNot(contains(base64Of(secret))));
+      },
+    );
 
     test('the stored hash is a PBKDF2 record, not the secret', () async {
       await localAuth.register(
@@ -180,7 +188,6 @@ void main() {
 
     test('a server-backed session stores no local password', () async {
       await localAuth.saveRemoteSession(
-        serverUserId: 42,
         username: 'kofi',
         email: 'kofi@example.com',
         accessToken: 'eyJ.access',
@@ -200,6 +207,25 @@ void main() {
       );
     });
 
+    test('a remote user profile uses its local row id for lookup', () async {
+      await localAuth.register(
+        username: 'first-local-user',
+        email: 'first@example.com',
+        password: 'secret123',
+      );
+      await localAuth.saveRemoteSession(
+        username: 'kofi',
+        email: 'kofi@example.com',
+        accessToken: 'eyJ.access',
+        refreshToken: 'eyJ.refresh',
+      );
+
+      final user = await localAuth.getMe();
+
+      expect(user.username, 'kofi');
+      expect(user.id, isNot(42));
+    });
+
     test('a username that does not exist is refused', () async {
       await expectLater(
         localAuth.login(username: 'nobody', password: 'x'),
@@ -209,17 +235,19 @@ void main() {
   });
 
   group('OfflineUserRepository', () {
-    test('a queued registration keeps its password out of the database',
-        () async {
-      const secret = 'QueuedSecret!42';
-      await offlineUsers.saveUser(
-        username: 'queued',
-        email: 'queued@example.com',
-        password: secret,
-      );
+    test(
+      'a queued registration keeps its password out of the database',
+      () async {
+        const secret = 'QueuedSecret!42';
+        await offlineUsers.saveUser(
+          username: 'queued',
+          email: 'queued@example.com',
+          password: secret,
+        );
 
-      expect(await dumpDatabase(), isNot(contains(secret)));
-    });
+        expect(await dumpDatabase(), isNot(contains(secret)));
+      },
+    );
 
     test('the password is readable back for replay', () async {
       await offlineUsers.saveUser(
@@ -273,17 +301,22 @@ void main() {
       expect(secureValues.values, isNot(contains('SecretB')));
     });
 
-    test('a failed registration keeps its password so it can be retried',
-        () async {
-      final user = await offlineUsers.saveUser(
-        username: 'queued',
-        email: 'queued@example.com',
-        password: 'QueuedSecret!42',
-      );
+    test(
+      'a failed registration keeps its password so it can be retried',
+      () async {
+        final user = await offlineUsers.saveUser(
+          username: 'queued',
+          email: 'queued@example.com',
+          password: 'QueuedSecret!42',
+        );
 
-      await offlineUsers.markFailed(user.id!, 'network down');
+        await offlineUsers.markFailed(user.id!, 'network down');
 
-      expect(await offlineUsers.readPendingPassword(user.id!), 'QueuedSecret!42');
-    });
+        expect(
+          await offlineUsers.readPendingPassword(user.id!),
+          'QueuedSecret!42',
+        );
+      },
+    );
   });
 }
