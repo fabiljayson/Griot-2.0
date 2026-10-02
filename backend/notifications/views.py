@@ -1,4 +1,5 @@
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission, IsAuthenticated
@@ -31,6 +32,9 @@ class InboxPagination(pagination.PageNumberPagination):
     max_page_size = 100
 
 
+@extend_schema(
+    parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH)],
+)
 class NotificationViewSet(viewsets.ModelViewSet):
     """The reader's inbox: list, open, and bulk-mark.
 

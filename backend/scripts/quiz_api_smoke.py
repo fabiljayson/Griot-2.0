@@ -1,14 +1,24 @@
 """
-Test script: exercises the full quiz flow via Django's test client.
-Run with:  python test_quiz_api.py
+Smoke script: exercises the full quiz flow via Django's test client.
 
-This is a standalone smoke script, NOT a unit-test module. The whole flow
-lives inside main() guarded by __main__, so `manage.py test` (which
-discovers test*.py files) imports it without running anything against the
-empty test database.
+Run from the `backend/` directory:
+
+    python scripts/quiz_api_smoke.py
+
+This is a standalone smoke script, NOT a unit-test module. The whole flow lives
+inside main() guarded by __main__, and the module is deliberately not named
+`test_*` so unittest discovery cannot pick it up even if that guard changes.
+The real quiz coverage lives in `gamification/tests.py`; this is the quick
+"is the wiring still connected" check, and it runs against
+`config.settings.dev`, so it touches the development database.
 """
 import os
 import sys
+from pathlib import Path
+
+# Run from anywhere: make sure `backend/` is importable so `config.settings`
+# and the app packages resolve regardless of the caller's cwd.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def main():

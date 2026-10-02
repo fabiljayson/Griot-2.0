@@ -210,3 +210,11 @@ class AudioNarrationJob(models.Model):
     @property
     def is_ready(self):
         return self.status == self.Status.COMPLETED and self.audio_url
+
+# Module-level choice aliases — see the note in stories/models.py.
+#
+# Note that VideoGenerationJob.Status and AudioNarrationJob.Status have
+# identical values, so they share ONE override name. drf-spectacular errors on
+# two names pointing at the same choice set, and rightly so: publishing the
+# identical enum twice under different names would imply they could diverge.
+MediaJobStatusChoices = VideoGenerationJob.Status

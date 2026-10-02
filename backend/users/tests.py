@@ -441,6 +441,11 @@ class DuplicateEmailDedupeTests(TransactionTestCase):
 
 class TokenTests(CacheIsolatedTestCase):
     def setUp(self):
+        # super().setUp() clears the cache, so the 'auth' throttle counter is
+        # not shared with whichever test classes ran before this one (they run
+        # in alphabetical order and would otherwise exhaust the 5/min budget
+        # and turn these assertions into a misleading 429).
+        super().setUp()
         self.user = User.objects.create_user(
             'griot', email='griot@example.com', password='hunter2secure'
         )
@@ -462,6 +467,9 @@ class TokenTests(CacheIsolatedTestCase):
         self.assertEqual(token['username'], 'griot')
 
     def test_token_obtain_wrong_password(self):
+        # A wrong password MUST never yield a 200. The setUp above clears the
+        # cache, so the 5/min auth budget is fresh and the rejection is a
+        # deterministic 401 rather than a throttle-dependent 403.
         resp = self.client.post(TOKEN_URL, {
             'username': 'griot',
             'password': 'wrong-password',
@@ -469,6 +477,9 @@ class TokenTests(CacheIsolatedTestCase):
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_refresh_rotates_tokens(self):
+        # SIMPLE_JWT sets ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION, so
+        # a refresh must return a *new* refresh token rather than replaying the
+        # one the client already spent.
         obtain = self.client.post(TOKEN_URL, {
             'username': 'griot',
             'password': 'hunter2secure',
@@ -478,7 +489,7 @@ class TokenTests(CacheIsolatedTestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('access', resp.data)
         self.assertIn('refresh', resp.data)
-
+        self.assertNotEqual(resp.data['refresh'], refresh)
 
 class MeTests(CacheIsolatedTestCase):
     def setUp(self):

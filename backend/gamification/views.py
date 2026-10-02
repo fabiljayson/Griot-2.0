@@ -1,6 +1,11 @@
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    inline_serializer,
+)
 from rest_framework import generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -225,6 +230,9 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
                 UserBadge.objects.create(user=user, badge=badge)
 
 
+@extend_schema(
+    parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH)],
+)
 class QuizAttemptViewSet(viewsets.ReadOnlyModelViewSet):
     """User's quiz attempts."""
 
@@ -255,6 +263,9 @@ class BadgeViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.filter(is_secret=False)
 
 
+@extend_schema(
+    parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH)],
+)
 class UserBadgeViewSet(viewsets.ReadOnlyModelViewSet):
     """User's earned badges."""
 
@@ -322,9 +333,28 @@ class RecordActivityView(generics.CreateAPIView):
         )
 
 
+@extend_schema(
+    responses=inline_serializer(
+        name='LeaderboardEntry',
+        many=True,
+        fields={
+            'rank': serializers.IntegerField(),
+            'username': serializers.CharField(),
+            'level': serializers.IntegerField(),
+            'total_xp': serializers.IntegerField(),
+            'stories_read': serializers.IntegerField(),
+            'quizzes_passed': serializers.IntegerField(),
+            'current_streak': serializers.IntegerField(),
+        },
+    ),
+)
 class LeaderboardView(generics.ListAPIView):
-    """Top users by XP."""
+    """Top users by XP — the top 20 profiles, ranked."""
 
+    # Declared so the endpoint appears in the OpenAPI schema. The rows are
+    # built by hand in `get` (the rank is positional, not a model field), so
+    # this cannot be a ModelSerializer over UserProfile.
+    serializer_class = UserProfileSerializer
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -343,6 +373,9 @@ class LeaderboardView(generics.ListAPIView):
         return Response(data)
 
 
+@extend_schema(
+    parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH)],
+)
 class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
     """User's certificates."""
 

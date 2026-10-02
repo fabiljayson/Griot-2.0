@@ -1,5 +1,29 @@
 # Security Review — Web App + Backend
 
+> **Note on running the tests named below.** This document is the original
+> review record, so the class names, test names and sample output in it are
+> preserved as they were on 2026-09-29. The suite has since been renamed and
+> its classes renamed from `...PoC` to `...Regression` (they no longer assert
+> vulnerable behaviour, so "PoC" was actively misleading):
+>
+> - File: `backend/web/test_security_poc.py` → **`backend/web/test_security_regressions.py`**
+> - Classes: `WebQuotaBypassPoC` → `WebQuotaBypassRegression`,
+>   `WebAuthControlsPoC` → `WebAuthControlsRegression`,
+>   `WebOpenRedirectPoC` → `WebOpenRedirectRegression`,
+>   `WebUnthrottledWritePoC` → `WebScanDedupeRegression`,
+>   `WebXpFarmingPoC` → `WebXpFarmingRegression`
+> - Test methods: `test_poc_NN_*` → descriptive names (e.g.
+>   `test_poc_02_login_not_throttled` → `test_login_is_throttled_after_limit`)
+>
+> Run the current suite with:
+>
+> ```bash
+> DJANGO_SETTINGS_MODULE=config.settings.test python manage.py test \
+>     web.test_security_regressions -v 2
+> ```
+>
+> `WebPositiveControls` kept its name.
+
 **Scope:** `backend/web/` (Django server-rendered web interface, session auth) and
 the `backend/` Django REST API and its apps.
 **Explicitly out of scope:** `frontend/` (Flutter), `crawler/`, CI/deploy config.
@@ -11,7 +35,7 @@ the `backend/` Django REST API and its apps.
 | Trust class | `trusted` — maintainer-controlled local source, read-only review |
 | Runtime mode | read-only filesystem inspection + sandboxed test-database execution; no credentialed writes, no outbound network |
 | Method | `common-security-audit` + `common-exploit-verification` + `common-owasp` |
-| PoC suite | `backend/web/test_security_poc.py` (18 tests) |
+| PoC suite | `backend/web/test_security_poc.py` (18 tests) — since renamed to `test_security_regressions.py`, see the note above |
 | Remediation | **All six findings fixed** — see "Remediation status" below |
 | Regression check | full backend suite `385 tests OK (skipped=6)` — no regressions |
 

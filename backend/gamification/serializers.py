@@ -80,7 +80,7 @@ class QuizListSerializer(serializers.ModelSerializer):
             'best_score',
         ]
 
-    def get_best_score(self, obj):
+    def get_best_score(self, obj) -> int | None:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             attempt = obj.attempts.filter(
@@ -151,7 +151,7 @@ class BadgeSerializer(serializers.ModelSerializer):
             'earned',
         ]
 
-    def get_earned(self, obj):
+    def get_earned(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return UserBadge.objects.filter(
@@ -218,7 +218,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-    def get_current_streak(self, obj):
+    def get_current_streak(self, obj) -> int:
         """The streak still standing today, not the run as of the last visit.
 
         A stored streak outlives its own conditions: without this the profile of
@@ -227,14 +227,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
         """
         return streaks.live_streak(obj)
 
-    def get_active_today(self, obj):
+    def get_active_today(self, obj) -> bool:
         """Whether today already counts, which drives the 'keep it alive' prompt."""
         return streaks.is_active_today(obj)
 
-    def get_badges_count(self, obj):
+    def get_badges_count(self, obj) -> int:
         return UserBadge.objects.filter(user=obj.user).count()
 
-    def get_recent_badges(self, obj):
+    def get_recent_badges(self, obj) -> list:
         recent = UserBadge.objects.filter(user=obj.user).select_related('badge')[:5]
         return UserBadgeSerializer(recent, many=True).data
 

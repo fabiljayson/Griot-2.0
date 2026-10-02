@@ -1,10 +1,10 @@
-"""
-Security regression suite for the web app (scope: backend/web + backend API).
+"""Security regression suite for the web app (scope: backend/web + backend API).
 
-Each test pins a control that was missing when this file was first written. The
-original versions asserted the *vulnerable* behaviour (they were reproductions,
-green while the finding was live). They have been inverted: every test now fails
-if the control is removed again.
+This started life as a set of proofs of concept: the original versions asserted
+the *vulnerable* behaviour, so they stayed green while the finding was live and
+went red only once it was fixed. They were inverted, and the classes renamed
+``...Regression``, because that is what they are now — a permanent suite that
+fails if a control is removed again. Only the filename still said "poc".
 
 The controls under test:
   - F-01 web media actions enforce the same per-user daily caps as the API.
@@ -14,13 +14,18 @@ The controls under test:
   - F-05 artifact-view scan writes are collapsed per window.
   - F-06 quiz XP is first-pass-only.
 
+Plus a set of positive controls (``WebPositiveControls``) asserting behaviour
+that is *supposed* to hold — CSRF enforcement, ownership checks, role
+self-assignment, output escaping — so a future "fix" cannot pass by breaking
+something adjacent.
+
 Several controls are enforced with Django's cache (rate limiting, scan dedupe).
 The cache is a per-process store that survives between tests in a single run, so
 the tests that depend on it clear it in ``setUp`` to stay order-independent.
 
 Run with:
     DJANGO_SETTINGS_MODULE=config.settings.test .venv-linux/bin/python \
-        manage.py test web.test_security_poc -v 2
+        manage.py test web.test_security_regressions -v 2
 """
 
 from unittest import mock

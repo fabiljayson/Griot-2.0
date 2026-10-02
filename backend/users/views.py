@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -119,6 +120,10 @@ class RegisterView(generics.CreateAPIView):
 # ---------------------------------------------------------------------------
 # Current user
 # ---------------------------------------------------------------------------
+@extend_schema(
+    request=UserSerializer,
+    responses={200: UserSerializer},
+)
 class MeView(APIView):
     """GET/PATCH/DELETE /api/users/me/ — the authenticated user's profile.
 
@@ -127,7 +132,10 @@ class MeView(APIView):
     DELETE — permanently delete the account & data (privacy compliance,
              Task 2.3).
     """
-
+    # Declared for drf-spectacular; the view builds this serializer by hand in
+    # each method, and an APIView without `serializer_class` is skipped when
+    # the schema is generated, so /api/users/me/ was missing from the document.
+    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):

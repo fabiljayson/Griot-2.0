@@ -6,6 +6,7 @@ live in config.settings.dev and config.settings.prod.
 """
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -133,6 +134,59 @@ DATABASES = {
 }
 
 # ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
+# Two security controls in this project are cache-backed, and both silently
+# stop working when the cache is per-process:
+#
+#   1. Every DRF throttle (the 5/min auth budget, the 10/min metrics budget)
+#      and every `config.rate_limit` web decorator. LocMemCache is private to
+#      one gunicorn worker, so `--workers N` multiplies the real allowance by
+#      N and an attacker just spreads requests across workers.
+#   2. `rest_framework_simplejwt.token_blacklist`, which is what makes
+#      ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION mean anything. A
+#      blacklisted refresh token stays valid in any worker that never saw the
+#      blacklist write, so logout and rotation can be undone by retrying
+#      against a different worker.
+#
+# Set REDIS_URL to fix both. Left unset, this falls back to LocMemCache so a
+# laptop needs no extra service — and says so loudly in production, because
+# that fallback is correct on a single-worker deploy and wrong on every other.
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            # Throttle windows here are 60s; a socket timeout longer than that
+            # would let a stalled Redis turn a rate limit into a hang.
+            'OPTIONS': {
+                'socket_connect_timeout': 2,
+                'socket_timeout': 2,
+            },
+            'KEY_PREFIX': 'griot',
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'griot-default',
+        }
+    }
+    if not DEBUG:
+        # `manage.py migrate` at start-up and every management command import
+        # these settings, so keep this to one line rather than a traceback.
+        print(
+            'WARNING: REDIS_URL is unset, so rate limits and the JWT '
+            'blacklist are using a per-process LocMemCache. Both are only '
+            'exact on a single-worker deployment. Set REDIS_URL before '
+            'scaling gunicorn workers.',
+            file=sys.stderr,
+        )
+
+# ---------------------------------------------------------------------------
 # Password validation
 # ---------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
@@ -183,6 +237,26 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '0.2.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_PATH_PREFIX': r'/api/',
+    # Several models each define a `Status` and a `Category` choice set, so
+    # drf-spectacular cannot derive a unique component name from the field
+    # alone and falls back to hash-suffixed names ("Status244Enum"). Those
+    # names are stable-ish but meaningless to a client reading the schema, and
+    # they change whenever an unrelated field is added.
+    #
+    # The values point at module-level aliases (`StoryStatusChoices`, etc.)
+    # rather than the nested classes, because ENUM_NAME_OVERRIDES resolves each
+    # value with `import_string`, which cannot walk into a class. See the alias
+    # block at the bottom of stories/models.py.
+    'ENUM_NAME_OVERRIDES': {
+        'StoryStatusEnum': 'stories.models.StoryStatusChoices.choices',
+        'QuizAttemptStatusEnum': 'gamification.models.QuizAttemptStatusChoices.choices',
+        # VideoGenerationJob.Status and AudioNarrationJob.Status hold identical
+        # values, so they deliberately share one name — two names for one set is
+        # an error, not a feature.
+        'MediaJobStatusEnum': 'media_app.models.MediaJobStatusChoices.choices',
+        'BadgeCategoryEnum': 'gamification.models.BadgeCategoryChoices.choices',
+        'ArtifactCategoryEnum': 'qr_codes.models.ArtifactCategoryChoices.choices',
+    },
 }
 
 SIMPLE_JWT = {
@@ -286,6 +360,23 @@ LOGOUT_REDIRECT_URL = '/'
 # than hardcoded. When it is absent `get_luma_service()` returns the mock
 # service, which keeps local dev and tests working without external calls.
 LUMA_API_KEY = os.environ.get('LUMA_API_KEY', '')
+
+# Whether the mock is allowed to stand in for the real service.
+#
+# The mock marks jobs 'completed' and hands back a
+# https://storage.example.com/... URL that plays nothing. On a laptop that is
+# a useful placeholder. In production it is worse than a hard failure: the
+# dashboard says the video is done, the row is marked complete, the daily
+# quota was spent, and the user gets an unplayable player with no indication
+# anything went wrong. So outside DEBUG the mock refuses to load and the
+# request fails loudly instead. Set LUMA_ALLOW_MOCK=1 to override (a staging
+# deploy that deliberately wants fake data).
+_LUMA_ALLOW_MOCK_RAW = os.environ.get('LUMA_ALLOW_MOCK')
+LUMA_ALLOW_MOCK = (
+    DEBUG
+    if _LUMA_ALLOW_MOCK_RAW is None
+    else _LUMA_ALLOW_MOCK_RAW.strip().lower() in ('1', 'true', 'yes', 'on')
+)
 
 # Bound spend: how many video jobs one user may start per day. The cap is
 # applied on top of the ownership rule so a wide-open policy cannot be

@@ -24,7 +24,7 @@ class StoryCategorySerializer(serializers.ModelSerializer):
         model = StoryCategory
         fields = ('id', 'name', 'slug', 'description', 'icon', 'color', 'story_count')
 
-    def get_story_count(self, obj):
+    def get_story_count(self, obj) -> int:
         return obj.stories.filter(status=Story.Status.PUBLISHED).count()
 
 
@@ -59,7 +59,7 @@ class StoryListSerializer(serializers.ModelSerializer):
             'published_at',
         )
 
-    def get_is_bookmarked(self, obj):
+    def get_is_bookmarked(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return StoryBookmark.objects.filter(
@@ -67,7 +67,7 @@ class StoryListSerializer(serializers.ModelSerializer):
             ).exists()
         return False
 
-    def get_is_liked(self, obj):
+    def get_is_liked(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return StoryLike.objects.filter(
@@ -91,7 +91,14 @@ class StoryDetailSerializer(serializers.ModelSerializer):
     is_bookmarked = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     reading_progress = serializers.SerializerMethodField()
-    tag_list = serializers.ReadOnlyField()
+    # A model property returning a list of strings. `ReadOnlyField` leaves it
+    # untyped in the schema, so drf-spectacular flags it and a generated client
+    # has to guess. `ListField(child=CharField())` is the honest declaration
+    # (there is no `many=True` on a plain field — that only exists on
+    # serializer classes).
+    tag_list = serializers.ListField(
+        child=serializers.CharField(), read_only=True,
+    )
 
     class Meta:
         model = Story
@@ -141,7 +148,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'published_at',
         )
 
-    def get_is_bookmarked(self, obj):
+    def get_is_bookmarked(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return StoryBookmark.objects.filter(
@@ -149,7 +156,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             ).exists()
         return False
 
-    def get_is_liked(self, obj):
+    def get_is_liked(self, obj) -> bool:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return StoryLike.objects.filter(
@@ -157,7 +164,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             ).exists()
         return False
 
-    def get_reading_progress(self, obj):
+    def get_reading_progress(self, obj) -> dict | None:
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             progress = ReadingProgress.objects.filter(

@@ -265,3 +265,7 @@ class QRCodeScan(models.Model):
     def __str__(self):
         user_str = self.user.username if self.user else 'Anonymous'
         return f'{user_str} scanned {self.artifact.title}'
+
+
+# Module-level choice alias — see the note in stories/models.py.
+ArtifactCategoryChoices = Artifact.Category

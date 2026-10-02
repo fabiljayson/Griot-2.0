@@ -111,7 +111,7 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
             'completed_at',
         ]
 
-    def get_story_title(self, obj):
+    def get_story_title(self, obj) -> str:
         """Title used for playback: the story, or the artifact for audio guides."""
         if obj.story_id:
             return obj.story.title
@@ -119,12 +119,12 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
             return obj.artifact.title
         return ''
 
-    def get_artifact_title(self, obj):
+    def get_artifact_title(self, obj) -> str:
         if obj.artifact_id:
             return obj.artifact.title
         return ''
 
-    def get_audio_url(self, obj):
+    def get_audio_url(self, obj) -> str:
         """Serve the stored audio file as an absolute URL when available."""
         if obj.audio_file:
             request = self.context.get('request')

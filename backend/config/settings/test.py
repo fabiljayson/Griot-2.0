@@ -57,6 +57,25 @@ EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 # required by Django's test client; localhost/loopback cover local runs.
 ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
 
+# The suite exercises the mock Luma service directly (it is the only way to
+# test the job lifecycle without spending real generations), and test.py
+# inherits DEBUG=False from base.py. Opt back in explicitly, or every video
+# test would hit the "no LUMA_API_KEY in production" guard instead.
+LUMA_ALLOW_MOCK = True
+
+# Pinned to a local in-process cache regardless of the developer's
+# environment. base.py switches to Redis when REDIS_URL is set, and a suite
+# that silently ran against a developer's real Redis would both need a live
+# server and share throttle counters with whatever else points at it. Several
+# tests here assert on exact 429 boundaries, so the store has to be the same
+# fast, isolated, in-process one every time.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'griot-test',
+    }
+}
+
 # This is a settings module, not a test module — keep unittest discovery from
 # loading it as one (the `test*.py` name pattern would otherwise match).
 __test__ = False

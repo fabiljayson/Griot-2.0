@@ -1,6 +1,13 @@
+import logging
+
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.decorators import action
@@ -27,6 +34,8 @@ from .services.tts import (
     strip_markdown,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """Allow owners to edit their own jobs."""
@@ -37,6 +46,9 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return obj.user == request.user
 
 
+@extend_schema(
+    parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH)],
+)
 class VideoGenerationViewSet(viewsets.ModelViewSet):
     """ViewSet for video generation jobs."""
 
@@ -96,9 +108,13 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
             status=VideoGenerationJob.Status.PENDING,
         )
 
-        # Submit to Luma AI (mock service when no key is configured).
-        luma_service = get_luma_service()
+        # Submit to Luma AI (mock service when no key is configured and
+        # LUMA_ALLOW_MOCK permits it). Resolving the service inside the try
+        # matters: with no key on a production config, get_luma_service()
+        # raises rather than handing back a mock that would report this job
+        # completed with an unplayable URL.
         try:
+            luma_service = get_luma_service()
             result = luma_service.submit_video_generation(
                 prompt=data['prompt'],
                 duration=data.get('duration', 10),
@@ -142,9 +158,15 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Cancel via Luma AI service
-        luma_service = get_luma_service()
-        luma_service.cancel_job(job.luma_job_id)
+        # Cancel via Luma AI service. If the server has no Luma configured
+        # there is nothing remote to cancel, but the user's intent still has
+        # to be honoured locally, so fall through to the same state update
+        # rather than erroring out.
+        try:
+            luma_service = get_luma_service()
+            luma_service.cancel_job(job.luma_job_id)
+        except LumaAIError as exc:
+            logger.warning('Luma cancel skipped for job %s: %s', job.pk, exc)
 
         job.status = VideoGenerationJob.Status.FAILED
         job.error_message = 'Cancelled by user'
@@ -159,39 +181,50 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
 
         # Poll Luma AI for status update
         if job.luma_job_id:
-            luma_service = get_luma_service()
-            luma_status = luma_service.get_job_status(job.luma_job_id)
+            luma_status = None
+            try:
+                luma_service = get_luma_service()
+                luma_status = luma_service.get_job_status(job.luma_job_id)
+            except LumaAIError as exc:
+                # A server that has lost its Luma configuration must not 500
+                # a poll: the client loops on this endpoint and would read the
+                # error as a dead job. Report the stored state unchanged.
+                logger.warning('Luma poll skipped for job %s: %s', job.pk, exc)
 
-            # Update job based on Luma AI response
-            if luma_status.get('status') == 'completed':
-                job.status = VideoGenerationJob.Status.COMPLETED
-                job.video_url = luma_status.get('video_url', '')
-                job.thumbnail_url = luma_status.get('thumbnail_url', '')
-                job.duration = luma_status.get('duration', 0)
-                job.progress_percent = 100
-                if not job.completed_at:
-                    job.completed_at = timezone.now()
-            elif luma_status.get('status') == 'failed':
-                job.status = VideoGenerationJob.Status.FAILED
-                job.error_message = luma_status.get('error', 'Unknown error')
-            else:
-                # Persist progress while rendering. Without this the field
-                # stays 0 for the whole render and the client's progress bar
-                # reads as a hung request.
-                job.progress_percent = _normalise_progress(
-                    luma_status.get('progress'), luma_status.get('status', '')
-                )
-                if job.status == VideoGenerationJob.Status.PENDING:
-                    job.status = VideoGenerationJob.Status.PROCESSING
-                if not job.started_at:
-                    job.started_at = timezone.now()
+            if luma_status is not None:
+                # Update job based on Luma AI response
+                if luma_status.get('status') == 'completed':
+                    job.status = VideoGenerationJob.Status.COMPLETED
+                    job.video_url = luma_status.get('video_url', '')
+                    job.thumbnail_url = luma_status.get('thumbnail_url', '')
+                    job.duration = luma_status.get('duration', 0)
+                    job.progress_percent = 100
+                    if not job.completed_at:
+                        job.completed_at = timezone.now()
+                elif luma_status.get('status') == 'failed':
+                    job.status = VideoGenerationJob.Status.FAILED
+                    job.error_message = luma_status.get('error', 'Unknown error')
+                else:
+                    # Persist progress while rendering. Without this the field
+                    # stays 0 for the whole render and the client's progress bar
+                    # reads as a hung request.
+                    job.progress_percent = _normalise_progress(
+                        luma_status.get('progress'), luma_status.get('status', '')
+                    )
+                    if job.status == VideoGenerationJob.Status.PENDING:
+                        job.status = VideoGenerationJob.Status.PROCESSING
+                    if not job.started_at:
+                        job.started_at = timezone.now()
 
-            job.save()
+                job.save()
 
         serializer = self.get_serializer(job)
         return Response(serializer.data)
 
 
+@extend_schema(
+    parameters=[OpenApiParameter('id', int, OpenApiParameter.PATH)],
+)
 class AudioNarrationViewSet(viewsets.ModelViewSet):
     """ViewSet for audio narration jobs."""
 
@@ -381,8 +414,37 @@ class AudioNarrationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='job_type',
+            type=str,
+            location=OpenApiParameter.PATH,
+            required=True,
+            enum=['video', 'audio'],
+        ),
+        OpenApiParameter(
+            name='job_id',
+            type=int,
+            location=OpenApiParameter.PATH,
+            required=True,
+        ),
+    ],
+    # The body is a VideoGenerationJob or an AudioNarrationJob depending on
+    # `job_type`, so both are declared and the operation documented as a
+    # oneOf by drf-spectacular.
+    responses={
+        200: OpenApiResponse(
+            response=VideoGenerationJobSerializer,
+            description='Video job state.',
+        ),
+    },
+)
 class MediaStatusView(generics.GenericAPIView):
     """Check status of a media generation job."""
+    # Declared for the schema; the concrete serializer is chosen per
+    # `job_type` inside `get`, which a single `serializer_class` cannot express.
+    serializer_class = VideoGenerationJobSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, job_type, job_id):

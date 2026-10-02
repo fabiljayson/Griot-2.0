@@ -1,0 +1,133 @@
+name: CI
+
+# The repository previously had no test workflow at all — only a keep-alive
+# ping. That is how a broken `TokenTests.setUp` sat in the working tree while
+# AUDIT.md still reported "365 tests, OK": the validation table was a manual
+# claim that nothing enforced. This workflow makes those numbers real.
+#
+# Gates on every push and pull request:
+#   backend  — Django system checks, migration drift, full test suite
+#   frontend — flutter analyze, full test suite
+#   deps     — pip-audit against the pinned backend requirements
+#
+# If a number in AUDIT.md disagrees with what this workflow prints, the
+# workflow is right.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref: a new push makes the previous run's
+# result irrelevant, and the backend suite is fast enough that queuing is
+# pure waste.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (Django)
+    runs-on: ubuntu-latest
+    # Pinned to the exact patch release render.yaml deploys. Testing the
+    # deployed interpreter is the only number that means anything — the suite
+    # previously ran solely on whatever the developer had installed (3.14
+    # locally) while production ran 3.12, so a version-specific break could
+    # only surface on deploy. Change this and PYTHON_VERSION in render.yaml
+    # together.
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      # Catches a model edited without its migration. Without this, the suite
+      # happily passes against a stale schema and the failure only appears on
+      # the Render deploy, where migrate runs at start-up.
+      - name: No migration drift
+        run: python manage.py makemigrations --check --dry-run
+
+      # The deploy settings must fail fast on a missing/insecure secret key
+      # rather than booting with a default, so prove that they still do.
+      - name: Production settings fail fast without a secret key
+        run: |
+          if DJANGO_SETTINGS_MODULE=config.settings.prod python manage.py check 2>/dev/null; then
+            echo "::error::prod settings booted with no DJANGO_SECRET_KEY — the fail-fast guard is gone"
+            exit 1
+          fi
+          echo "prod correctly refused to boot without DJANGO_SECRET_KEY"
+
+      - name: Test suite
+        run: python manage.py test -v 1
+
+  frontend:
+    name: Frontend (Flutter)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test suite
+        run: flutter test --reporter compact
+
+  deps:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+
+      # Non-blocking, deliberately. The one known advisory is click
+      # PYSEC-2026-2132, which has no reachable upgrade path: gTTS pins
+      # click>=7.1,<8.2, and the app only ever imports gTTS's library entry
+      # point, never the click.edit() the advisory covers. See "Residual risk
+      # R1" in AUDIT.md.
+      #
+      # This still earns its place: it is what tells you a *second*, genuinely
+      # exploitable advisory arrived. Flip this to blocking the day R1 is
+      # resolved (gTTS relaxes the pin, or the dependency is dropped).
+      - name: pip-audit (advisory only — see R1)
+        continue-on-error: true
+        run: pip-audit -r backend/requirements.txt --strict

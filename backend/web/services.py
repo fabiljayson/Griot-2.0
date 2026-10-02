@@ -34,7 +34,7 @@ from gamification.services.quiz_xp import already_earned_quiz_xp
 from gamification.services.streaks import record_activity
 from media_app import quota
 from media_app.models import AudioNarrationJob, VideoGenerationJob
-from media_app.services.luma_ai import get_luma_service
+from media_app.services.luma_ai import LumaAIError, get_luma_service
 from media_app.services.tts import (
     TTSGenerationError,
     build_artifact_script,
@@ -968,8 +968,17 @@ def generate_story_video(user, story, prompt):
         prompt=prompt,
         status=VideoGenerationJob.Status.PENDING,
     )
-    luma_service = get_luma_service()
-    result = luma_service.submit_video_generation(prompt=prompt)
+    try:
+        luma_service = get_luma_service()
+        result = luma_service.submit_video_generation(prompt=prompt)
+    except LumaAIError as exc:
+        # The job row already exists, so record why it died rather than
+        # leaving a permanently-pending job, and tell the user plainly.
+        job.status = VideoGenerationJob.Status.FAILED
+        job.error_message = str(exc)
+        job.save(update_fields=['status', 'error_message', 'updated_at'])
+        return f'🎬 Video generation unavailable: {exc}', 'error'
+
     job.luma_job_id = result['id']
     job.save()
     return '🎬 Video generation started — check back shortly.', 'success'
@@ -987,8 +996,15 @@ def refresh_video_job(user, story):
     ):
         return job
 
-    luma_service = get_luma_service()
-    luma_status = luma_service.get_job_status(job.luma_job_id)
+    # A server that has lost its Luma configuration must not break the page
+    # render: report the stored state and let the user retry later.
+    try:
+        luma_service = get_luma_service()
+        luma_status = luma_service.get_job_status(job.luma_job_id)
+    except LumaAIError:
+        return job
+
+
     if luma_status.get('status') == 'completed':
         job.status = VideoGenerationJob.Status.COMPLETED
         job.video_url = luma_status.get('video_url', '')

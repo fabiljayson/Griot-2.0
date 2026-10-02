@@ -368,4 +368,19 @@ class StoryShare(models.Model):
         ]
 
     def __str__(self):
-        return f'Share: {self.story.title} via {self.platform}'
+        return f'Share: {self.story.title} via {self.platform}'
+
+# ---------------------------------------------------------------------------
+# Module-level choice aliases
+# ---------------------------------------------------------------------------
+# Several models across this project each define a nested `Status` or
+# `Category` TextChoices, so drf-spectacular cannot derive a unique schema
+# component name from the field alone and falls back to hash-suffixed names
+# like "Status244Enum". `ENUM_NAME_OVERRIDES` fixes that, but it resolves each
+# value with `import_string`, which cannot walk *into* a class
+# (`stories.models.Story.Status.choices` fails — it tries to import a module
+# named `stories.models.Story`). Re-exporting the nested enum at module level
+# gives the override a path that actually resolves.
+#
+# The alias, not the nested class, is the canonical name; keep them together.
+StoryStatusChoices = Story.Status

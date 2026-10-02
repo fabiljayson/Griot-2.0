@@ -299,12 +299,12 @@ class UserProfile(models.Model):
         return f'{self.user.username} — Level {self.level} ({self.total_xp} XP)'
 
     @property
-    def xp_for_next_level(self):
+    def xp_for_next_level(self) -> int:
         """XP needed to reach the next level."""
         return self.level * 100
 
     @property
-    def xp_progress(self):
+    def xp_progress(self) -> float:
         """Progress toward next level (0.0 to 1.0)."""
         needed = self.xp_for_next_level
         if needed == 0:
@@ -407,3 +407,10 @@ class Certificate(models.Model):
             import logging
             logging.getLogger(__name__).exception('Failed to generate PDF for %s', self.certificate_number)
             return ''
+
+
+# Module-level choice aliases — see the note in stories/models.py. drf-spectacular's
+# ENUM_NAME_OVERRIDES resolves values with `import_string`, which cannot traverse
+# into a class, so the nested enums have to be re-exported to be nameable.
+QuizAttemptStatusChoices = QuizAttempt.Status
+BadgeCategoryChoices = Badge.Category

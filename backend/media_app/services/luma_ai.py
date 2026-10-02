@@ -283,7 +283,17 @@ def get_luma_service() -> LumaAIService:
     """Return the appropriate Luma AI service based on configuration.
 
     - If ``LUMA_API_KEY`` is set in the environment, returns a real API client.
-    - Otherwise, returns the mock service for development.
+    - Otherwise returns the mock service, but only where that is allowed:
+      local dev, or any environment that opts in with ``LUMA_ALLOW_MOCK=1``.
+    - With no key and no opt-in, raises :class:`LumaAIError`.
+
+    The raise is the important part. ``MockLumaAIService`` reports jobs
+    ``completed`` and points ``video_url`` at a ``storage.example.com``
+    placeholder, so letting it load in production means a paid feature that
+    reports success, spends the caller's daily quota, and produces nothing
+    playable. Failing here routes through the same ``LumaAIError`` handling
+    the views already have for transport errors, which marks the job FAILED
+    with a reason and returns an honest status code.
     """
     global _service_instance
     if _service_instance is not None:
@@ -293,8 +303,20 @@ def get_luma_service() -> LumaAIService:
     if api_key:
         logger.info('Using live Luma AI service')
         _service_instance = LiveLumaAIService(api_key)
-    else:
-        logger.info('Using mock Luma AI service (no LUMA_API_KEY configured)')
-        _service_instance = MockLumaAIService()
+        return _service_instance
 
+    if not getattr(settings, 'LUMA_ALLOW_MOCK', False):
+        logger.error(
+            'LUMA_API_KEY is not set and LUMA_ALLOW_MOCK is off. Refusing to '
+            'serve mock video jobs: they would report completed with an '
+            'unplayable placeholder URL. Set LUMA_API_KEY, or '
+            'LUMA_ALLOW_MOCK=1 for a staging deploy that wants fake data.'
+        )
+        raise LumaAIError(
+            'Video generation is not configured on this server '
+            '(LUMA_API_KEY is unset).'
+        )
+
+    logger.info('Using mock Luma AI service (no LUMA_API_KEY configured)')
+    _service_instance = MockLumaAIService()
     return _service_instance

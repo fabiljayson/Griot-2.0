@@ -47,6 +47,11 @@ class DashboardSummaryView(APIView):
     Complete dashboard summary with all analytics.
     Admin-only endpoint.
     """
+    # Declared for drf-spectacular as well as for the reader: the view already
+    # builds this serializer by hand in `get`, but an APIView without
+    # `serializer_class` is skipped in the generated schema, so the endpoint
+    # was simply absent from the published OpenAPI document.
+    serializer_class = DashboardSummarySerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
@@ -61,6 +66,7 @@ class UserAnalyticsView(APIView):
 
     User statistics and growth data.
     """
+    serializer_class = UserStatsSerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
@@ -76,6 +82,7 @@ class AdminUsersListView(APIView):
     Every platform user (across all synced databases), newest first.
     Optional `?search=` filters by username, email or full name.
     """
+    serializer_class = AdminUserListSerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
@@ -98,6 +105,7 @@ class StoryAnalyticsView(APIView):
 
     Story statistics, engagement, and growth.
     """
+    serializer_class = StoryStatsSerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
@@ -112,6 +120,7 @@ class GamificationAnalyticsView(APIView):
 
     Gamification statistics (quizzes, badges, leaderboards).
     """
+    serializer_class = GamificationStatsSerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
@@ -126,6 +135,7 @@ class QRAnalyticsView(APIView):
 
     QR code and artifact scan statistics.
     """
+    serializer_class = QRStatsSerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
@@ -140,6 +150,7 @@ class EngagementAnalyticsView(APIView):
 
     High-level engagement metrics.
     """
+    serializer_class = EngagementSummarySerializer
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):

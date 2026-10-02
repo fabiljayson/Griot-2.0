@@ -1,7 +1,12 @@
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions, status, viewsets
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    inline_serializer,
+)
+from rest_framework import generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -167,12 +172,35 @@ class ArtifactViewSet(viewsets.ModelViewSet):
         return get_client_ip(request)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='path',
+            type=str,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description='Deep link path, e.g. /artifact/my-artifact.',
+        ),
+    ],
+    responses={
+        200: ArtifactDetailSerializer,
+        400: inline_serializer(
+            name='ArtifactLookupBadRequest',
+            fields={'error': serializers.CharField()},
+        ),
+        404: inline_serializer(
+            name='ArtifactLookupNotFound',
+            fields={'error': serializers.CharField()},
+        ),
+    },
+)
 class ArtifactLookupByDeepLinkView(generics.GenericAPIView):
     """Look up an artifact by its deep link path.
 
     Used by the frontend deep link handler:
       GET /api/artifacts/lookup/?path=/artifact/my-artifact
     """
+    serializer_class = ArtifactDetailSerializer
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -209,12 +237,25 @@ class ArtifactLookupByDeepLinkView(generics.GenericAPIView):
         return Response(ArtifactDetailSerializer(artifact).data)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='device',
+            type=str,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description='Device label recorded with the scan, if the caller sends one.',
+        ),
+    ],
+    responses={200: ArtifactDetailSerializer},
+)
 class QRCodeRedirectView(generics.GenericAPIView):
     """Handle deep link redirects.
 
     This endpoint is hit when a user scans a QR code:
       /qr/<slug>/ → redirects to artifact detail in-app
     """
+    serializer_class = ArtifactDetailSerializer
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, slug):

@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import Artifact, QRCodeScan
@@ -23,10 +24,10 @@ class ArtifactListSerializer(serializers.ModelSerializer):
             'story_count', 'scan_count', 'created_at',
         ]
 
-    def get_story_count(self, obj):
+    def get_story_count(self, obj) -> int:
         return obj.stories.count()
 
-    def get_scan_count(self, obj):
+    def get_scan_count(self, obj) -> int:
         return obj.scans.count()
 
 
@@ -38,9 +39,15 @@ class ArtifactDetailSerializer(serializers.ModelSerializer):
         read_only=True,
         default='',
     )
-    stories = serializers.SerializerMethodField()
+    stories = serializers.SerializerMethodField(
+        help_text='Stories that feature this artifact.',
+    )
     scan_count = serializers.SerializerMethodField()
-    qr_deep_link = serializers.ReadOnlyField()
+    # A model property returning a URL string. `ReadOnlyField` publishes it as
+    # an untyped blob, which drf-spectacular flags and generated clients cannot
+    # use; `CharField` states what it actually is. `deep_link_path` on the
+    # list serializer below is a concrete model field and needs none of this.
+    qr_deep_link = serializers.CharField(read_only=True)
 
     class Meta:
         model = Artifact
@@ -65,11 +72,16 @@ class ArtifactDetailSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_stories(self, obj):
+        # Serialised inline rather than referenced by name because of a
+        # circular import: stories.serializers reaches back into this module.
+        # That also means the return type cannot be named in a hint, so the
+        # OpenAPI type is declared with @extend_schema_field instead.
         from stories.serializers import StoryListSerializer
         return StoryListSerializer(obj.stories.all(), many=True).data
 
-    def get_scan_count(self, obj):
+    def get_scan_count(self, obj) -> int:
         return obj.scans.count()
 
 

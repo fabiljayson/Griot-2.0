@@ -36,10 +36,29 @@ urlpatterns = [
     ),
 ]
 
-# Serve media files directly. Django's static() helper no-ops when DEBUG is
-# False, and Render runs gunicorn with no separate media server (the free tier
-# has no persistent disk), so the route is registered explicitly — media is
-# baked into the container from this repo's media/ directory.
+# Serve media files directly.
+#
+# Why not the usual alternatives:
+#   * `django.conf.urls.static.static()` is a no-op unless DEBUG is True, so it
+#     is not an option in production.
+#   * WhiteNoise is for STATIC_ROOT, not user media, and adding a second
+#     whitenoise-style handler would mean serving uploads as if they were
+#     versioned build artefacts.
+#   * Render's free tier has no persistent disk and no separate media service,
+#     so there is nothing to hand this off to. The files are baked into the
+#     image from this repo's media/ directory.
+#
+# What this costs, stated plainly: `django.views.static.serve` is documented as
+# "not hardened for production use". It is safe against path traversal
+# (`safe_join` normalises and rejects anything escaping MEDIA_ROOT — pinned by
+# MediaServingTests), but it reads each file per request with no caching, no
+# Range support and no ETag, which matters for the audio and video this app
+# serves. That is an accepted trade-off for a single-instance free-tier
+# deployment, not an oversight.
+#
+# The moment there is a real disk or a CDN in front, delete this block and
+# point MEDIA_URL there. `MediaServingTests` will then fail, which is the
+# intended signal that the route moved.
 urlpatterns += [
     path(
         f'{settings.MEDIA_URL.strip("/")}/<path:path>',

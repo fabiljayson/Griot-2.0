@@ -1,0 +1,34 @@
+# Normalize line endings so a file edited on Windows does not come back as a
+# whole-file rewrite on Linux (and vice versa). Without this, a CRLF checkout
+# of a Python file produces a diff touching every line, which is how a
+# three-line bug fix ends up buried under 1160 changed lines.
+#
+# `text=auto` lets git detect text vs binary; `eol=lf` makes the working tree
+# LF everywhere. Blob normalization happens on checkin, so files already
+# committed with CRLF convert naturally as they are edited rather than all at
+# once.
+* text=auto eol=lf
+
+# Windows scripts genuinely need CRLF to execute.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets: never touched.
+*.jpg text=false
+*.jpeg text=false
+*.png text=false
+*.gif text=false
+*.ico text=false
+*.webp text=false
+*.pdf text=false
+*.ttf text=false
+*.otf text=false
+*.woff text=false
+*.woff2 text=false
+*.mp3 text=false
+*.mp4 text=false
+*.wav text=false
+*.zip text=false
+*.jar text=false
+*.keystore text=false
+*.jks text=false

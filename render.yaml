@@ -22,6 +22,12 @@ services:
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
+      # 3.12.10 is the deployed interpreter, and .github/workflows/ci.yml pins
+      # the backend job to the same patch release. That exact match is the
+      # point: the suite used to run only on whatever the developer happened to
+      # have installed (3.14 locally) while production ran 3.12, so a
+      # version-specific failure could only ever surface on deploy. Change both
+      # this line and the CI matrix together.
       - key: PYTHON_VERSION
         value: 3.12.10
       - key: DJANGO_SECRET_KEY
@@ -37,6 +43,16 @@ services:
         fromDatabase:
           name: griot-db
           property: connectionString
+      # Shared cache for rate limits + the JWT refresh-token blacklist. Both
+      # are cache-backed, and this service runs a single gunicorn worker, so
+      # LocMemCache is technically sufficient today. Set REDIS_URL anyway
+      # before you touch --workers: the start-up warning in base.py is the
+      # only thing standing between a worker bump and silently doubled rate
+      # limits plus non-revocable refresh tokens.
+      # - key: REDIS_URL
+      #   fromDatabase:
+      #     name: griot-cache
+      #     property: connectionString
       - key: SENTRY_DSN
         sync: false
       # Luma Dream Machine bills per generated video. Leaving this unset does

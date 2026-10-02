@@ -48,6 +48,85 @@ integrity, observability.
 
 ---
 
+# Audit — 2026-10-02
+
+Full-project audit of the Griot 2.0 monorepo (Django backend, Flutter client,
+crawler, CI/deploy config). Baseline: Django 5.2.17 / DRF 3.17.2 / Python 3.12.10
+deployed, 3.14.7 local.
+
+The 2026-09-29 pass below fixed real defects and its remediation holds up: no
+SQL injection, no `verify=False`, no unparameterised queries, no secrets in
+tracked files, correct permission wiring, and clean `IDOR` checks on the
+profile-delete and moderation paths. This pass found the security posture sound
+and the **process** around it weak. Findings were worked in severity order.
+
+## Validation
+
+| Check | Result |
+|---|---|
+| `manage.py check` (`config.settings.test`) | 0 issues |
+| `makemigrations --check --dry-run` | No migration drift |
+| Backend suite | **405 tests, OK (6 skipped)** |
+| `flutter analyze --fatal-infos` | No issues found |
+| Flutter suite | 320 tests, all passed |
+| OpenAPI schema (`manage.py spectacular`) | **0 warnings, 0 errors** — was 48 issues |
+| `pip-audit` | 1 advisory, unreachable — see R1, unchanged |
+
+All of the above now runs in CI on every push and pull request
+(`.github/workflows/ci.yml`), which is the actual fix behind the numbers.
+
+## HIGH
+
+| # | Finding | Resolution |
+|---|---|---|
+| H-1 | **The suite was red and nobody knew.** `users/tests.py::TokenTests.setUp` had been replaced by a debug `logging` call that read `self.user` before creating it, so both token tests errored with `AttributeError`. The same edit had also deleted `test_refresh_rotates_tokens` — the regression test pinning `ROTATE_REFRESH_TOKENS`/`BLACKLIST_AFTER_ROTATION`. | Fixture restored (now chaining `super().setUp()` so the auth throttle counter is cleared), rotation test restored and strengthened to assert the refreshed token differs from the spent one, debug logging removed. |
+| H-2 | **No CI at all.** `.github/workflows/` held only a keep-alive ping. Nothing ran the backend suite, `flutter analyze`/`test`, or `pip-audit`. This is why H-1 sat unnoticed while this file reported "365 tests, OK" — the validation table was a manual claim, not an enforced gate. | New `ci.yml`: Django checks + migration drift + prod fail-fast guard + backend suite; `flutter analyze --fatal-infos` + suite; `pip-audit` (advisory-only, see R1). |
+| H-3 | The broken test file also carried a **whole-file CRLF→LF conversion** — 1160 changed lines in a 577-line file, which buries a three-line bug fix in review. The repo has mixed EOL conventions and no `.gitattributes`. | Root `.gitattributes` added (`* text=auto eol=lf`, with CRLF preserved for `.bat`/`.cmd` and binaries excluded). Real content diff is now 12 insertions. |
+
+## MEDIUM
+
+| # | Finding | Resolution |
+|---|---|---|
+| M-1 | **Rate limits and JWT revocation were per-process.** No `CACHES` was configured anywhere, so DRF throttles (the 5/min auth budget, 10/min metrics), `config.rate_limit`, and the SimpleJWT blacklist all ran on a per-process `LocMemCache`. Under `--workers N` every limit is silently multiplied by N, and a refresh token blacklisted by one worker still validates on another. | `CACHES` in `base.py` is now `REDIS_URL`-driven (Django's built-in `RedisCache`, 2 s socket timeouts, `KEY_PREFIX`), falling back to `LocMemCache` with a loud stderr warning whenever `DEBUG` is off. `Procfile` dropped `--workers 2` → `1` so the deployed limit matches the configured one, with the reason documented in both files. `config/settings/test.py` pins `LocMemCache` so the suite never depends on a developer's `REDIS_URL`. |
+| M-2 | **A production server with no `LUMA_API_KEY` faked success.** `get_luma_service()` fell back to `MockLumaAIService`, which marks jobs `completed` and points `video_url` at an unplayable `storage.example.com` placeholder — spending the caller's daily quota and reporting a finished render that plays nothing. Nothing distinguished "no key because we are developing" from "no key because nobody set it". | `LUMA_ALLOW_MOCK` (defaults to `DEBUG`) gates the mock; with no key and no opt-in, `get_luma_service()` raises `LumaAIError`. All five call sites honour it: create returns 502 with the job marked FAILED, cancel still succeeds locally, poll returns stored state instead of 500, and both web paths report an honest error. Pinned by 9 new tests in `media_app/tests_luma_config.py`. |
+
+## LOW
+
+| # | Finding | Resolution |
+|---|---|---|
+| L-1 | `django.views.static.serve` is mounted at `MEDIA_URL` in production. Safe against traversal, but not hardened: no caching, no `Range` support, no ETag — which matters for the audio and video this app serves. | Kept (Render's free tier has neither a disk nor a media service) but the trade-off is now written down at the route, along with the exit condition. Pinned by `config/tests/test_media_serving.py`, which asserts traversal is refused — so the decision has a test rather than a comment. |
+| L-2 | **48 OpenAPI schema issues.** Integer pks published as `string`; ~20 unannotated serializer methods; and `APIView`s that built their serializer by hand without declaring `serializer_class`, which made the generator skip them entirely — `/api/users/me/`, all seven admin analytics endpoints, both media viewsets and the deep-link lookup were **absent from the published schema**. | All 48 cleared: return type hints on the serializer/model methods, `serializer_class` on the seven analytics views, `@extend_schema` response/parameter annotations on the health, lookup, redirect, leaderboard, media-status and `me` endpoints, and named `ENUM_NAME_OVERRIDES` for the colliding choice sets. Ids now publish as `integer` (verified in the generated schema, not just warning-free). Pinned by `config/tests/test_openapi_schema.py`. |
+| L-3 | `web/test_security_poc.py` was a 534-line permanent regression suite whose classes were already named `...Regression`. Only the filename still said "PoC", and `artifacts/security-review.md` referenced class names that no longer existed. | Renamed to `web/test_security_regressions.py`; the historical review keeps its record and gains a note mapping the old names to the new ones and the command to run them. |
+| L-4 | `test_quiz_api.py` sat at the backend root (open since the 2026-09-19 audit, finding 3). | Moved to `scripts/quiz_api_smoke.py` — out of unittest discovery's `test*.py` pattern entirely, and runnable from any directory. |
+| L-5 | **Python version drift.** Local development ran 3.14.7 while `render.yaml` deployed 3.12.10, and nothing tested either. | CI pins 3.12.10, matching `render.yaml` exactly, with the coupling documented in both files and in `backend/README.md`. 3.14 still passes locally and is noted as such. |
+| L-6 | `render.yaml` documented that an unset `LUMA_API_KEY` silently degrades video generation — a footgun documented but not fixed. | Fixed as M-2 above; the comment now describes the loud failure instead of the silent one. |
+
+## Corrections to the 2026-09-29 record
+
+This file's earlier Validation table said "365 tests, OK". At the start of this
+pass the suite actually ran **384 tests with 2 errors** — see H-1. Two other
+claims were also wrong:
+
+- **gTTS.** The 2026-09-29 entry cites "gTTS 2.5.4 (the current release)" but
+  `requirements.txt` pinned **2.5.1**. Re-verified on PyPI: 2.5.4 is current and
+  still pins `click>=7.1,<8.2`, so residual risk **R1 stands unchanged**.
+- **Finding 4 (no submission-approval workflow) is resolved.** The workflow
+  exists: `IsAdminOrManager` gates `moderation_queue` and `moderate` in the
+  API, and `web/services.py::moderate_story` plus
+  `web/actions.py::story_moderate` cover the web path, with `reviewer_notes`
+  and the story `status` field carrying the outcome.
+
+## Residual risk
+
+**R1 — `click==8.1.8` / PYSEC-2026-2132.** Unchanged and still unreachable:
+gTTS pins `click>=7.1,<8.2`, the app only imports gTTS's library entry point
+and never reaches `click.edit()`, and resolving it needs either a gTTS that
+relaxes the pin or dropping the dependency. The new `pip-audit` CI job is
+`continue-on-error` for exactly this one advisory — it exists to tell you when
+a *second*, genuinely exploitable one arrives.
+
+---
+
 # Remediation pass — 2026-09-29
 
 Full-stack security remediation covering the Django backend, the Flutter client,
@@ -134,7 +213,6 @@ the P2 table.
 
 ## Still open from the 2026-09-19 audit
 
-- Finding 3: `test_quiz_api.py` at repo root remains a standalone script outside
-  the app test packages. Low priority, unchanged.
-- Finding 4: no story submission approval workflow (spec'd as
-  `specs/002-story-submission-moderation`).
+- Finding 3: `test_quiz_api.py` — **resolved** in the 2026-10-02 pass (L-4).
+- Finding 4: story submission moderation — **resolved**, see the 2026-10-02
+  corrections above.

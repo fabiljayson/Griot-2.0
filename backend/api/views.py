@@ -2,7 +2,8 @@ import time
 
 from django.contrib.auth import get_user_model
 from django.db import connection
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -41,6 +42,18 @@ def _banded_count(value: int) -> int:
     return 1 << (value - 1).bit_length()
 
 
+@extend_schema(
+    responses=inline_serializer(
+        name='HealthCheck',
+        fields={
+            'status': serializers.CharField(
+                help_text='Always "ok" — a non-200 means the check failed.',
+            ),
+            'service': serializers.CharField(),
+            'version': serializers.CharField(),
+        },
+    ),
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check(request):
@@ -52,6 +65,28 @@ def health_check(request):
     })
 
 
+@extend_schema(
+    responses={
+        200: inline_serializer(
+            name='HealthReady',
+            fields={
+                'status': serializers.CharField(),
+                'database': serializers.CharField(
+                    help_text='"ok" when the database answered SELECT 1.',
+                ),
+            },
+        ),
+        503: inline_serializer(
+            name='HealthReadyDegraded',
+            fields={
+                'status': serializers.CharField(
+                    help_text='"degraded" — the database is unreachable.',
+                ),
+                'database': serializers.CharField(),
+            },
+        ),
+    },
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_ready(request):
@@ -75,6 +110,36 @@ def health_ready(request):
     )
 
 
+@extend_schema(
+    responses=inline_serializer(
+        name='HealthMetrics',
+        fields={
+            'process': inline_serializer(
+                name='HealthMetricsProcess',
+                fields={
+                    'uptime_seconds': serializers.FloatField(),
+                    'requests_served': serializers.IntegerField(),
+                },
+            ),
+            'counts': inline_serializer(
+                name='HealthMetricsCounts',
+                fields={
+                    'users': serializers.IntegerField(
+                        help_text=(
+                            'Banded (rounded up to the next power of two), '
+                            'never the exact total.'
+                        ),
+                    ),
+                    'published_stories': serializers.IntegerField(),
+                    'total_stories': serializers.IntegerField(),
+                    'artifacts': serializers.IntegerField(),
+                    'qr_scans': serializers.IntegerField(),
+                    'quiz_attempts': serializers.IntegerField(),
+                },
+            ),
+        },
+    ),
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @throttle_classes([MetricsThrottle])
