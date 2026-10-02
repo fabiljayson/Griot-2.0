@@ -4,16 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/onboarding_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
-import '../../../core/widgets/griot_logo.dart';
+import '../../../core/widgets/auth_form_widgets.dart';
+import '../../../core/widgets/brand_widgets.dart';
 
 /// Onboarding screen shown on the very first app launch.
 ///
-/// Features 3 beautiful slides introducing the Griot AI platform:
+/// Three slides introducing the Griot AI platform:
 /// 1. Welcome — brand introduction with African proverb
 /// 2. Explore — discover stories, museums, QR codes
 /// 3. Heritage — preserve and share African culture
 ///
 /// After completion, the user proceeds to the login/registration screen.
+///
+/// This screen used to paint itself: a hardcoded `#151F42` indigo background,
+/// its own copy of the kente pattern painter, and hand-rolled `TextStyle`s. It
+/// was the only screen in the app not built on the shared shell, so it read as
+/// a different product from the login screen one swipe away. It now uses
+/// [BrandScaffold] — the same branding panel, header, pattern and breakpoint
+/// as login and register — and takes every colour and font from the theme, so
+/// the three surfaces cannot drift apart again.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -73,198 +82,86 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    final isWide = screenWidth >= 720;
-
-    return Scaffold(
-      backgroundColor: AppColors.indigoDark,
-      body: isWide
-          ? _buildWideLayout(screenWidth, screenHeight)
-          : _buildCompactLayout(screenWidth, screenHeight),
+    // BrandScaffold supplies the brand panel (wide) or brand header (compact),
+    // plus the shared kente pattern and the 720px breakpoint. The controller
+    // is passed through so the brand panel animates in step with the slides,
+    // which is what LoginScreen does.
+    return BrandScaffold(
+      animController: _animController,
+      child: _OnboardingPanel(
+        pageController: _pageController,
+        animController: _animController,
+        currentPage: _currentPage,
+        totalPages: _totalPages,
+        onPageChanged: _onPageChanged,
+        onNext: _nextPage,
+        onSkip: _skipToEnd,
+      ),
     );
   }
+}
 
-  // ─── Wide layout: side-by-side ──────────────────────────────────────
-  Widget _buildWideLayout(double screenWidth, double screenHeight) {
-    return Row(
-      children: [
-        // Left: Page content
-        Expanded(flex: 5, child: _buildPageView()),
-        // Right: Branding & controls
-        Expanded(flex: 4, child: _buildSidePanel(screenWidth)),
-      ],
-    );
-  }
+// ═══════════════════════════════════════════════════════════════════════
+//  ONBOARDING PANEL (the content side of BrandScaffold)
+// ═══════════════════════════════════════════════════════════════════════
 
-  // ─── Compact layout: stacked ────────────────────────────────────────
-  Widget _buildCompactLayout(double screenWidth, double screenHeight) {
-    return Column(
-      children: [
-        // Skip button
-        SafeArea(
-          bottom: false,
-          child: Align(
-            alignment: Alignment.topRight,
-            child: TextButton(
-              onPressed: _skipToEnd,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                foregroundColor: AppColors.sand.withValues(alpha: 0.72),
+class _OnboardingPanel extends StatelessWidget {
+  const _OnboardingPanel({
+    required this.pageController,
+    required this.animController,
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
+    required this.onNext,
+    required this.onSkip,
+  });
+
+  final PageController pageController;
+  final AnimationController animController;
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
+  final VoidCallback onNext;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isWide = MediaQuery.sizeOf(context).width >= kAuthBreakpointWide;
+
+    return Container(
+      // Mirrors the login form panel: an opaque surface on wide layouts (where
+      // it sits beside the brand panel) and transparent on compact ones,
+      // where it sits directly under the brand header.
+      color: isWide ? scheme.surface : Colors.transparent,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            // Skip, top-right. Inside SafeArea so it clears the status bar on
+            // compact layouts without double-padding under the brand header.
+            Align(
+              alignment: Alignment.topRight,
+              child: TextButton(
+                onPressed: onSkip,
+                child: const Text('Skip'),
               ),
-              child: Text(
-                'Skip',
-                style: TextStyle(
-                  fontFamily: 'PlusJakartaSans',
-                  fontWeight: FontWeight.w600,
+            ),
+            Expanded(
+              child: PageView.builder(
+                controller: pageController,
+                itemCount: totalPages,
+                onPageChanged: onPageChanged,
+                itemBuilder: (context, index) => _OnboardingSlide(
+                  slide: _slides[index],
+                  animController: animController,
                 ),
               ),
             ),
-          ),
-        ),
-        // Page content
-        Expanded(child: _buildPageView()),
-        // Bottom controls
-        _buildBottomControls(isWide: false),
-      ],
-    );
-  }
-
-  // ─── PageView ───────────────────────────────────────────────────────
-  Widget _buildPageView() {
-    return PageView.builder(
-      controller: _pageController,
-      itemCount: _totalPages,
-      onPageChanged: _onPageChanged,
-      itemBuilder: (context, index) {
-        return _OnboardingSlide(
-          pageIndex: index,
-          animController: _animController,
-        );
-      },
-    );
-  }
-
-  // ─── Side panel (wide layout) ──────────────────────────────────────
-  Widget _buildSidePanel(double screenWidth) {
-    return Container(
-      decoration: const BoxDecoration(color: AppColors.indigo),
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.05,
-            vertical: 40,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const GriotLogo(
-                size: 72,
-                light: true,
-                tagline: 'Digital Heritage Platform',
-              ),
-              const SizedBox(height: 48),
-              // Page indicator
-              _buildPageIndicator(),
-              const SizedBox(height: 48),
-              // Action button
-              _buildActionButton(isWide: true),
-              const SizedBox(height: 16),
-              // Skip
-              TextButton(
-                onPressed: _skipToEnd,
-                child: Text(
-                  'Skip',
-                  style: TextStyle(
-                    fontFamily: 'PlusJakartaSans',
-                    color: AppColors.sand.withValues(alpha: 0.5),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─── Bottom controls (compact layout) ──────────────────────────────
-  Widget _buildBottomControls({required bool isWide}) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        0,
-        24,
-        MediaQuery.of(context).padding.bottom + 24,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF151F42), // Ndop indigo dark
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildPageIndicator(),
-          const SizedBox(height: 32),
-          _buildActionButton(isWide: false),
-        ],
-      ),
-    );
-  }
-
-  // ─── Page indicator dots ───────────────────────────────────────────
-  Widget _buildPageIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_totalPages, (index) {
-        final isActive = index == _currentPage;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(horizontal: 5),
-          width: isActive ? 28 : 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: isActive
-                ? AppColors.bronze
-                : AppColors.sand.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        );
-      }),
-    );
-  }
-
-  // ─── Action button ─────────────────────────────────────────────────
-  Widget _buildActionButton({required bool isWide}) {
-    final isLastPage = _currentPage == _totalPages - 1;
-
-    return SizedBox(
-      width: isWide ? 220 : double.infinity,
-      height: 54,
-      child: FilledButton(
-        onPressed: _nextPage,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.bronze,
-          foregroundColor: AppColors.charcoal,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-          textStyle: const TextStyle(
-            fontFamily: 'PlusJakartaSans',
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
-            letterSpacing: 0.3,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(isLastPage ? 'Get Started' : 'Next'),
-            const SizedBox(width: 8),
-            Icon(
-              isLastPage ? AppIcons.check : AppIcons.arrow_forward_ios,
-              size: 16,
+            _OnboardingControls(
+              currentPage: currentPage,
+              totalPages: totalPages,
+              onNext: onNext,
             ),
           ],
         ),
@@ -274,161 +171,239 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+//  CONTROLS — page dots + primary action
+// ═══════════════════════════════════════════════════════════════════════
+
+class _OnboardingControls extends StatelessWidget {
+  const _OnboardingControls({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onNext,
+  });
+
+  final int currentPage;
+  final int totalPages;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLastPage = currentPage == totalPages - 1;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PageIndicator(currentPage: currentPage, totalPages: totalPages),
+          const SizedBox(height: 28),
+          // AuthButton is the same primary action login and register use, so
+          // "Get Started" here and "Sign In" one swipe later are the same
+          // button.
+          AuthButton(
+            onPressed: onNext,
+            label: isLastPage ? 'Get Started' : 'Next',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PAGE INDICATOR DOTS
+// ═══════════════════════════════════════════════════════════════════════
+
+class _PageIndicator extends StatelessWidget {
+  const _PageIndicator({required this.currentPage, required this.totalPages});
+
+  final int currentPage;
+  final int totalPages;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(totalPages, (index) {
+        final isActive = index == currentPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          width: isActive ? 28 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            // `secondary` is the theme's bronze accent, so the dots pick up a
+            // palette change rather than hard-coding one.
+            color: isActive
+                ? scheme.secondary
+                : scheme.onSurfaceVariant.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 //  ONBOARDING SLIDE
 // ═══════════════════════════════════════════════════════════════════════
 
 class _OnboardingSlide extends StatelessWidget {
-  const _OnboardingSlide({
-    required this.pageIndex,
-    required this.animController,
-  });
+  const _OnboardingSlide({required this.slide, required this.animController});
 
-  final int pageIndex;
+  final _SlideData slide;
   final AnimationController animController;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final isWide = screenWidth >= 720;
+    final isWide = screenWidth >= kAuthBreakpointWide;
 
-    final slideData = _slides[pageIndex];
-
-    return Container(
-      decoration: const BoxDecoration(color: AppColors.indigoDark),
-      child: Stack(
-        children: [
-          // Decorative pattern
-          Positioned.fill(
-            child: CustomPaint(painter: _AfricanPatternPainter()),
-          ),
-          // Content
-          Center(
-            child: FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animController,
-                curve: const Interval(0.0, 0.6),
-              ),
-              child: SlideTransition(
-                position:
-                    Tween<Offset>(
-                      begin: const Offset(0, 0.08),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animController,
-                        curve: const Interval(
-                          0.0,
-                          0.6,
-                          curve: Curves.easeOutCubic,
-                        ),
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: isWide ? 48 : 24),
+      child: Center(
+        child: ConstrainedBox(
+          // Same measure as the login form panel, so the two read as one
+          // column of content rather than two unrelated ones.
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animController,
+              curve: const Interval(0.0, 0.6),
+            ),
+            child: SlideTransition(
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.08),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animController,
+                      curve: const Interval(
+                        0.0,
+                        0.6,
+                        curve: Curves.easeOutCubic,
                       ),
                     ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isWide ? 48 : 32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Image-led hero card with a branded feature marker.
-                      SizedBox(
-                        width: double.infinity,
-                        height: isWide ? 220 : 170,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.asset(
-                                slideData.imageAsset,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                left: 16,
-                                bottom: 16,
-                                child: Container(
-                                  width: 42,
-                                  height: 42,
-                                  decoration: BoxDecoration(
-                                    color: slideData.accentColor,
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      slideData.icon,
-                                      size: 19,
-                                      color: AppColors.charcoal,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-                      // Title
-                      Text(
-                        slideData.title,
-                        style: TextStyle(
-                          fontFamily: 'Fraunces',
-                          fontSize: isWide ? 32 : 28,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.sand,
-                          height: 1.2,
-                          letterSpacing: -0.3,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      // Subtitle
-                      Text(
-                        slideData.subtitle,
-                        style: TextStyle(
-                          fontFamily: 'PlusJakartaSans',
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.sand.withValues(alpha: 0.7),
-                          height: 1.6,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      if (slideData.quote != null) ...[
-                        const SizedBox(height: 28),
-                        // Quote
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.bronze.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: AppColors.terracotta.withValues(
-                                alpha: 0.15,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            '"${slideData.quote}"',
-                            style: TextStyle(
-                              fontFamily: 'Fraunces',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.ochreDark.withValues(
-                                alpha: 0.85,
-                              ),
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ],
                   ),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _SlideHero(slide: slide, height: isWide ? 220 : 170),
+                  SizedBox(height: isWide ? 32 : 24),
+                  // Fraunces display style from the theme; the size steps up
+                  // on wide layouts without leaving the type scale.
+                  Text(
+                    slide.title,
+                    style: theme.textTheme.displayMedium?.copyWith(
+                      fontSize: isWide ? 32 : 28,
+                      height: 1.2,
+                      letterSpacing: -0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    slide.subtitle,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.6,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (slide.quote != null) ...[
+                    const SizedBox(height: 28),
+                    _QuoteCard(quote: slide.quote!),
+                  ],
+                ],
               ),
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Image-led hero with a branded feature marker.
+///
+/// The marker is a white badge carrying the slide's accent as the glyph
+/// colour, which keeps contrast in the right direction on every accent
+/// instead of flipping between white and charcoal per slide.
+class _SlideHero extends StatelessWidget {
+  const _SlideHero({required this.slide, required this.height});
+
+  final _SlideData slide;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(slide.imageAsset, fit: BoxFit.cover),
+            Positioned(
+              left: 16,
+              bottom: 16,
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Icon(slide.icon, size: 19, color: slide.accentColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Proverb card, matching the one in `BrandPanel`.
+///
+/// `accentTextStrong` is the WCAG AA bronze for small text on white — the
+/// plain bronze only reaches ~2.8:1, which is why the quote is not simply
+/// `AppColors.bronze`.
+class _QuoteCard extends StatelessWidget {
+  const _QuoteCard({required this.quote});
+
+  final String quote;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.bronze.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Text(
+        '"$quote"',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontFamily: 'Fraunces',
+          fontStyle: FontStyle.italic,
+          color: AppColors.accentTextStrong,
+          height: 1.5,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -444,16 +419,21 @@ class _SlideData {
     required this.imageAsset,
     required this.title,
     required this.subtitle,
-    this.quote,
     required this.accentColor,
+    this.quote,
   });
 
   final IconData icon;
   final String imageAsset;
   final String title;
   final String subtitle;
-  final String? quote;
+
+  /// Glyph colour for the hero marker. All three are the "strong" accent
+  /// variants — they clear 4.5:1 as small marks on a white badge, where the
+  /// base bronze does not.
   final Color accentColor;
+
+  final String? quote;
 }
 
 final _slides = [
@@ -464,7 +444,7 @@ final _slides = [
     subtitle:
         'Explore a rich digital library of cultural tales, oral traditions, and historical artifacts from Cameroon and Central Africa.',
     quote: 'Every artifact has a story to tell.',
-    accentColor: AppColors.bronze,
+    accentColor: AppColors.accentTextStrong,
   ),
   _SlideData(
     icon: AppIcons.qr_code_scanner,
@@ -474,7 +454,7 @@ final _slides = [
         'Scan QR codes at museums and cultural sites to unlock immersive digital experiences with AI-powered narration and video.',
     quote:
         'Until the lion learns to write, every story will glorify the hunter.',
-    accentColor: AppColors.ochre,
+    accentColor: AppColors.accentTextStrongIndigo,
   ),
   _SlideData(
     icon: AppIcons.favorite,
@@ -482,45 +462,6 @@ final _slides = [
     title: 'Preserve &\nShare',
     subtitle:
         'Contribute stories, earn heritage badges, and help preserve Africa\'s oral traditions for future generations.',
-    quote: null,
-    accentColor: AppColors.savannahGreen,
+    accentColor: AppColors.accentTextStrongGreen,
   ),
 ];
-
-// ═══════════════════════════════════════════════════════════════════════
-//  DECORATIVE PAINTER
-// ═══════════════════════════════════════════════════════════════════════
-
-class _AfricanPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.terracotta.withValues(alpha: 0.03)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
-    const spacing = 70.0;
-    final rows = (size.height / spacing).ceil();
-    final cols = (size.width / spacing).ceil();
-
-    for (var r = 0; r < rows; r++) {
-      for (var c = 0; c < cols; c++) {
-        final cx = c * spacing + spacing / 2;
-        final cy = r * spacing + spacing / 2;
-        final half = spacing * 0.25;
-
-        // Diamond
-        final path = Path()
-          ..moveTo(cx, cy - half)
-          ..lineTo(cx + half, cy)
-          ..lineTo(cx, cy + half)
-          ..lineTo(cx - half, cy)
-          ..close();
-        canvas.drawPath(path, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
