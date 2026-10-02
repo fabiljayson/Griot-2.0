@@ -3,6 +3,7 @@ Tests for the admin analytics API endpoints.
 """
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+from django.utils import timezone
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -219,3 +220,120 @@ class AdminUsersListTests(APITestCase):
 
         resp = self.client.get(USERS_LIST_URL, {'search': 'no-such-user'})
         self.assertEqual(len(resp.data), 0)
+
+
+class GamificationXpConsistencyTests(APITestCase):
+    """The "XP earned" tile must agree with the leaderboard printed beneath it.
+
+    These two sat on the same screen reading `QuizAttempt.xp_earned` and
+    `UserProfile.total_xp` respectively, so a platform with XP in its profiles
+    but no passed quiz attempts showed 0 above a leaderboard of ~2,000. Both
+    numbers were true about different things; only one is "XP earned".
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'xp_user', email='xp@example.com',
+            password='hunter2secure', role='visitor',
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user, total_xp=1500, level=12,
+        )
+
+    def test_total_xp_earned_is_the_platform_total(self):
+        from api.analytics import get_gamification_stats
+
+        stats = get_gamification_stats()
+        self.assertEqual(stats['total_xp_earned'], 1500)
+
+    def test_total_xp_earned_never_contradicts_the_top_reader(self):
+        from api.analytics import get_gamification_stats
+
+        stats = get_gamification_stats()
+        best = max(u['total_xp'] for u in stats['top_users'])
+        self.assertGreaterEqual(
+            stats['total_xp_earned'], best,
+            'the platform total cannot be smaller than the largest member',
+        )
+
+    def test_quiz_xp_is_reported_separately(self):
+        from api.analytics import get_gamification_stats
+
+        # `xp_reward` is derived (50 + 10 per question), so a quiz with no
+        # questions pays exactly 50. A quiz belongs to a story.
+        story = Story.objects.create(
+            title='Quiz Host Story', content='Content.',
+            author=self.user, status=Story.Status.PUBLISHED,
+        )
+        # One quiz per story, created automatically with the story.
+        quiz = Quiz.objects.get(story=story)
+        QuizAttempt.objects.create(
+            user=self.user, quiz=quiz,
+            status=QuizAttempt.Status.COMPLETED,
+            passed=True, score=90, xp_earned=50,
+        )
+        stats = get_gamification_stats()
+        self.assertEqual(stats['quiz_xp_earned'], 50)
+        self.assertEqual(
+            stats['total_xp_earned'], 1500,
+            'the quiz payout is recorded on the profile, not summed separately',
+        )
+
+
+class DashboardGrowthSeriesTests(APITestCase):
+    """The growth series must be correct *and* not cost 120 queries.
+
+    Each series was a loop of 30 `COUNT(*)` calls, so the dashboard paid 120
+    round trips to draw three sparklines. They are now one grouped query each.
+    The budget assertion is the point: without it the loops can come back
+    unnoticed, because a correct-but-slow series still passes every other test.
+    """
+
+    def test_each_growth_series_has_30_chronological_points(self):
+        from api.analytics import daily_growth, get_qr_stats, get_user_stats
+
+        for name, fn in (
+            ('user_growth', get_user_stats),
+            ('scan_growth', get_qr_stats),
+        ):
+            series = fn()[name]
+            with self.subTest(series=name):
+                self.assertEqual(len(series), 30)
+                self.assertEqual(series, sorted(series, key=lambda p: p['date']))
+                for point in series:
+                    self.assertIn('count', point)
+
+    def test_days_with_no_rows_are_present_with_zero(self):
+        """A gap must render as a zero, not disappear and shift the axis."""
+        from api.analytics import daily_growth
+
+        series = daily_growth(User.objects.none(), 'date_joined', days=7)
+        self.assertEqual(len(series), 7)
+        self.assertTrue(all(point['count'] == 0 for point in series))
+
+    def test_a_row_on_one_day_lands_on_that_day(self):
+        from api.analytics import daily_growth
+
+        user = User.objects.create_user(
+            'growth_user', email='growth@example.com', password='hunter2secure',
+        )
+        today = timezone.now().date().isoformat()
+        series = daily_growth(User.objects.filter(pk=user.pk), 'date_joined', days=30)
+        by_date = {point['date']: point['count'] for point in series}
+        self.assertEqual(by_date[today], 1)
+
+    def test_the_dashboard_stays_within_its_query_budget(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        from web.services import admin_dashboard_data
+
+        admin_dashboard_data()  # warm any lazy caches first
+        with CaptureQueriesContext(connection) as ctx:
+            admin_dashboard_data()
+
+        self.assertLessEqual(
+            len(ctx.captured_queries), 60,
+            f'dashboard issued {len(ctx.captured_queries)} queries; the growth '
+            f'series must stay grouped rather than looping per day',
+        )

@@ -166,7 +166,7 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
           <a href="{% url 'web:story-detail' entry.story.slug %}" class="font-display font-bold hover:text-terracotta">{{ entry.story.title }}</a>
           <p class="text-xs text-secondary-text">by {{ entry.story.author.username }} • status: {{ entry.story.get_status_display }}</p>
         </div>
-        <span class="rounded-full bg-brand-error px-2.5 py-1 text-[11px] font-bold text-white">{{ entry.flags|length }} flag{{ entry.flags|length|yesno:',s' }}</span>
+        <span class="rounded-full bg-brand-error px-2.5 py-1 text-[11px] font-bold text-white">{% with flag_count=entry.flags|length %}{{ flag_count }} flag{{ flag_count|pluralize:"s" }}{% endwith %}</span>
       </div>
 
       <ul class="mt-3 space-y-2">

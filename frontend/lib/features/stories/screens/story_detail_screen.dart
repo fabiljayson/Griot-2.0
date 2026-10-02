@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/navigation/app_router.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/griot_image.dart';
 import '../../../core/widgets/griot_loader.dart';
 import '../../audio/models/narration_job_model.dart';
 import '../../audio/providers/audio_provider.dart';
 import '../../audio/widgets/audio_playback_indicator.dart';
+import '../../audio/widgets/audio_player_sheet.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/sign_in_prompt.dart';
 import '../../gamification/providers/gamification_provider.dart';
@@ -41,10 +43,13 @@ class StoryDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<StoryDetailScreen> createState() => _StoryDetailScreenState();
 }
 
-class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
+class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
+    with RouteAware {
   final ScrollController _scrollController = ScrollController();
+  PageRoute<dynamic>? _subscribedRoute;
   double _scrollProgress = 0;
   bool _isStartingQuiz = false;
+  bool _hasStoppedAudioOnRouteExit = false;
 
   /// Throttle reading-progress writes: only persist when the percentage moves
   /// by at least this much. Previously every scroll event triggered a setState
@@ -63,7 +68,39 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic> && route != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        AppRouter.routeObserver.unsubscribe(this);
+      }
+      _subscribedRoute = route;
+      AppRouter.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() => _stopAudioOnRouteExit();
+
+  @override
+  void didPop() => _stopAudioOnRouteExit();
+
+  @override
+  void didPopNext() {
+    _hasStoppedAudioOnRouteExit = false;
+  }
+
+  void _stopAudioOnRouteExit() {
+    if (_hasStoppedAudioOnRouteExit) return;
+    if (!ref.read(audioPlayerProvider).hasAudio) return;
+    _hasStoppedAudioOnRouteExit = true;
+    unawaited(ref.read(audioPlayerProvider.notifier).stop());
+  }
+
+  @override
   void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -123,12 +160,12 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen> {
         ),
       },
       bottomNavigationBar: switch (storyState) {
-        StoryDetailReady(:final story) => _buildBottomBar(
-          context,
-          theme,
-          scheme,
-          story,
-          isAuthenticated,
+        StoryDetailReady(:final story) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AudioPlayerSheet(),
+            _buildBottomBar(context, theme, scheme, story, isAuthenticated),
+          ],
         ),
         _ => null,
       },

@@ -7,7 +7,11 @@ from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .serializers import CustomTokenObtainPairSerializer, RegisterSerializer, UserSerializer
+from .serializers import (
+    CustomTokenObtainPairSerializer,
+    PrivateUserSerializer,
+    RegisterSerializer,
+)
 
 User = get_user_model()
 
@@ -96,11 +100,12 @@ class RegisterView(generics.CreateAPIView):
                     }
                 )
             # Reached only with the account's exact username *and* password, so
-            # the caller is not learning anything they could not get from
-            # `POST /api/auth/token/` followed by `GET /api/users/me/`.
+            # the caller has proven they own this record and may see it — which
+            # is why this uses the private serializer rather than the public one
+            # the stories API embeds.
             return Response(
                 {
-                    'user': UserSerializer(existing).data,
+                    'user': PrivateUserSerializer(existing).data,
                     'message': 'Account already exists. Sign in at /api/auth/token/.',
                 },
                 status=status.HTTP_200_OK,
@@ -110,7 +115,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
         return Response(
             {
-                'user': UserSerializer(user).data,
+                'user': PrivateUserSerializer(user).data,
                 'message': 'Account created. Sign in at /api/auth/token/.',
             },
             status=status.HTTP_201_CREATED,
@@ -121,13 +126,13 @@ class RegisterView(generics.CreateAPIView):
 # Current user
 # ---------------------------------------------------------------------------
 @extend_schema(
-    request=UserSerializer,
-    responses={200: UserSerializer},
+    request=PrivateUserSerializer,
+    responses={200: PrivateUserSerializer},
 )
 class MeView(APIView):
     """GET/PATCH/DELETE /api/users/me/ — the authenticated user's profile.
 
-    GET    — return the current profile.
+    GET    — return the current profile, including this reader's own email.
     PATCH  — update profile fields (role is NOT editable here; see admin).
     DELETE — permanently delete the account & data (privacy compliance,
              Task 2.3).
@@ -135,14 +140,14 @@ class MeView(APIView):
     # Declared for drf-spectacular; the view builds this serializer by hand in
     # each method, and an APIView without `serializer_class` is skipped when
     # the schema is generated, so /api/users/me/ was missing from the document.
-    serializer_class = UserSerializer
+    serializer_class = PrivateUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        return Response(UserSerializer(request.user).data)
+        return Response(PrivateUserSerializer(request.user).data)
 
     def patch(self, request):
-        serializer = UserSerializer(
+        serializer = PrivateUserSerializer(
             request.user,
             data=request.data,
             partial=True,

@@ -133,19 +133,10 @@ void main() {
     // Let the (mocked) auth check resolve so the home screen renders.
     await tester.pumpAndSettle();
 
-    expect(
-      find.ancestor(
-        of: find.byType(AudioPlayerSheet),
-        matching: find.byType(Overlay),
-      ),
-      findsOneWidget,
-    );
+    expect(find.byType(AudioPlayerSheet), findsNothing);
     final storiesNavigationTarget = find
         .ancestor(of: find.text('Stories').last, matching: find.byType(InkWell))
         .first;
-    final playerRect = tester.getRect(find.byType(AudioPlayerSheet));
-    final navigationRect = tester.getRect(storiesNavigationTarget);
-    expect(playerRect.bottom, lessThanOrEqualTo(navigationRect.top));
 
     // Landing branding is visible — the GriotLogo renders "Griot " and
     // "AI" as separate TextSpans inside a single RichText.

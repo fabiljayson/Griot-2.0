@@ -30,6 +30,7 @@ class GamificationStatsSerializer(serializers.Serializer):
     pass_rate = serializers.FloatField()
     avg_score = serializers.FloatField()
     total_xp_earned = serializers.IntegerField()
+    quiz_xp_earned = serializers.IntegerField()
     badges_earned = serializers.IntegerField()
     top_users = serializers.ListField()
     quiz_stats = serializers.ListField()

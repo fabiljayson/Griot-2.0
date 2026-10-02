@@ -8,6 +8,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from stories.models import Story
+
 from .models import UserRole
 
 User = get_user_model()
@@ -586,3 +588,79 @@ class AuthThrottleTests(CacheIsolatedTestCase):
             'password': 'hunter2secure',
         })
         self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class UserEmailExposureTests(APITestCase):
+    """A story must not hand out its author's email address.
+
+    `UserSerializer` is nested in the story list, story detail and story-flag
+    responses, all of which are served to anonymous readers. While it carried
+    `email`, the stories API was a scrapable directory of every contributor's
+    address — a real address book, not a profile.
+    """
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'author_user', email='author@example.com',
+            password='hunter2secure', role='contributor',
+        )
+        self.reader = User.objects.create_user(
+            'reader_user', email='reader@example.com',
+            password='hunter2secure', role='visitor',
+        )
+        self.story = Story.objects.create(
+            title='Email Exposure Story',
+            content='Content.',
+            author=self.author,
+            status=Story.Status.PUBLISHED,
+        )
+
+    def test_anonymous_story_list_hides_the_author_email(self):
+        resp = self.client.get(reverse('stories:story-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        body = resp.content.decode()
+        self.assertNotIn('author@example.com', body)
+        # The author is still identifiable by name — only the address is hidden.
+        self.assertIn('author_user', body)
+
+    def test_anonymous_story_detail_hides_the_author_email(self):
+        resp = self.client.get(
+            reverse('stories:story-detail', kwargs={'slug': self.story.slug})
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertNotIn('author@example.com', resp.content.decode())
+
+    def test_the_owner_still_sees_their_own_email(self):
+        self.client.force_authenticate(self.reader)
+        resp = self.client.get(reverse('me'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['email'], 'reader@example.com')
+
+    def test_another_reader_cannot_read_someone_elses_email(self):
+        self.client.force_authenticate(self.reader)
+        resp = self.client.get(
+            reverse('stories:story-detail', kwargs={'slug': self.story.slug})
+        )
+        self.assertNotIn('author@example.com', resp.content.decode())
+
+    def test_registration_response_includes_the_new_accounts_email(self):
+        """The caller just created the account, so it is theirs to see."""
+        resp = self.client.post(reverse('users:register'), {
+            'username': 'brand_new',
+            'email': 'brand_new@example.com',
+            'password': 'a-strong-passphrase-9',
+            'password_confirm': 'a-strong-passphrase-9',
+            'first_name': 'Brand',
+            'last_name': 'New',
+        })
+        self.assertIn(resp.status_code, (status.HTTP_201_CREATED, status.HTTP_200_OK))
+        if resp.status_code == status.HTTP_201_CREATED:
+            self.assertEqual(resp.data['user']['email'], 'brand_new@example.com')
+
+    def test_the_public_serializer_cannot_write_a_username(self):
+        """Username is the identity shown everywhere; it must not be editable."""
+        from users.serializers import UserSerializer
+
+        fields = UserSerializer().fields
+        self.assertIn('username', fields)
+        self.assertTrue(fields['username'].read_only)

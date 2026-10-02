@@ -40,6 +40,11 @@ def main():
         action="store_true",
         help="Crawl pages only, skip image downloads",
     )
+    parser.add_argument(
+        "--category",
+        choices=sorted(config.CATEGORY_KEYWORDS),
+        help="Keep only items in this category (for example: Artifact)",
+    )
     args = parser.parse_args()
 
     # Create output directories
@@ -48,7 +53,7 @@ def main():
     (args.output / "images" / "landmarks").mkdir(parents=True, exist_ok=True)
     (args.output / "images" / "stories").mkdir(parents=True, exist_ok=True)
 
-    crawl_all(args.output, dry_run=args.dry_run)
+    crawl_all(args.output, dry_run=args.dry_run, category=args.category)
 
 
 if __name__ == "__main__":

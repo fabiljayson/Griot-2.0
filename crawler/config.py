@@ -52,10 +52,10 @@ CATEGORY_KEYWORDS = {
     "Landmark": [
         "monument", "memorial", "statue", "fountain", "castle",
         "courthouse", "temple", "church", "mosque", "bridge",
-        "colonial building", "reunification",
+        "colonial building", "reunification", "museum",
     ],
     "Artifact": [
-        "museum", "artifact", "artwork", "sculpture", "mask",
+        "artifact", "artwork", "sculpture", "mask",
         "craft", "carving", "pottery", "textile", "work of art",
     ],
     "Legend": [

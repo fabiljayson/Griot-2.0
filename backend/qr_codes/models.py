@@ -29,7 +29,7 @@ class Artifact(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=250, unique=True, blank=True)
     description = models.TextField(
-        help_text='Detailed description of the artifact.',
+        help_text='Short explanation of what the artifact looks like.',
     )
     category = models.CharField(
         max_length=20,

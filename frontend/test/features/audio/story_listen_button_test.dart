@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:griot_ai/core/navigation/app_router.dart';
 import 'package:griot_ai/core/theme/app_theme.dart';
+import 'package:griot_ai/features/audio/models/audio_model.dart';
 import 'package:griot_ai/features/audio/models/narration_job_model.dart';
 import 'package:griot_ai/features/audio/providers/audio_provider.dart';
 import 'package:griot_ai/features/audio/services/audio_api_service.dart';
+import 'package:griot_ai/features/audio/widgets/audio_player_sheet.dart';
 import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/auth/providers/auth_provider.dart';
 import 'package:griot_ai/features/stories/models/story_model.dart';
@@ -22,6 +27,16 @@ class _FakeAuthNotifier extends AuthNotifier {
   @override
   Future<AuthState> build() async =>
       const AuthState(status: AuthStatus.authenticated);
+}
+
+class _TrackingAudioPlayerNotifier extends AudioPlayerNotifier {
+  int stopCount = 0;
+
+  @override
+  Future<void> stop() async {
+    stopCount++;
+    state = const AudioPlayerState();
+  }
 }
 
 const _story = StoryModel(
@@ -40,7 +55,8 @@ void main() {
   testWidgets('Listen button plays the generated narration for the story', (
     tester,
   ) async {
-    const audioUrl = 'https://griot-backend-7ie7.onrender.com'
+    const audioUrl =
+        'https://griot-backend-7ie7.onrender.com'
         '/media/audio/story_1_en.mp3';
 
     final api = _MockAudioApiService();
@@ -51,37 +67,52 @@ void main() {
         language: 'en',
         speed: any(named: 'speed'),
       ),
-    ).thenAnswer((_) async => const NarrationJobModel(
-      id: 42,
-      storyId: 1,
-      title: 'The Legend of Mount Mbapit',
-      status: NarrationStatus.completed,
-      audioUrl: audioUrl,
-      narrationText: 'Long ago…',
-    ));
+    ).thenAnswer(
+      (_) async => const NarrationJobModel(
+        id: 42,
+        storyId: 1,
+        title: 'The Legend of Mount Mbapit',
+        status: NarrationStatus.completed,
+        audioUrl: audioUrl,
+        narrationText: 'Long ago…',
+      ),
+    );
 
     final repo = _MockStoryRepository();
-    when(() => repo.getStory('the-legend-of-mount-mbapit'))
-        .thenAnswer((_) async => _story);
+    when(
+      () => repo.getStory('the-legend-of-mount-mbapit'),
+    ).thenAnswer((_) async => _story);
 
     final playedUrls = <String>[];
+    final audioPlayer = _TrackingAudioPlayerNotifier();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           storyRepositoryProvider.overrideWithValue(repo),
           authProvider.overrideWith(() => _FakeAuthNotifier()),
+          audioPlayerProvider.overrideWith((ref) => audioPlayer),
           audioNarrationProvider.overrideWith(
             (ref) => AudioNarrationNotifier(
               apiService: api,
-              onReady: (job) async => playedUrls.add(job.audioUrl),
+              onReady: (job) async {
+                playedUrls.add(job.audioUrl);
+                audioPlayer.state = AudioPlayerState(
+                  currentAudio: AudioModel(
+                    id: job.id,
+                    storyId: job.storyId ?? 0,
+                    storyTitle: job.title,
+                    url: job.audioUrl,
+                  ),
+                  isPlaying: true,
+                );
+              },
             ),
           ),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const StoryDetailScreen(
-            slug: 'the-legend-of-mount-mbapit',
-          ),
+          navigatorObservers: [AppRouter.routeObserver],
+          home: const StoryDetailScreen(slug: 'the-legend-of-mount-mbapit'),
         ),
       ),
     );
@@ -91,9 +122,26 @@ void main() {
     expect(find.byTooltip('Listen'), findsOneWidget);
     await tester.tap(find.byTooltip('Listen'));
     await tester.pump();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
 
     expect(playedUrls, [audioUrl]);
+    expect(find.byType(AudioPlayerSheet), findsOneWidget);
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    unawaited(
+      navigator.push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('Other screen')),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(audioPlayer.stopCount, 1);
+    expect(audioPlayer.state.currentAudio, isNull);
+    expect(find.text('Other screen'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

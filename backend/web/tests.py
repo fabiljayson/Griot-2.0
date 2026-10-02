@@ -12,7 +12,9 @@ from django.template import Context, Template
 
 from gamification.models import Badge, Quiz, QuizAttempt, QuizQuestion, UserProfile
 from media_app.models import AudioNarrationJob, VideoGenerationJob
-from stories.models import Story, StoryCategory
+from stories.models import Story, StoryCategory, StoryFlag
+
+from .services import admin_dashboard_data
 from users.models import User
 
 
@@ -163,6 +165,25 @@ class ProfileTests(WebSmokeTestCase):
 
 class StoryMediaTests(WebSmokeTestCase):
     """Audio narration + AI video UI (§6 / §7) on story detail."""
+
+    def test_multiline_template_notes_are_not_rendered(self):
+        AudioNarrationJob.objects.create(
+            user=self.contributor,
+            story=self.story,
+            language='en',
+            status=AudioNarrationJob.Status.COMPLETED,
+            duration=42,
+        )
+        self.client.login(username='web_contributor', password='testpass123')
+
+        detail = self.client.get(
+            reverse('web:story-detail', args=[self.story.slug]),
+        )
+        self.assertNotContains(detail, 'Names the engine rather than saying')
+        self.assertNotContains(detail, 'Consent is stated plainly')
+
+        stories = self.client.get(reverse('web:stories'))
+        self.assertNotContains(stories, 'On the card, not only on the detail page')
 
     def test_owner_sees_generate_narration_prompt(self):
         self.client.login(username='web_contributor', password='testpass123')
@@ -321,6 +342,19 @@ class ArtifactAudioGuideTests(WebSmokeTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Audio guide')
 
+    def test_artifact_page_shows_the_short_visual_description(self):
+        artifact = self._make_artifact()
+        artifact.description = 'A carved wooden mask with copper details.'
+        artifact.story = 'The long account of the mask and its cultural use.'
+        artifact.save()
+
+        response = self.client.get(
+            reverse('web:artifact-detail', args=[artifact.slug]),
+        )
+
+        self.assertContains(response, 'A carved wooden mask with copper details.')
+        self.assertNotContains(response, 'The long account of the mask')
+
     def test_generation_prompt_shows_for_authenticated_users(self):
         artifact = self._make_artifact()
         self.client.login(username='web_visitor', password='testpass123')
@@ -424,58 +458,51 @@ class WebRegisterUserTests(TestCase):
 
 
 class StoryProvenanceWebTests(WebSmokeTestCase):
-    """The reader-facing surfaces must state where a story came from.
+    """Reader-facing story pages show location without provenance detail."""
 
-    The API test suite covers the data contract; these pin the web pages,
-    which are what most visitors actually read.
-    """
-
-    def test_story_detail_shows_origin_and_licence(self):
-        self.story.origin = Story.Origin.COMMUNITY_RECORDED
+    def test_story_detail_shows_region_without_provenance_details(self):
+        self.story.region = 'Northwest'
+        self.story.origin = Story.Origin.SEEDED
         self.story.licence = Story.Licence.CC_BY_NC
         self.story.rights_holder = 'The Kom kingdom'
         self.story.provenance_notes = 'Recorded with the elders of Foumban in 2021.'
+        self.story.source = 'Discover Cameroon'
         self.story.save()
 
         response = self.client.get(
             reverse('web:story-detail', args=[self.story.slug])
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Where this story comes from')
-        self.assertContains(response, 'Recorded from a community member')
-        self.assertContains(response, 'CC BY-NC 4.0')
-        self.assertContains(response, 'The Kom kingdom')
-        self.assertContains(response, 'Recorded with the elders of Foumban in 2021.')
+        self.assertContains(response, 'Northwest')
+        self.assertNotContains(response, 'Demonstration content')
+        self.assertNotContains(response, 'CC BY-NC 4.0')
+        self.assertNotContains(response, 'The Kom kingdom')
+        self.assertNotContains(response, 'Recorded with the elders of Foumban')
+        self.assertNotContains(response, 'Discover Cameroon')
+        self.assertNotContains(response, 'not yet recorded consent')
 
-    def test_seeded_story_is_labelled_on_detail_and_in_the_grid(self):
+    def test_story_grid_keeps_region_without_seed_badge(self):
         self.story.origin = Story.Origin.SEEDED
         self.story.save()
 
-        detail = self.client.get(
-            reverse('web:story-detail', args=[self.story.slug])
-        )
-        self.assertContains(detail, 'Demonstration content')
-
         listing = self.client.get(reverse('web:stories'))
-        self.assertContains(listing, 'Demonstration content')
+        self.assertContains(listing, self.story.region)
+        self.assertNotContains(listing, 'Demonstration content')
 
-    def test_withheld_consent_is_disclosed_on_the_detail_page(self):
-        # Withdrawing consent must remain possible for an already-published
-        # story — that is the whole point of being able to withdraw it — so
-        # this writes the column directly, as an emergency takedown would.
+    def test_withheld_consent_details_are_not_shown_on_the_detail_page(self):
         Story.objects.filter(pk=self.story.pk).update(
             consent_status=Story.Consent.WITHHELD,
         )
         response = self.client.get(
             reverse('web:story-detail', args=[self.story.slug])
         )
-        self.assertContains(response, 'Consent withheld')
+        self.assertNotContains(response, 'Consent withheld')
 
-    def test_unverified_consent_is_disclosed_plainly(self):
+    def test_unverified_consent_details_are_not_shown(self):
         response = self.client.get(
             reverse('web:story-detail', args=[self.story.slug])
         )
-        self.assertContains(response, 'not yet recorded consent')
+        self.assertNotContains(response, 'not yet recorded consent')
 
     def test_narration_credit_names_the_engine(self):
         self.client.login(username='web_contributor', password='testpass123')
@@ -594,3 +621,84 @@ class StoryProvenanceWebTests(WebSmokeTestCase):
         self.assertEqual(withheld.status, Story.Status.DRAFT)
         self.assertEqual(allowed.status, Story.Status.PUBLISHED)
         self.assertIsNotNone(allowed.published_at)
+
+
+class AdminModerationQueueTests(WebSmokeTestCase):
+    """The dashboard's moderation queue — the one page an admin opens to work.
+
+    It renders only when flags exist, and the development database had none, so
+    this path had never executed against real data: a template error or a
+    missing select_related would have surfaced only after the first reader
+    reported a story.
+    """
+
+    def _flag(self, story, user, reason=StoryFlag.Reason.CULTURAL_INACCURACY):
+        return StoryFlag.objects.create(story=story, user=user, reason=reason)
+
+    def test_the_queue_renders_flags_when_they_exist(self):
+        self._flag(self.story, self.visitor)
+        self.client.login(username='web_manager', password='testpass123')
+
+        response = self.client.get(reverse('web:admin-dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.story.title)
+        self.assertContains(response, '1 flag')
+
+    def test_several_flags_on_one_story_are_grouped_under_it(self):
+        second = User.objects.create_user(
+            username='web_flagger', password='testpass123', role='visitor',
+        )
+        self._flag(self.story, self.visitor)
+        self._flag(self.story, second, reason='cultural_inaccuracy')
+        self.client.login(username='web_manager', password='testpass123')
+
+        response = self.client.get(reverse('web:admin-dashboard'))
+
+        self.assertContains(response, '2 flags')
+        # One entry for the story, not one per flag.
+        self.assertEqual(
+            admin_dashboard_data()['moderation_queue'][0]['story'], self.story,
+        )
+
+    def test_a_resolved_flag_leaves_the_queue(self):
+        flag = self._flag(self.story, self.visitor)
+        self.client.login(username='web_manager', password='testpass123')
+        self.assertEqual(len(admin_dashboard_data()['moderation_queue']), 1)
+
+        flag.resolved = True
+        flag.save()
+
+        self.assertEqual(len(admin_dashboard_data()['moderation_queue']), 0)
+
+    def test_an_empty_queue_renders_without_error(self):
+        self.client.login(username='web_manager', password='testpass123')
+        response = self.client.get(reverse('web:admin-dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_the_queue_does_not_add_queries_per_story(self):
+        """It must stay `select_related`, or it is an N+1 waiting for volume."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        for index in range(5):
+            story = Story.objects.create(
+                title=f'Flagged {index}', content='Content.',
+                author=self.contributor, status=Story.Status.PUBLISHED,
+            )
+            self._flag(story, self.visitor)
+
+        admin_dashboard_data()  # warm
+        with CaptureQueriesContext(connection) as ctx:
+            admin_dashboard_data()
+
+        self.assertLessEqual(
+            len(ctx.captured_queries), 60,
+            f'queue pushed the dashboard to {len(ctx.captured_queries)} queries',
+        )
+
+    def test_a_visitor_cannot_see_the_dashboard(self):
+        self._flag(self.story, self.visitor)
+        self.client.login(username='web_visitor', password='testpass123')
+        response = self.client.get(reverse('web:admin-dashboard'))
+        self.assertEqual(response.status_code, 403)

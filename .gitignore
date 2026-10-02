@@ -12,6 +12,11 @@ build/
 *.sqlite3
 db.sqlite3
 db.sqlite3-journal
+# Timestamped database backups. `*.sqlite3` does not match
+# `db.sqlite3.bak-20261002-180422`, which is how a copy of the dev database
+# — 523 user rows and their password hashes — ended up in the history.
+*.sqlite3.bak*
+*.sqlite3-*
 staticfiles/
 .env
 .venv/

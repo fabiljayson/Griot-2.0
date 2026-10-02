@@ -12,6 +12,7 @@ from utils import (
     infer_location,
     is_skip_heading,
     slugify,
+    summarize_description,
     trim_description,
 )
 
@@ -238,8 +239,45 @@ def sections_to_items(
         description = trim_description(description)
 
         images = section["images"]
+        if not description or len(description) < 15:
+            description = next(
+                (
+                    clean_description(image.get("alt_text", ""))
+                    for image in images
+                    if len(image.get("alt_text", "").strip()) >= 15
+                ),
+                description,
+            )
+
+        image_descriptions = " ".join(
+            image.get("alt_text", "") for image in images
+        )
+        lead_description = re.split(
+            r"(?<=[.!?])\s+", description, maxsplit=1
+        )[0]
+        classification_text = " ".join(
+            (title, lead_description, image_descriptions)
+        )
         combined = title + " " + description
-        category = default_category or classify_category(combined)
+        artifact_title_terms = (
+            "artifact",
+            "artwork",
+            "sculpture",
+            "mask",
+            "carving",
+            "pottery",
+            "textile",
+            "work of art",
+            "handicraft",
+        )
+        title_names_artifact = any(
+            term in title.casefold() for term in artifact_title_terms
+        )
+        category = default_category or (
+            "Artifact"
+            if title_names_artifact
+            else classify_category(classification_text)
+        )
         location = default_location
 
         # Try to infer location from content
@@ -254,6 +292,7 @@ def sections_to_items(
             "title": title,
             "category": category,
             "location": location,
+            "short_description": summarize_description(description),
             "description": description,
             "historical_significance": extract_historical_significance(description),
             "source_url": source_url,

@@ -1,4 +1,11 @@
+import json
+import tempfile
+from io import StringIO
+from pathlib import Path
+
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -191,3 +198,71 @@ class QRGeneratorTests(APITestCase):
         gen = get_qr_generator()
         uri = gen.generate_data_uri('https://africanteller.org/artifact/test')
         self.assertTrue(uri.startswith('data:image/png;base64,'))
+
+
+class CrawlImportTests(TestCase):
+    def test_import_uses_short_description_and_keeps_full_story(self):
+        full_description = (
+            'A carved wooden throne with bronze panels. It was used by Bamoun '
+            'kings during public ceremonies.'
+        )
+        crawl_data = [{
+            'id': 'bamoun-bronze-throne',
+            'title': 'Bamoun Bronze Throne',
+            'category': 'Artifact',
+            'location': 'Foumban, West Region',
+            'short_description': 'A carved wooden throne with bronze panels.',
+            'description': full_description,
+            'historical_significance': 'It was used by Bamoun kings during public ceremonies.',
+            'images': [],
+        }]
+
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / 'crawl.json'
+            json_path.write_text(json.dumps(crawl_data), encoding='utf-8')
+            call_command(
+                'import_crawl_data',
+                json_path=str(json_path),
+                skip_images=True,
+                stdout=StringIO(),
+            )
+
+        artifact = Artifact.objects.get(slug='bamoun-bronze-throne')
+        self.assertEqual(
+            artifact.description,
+            'A carved wooden throne with bronze panels.',
+        )
+        self.assertIn(full_description, artifact.story)
+        self.assertIn('Historical Significance', artifact.story)
+
+    def test_import_summarizes_legacy_description_when_short_field_is_missing(self):
+        full_description = (
+            'A ceremonial drum carved from a single tree trunk. '
+            'Its sound traditionally called people together.'
+        )
+        crawl_data = [{
+            'id': 'carved-ceremonial-drum',
+            'title': 'Carved Ceremonial Drum',
+            'category': 'Artifact',
+            'location': 'Bamoun',
+            'description': full_description,
+            'historical_significance': '',
+            'images': [],
+        }]
+
+        with tempfile.TemporaryDirectory() as directory:
+            json_path = Path(directory) / 'legacy-crawl.json'
+            json_path.write_text(json.dumps(crawl_data), encoding='utf-8')
+            call_command(
+                'import_crawl_data',
+                json_path=str(json_path),
+                skip_images=True,
+                stdout=StringIO(),
+            )
+
+        artifact = Artifact.objects.get(slug='carved-ceremonial-drum')
+        self.assertEqual(
+            artifact.description,
+            'A ceremonial drum carved from a single tree trunk.',
+        )
+        self.assertIn(full_description, artifact.story)

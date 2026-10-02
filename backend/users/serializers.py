@@ -10,7 +10,14 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Public profile representation of a user."""
+    """Public profile representation of a user.
+
+    Deliberately excludes ``email``. This serializer is nested inside the story
+    list, story detail and story-flag responses, all of which are served to
+    anonymous readers — including it turned the stories API into a scrapable
+    directory of contributor addresses. The email is available to its owner
+    through :class:`PrivateUserSerializer`, and nowhere else.
+    """
 
     role_display = serializers.CharField(source='get_role_display', read_only=True)
 
@@ -19,7 +26,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'username',
-            'email',
             'first_name',
             'last_name',
             'role',
@@ -27,7 +33,21 @@ class UserSerializer(serializers.ModelSerializer):
             'institution',
             'date_joined',
         )
-        read_only_fields = ('id', 'date_joined')
+        read_only_fields = ('id', 'username', 'date_joined')
+
+
+class PrivateUserSerializer(UserSerializer):
+    """The authenticated user's own record, including their email.
+
+    Used only for ``/api/users/me/`` and the auth responses, where the reader
+    is asking about themselves. Inheriting from :class:`UserSerializer` keeps
+    the public shape identical plus this one field, so the two cannot drift.
+    """
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('email',)
+        # Writable by the owner: changing your own address is legitimate.
+        read_only_fields = ('id', 'username', 'date_joined')
 
 
 class RegisterSerializer(serializers.ModelSerializer):

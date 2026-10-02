@@ -18,8 +18,12 @@ from session import fetch_page
 log = logging.getLogger("crawler")
 
 
-def crawl_all(output_dir: Path, dry_run: bool = False) -> list[dict]:
-    """Main crawl orchestrator."""
+def crawl_all(
+    output_dir: Path,
+    dry_run: bool = False,
+    category: str | None = None,
+) -> list[dict]:
+    """Crawl configured pages, optionally keeping one content category."""
     all_items = []
 
     log.info(f"Starting crawl of {len(config.PAGES_TO_CRAWL)} pages...")
@@ -45,7 +49,14 @@ def crawl_all(output_dir: Path, dry_run: bool = False) -> list[dict]:
         else:
             items = extract_content_page(soup, page_info)
 
-        log.info(f"  Extracted {len(items)} items from {url}")
+        if category:
+            items = [
+                item for item in items
+                if item.get("category", "").casefold() == category.casefold()
+            ]
+            log.info(f"  Kept {len(items)} {category} items from {url}")
+        else:
+            log.info(f"  Extracted {len(items)} items from {url}")
         all_items.extend(items)
 
     # Deduplicate by id, merging images

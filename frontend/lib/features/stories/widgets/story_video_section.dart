@@ -49,16 +49,18 @@ class _StoryVideoSectionState extends ConsumerState<StoryVideoSection> {
     final theme = Theme.of(context);
     final story = widget.story;
 
-    final isAuthenticated = ref.watch(authProvider).maybeWhen(
-      data: (s) => s.isAuthenticated,
-      orElse: () => false,
-    );
+    final isAuthenticated = ref
+        .watch(authProvider)
+        .maybeWhen(data: (s) => s.isAuthenticated, orElse: () => false);
 
     final job = ref.watch(videoForStoryProvider(story.id));
     final canStart = isAuthenticated && _canStartGeneration(story);
+    final hasExistingStoryVideo = story.videoUrl.isNotEmpty;
 
     // Nothing to show and nothing to offer.
-    if (job == null && !canStart) return const SizedBox.shrink();
+    if (job == null && !hasExistingStoryVideo && !canStart) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,13 +70,26 @@ class _StoryVideoSectionState extends ConsumerState<StoryVideoSection> {
           icon: AppIcons.movie_creation_outlined,
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (job == null)
+        if (job == null && !hasExistingStoryVideo)
           _buildStartPrompt(context, theme)
-        else if (job.isReady)
+        else if (job != null && job.isReady)
           _buildPlayer(context, theme, job)
-        else if (job.hasFailed)
+        else if (hasExistingStoryVideo)
+          _buildPlayer(
+            context,
+            theme,
+            VideoModel(
+              id: story.id,
+              storyId: story.id,
+              storyTitle: story.title,
+              url: story.videoUrl,
+              thumbnailUrl: story.coverImage ?? '',
+              status: VideoStatus.completed,
+            ),
+          )
+        else if (job != null && job.hasFailed)
           _buildFailure(context, theme, job, canStart)
-        else
+        else if (job != null)
           _buildInProgress(context, theme, job),
         const SizedBox(height: AppSpacing.section),
       ],
@@ -84,10 +99,9 @@ class _StoryVideoSectionState extends ConsumerState<StoryVideoSection> {
   /// Mirror the media API: published stories are open to any signed-in user,
   /// drafts to their author and the managing roles.
   bool _canStartGeneration(StoryModel story) {
-    final user = ref.read(authProvider).maybeWhen(
-      data: (s) => s.user,
-      orElse: () => null,
-    );
+    final user = ref
+        .read(authProvider)
+        .maybeWhen(data: (s) => s.user, orElse: () => null);
     if (user == null) return false;
     return user.canGenerateMediaFor(
       authorId: story.author.id,
@@ -100,10 +114,7 @@ class _StoryVideoSectionState extends ConsumerState<StoryVideoSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Bring this story to life',
-            style: theme.textTheme.titleSmall,
-          ),
+          Text('Bring this story to life', style: theme.textTheme.titleSmall),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Generate an AI video that visualises this story.',

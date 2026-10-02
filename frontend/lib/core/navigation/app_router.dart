@@ -25,6 +25,9 @@ abstract final class AppRouter {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'griot-root-navigator');
 
+  static final RouteObserver<PageRoute<dynamic>> routeObserver =
+      RouteObserver<PageRoute<dynamic>>();
+
   /// Route an incoming link.
   ///
   /// Safe to call before the first frame: the push is deferred until a
@@ -40,9 +43,7 @@ abstract final class AppRouter {
       return;
     }
 
-    navigator.push(
-      MaterialPageRoute(builder: (_) => _screenFor(link)),
-    );
+    navigator.push(MaterialPageRoute(builder: (_) => _screenFor(link)));
   }
 
   static Widget _screenFor(AppDeepLink link) {
@@ -69,7 +70,8 @@ class ArtifactDeepLinkScreen extends ConsumerStatefulWidget {
       _ArtifactDeepLinkScreenState();
 }
 
-class _ArtifactDeepLinkScreenState extends ConsumerState<ArtifactDeepLinkScreen> {
+class _ArtifactDeepLinkScreenState
+    extends ConsumerState<ArtifactDeepLinkScreen> {
   late Future<ArtifactModel> _artifact;
 
   @override

@@ -25,13 +25,6 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
       {% icon 'location' 'text-[10px]' %} {{ story.region }}
     </span>
     {% endif %}
-    {# On the card, not only on the detail page: a reader scanning the grid
-       must be able to see which stories are demo material. #}
-    {% if story.is_synthetic_origin %}
-    <span class="absolute bottom-3 left-3 rounded-full bg-ochre/90 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
-      {% icon 'flask' 'text-[10px]' %} Demonstration content
-    </span>
-    {% endif %}
   </a>
 
   <div class="flex flex-1 flex-col p-4">

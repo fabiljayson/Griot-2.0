@@ -2,7 +2,8 @@
 Management command to import crawled Cameroon content data into Artifact model.
 
 Reads cameroon_content.json and creates Artifact instances with:
-- Combined story (description + historical_significance)
+- A short visual description for the artifact detail page
+- Combined story (full description + historical_significance)
 - Category and location metadata
 - Downloads associated images to media/artifacts/images/
 
@@ -14,6 +15,7 @@ Usage:
 
 import json
 import os
+import re
 import shutil
 import time
 from pathlib import Path
@@ -25,6 +27,20 @@ from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 
 from qr_codes.models import Artifact
+
+
+def _short_description(text: str, max_length: int = 240) -> str:
+    """Use the first source sentence as a fallback for older crawl files."""
+    normalized = ' '.join(text.split())
+    if not normalized:
+        return ''
+
+    sentence = re.split(r'(?<=[.!?])\s+', normalized, maxsplit=1)[0]
+    if len(sentence) <= max_length:
+        return sentence
+
+    excerpt = sentence[:max_length - 3].rsplit(' ', 1)[0].rstrip(' ,;:-')
+    return f'{excerpt}...'
 
 
 class Command(BaseCommand):
@@ -91,16 +107,21 @@ class Command(BaseCommand):
             title = item.get('title', '')
             category = item.get('category', 'culture').lower()
             location = item.get('location', '')
-            description = item.get('description', '')
+            full_description = item.get('description', '')
+            description = item.get('short_description', '').strip()
+            if not description:
+                description = _short_description(full_description)
             historical_significance = item.get('historical_significance', '')
             source_url = item.get('source_url', '')
             images = item.get('images', [])
 
             # Build the story field by combining description + historical context
             story_parts = []
-            if description:
+            if full_description:
+                story_parts.append(full_description)
+            elif description:
                 story_parts.append(description)
-            if historical_significance and historical_significance != description:
+            if historical_significance and historical_significance != full_description:
                 story_parts.append(f'\n\n**Historical Significance:**\n\n{historical_significance}')
             story = '\n'.join(story_parts).strip()
 
@@ -131,6 +152,7 @@ class Command(BaseCommand):
                         existing.title = title[:200]
                         existing.category = category
                         existing.region = location[:100]
+                        existing.description = description
                         existing.story = story
                         existing.historical_significance = historical_significance
                         existing.source_url = source_url
@@ -153,6 +175,7 @@ class Command(BaseCommand):
             artifact = Artifact(
                 title=title[:200],
                 slug=slug,
+                description=description,
                 category=category,
                 region=location[:100],
                 story=story,

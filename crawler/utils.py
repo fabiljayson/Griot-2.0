@@ -78,6 +78,34 @@ def clean_description(text: str) -> str:
     return text
 
 
+def summarize_description(text: str, max_length: int = 240) -> str:
+    """Return a concise lead description while keeping source wording intact."""
+    cleaned = clean_description(text)
+    if not cleaned:
+        return ""
+
+    normalized = re.sub(r"\s+", " ", cleaned)
+    sentences = re.split(r"(?<=[.!?])\s+", normalized)
+    summary_parts = []
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        candidate = " ".join([*summary_parts, sentence])
+        if len(candidate) > max_length:
+            break
+        summary_parts.append(sentence)
+        if len(summary_parts) == 2 or len(candidate) >= 120:
+            break
+
+    if summary_parts:
+        return " ".join(summary_parts)
+
+    excerpt = normalized[:max_length].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return f"{excerpt}..." if len(excerpt) < len(normalized) else excerpt
+
+
 def trim_description(text: str, max_length: int = 1500) -> str:
     """Trim description to a reasonable length, preserving complete sentences."""
     if not text or len(text) <= max_length:

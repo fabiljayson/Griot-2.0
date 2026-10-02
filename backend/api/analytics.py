@@ -27,6 +27,38 @@ from qr_codes.models import Artifact, QRCodeScan
 User = get_user_model()
 
 
+def daily_growth(queryset, date_field: str, days: int = 30):
+    """Count rows per day for the last [days] days, in a single query.
+
+    The four growth series on this dashboard were each written as a loop of 30
+    `COUNT(*)` queries — 120 round trips to render one page, growing linearly
+    with the window. Grouping once by date and filling the gaps in Python gives
+    the identical series from one query per series.
+
+    `__date` extraction is done by the database either way, so this does not
+    move work out of the engine; it just stops asking it the same question 30
+    times.
+    """
+    today = timezone.now().date()
+    start = today - timedelta(days=days - 1)
+
+    counts = {
+        row[0]: row[1]
+        for row in queryset.filter(
+            **{f'{date_field}__date__gte': start}
+        ).values_list(f'{date_field}__date').annotate(count=Count('id'))
+    }
+
+    series = []
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        series.append({
+            'date': day.isoformat(),
+            'count': counts.get(day, 0),
+        })
+    return series
+
+
 def get_user_stats():
     """Aggregate user statistics."""
     now = timezone.now()
@@ -46,17 +78,7 @@ def get_user_stats():
     )
 
     # User growth (last 30 days, daily)
-    user_growth = []
-    for i in range(30):
-        day = (now - timedelta(days=i)).date()
-        count = User.objects.filter(
-            date_joined__date=day
-        ).count()
-        user_growth.append({
-            'date': day.isoformat(),
-            'count': count,
-        })
-    user_growth.reverse()
+    user_growth = daily_growth(User.objects.all(), 'date_joined')
 
     return {
         'total_users': total_users,
@@ -103,18 +125,7 @@ def get_story_stats():
     )
 
     # Stories published over time (last 30 days)
-    story_growth = []
-    now = timezone.now()
-    for i in range(30):
-        day = (now - timedelta(days=i)).date()
-        count = Story.objects.filter(
-            published_at__date=day
-        ).count()
-        story_growth.append({
-            'date': day.isoformat(),
-            'count': count,
-        })
-    story_growth.reverse()
+    story_growth = daily_growth(Story.objects.all(), 'published_at')
 
     # Pending stories (need review)
     pending_stories = Story.objects.filter(
@@ -152,7 +163,19 @@ def get_gamification_stats():
         status=QuizAttempt.Status.COMPLETED
     ).aggregate(avg=Avg('score'))['avg'] or 0
 
-    total_xp_earned = QuizAttempt.objects.filter(
+    # Platform-wide XP, read from the profiles.
+    #
+    # This used to sum `QuizAttempt.xp_earned` over passing attempts only,
+    # which meant the "XP earned" tile sat directly above a leaderboard reading
+    # `UserProfile.total_xp` and the two disagreed on the same screen — 0 against
+    # ~2,000 per user. Both numbers were true about different things; only one
+    # of them is what "XP earned" means to an operator. The quiz-only figure is
+    # still reported, under a name that says so.
+    total_xp_earned = UserProfile.objects.aggregate(
+        total=Sum('total_xp')
+    )['total'] or 0
+
+    quiz_xp_earned = QuizAttempt.objects.filter(
         status=QuizAttempt.Status.COMPLETED,
         passed=True,
     ).aggregate(total=Sum('xp_earned'))['total'] or 0
@@ -188,6 +211,9 @@ def get_gamification_stats():
         'pass_rate': round(quizzes_passed / total_quizzes_taken * 100, 1) if total_quizzes_taken > 0 else 0,
         'avg_score': round(avg_score, 1),
         'total_xp_earned': total_xp_earned,
+        # The subset of the above that came from quizzes, kept because it is a
+        # genuinely different question from "how much XP has been handed out".
+        'quiz_xp_earned': quiz_xp_earned,
         'badges_earned': badges_earned,
         'top_users': top_users,
         'quiz_stats': quiz_stats,
@@ -207,18 +233,7 @@ def get_qr_stats():
     unique_scanners = QRCodeScan.objects.values('user').distinct().count()
 
     # Scans by day (last 30 days)
-    now = timezone.now()
-    scan_growth = []
-    for i in range(30):
-        day = (now - timedelta(days=i)).date()
-        count = QRCodeScan.objects.filter(
-            created_at__date=day
-        ).count()
-        scan_growth.append({
-            'date': day.isoformat(),
-            'count': count,
-        })
-    scan_growth.reverse()
+    scan_growth = daily_growth(QRCodeScan.objects.all(), 'created_at')
 
     # Top artifacts by scan count
     top_artifacts = list(
