@@ -35,8 +35,16 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
   late TextEditingController _culturalContextController;
   late TextEditingController _moralLessonController;
   late TextEditingController _sourceController;
+  late TextEditingController _provenanceNotesController;
+  late TextEditingController _rightsHolderController;
 
   String _selectedLanguage = 'en';
+
+  /// Provenance the contributor declares about their own text. `consentStatus`
+  /// is not here: a contributor recording their own community's consent is
+  /// the claim this app exists not to make on someone's behalf.
+  String _selectedOrigin = StoryOrigin.contributorOriginal.value;
+  String _selectedLicence = StoryLicence.undetermined.value;
   List<int> _selectedCategoryIds = [];
   bool _isPreviewMode = false;
   bool _isSaving = false;
@@ -58,10 +66,18 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
       text: story?.moralLesson ?? '',
     );
     _sourceController = TextEditingController(text: story?.source ?? '');
+    _provenanceNotesController = TextEditingController(
+      text: story?.provenanceNotes ?? '',
+    );
+    _rightsHolderController = TextEditingController(
+      text: story?.rightsHolder ?? '',
+    );
 
     if (story != null) {
       _selectedLanguage = story.language;
       _selectedCategoryIds = story.categories.map((c) => c.id).toList();
+      _selectedOrigin = story.origin;
+      _selectedLicence = story.licence;
     }
   }
 
@@ -75,6 +91,8 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
     _culturalContextController.dispose();
     _moralLessonController.dispose();
     _sourceController.dispose();
+    _provenanceNotesController.dispose();
+    _rightsHolderController.dispose();
     super.dispose();
   }
 
@@ -320,6 +338,74 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
                 hintText: 'Original source or teller of the story',
               ),
             ),
+            const SizedBox(height: 28),
+
+            // --- Provenance & rights ---
+            //
+            // Readers see this, so "I don't know yet" is a better answer than
+            // a guess. Consent is recorded separately by a moderator.
+            Text(
+              'Where this story comes from',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'This is a rendering of someone\'s tradition, not our property. '
+              'Please be accurate.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedOrigin,
+              decoration: const InputDecoration(labelText: 'Origin'),
+              items: [
+                for (final origin in StoryOrigin.values)
+                  DropdownMenuItem(
+                    value: origin.value,
+                    child: Text(origin.label),
+                  ),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _selectedOrigin = value);
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedLicence,
+              decoration: const InputDecoration(labelText: 'Licence'),
+              items: [
+                for (final licence in StoryLicence.values)
+                  DropdownMenuItem(
+                    value: licence.value,
+                    child: Text(licence.label),
+                  ),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _selectedLicence = value);
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _rightsHolderController,
+              decoration: const InputDecoration(
+                labelText: 'Rights Holder',
+                hintText: 'Person or community who holds the rights',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _provenanceNotesController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'How this version was obtained',
+                hintText:
+                    'e.g. Recorded in Bafoussam in 2019 with the village '
+                    'elder\'s permission; translated from the Lamnso original.',
+                alignLabelWithHint: true,
+              ),
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -466,6 +552,14 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
               ? _tagsController.text.trim()
               : null,
           status: draft ? 'draft' : 'pending',
+          origin: _selectedOrigin,
+          provenanceNotes: _provenanceNotesController.text.trim().isNotEmpty
+              ? _provenanceNotesController.text.trim()
+              : null,
+          rightsHolder: _rightsHolderController.text.trim().isNotEmpty
+              ? _rightsHolderController.text.trim()
+              : null,
+          licence: _selectedLicence,
         );
       } else {
         // Create new story
@@ -494,6 +588,14 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
           source: _sourceController.text.trim().isNotEmpty
               ? _sourceController.text.trim()
               : null,
+          origin: _selectedOrigin,
+          provenanceNotes: _provenanceNotesController.text.trim().isNotEmpty
+              ? _provenanceNotesController.text.trim()
+              : null,
+          rightsHolder: _rightsHolderController.text.trim().isNotEmpty
+              ? _rightsHolderController.text.trim()
+              : null,
+          licence: _selectedLicence,
         );
       }
 

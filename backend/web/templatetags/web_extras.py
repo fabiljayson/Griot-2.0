@@ -28,6 +28,7 @@ ICON_MAP = {
     'book-open': 'fa-book-open',
     'book': 'fa-book',
     'landmark': 'fa-landmark',
+    'flask': 'fa-flask',
     'bookmark': 'fa-bookmark',
     'trophy': 'fa-trophy',
     'chart': 'fa-chart-line',

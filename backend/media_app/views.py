@@ -17,7 +17,7 @@ from qr_codes.models import Artifact
 from stories.models import Story
 
 from . import quota
-from .models import AudioNarrationJob, VideoGenerationJob
+from .models import AudioNarrationJob, VideoGenerationJob, normalise_engine
 from .serializers import (
     AudioNarrationCreateSerializer,
     AudioNarrationJobSerializer,
@@ -100,19 +100,13 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        # Create the job
-        job = VideoGenerationJob.objects.create(
-            user=request.user,
-            story=story,
-            prompt=data['prompt'],
-            status=VideoGenerationJob.Status.PENDING,
-        )
-
         # Submit to Luma AI (mock service when no key is configured and
         # LUMA_ALLOW_MOCK permits it). Resolving the service inside the try
         # matters: with no key on a production config, get_luma_service()
         # raises rather than handing back a mock that would report this job
-        # completed with an unplayable URL.
+        # completed with an unplayable URL. The job row is created after the
+        # call so `engine` can be stamped from whichever service answered — a
+        # mock run must never be credited to Dream Machine.
         try:
             luma_service = get_luma_service()
             result = luma_service.submit_video_generation(
@@ -120,18 +114,28 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 duration=data.get('duration', 10),
             )
         except LumaAIError as exc:
-            # The job row exists, so record why it died instead of leaving a
-            # permanently-pending job the user can never cancel.
-            job.status = VideoGenerationJob.Status.FAILED
-            job.error_message = str(exc)
-            job.save(update_fields=['status', 'error_message', 'updated_at'])
+            # Record why the generation died instead of leaving a permanently
+            # pending job the user can never cancel.
+            VideoGenerationJob.objects.create(
+                user=request.user,
+                story=story,
+                prompt=data['prompt'],
+                status=VideoGenerationJob.Status.FAILED,
+                error_message=str(exc),
+            )
             return Response(
                 {'detail': f'Video generation could not be started: {exc}'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
         # Update job with Luma AI details
-        job.luma_job_id = result['id']
+        job = VideoGenerationJob.objects.create(
+            user=request.user,
+            story=story,
+            prompt=data['prompt'],
+            luma_job_id=result['id'],
+            engine=normalise_engine(luma_service, 'video'),
+        )
         if result.get('status') == VideoGenerationJob.Status.FAILED:
             job.status = VideoGenerationJob.Status.FAILED
             job.error_message = result.get('error', 'Luma AI rejected the request')
@@ -357,7 +361,8 @@ class AudioNarrationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        # Create job
+        # Generate real audio with gTTS and store the file.
+        tts_service = get_tts_service()
         job = AudioNarrationJob.objects.create(
             user=request.user,
             story=story,
@@ -367,10 +372,9 @@ class AudioNarrationViewSet(viewsets.ModelViewSet):
             speed=data.get('speed', 1.0),
             voice_id=data.get('voice_id', 'default'),
             status=AudioNarrationJob.Status.PROCESSING,
+            engine=normalise_engine(tts_service, 'narration'),
         )
 
-        # Generate real audio with gTTS and store the file.
-        tts_service = get_tts_service()
         try:
             result = tts_service.submit_narration(
                 text=narration_text,

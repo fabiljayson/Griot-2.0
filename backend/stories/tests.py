@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -412,4 +413,146 @@ class ModerationTests(APITestCase):
 
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.flag.refresh_from_db()
-        self.assertFalse(self.flag.resolved)
+        self.assertFalse(self.flag.resolved)
+
+class StoryProvenanceTests(APITestCase):
+    """The app renders oral traditions it did not record.
+
+    These tests pin the guarantees a reader depends on: seeded content is
+    labelled as such, a withheld consent blocks publication, and a contributor
+    cannot self-declare that a community agreed.
+    """
+
+    def setUp(self):
+        self.contributor = User.objects.create_user(
+            'prov_contributor',
+            email='prov_contrib@example.com',
+            password='hunter2secure',
+            role='contributor',
+        )
+        self.story = Story.objects.create(
+            title='The Calabash of Truth',
+            content='A tale carried by the Mambila.',
+            source='The Mambila',
+            author=self.contributor,
+            status=Story.Status.PUBLISHED,
+            origin=Story.Origin.COMMUNITY_RECORDED,
+            rights_holder='The Mambila community',
+            licence=Story.Licence.CC_BY_NC,
+        )
+
+    def test_publishing_with_withheld_consent_is_refused(self):
+        self.story.consent_status = Story.Consent.WITHHELD
+        with self.assertRaises(ValidationError):
+            self.story.save()
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PUBLISHED)
+
+    def test_withheld_consent_blocks_the_draft_to_published_transition(self):
+        self.story.status = Story.Status.DRAFT
+        self.story.save()
+        self.story.consent_status = Story.Consent.WITHHELD
+        self.story.status = Story.Status.PUBLISHED
+
+        with self.assertRaises(ValidationError):
+            self.story.save()
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.DRAFT)
+
+    def test_consent_can_be_restored_before_publishing(self):
+        self.story.status = Story.Status.DRAFT
+        self.story.consent_status = Story.Consent.WITHHELD
+        self.story.save()
+
+        # The fix path must work: reversing the consent decision unblocks it.
+        self.story.consent_status = Story.Consent.GRANTED
+        self.story.status = Story.Status.PUBLISHED
+        self.story.save()
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PUBLISHED)
+
+    def test_withheld_consent_story_can_still_be_archived(self):
+        self.story.consent_status = Story.Consent.WITHHELD
+        self.story.status = Story.Status.ARCHIVED
+        self.story.save()
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.ARCHIVED)
+
+    def test_attribution_credits_source_and_rights_holder(self):
+        self.assertEqual(
+            self.story.attribution,
+            'Told by The Mambila · Rights: The Mambila community',
+        )
+
+    def test_attribution_omits_a_duplicate_rights_holder(self):
+        self.story.rights_holder = self.story.source
+        self.assertEqual(self.story.attribution, 'Told by The Mambila')
+
+    def test_seeded_origin_is_flagged_as_synthetic(self):
+        self.assertFalse(self.story.is_synthetic_origin)
+        self.story.origin = Story.Origin.SEEDED
+        self.assertTrue(self.story.is_synthetic_origin)
+        # Seeded content is not "told by" anyone, so the claim is dropped
+        # while the source name is still shown.
+        self.assertNotIn('Told by', self.story.attribution)
+        self.assertIn('The Mambila', self.story.attribution)
+
+    def test_detail_api_exposes_provenance_and_rights(self):
+        resp = self.client.get(
+            reverse('stories:story-detail', kwargs={'slug': self.story.slug})
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['origin'], Story.Origin.COMMUNITY_RECORDED)
+        self.assertEqual(resp.data['licence'], Story.Licence.CC_BY_NC)
+        self.assertEqual(resp.data['rights_holder'], 'The Mambila community')
+        self.assertEqual(resp.data['consent_status'], Story.Consent.NOT_REQUESTED)
+        self.assertIn('Mambila', resp.data['attribution'])
+        self.assertFalse(resp.data['is_synthetic_origin'])
+
+    def test_list_api_labels_seeded_stories(self):
+        seeded = Story.objects.create(
+            title='Sample Story',
+            content='Demo content.',
+            author=self.contributor,
+            status=Story.Status.PUBLISHED,
+            origin=Story.Origin.SEEDED,
+        )
+        resp = self.client.get(reverse('stories:story-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.data.get('results', resp.data)
+        by_id = {row['id']: row for row in data}
+        self.assertTrue(by_id[seeded.id]['is_synthetic_origin'])
+        self.assertFalse(by_id[self.story.id]['is_synthetic_origin'])
+
+    def test_contributor_cannot_self_declare_consent(self):
+        self.client.force_authenticate(self.contributor)
+        resp = self.client.patch(
+            reverse('stories:story-detail', kwargs={'slug': self.story.slug}),
+            {'consent_status': Story.Consent.GRANTED},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(
+            self.story.consent_status,
+            Story.Consent.NOT_REQUESTED,
+            'a contributor must not be able to record their own community\'s consent',
+        )
+
+    def test_contributor_can_declare_provenance(self):
+        self.client.force_authenticate(self.contributor)
+        resp = self.client.patch(
+            reverse('stories:story-detail', kwargs={'slug': self.story.slug}),
+            {
+                'origin': Story.Origin.ORAL_TRANSCRIPTION,
+                'provenance_notes': 'Transcribed from a Lamnso telling.',
+                'licence': Story.Licence.CC_BY,
+            },
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.origin, Story.Origin.ORAL_TRANSCRIPTION)
+        self.assertEqual(self.story.licence, Story.Licence.CC_BY)

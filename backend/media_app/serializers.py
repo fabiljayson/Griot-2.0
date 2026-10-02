@@ -8,7 +8,11 @@ class VideoGenerationJobSerializer(serializers.ModelSerializer):
     
     story_title = serializers.CharField(source='story.title', read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)
-    
+    # Provenance travels with the job so a player can state that the video is a
+    # modern AI illustration of the story, not archival footage of the place.
+    attribution = serializers.CharField(read_only=True)
+    is_synthetic = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = VideoGenerationJob
         fields = [
@@ -25,6 +29,10 @@ class VideoGenerationJobSerializer(serializers.ModelSerializer):
             'thumbnail_url',
             'duration',
             'error_message',
+            'origin_kind',
+            'engine',
+            'attribution',
+            'is_synthetic',
             'created_at',
             'updated_at',
             'started_at',
@@ -40,6 +48,8 @@ class VideoGenerationJobSerializer(serializers.ModelSerializer):
             'thumbnail_url',
             'duration',
             'error_message',
+            'origin_kind',
+            'engine',
             'created_at',
             'updated_at',
             'started_at',
@@ -67,6 +77,10 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
     artifact_title = serializers.SerializerMethodField()
     user_username = serializers.CharField(source='user.username', read_only=True)
     audio_url = serializers.SerializerMethodField()
+    # A synthesised voice reciting someone's tradition must not be mistakable
+    # for that person speaking. The listener is told which engine produced it.
+    attribution = serializers.CharField(read_only=True)
+    is_synthetic = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = AudioNarrationJob
@@ -87,6 +101,11 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
             'duration',
             'file_size',
             'error_message',
+            'origin_kind',
+            'engine',
+            'reviewed_by_source',
+            'attribution',
+            'is_synthetic',
             'created_at',
             'updated_at',
             'completed_at',
@@ -106,6 +125,8 @@ class AudioNarrationJobSerializer(serializers.ModelSerializer):
             'duration',
             'file_size',
             'error_message',
+            'origin_kind',
+            'engine',
             'created_at',
             'updated_at',
             'completed_at',

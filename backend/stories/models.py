@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
 
@@ -48,6 +49,41 @@ class Story(models.Model):
         EWONDO = 'ewo', 'Ewondo'
         BAMILEKE = 'bml', 'Bamileke'
         OTHER = 'other', 'Other'
+
+    class Origin(models.TextChoices):
+        """Where a story's text came from, before it entered this database.
+
+        The app renders oral traditions it did not record. Distinguishing a
+        community recording from a researcher's transcription, and both from
+        seeded demo content, is what lets a reader trust the label on the page.
+        """
+
+        COMMUNITY_RECORDED = 'community_recorded', 'Recorded from a community member'
+        ORAL_TRANSCRIPTION = 'oral_transcription', 'Transcribed from an oral telling'
+        PUBLISHED_COLLECTION = 'published_collection', 'From a published collection'
+        CONTRIBUTOR_ORIGINAL = 'contributor_original', 'Original contribution'
+        SEEDED = 'seeded', 'Seeded demonstration content'
+        UNKNOWN = 'unknown', 'Unknown'
+
+    class Consent(models.TextChoices):
+        """Whether the people behind the story agreed to its publication."""
+
+        NOT_REQUESTED = 'not_requested', 'Consent not yet requested'
+        PENDING = 'pending', 'Consent pending'
+        GRANTED = 'granted', 'Consent granted'
+        GRANTED_RESTRICTED = 'granted_restricted', 'Consent granted with restrictions'
+        WITHHELD = 'withheld', 'Consent withheld'
+
+    class Licence(models.TextChoices):
+        """Rights under which the text is shared."""
+
+        ALL_RIGHTS_RESERVED = 'all_rights_reserved', 'All rights reserved'
+        CC_BY = 'cc_by', 'CC BY 4.0'
+        CC_BY_SA = 'cc_by_sa', 'CC BY-SA 4.0'
+        CC_BY_NC = 'cc_by_nc', 'CC BY-NC 4.0'
+        CC_BY_NC_SA = 'cc_by_nc_sa', 'CC BY-NC-SA 4.0'
+        PUBLIC_DOMAIN = 'public_domain', 'Public domain'
+        UNDETERMINED = 'undetermined', 'Undetermined'
 
     # --- Core fields ---
     title = models.CharField(max_length=200)
@@ -138,6 +174,45 @@ class Story(models.Model):
         help_text='Estimated read time in minutes.',
     )
 
+    # --- Provenance & rights ---
+    # A story is a rendering of someone's tradition, not our property. These
+    # fields are editable rather than derived so that a reviewer correcting a
+    # provenance record is a normal, auditable write.
+    origin = models.CharField(
+        max_length=30,
+        choices=Origin.choices,
+        default=Origin.UNKNOWN,
+        help_text='Where this text came from, independently of `source`.',
+    )
+    provenance_notes = models.TextField(
+        blank=True,
+        default='',
+        help_text='How this version was obtained (interview, archive, memory).',
+    )
+    consent_status = models.CharField(
+        max_length=30,
+        choices=Consent.choices,
+        default=Consent.NOT_REQUESTED,
+        help_text='Whether the source community agreed to this publication.',
+    )
+    rights_holder = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Person or community holding the rights to this tradition.',
+    )
+    licence = models.CharField(
+        max_length=30,
+        choices=Licence.choices,
+        default=Licence.UNDETERMINED,
+        help_text='Licence the text is shared under.',
+    )
+    recorded_at = models.DateField(
+        blank=True,
+        null=True,
+        help_text='When the story was recorded from its source, if it was.',
+    )
+
     # --- Status & moderation ---
     status = models.CharField(
         max_length=20,
@@ -171,6 +246,22 @@ class Story(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        # Publishing a story whose community withheld consent would be the one
+        # irreversible cultural-data failure this app must not allow, so it is
+        # blocked at the model rather than in each of the four call sites that
+        # can set a status (API serializer, web form, seeder, tests).
+        if (
+            self.status == self.Status.PUBLISHED
+            and self.consent_status == self.Consent.WITHHELD
+        ):
+            raise ValidationError(
+                {
+                    'consent_status': (
+                        'Consent is withheld for this story, so it cannot be '
+                        'published. Change the consent status first.'
+                    ),
+                },
+            )
         if not self.slug:
             self.slug = slugify(self.title)
         # Auto-calculate read time (~200 words per minute)
@@ -201,6 +292,32 @@ class Story(models.Model):
         if not self.tags:
             return []
         return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+
+    @property
+    def is_synthetic_origin(self) -> bool:
+        """True when this text was generated or seeded, not sourced from a community.
+
+        Surfaces the "this is demo content" label on the web and in the API so
+        seeded stories can never be mistaken for recorded oral tradition.
+        """
+        return self.origin == self.Origin.SEEDED
+
+    @property
+    def attribution(self) -> str:
+        """One-line credit shown under the story, combining the fields we have.
+
+        Deliberately derived rather than stored: it must never drift from
+        ``source``/``rights_holder``, and a free-text attribution field would
+        drift by definition.
+        """
+        parts = []
+        if self.source:
+            parts.append(f'Told by {self.source}' if self.origin != self.Origin.SEEDED else self.source)
+        if self.rights_holder and self.rights_holder != self.source:
+            parts.append(f'Rights: {self.rights_holder}')
+        if not parts and self.region:
+            parts.append(self.region)
+        return ' · '.join(parts)
 
 
 class StoryBookmark(models.Model):
@@ -384,3 +501,6 @@ class StoryShare(models.Model):
 #
 # The alias, not the nested class, is the canonical name; keep them together.
 StoryStatusChoices = Story.Status
+StoryOriginChoices = Story.Origin
+StoryConsentChoices = Story.Consent
+StoryLicenceChoices = Story.Licence

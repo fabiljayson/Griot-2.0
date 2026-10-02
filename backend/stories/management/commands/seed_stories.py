@@ -73,6 +73,22 @@ class Command(BaseCommand):
         
         return categories
 
+    def _backfill_provenance(self, story):
+        """Label a pre-existing seeded story, without touching a curated one.
+
+        Returns True when the row was changed. A story whose provenance has
+        already been filled in — by a moderator, or by a later crawl — is left
+        exactly as it is; re-seeding must never overwrite a real record with
+        the demo label.
+        """
+        if story.origin != Story.Origin.UNKNOWN:
+            return False
+        # `is_synthetic_origin` is derived from `origin`, so setting the origin
+        # is the whole job — there is no second column to keep in step.
+        story.origin = Story.Origin.SEEDED
+        story.save(update_fields=['origin', 'updated_at'])
+        return True
+
     def _create_stories(self, author, categories):
         """Create stories based on crawled content from discover-cameroon.com."""
         
@@ -91,6 +107,13 @@ class Command(BaseCommand):
                     **story_data,
                     'author': author,
                     'status': 'published',
+                    # Everything this command inserts was written or crawled by
+                    # us, not recorded from a community member. Labelling it
+                    # `seeded` is what stops demo content from reading as
+                    # collected oral tradition on the site.
+                    'origin': Story.Origin.SEEDED,
+                    'licence': Story.Licence.UNDETERMINED,
+                    'consent_status': Story.Consent.NOT_REQUESTED,
                 }
             )
             
@@ -99,7 +122,26 @@ class Command(BaseCommand):
                 story.categories.set(category_objects)
                 self.stdout.write(f'  Created story: {story_data["title"]}')
             else:
-                self.stdout.write(f'  Story already exists: {story_data["title"]}')
+                # Backfill provenance on an existing row.
+                #
+                # `get_or_create` only applies `defaults` when it inserts, so a
+                # database seeded before these columns existed keeps every story
+                # at `unknown` while a fresh install labels them `seeded`. That
+                # divergence is the problem: the same content would read as
+                # verified oral tradition on one machine and demo content on
+                # another. Re-running the seeder is what brings them in line.
+                #
+                # Only rows still at the untouched default are touched, so a
+                # moderator who has since recorded real provenance keeps it.
+                updated = self._backfill_provenance(story)
+                if updated:
+                    self.stdout.write(
+                        f'  Labelled as seeded: {story_data["title"]}'
+                    )
+                else:
+                    self.stdout.write(
+                        f'  Story already exists: {story_data["title"]}'
+                    )
 
             if self._attach_cover_image(story):
                 self.stdout.write(f'  Attached cover image: {story.title}')
@@ -125,6 +167,9 @@ class Command(BaseCommand):
             'the-ekom-nkam-waterfalls-where-tarzan-was-born': 'ekom-nkam-waterfalls',
             'the-bamileke-elephant-dance': 'elephant',
             'the-sacred-forest-of-foreke-dschang': 'dschang-attractions',
+            'the-gouma-dance-a-celebration-of-twins': 'the-gouma-dance',
+            'crab-divination-in-rhumsiki': 'the-crab-wizard',
+            'the-mousgoum-earth-houses-of-pouss': 'the-village-of-pouss',
         }
         if not candidates and story_slug in aliases:
             candidates = sorted(image_root.rglob(f"{aliases[story_slug]}-01.*"))

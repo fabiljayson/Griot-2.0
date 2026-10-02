@@ -116,6 +116,62 @@ Bottom actions mirror Save Draft / Submit for Review. Contributors+ only.
              class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
     </div>
 
+    {# ── Provenance & rights — how this text reached us, and under what terms ── #}
+    <div class="rounded-2xl border border-cam-bronze/40 bg-cam-bronze/5 p-5 dark:border-cam-bronze/30 sm:p-6">
+      <h2 class="flex items-center gap-2 font-display text-base font-bold">
+        {% icon 'landmark' 'text-cam-bronze' %} Where this story comes from
+      </h2>
+      <p class="mt-1.5 text-xs leading-relaxed text-secondary-text">
+        This is a rendering of someone's tradition, not our property. Readers see this
+        information, so please be accurate — “I don't know yet” is a better answer than a
+        guess. A moderator records consent separately, after checking with the community.
+      </p>
+
+      <div class="mt-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <label for="id_origin" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Origin</label>
+          <select id="id_origin" name="origin"
+                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+            {% for code, label in origins %}
+            <option value="{{ code }}" {% if story.origin == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="id_licence" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Licence</label>
+          <select id="id_licence" name="licence"
+                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+            {% for code, label in licences %}
+            <option value="{{ code }}" {% if story.licence == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="id_rights_holder" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Rights Holder</label>
+          <input type="text" id="id_rights_holder" name="rights_holder" maxlength="200" value="{{ story.rights_holder|default:'' }}"
+                 placeholder="Person or community who holds the rights"
+                 class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+        </div>
+        <div>
+          <label for="id_recorded_at" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Recorded On</label>
+          <input type="date" id="id_recorded_at" name="recorded_at" value="{{ story.recorded_at|date:'Y-m-d' }}"
+                 class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+        </div>
+      </div>
+
+      <label for="id_provenance_notes" class="mb-1.5 mt-5 block text-xs font-bold uppercase tracking-wide text-secondary-text">How This Version Was Obtained</label>
+      <textarea id="id_provenance_notes" name="provenance_notes" rows="2"
+                placeholder="e.g. Recorded in Bafoussam in 2019 with the village elder's permission; translated from the Lamnso original."
+                class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">{{ story.provenance_notes|default:'' }}</textarea>
+
+      {% if editing and story.consent_status != 'not_requested' %}
+      <p class="mt-4 rounded-xl bg-white/70 px-4 py-3 text-xs dark:bg-mud-charcoal/70">
+        <span class="font-bold">Consent on record:</span> {{ story.get_consent_status_display }}.
+        Only a moderator can change this — ask one to update it if it is wrong.
+      </p>
+      {% endif %}
+    </div>
+
     {# ── Actions — mirrors mobile Save Draft / Submit for Review bar ── #}
     <div class="sticky bottom-20 flex flex-col gap-3 rounded-2xl border border-brand-border bg-white/95 p-4 shadow-lg backdrop-blur dark:border-warm-brown dark:bg-deep-earth/95 lg:bottom-4 sm:flex-row">
       <button type="submit" name="status" value="draft"

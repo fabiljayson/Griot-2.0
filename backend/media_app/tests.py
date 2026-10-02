@@ -4,6 +4,7 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import IntegrityError
 from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -12,7 +13,13 @@ from rest_framework.test import APITestCase
 from qr_codes.models import Artifact
 from stories.models import Story
 
-from .models import AudioNarrationJob, VideoGenerationJob
+from .models import (
+    AudioNarrationJob,
+    MediaOriginKind,
+    VideoGenerationJob,
+    normalise_engine,
+)
+from .services.luma_ai import LumaAIError
 
 User = get_user_model()
 
@@ -894,3 +901,222 @@ class VideoProgressTests(APITestCase):
             self.client.get(reverse('media:video-generation-status', args=[job.id]))
         job.refresh_from_db()
         self.assertEqual(job.status, VideoGenerationJob.Status.PROCESSING)
+
+
+class MediaProvenanceTests(APITestCase):
+    """A generated video or narration must say what produced it.
+
+    A gTTS voice reciting an oral tradition is not a recorded elder, and a Luma
+    render of a village is not archival footage. These tests pin that the
+    player is told the truth, including when the engine is unknown.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'media_prov_user',
+            email='media-prov@example.com',
+            password='hunter2secure',
+            role='contributor',
+        )
+        self.story = Story.objects.create(
+            title='The Song of the Frog',
+            content='A short telling.',
+            author=self.user,
+            status=Story.Status.PUBLISHED,
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_video_job_credits_the_engine_that_ran(self):
+        service = mock.Mock()
+        service.engine = 'luma-mock'
+        service.submit_video_generation.return_value = {
+            'id': 'job-123',
+            'status': VideoGenerationJob.Status.PROCESSING,
+        }
+        with mock.patch('media_app.views.get_luma_service', return_value=service):
+            resp = self.client.post(
+                reverse('media:video-generation-list'),
+                {'story_id': self.story.id, 'prompt': 'A frog at a pond.'},
+                format='json',
+            )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        job = VideoGenerationJob.objects.get(luma_job_id='job-123')
+        self.assertEqual(job.engine, 'luma-mock')
+        self.assertTrue(job.is_synthetic)
+        self.assertEqual(job.attribution, 'AI-generated video (luma-mock)')
+
+    def test_narration_job_credits_the_tts_engine(self):
+        service = mock.Mock()
+        service.engine = 'gtts'
+        service.submit_narration.return_value = {
+            'status': 'completed',
+            'audio_bytes': b'ID3',
+            'filename': 'frog.mp3',
+            'duration': 4,
+            'file_size': 3,
+        }
+        with mock.patch('media_app.views.get_tts_service', return_value=service):
+            resp = self.client.post(
+                reverse('media:audio-narration-list'),
+                {'story_id': self.story.id, 'language': 'en'},
+                format='json',
+            )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        job = AudioNarrationJob.objects.get(story=self.story)
+        self.assertEqual(job.engine, 'gtts')
+        self.assertTrue(job.is_synthetic)
+        self.assertEqual(job.attribution, 'AI-generated narration (gtts)')
+
+    def test_narration_api_response_carries_attribution(self):
+        service = mock.Mock()
+        service.engine = 'gtts'
+        service.submit_narration.return_value = {
+            'status': 'completed',
+            'audio_bytes': b'ID3',
+            'filename': 'frog.mp3',
+            'duration': 4,
+            'file_size': 3,
+        }
+        with mock.patch('media_app.views.get_tts_service', return_value=service):
+            resp = self.client.post(
+                reverse('media:audio-narration-list'),
+                {'story_id': self.story.id, 'language': 'en'},
+                format='json',
+            )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['engine'], 'gtts')
+        self.assertTrue(resp.data['is_synthetic'])
+        self.assertEqual(resp.data['attribution'], 'AI-generated narration (gtts)')
+
+    def test_a_service_that_declares_no_engine_is_not_credited_to_one(self):
+        """A missing engine must never be papered over with a plausible name."""
+        service = mock.Mock(spec=['submit_narration'])
+        service.submit_narration.return_value = {
+            'status': 'completed',
+            'audio_bytes': b'ID3',
+            'filename': 'frog.mp3',
+            'duration': 4,
+            'file_size': 3,
+        }
+        with mock.patch('media_app.views.get_tts_service', return_value=service):
+            resp = self.client.post(
+                reverse('media:audio-narration-list'),
+                {'story_id': self.story.id, 'language': 'en'},
+                format='json',
+            )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        job = AudioNarrationJob.objects.get(story=self.story)
+        self.assertEqual(job.engine, 'unknown-narration-engine')
+        self.assertEqual(job.attribution, 'narration of unrecorded origin')
+
+    def test_human_reviewed_narration_says_so(self):
+        job = AudioNarrationJob.objects.create(
+            user=self.user,
+            story=self.story,
+            engine='gtts',
+            reviewed_by_source=True,
+        )
+        self.assertEqual(
+            job.attribution,
+            'AI-generated narration (gtts) · reviewed by the source community',
+        )
+
+    def test_human_recorded_media_is_credited_to_a_narrator(self):
+        job = AudioNarrationJob.objects.create(
+            user=self.user,
+            story=self.story,
+            origin_kind=MediaOriginKind.HUMAN_RECORDING,
+        )
+        self.assertFalse(job.is_synthetic)
+        self.assertEqual(job.attribution, 'Recorded narration by a human narrator')
+
+    def test_failed_video_job_records_no_engine_credit(self):
+        service = mock.Mock()
+        service.engine = 'luma-dream-machine'
+        service.submit_video_generation.side_effect = LumaAIError('no key')
+        with mock.patch('media_app.views.get_luma_service', return_value=service):
+            resp = self.client.post(
+                reverse('media:video-generation-list'),
+                {'story_id': self.story.id, 'prompt': 'A frog at a pond.'},
+                format='json',
+            )
+        self.assertEqual(resp.status_code, status.HTTP_502_BAD_GATEWAY)
+        job = VideoGenerationJob.objects.get()
+        self.assertEqual(job.status, VideoGenerationJob.Status.FAILED)
+        self.assertEqual(job.engine, '')
+
+
+class NarrationUniquenessTests(APITestCase):
+    """One completed narration per target and language, enforced by the database.
+
+    The generation endpoints all ask "does one already exist?" before spending
+    a TTS call. That check is a check-then-act, so two concurrent requests both
+    see "no" and both generate. These tests pin the constraint that closes the
+    window — and specifically that it covers story-only and artifact-only jobs,
+    which a naive unique index over the nullable FKs silently does not.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'uniq_user', email='uniq@example.com',
+            password='hunter2secure', role='contributor',
+        )
+        self.story = Story.objects.create(
+            title='Uniqueness Story', content='Content.',
+            author=self.user, status=Story.Status.PUBLISHED,
+        )
+
+    def _completed(self, **kwargs):
+        return AudioNarrationJob.objects.create(
+            user=self.user,
+            status=AudioNarrationJob.Status.COMPLETED,
+            **kwargs,
+        )
+
+    def test_target_key_is_derived_from_the_target(self):
+        job = self._completed(story=self.story)
+        self.assertEqual(job.target_key, f'story:{self.story.pk}')
+
+    def test_a_second_completed_story_job_is_rejected(self):
+        self._completed(story=self.story, language='en')
+        with self.assertRaises(IntegrityError):
+            self._completed(story=self.story, language='en')
+
+    def test_a_different_language_is_allowed(self):
+        self._completed(story=self.story, language='en')
+        job = self._completed(story=self.story, language='fr')
+        self.assertEqual(job.language, 'fr')
+
+    def test_artifact_only_jobs_are_also_protected(self):
+        """The NULL-FK case a naive unique index gets wrong.
+
+        `story` is NULL for every audio guide, and SQLite treats NULLs as
+        distinct — so a constraint over (story, artifact) would let these
+        duplicates through while appearing to work.
+        """
+        artifact = Artifact.objects.create(
+            title='Test Mask', slug='uniq-test-mask', is_published=True,
+        )
+        self._completed(artifact=artifact, language='en')
+        with self.assertRaises(IntegrityError):
+            self._completed(artifact=artifact, language='en')
+
+    def test_orphan_jobs_are_protected_too(self):
+        self._completed(language='zz')
+        with self.assertRaises(IntegrityError):
+            self._completed(language='zz')
+
+    def test_a_failed_attempt_may_be_retried(self):
+        """Only results are deduplicated; failures must not block a retry."""
+        self._completed(story=self.story, language='en')
+        retry = AudioNarrationJob.objects.create(
+            user=self.user, story=self.story, language='en',
+            status=AudioNarrationJob.Status.FAILED,
+        )
+        self.assertEqual(retry.status, AudioNarrationJob.Status.FAILED)
+
+    def test_target_key_is_refreshed_when_the_target_changes(self):
+        job = self._completed(story=self.story)
+        job.story = None
+        job.save()
+        self.assertEqual(job.target_key, 'none')

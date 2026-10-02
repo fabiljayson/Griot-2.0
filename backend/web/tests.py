@@ -421,3 +421,176 @@ class WebRegisterUserTests(TestCase):
         self.assertTrue(any('already exists' in e for e in errors))
         self.assertFalse(any('That username is taken' in e for e in errors))
         self.assertFalse(any('email already exists' in e for e in errors))
+
+
+class StoryProvenanceWebTests(WebSmokeTestCase):
+    """The reader-facing surfaces must state where a story came from.
+
+    The API test suite covers the data contract; these pin the web pages,
+    which are what most visitors actually read.
+    """
+
+    def test_story_detail_shows_origin_and_licence(self):
+        self.story.origin = Story.Origin.COMMUNITY_RECORDED
+        self.story.licence = Story.Licence.CC_BY_NC
+        self.story.rights_holder = 'The Kom kingdom'
+        self.story.provenance_notes = 'Recorded with the elders of Foumban in 2021.'
+        self.story.save()
+
+        response = self.client.get(
+            reverse('web:story-detail', args=[self.story.slug])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Where this story comes from')
+        self.assertContains(response, 'Recorded from a community member')
+        self.assertContains(response, 'CC BY-NC 4.0')
+        self.assertContains(response, 'The Kom kingdom')
+        self.assertContains(response, 'Recorded with the elders of Foumban in 2021.')
+
+    def test_seeded_story_is_labelled_on_detail_and_in_the_grid(self):
+        self.story.origin = Story.Origin.SEEDED
+        self.story.save()
+
+        detail = self.client.get(
+            reverse('web:story-detail', args=[self.story.slug])
+        )
+        self.assertContains(detail, 'Demonstration content')
+
+        listing = self.client.get(reverse('web:stories'))
+        self.assertContains(listing, 'Demonstration content')
+
+    def test_withheld_consent_is_disclosed_on_the_detail_page(self):
+        # Withdrawing consent must remain possible for an already-published
+        # story — that is the whole point of being able to withdraw it — so
+        # this writes the column directly, as an emergency takedown would.
+        Story.objects.filter(pk=self.story.pk).update(
+            consent_status=Story.Consent.WITHHELD,
+        )
+        response = self.client.get(
+            reverse('web:story-detail', args=[self.story.slug])
+        )
+        self.assertContains(response, 'Consent withheld')
+
+    def test_unverified_consent_is_disclosed_plainly(self):
+        response = self.client.get(
+            reverse('web:story-detail', args=[self.story.slug])
+        )
+        self.assertContains(response, 'not yet recorded consent')
+
+    def test_narration_credit_names_the_engine(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        AudioNarrationJob.objects.create(
+            user=self.contributor,
+            story=self.story,
+            narration_text='Once upon a time…',
+            status=AudioNarrationJob.Status.COMPLETED,
+            audio_url='/media/narration.mp3',
+            engine='gtts',
+        )
+        response = self.client.get(
+            reverse('web:story-detail', args=[self.story.slug])
+        )
+        self.assertContains(response, 'AI-generated narration (gtts)')
+
+    def test_form_offers_provenance_fields(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self.client.get(reverse('web:story-new'))
+        self.assertContains(response, 'name="origin"')
+        self.assertContains(response, 'name="licence"')
+        self.assertContains(response, 'name="rights_holder"')
+        self.assertContains(response, 'name="provenance_notes"')
+        self.assertContains(response, 'name="recorded_at"')
+
+    def test_form_has_no_consent_field_to_self_declare(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self.client.get(reverse('web:story-new'))
+        self.assertNotContains(response, 'name="consent_status"')
+
+    def test_contributor_can_declare_provenance_from_the_form(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        self.client.post(reverse('web:story-save'), {
+            'title': 'Sourced Story',
+            'content': 'Content here.',
+            'status': 'draft',
+            'origin': Story.Origin.ORAL_TRANSCRIPTION,
+            'licence': Story.Licence.CC_BY_SA,
+            'rights_holder': 'The Bamoun council of elders',
+            'provenance_notes': 'Transcribed from a Mafa telling.',
+            'recorded_at': '2024-05-17',
+        })
+        story = Story.objects.get(slug='sourced-story')
+        self.assertEqual(story.origin, Story.Origin.ORAL_TRANSCRIPTION)
+        self.assertEqual(story.licence, Story.Licence.CC_BY_SA)
+        self.assertEqual(story.rights_holder, 'The Bamoun council of elders')
+        self.assertEqual(story.recorded_at.isoformat(), '2024-05-17')
+
+    def test_a_garbage_date_does_not_break_the_save(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self.client.post(reverse('web:story-save'), {
+            'title': 'Odd Date Story',
+            'content': 'Content here.',
+            'status': 'draft',
+            'recorded_at': 'not-a-date',
+        })
+        self.assertEqual(response.status_code, 302)
+        story = Story.objects.get(slug='odd-date-story')
+        self.assertIsNone(story.recorded_at)
+
+    def test_an_unknown_origin_choice_falls_back_rather_than_erroring(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self.client.post(reverse('web:story-save'), {
+            'title': 'Bad Choice Story',
+            'content': 'Content here.',
+            'status': 'draft',
+            'origin': 'invented-origin',
+            'licence': 'invented-licence',
+        })
+        self.assertEqual(response.status_code, 302)
+        story = Story.objects.get(slug='bad-choice-story')
+        self.assertEqual(story.origin, Story.Origin.UNKNOWN)
+        self.assertEqual(story.licence, Story.Licence.UNDETERMINED)
+
+    def test_bulk_publish_action_skips_stories_with_withheld_consent(self):
+        """A bulk UPDATE would step past the model's consent guard."""
+        from django.contrib import messages
+        from django.contrib.admin.sites import AdminSite
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.test import RequestFactory
+
+        from stories.admin import StoryAdmin
+
+        withheld = Story.objects.create(
+            title='Withheld Story',
+            content='Content.',
+            author=self.contributor,
+            status=Story.Status.DRAFT,
+            consent_status=Story.Consent.WITHHELD,
+        )
+        allowed = Story.objects.create(
+            title='Allowed Story',
+            content='Content.',
+            author=self.contributor,
+            status=Story.Status.DRAFT,
+        )
+
+        request = RequestFactory().post('/admin/stories/story/')
+        request.session = {}
+        request._messages = FallbackStorage(request)
+        request.user = self.manager
+
+        admin_instance = StoryAdmin(Story, AdminSite())
+        admin_instance.publish_stories(
+            request, Story.objects.filter(pk__in=[withheld.pk, allowed.pk]),
+        )
+
+        stored = [str(m) for m in messages.get_messages(request)]
+        self.assertTrue(
+            any('consent is withheld' in line for line in stored),
+            f'the moderator must be told what was skipped, got: {stored}',
+        )
+
+        withheld.refresh_from_db()
+        allowed.refresh_from_db()
+        self.assertEqual(withheld.status, Story.Status.DRAFT)
+        self.assertEqual(allowed.status, Story.Status.PUBLISHED)
+        self.assertIsNotNone(allowed.published_at)

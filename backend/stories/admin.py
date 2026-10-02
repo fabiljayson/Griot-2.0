@@ -30,12 +30,19 @@ class StoryAdmin(admin.ModelAdmin):
         'like_count',
         'created_at',
     )
-    list_filter = ('status', 'language', 'categories', 'created_at')
-    search_fields = ('title', 'content', 'summary', 'tags')
+    list_filter = ('status', 'origin', 'consent_status', 'licence', 'language', 'categories', 'created_at')
+    search_fields = ('title', 'content', 'summary', 'tags', 'provenance_notes', 'rights_holder')
     prepopulated_fields = {'slug': ('title',)}
     raw_id_fields = ('author',)
     filter_horizontal = ('categories', 'co_authors')
-    readonly_fields = ('view_count', 'like_count', 'bookmark_count', 'created_at', 'updated_at')
+    readonly_fields = (
+        'view_count',
+        'like_count',
+        'bookmark_count',
+        'attribution',
+        'created_at',
+        'updated_at',
+    )
 
     fieldsets = (
         (None, {
@@ -52,6 +59,20 @@ class StoryAdmin(admin.ModelAdmin):
         }),
         ('Metadata', {
             'fields': ('cultural_context', 'moral_lesson', 'source', 'estimated_read_time'),
+        }),
+        # Where this text came from and whether the community behind it agreed
+        # to its publication. `attribution` is derived and shown read-only so a
+        # reviewer can see the credit line the public will read.
+        ('Provenance & rights', {
+            'fields': (
+                'origin',
+                'provenance_notes',
+                'recorded_at',
+                'consent_status',
+                'rights_holder',
+                'licence',
+                'attribution',
+            ),
         }),
         ('Collaboration', {
             'fields': ('co_authors',),
@@ -72,8 +93,24 @@ class StoryAdmin(admin.ModelAdmin):
     actions = ['publish_stories', 'archive_stories']
 
     def publish_stories(self, request, queryset):
-        updated = queryset.update(status=Story.Status.PUBLISHED, published_at=timezone.now())
-        self.message_user(request, f'{updated} stories published.')
+        # Per-row save(), never queryset.update(): the model refuses to publish
+        # a story whose community withheld consent, and a bulk UPDATE would step
+        # straight past that guard.
+        published = 0
+        blocked = 0
+        for story in queryset:
+            if story.consent_status == Story.Consent.WITHHELD:
+                blocked += 1
+                continue
+            story.status = Story.Status.PUBLISHED
+            story.published_at = timezone.now()
+            story.save()
+            published += 1
+        self.message_user(
+            request,
+            f'{published} stories published.'
+            + (f' {blocked} skipped: consent is withheld.' if blocked else ''),
+        )
     publish_stories.short_description = 'Publish selected stories'
 
     def archive_stories(self, request, queryset):

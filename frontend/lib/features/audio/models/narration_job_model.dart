@@ -20,6 +20,11 @@ class NarrationJobModel {
     this.duration = 0,
     this.fileSize = 0,
     this.errorMessage,
+    this.originKind = 'synthetic',
+    this.engine = '',
+    this.reviewedBySource = false,
+    this.attribution = '',
+    this.isSynthetic = true,
     this.createdAt = '',
     this.completedAt,
   });
@@ -41,6 +46,27 @@ class NarrationJobModel {
   final int duration; // in seconds
   final int fileSize; // in bytes
   final String? errorMessage;
+
+  // --- Provenance ---
+  //
+  // A text-to-speech voice reciting an oral tradition is not the teller. These
+  // fields let the player say which engine spoke rather than presenting a
+  // machine's output as a recorded narrator.
+  final String originKind;
+
+  /// Name/version of the engine that produced the audio (e.g. `gtts`).
+  final String engine;
+
+  /// Whether a source community member reviewed and approved this narration.
+  final bool reviewedBySource;
+
+  /// Credit line composed server-side, so the app never words it differently
+  /// from the web.
+  final String attribution;
+
+  /// True when a model produced this audio rather than a human narrator.
+  final bool isSynthetic;
+
   final String createdAt;
   final String? completedAt;
 
@@ -59,6 +85,11 @@ class NarrationJobModel {
       duration: json['duration'] as int? ?? 0,
       fileSize: json['file_size'] as int? ?? 0,
       errorMessage: json['error_message'] as String?,
+      originKind: json['origin_kind'] as String? ?? 'synthetic',
+      engine: json['engine'] as String? ?? '',
+      reviewedBySource: json['reviewed_by_source'] as bool? ?? false,
+      attribution: json['attribution'] as String? ?? '',
+      isSynthetic: json['is_synthetic'] as bool? ?? true,
       createdAt: json['created_at'] as String? ?? '',
       completedAt: json['completed_at'] as String?,
     );
@@ -91,10 +122,22 @@ class NarrationJobModel {
       storyTitle: title,
       url: audioUrl,
       duration: duration,
-      narrator: 'Griot AI',
+      // The credit the server composed, e.g. "AI-generated narration (gtts)".
+      // Never a bare "Griot AI": that reads as a person who told the story.
+      narrator: attribution.isNotEmpty ? attribution : _fallbackAttribution,
       language: language,
       createdAt: createdAt,
     );
+  }
+
+  /// Used when the server sent no credit line — an older backend, or a job
+  /// mirrored into the cache before this field existed. Says only what is
+  /// true: that the audio is computer-generated, and by what is known.
+  String get _fallbackAttribution {
+    if (!isSynthetic) return 'Recorded by a human narrator';
+    return engine.isNotEmpty
+        ? 'AI-generated narration ($engine)'
+        : 'AI-generated narration';
   }
 }
 

@@ -33,7 +33,7 @@ from gamification.models import (
 from gamification.services.quiz_xp import already_earned_quiz_xp
 from gamification.services.streaks import record_activity
 from media_app import quota
-from media_app.models import AudioNarrationJob, VideoGenerationJob
+from media_app.models import AudioNarrationJob, VideoGenerationJob, normalise_engine
 from media_app.services.luma_ai import LumaAIError, get_luma_service
 from media_app.services.tts import (
     TTSGenerationError,
@@ -161,10 +161,13 @@ def is_contributor_plus(user):
 
 
 def narration_payload(job):
-    """Normalize a narration job into {url, duration} for templates.
+    """Normalize a narration job into {url, duration, attribution} for templates.
 
     FileField.url raises when no file is attached (legacy audio_url rows),
     so resolve the playable URL defensively here rather than in templates.
+
+    The attribution is the whole point: the reader is told which engine spoke
+    the story, so a synthesised voice is never taken for a recorded elder.
     """
     url = ''
     if job.audio_file:
@@ -175,6 +178,8 @@ def narration_payload(job):
     return {
         'url': url or job.audio_url or '',
         'duration': job.duration,
+        'attribution': job.attribution,
+        'is_synthetic': job.is_synthetic,
     }
 
 
@@ -259,7 +264,15 @@ def story_detail_data(user, slug):
         progress = ReadingProgress.objects.filter(user=user, story=story).first()
 
         if story.audio_url:
-            narration = {'url': story.audio_url, 'duration': 0}
+            narration = {
+                'url': story.audio_url,
+                'duration': 0,
+                # A bare audio_url predates the provenance columns, so we can
+                # only say what we know: someone attached audio of unknown
+                # origin. Saying so beats implying it was recorded on site.
+                'attribution': 'Audio of unrecorded origin',
+                'is_synthetic': False,
+            }
         else:
             narration_job = (
                 AudioNarrationJob.objects.filter(
@@ -277,7 +290,12 @@ def story_detail_data(user, slug):
                 .first()
             )
     elif story.audio_url:
-        narration = {'url': story.audio_url, 'duration': 0}
+        narration = {
+            'url': story.audio_url,
+            'duration': 0,
+            'attribution': 'Audio of unrecorded origin',
+            'is_synthetic': False,
+        }
 
     related = (
         published_stories()
@@ -507,6 +525,10 @@ def story_form_data(user, slug):
         'editing': story is not None,
         'categories': StoryCategory.objects.all(),
         'languages': Story.Language.choices,
+        # A contributor declares where their text came from; only a moderator
+        # records whether the community consented, so consent is absent here.
+        'origins': Story.Origin.choices,
+        'licences': Story.Licence.choices,
     }
 
 
@@ -732,7 +754,8 @@ def moderate_story(user, story, action, notes):
 
 def save_story(user, *, slug, title, content, summary, language,
                region, tags, cultural_context, moral_lesson, source,
-               status, category_ids):
+               status, category_ids, origin='', provenance_notes='',
+               rights_holder='', licence='', recorded_at=None):
     """Create or update a story via the web form (API ownership rules).
 
     Returns ``(story, message)``. Raises ``PermissionDenied`` for the same
@@ -753,6 +776,12 @@ def save_story(user, *, slug, title, content, summary, language,
         status = Story.Status.DRAFT
     if language not in {choice for choice, _ in Story.Language.choices}:
         language = Story.Language.ENGLISH
+    # An unrecognised choice falls back to the honest default rather than
+    # raising: provenance metadata must never block someone saving their tale.
+    if origin not in {choice for choice, _ in Story.Origin.choices}:
+        origin = Story.Origin.UNKNOWN
+    if licence not in {choice for choice, _ in Story.Licence.choices}:
+        licence = Story.Licence.UNDETERMINED
 
     fields = {
         'title': title,
@@ -764,6 +793,11 @@ def save_story(user, *, slug, title, content, summary, language,
         'cultural_context': cultural_context,
         'moral_lesson': moral_lesson,
         'source': source,
+        'origin': origin,
+        'provenance_notes': provenance_notes,
+        'rights_holder': rights_holder,
+        'licence': licence,
+        'recorded_at': recorded_at,
     }
     categories = StoryCategory.objects.filter(id__in=category_ids)
 
@@ -832,6 +866,7 @@ def generate_story_audio(user, story, language):
             'error',
         )
 
+    tts_service = get_tts_service()
     job = AudioNarrationJob.objects.create(
         user=user,
         story=story,
@@ -839,8 +874,8 @@ def generate_story_audio(user, story, language):
         language=language,
         speed=1.0,
         status=AudioNarrationJob.Status.PROCESSING,
+        engine=normalise_engine(tts_service, 'narration'),
     )
-    tts_service = get_tts_service()
     try:
         result = tts_service.submit_narration(
             text=narration_text,
@@ -899,6 +934,7 @@ def generate_artifact_audio(user, artifact, language):
         status=Story.Status.PUBLISHED,
     ).order_by('id').first()
 
+    tts_service = get_tts_service()
     job = AudioNarrationJob.objects.create(
         user=user,
         story=primary_story,
@@ -907,8 +943,8 @@ def generate_artifact_audio(user, artifact, language):
         language=language,
         speed=1.0,
         status=AudioNarrationJob.Status.PROCESSING,
+        engine=normalise_engine(tts_service, 'narration'),
     )
-    tts_service = get_tts_service()
     try:
         result = tts_service.submit_narration(
             text=narration_text,
@@ -980,6 +1016,9 @@ def generate_story_video(user, story, prompt):
         return f'🎬 Video generation unavailable: {exc}', 'error'
 
     job.luma_job_id = result['id']
+    # Stamp the engine from whichever service actually answered, so a job run
+    # against the mock is never credited to Dream Machine.
+    job.engine = normalise_engine(luma_service, 'video')
     job.save()
     return '🎬 Video generation started — check back shortly.', 'success'
 

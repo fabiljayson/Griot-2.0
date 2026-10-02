@@ -27,7 +27,7 @@ from django.utils import timezone
 from qr_codes.models import Artifact
 from stories.models import Story
 
-from media_app.models import AudioNarrationJob
+from media_app.models import AudioNarrationJob, normalise_engine
 from media_app.services.tts import (
     TTSGenerationError,
     build_artifact_script,
@@ -130,6 +130,7 @@ class Command(BaseCommand):
             duration=result['duration'],
             file_size=result['file_size'],
             completed_at=timezone.now(),
+            engine=normalise_engine(service, 'narration'),
         )
         job.audio_file.save(
             result['filename'],
@@ -152,6 +153,28 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Command
     # ------------------------------------------------------------------
+    def _backfill_engines(self, service):
+        """Record which engine produced narrations made before the column existed.
+
+        gTTS is the only narration service this project has ever wired up
+        (`get_tts_service()` returns it unconditionally), so audio generated
+        before `AudioNarrationJob.engine` existed was made by gTTS. Leaving it
+        blank renders as "AI-generated narration (an unnamed model)", which is
+        less honest than the truth we do know.
+
+        Rows that already name an engine are left alone, so a real provider
+        recorded later is never overwritten.
+        """
+        stale = AudioNarrationJob.objects.filter(engine='')
+        count = stale.count()
+        if not count:
+            return
+        engine = normalise_engine(service, 'narration')
+        stale.update(engine=engine)
+        self.stdout.write(
+            f'  Recorded engine "{engine}" on {count} pre-existing narration(s).'
+        )
+
     def handle(self, *args, **options):
         force = options['force']
         dry_run = options['dry_run']
@@ -160,6 +183,9 @@ class Command(BaseCommand):
 
         service = get_tts_service()
         system_user = None if dry_run else self._get_system_user()
+
+        if not dry_run:
+            self._backfill_engines(service)
 
         stories = Story.objects.filter(status=Story.Status.PUBLISHED).order_by('id')
         artifacts = Artifact.objects.filter(is_published=True).order_by('id')

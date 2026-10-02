@@ -57,6 +57,7 @@ Reading progress posts back to the same model the mobile app syncs.
             <span>•</span>
             <span class="flex items-center gap-1">{% icon 'eye' 'text-[10px]' %} {{ story.view_count }}</span>
             {% if story.source %}<span>•</span><span>via {{ story.source }}</span>{% endif %}
+            {% if story.is_synthetic_origin %}<span>•</span><span class="font-semibold text-cam-bronze">Demonstration content</span>{% endif %}
           </p>
         </div>
       </div>
@@ -101,7 +102,9 @@ Reading progress posts back to the same model the mobile app syncs.
         </button>
         <div class="min-w-0 flex-1">
           <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-cam-bronze' %} Listen to this story</h2>
-          <p class="text-xs text-secondary-text">AI narration{% if narration.duration %} • {{ narration.duration }}s{% endif %}</p>
+          {# Names the engine rather than saying "AI narration" — a listener
+             should know which machine spoke, and that it is not the teller. #}
+          <p class="text-xs text-secondary-text">{{ narration.attribution }}{% if narration.duration %} • {{ narration.duration }}s{% endif %}</p>
         </div>
       </div>
       <audio id="story-audio" preload="none" class="mt-3 w-full"></audio>
@@ -134,7 +137,7 @@ Reading progress posts back to the same model the mobile app syncs.
         Your browser does not support video playback.
       </video>
       <div class="flex items-center justify-between p-4">
-        <p class="flex items-center gap-2 text-sm font-semibold">{% icon 'video' 'text-terracotta' %} AI-generated video</p>
+        <p class="flex items-center gap-2 text-sm font-semibold">{% icon 'video' 'text-terracotta' %} {{ video_job.attribution }}</p>
         {% if video_job.duration %}<span class="text-xs text-secondary-text">{{ video_job.duration }}s</span>{% endif %}
       </div>
     </section>
@@ -165,6 +168,76 @@ Reading progress posts back to the same model the mobile app syncs.
       </div>
     </section>
     {% endif %}
+
+    {# ── Provenance & rights — the reader's right to know what they are reading ── #}
+    <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth sm:p-6">
+      <h2 class="flex items-center gap-2.5 font-display text-lg font-bold">
+        {% icon 'landmark' 'text-cam-bronze' %} Where this story comes from
+      </h2>
+
+      {% if story.is_synthetic_origin %}
+      <p class="mt-3 rounded-xl bg-ochre-tint/60 px-4 py-3 text-sm dark:bg-ochre/10">
+        <span class="font-bold">Demonstration content.</span>
+        This text was written or collected for this app as sample material. It was not
+        recorded from a community, and should not be cited as a community's account.
+      </p>
+      {% endif %}
+
+      <dl class="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-secondary-text">Origin</dt>
+          <dd class="mt-0.5">{{ story.get_origin_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-secondary-text">Licence</dt>
+          <dd class="mt-0.5">{{ story.get_licence_display }}</dd>
+        </div>
+        {% if story.rights_holder %}
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-secondary-text">Rights Holder</dt>
+          <dd class="mt-0.5">{{ story.rights_holder }}</dd>
+        </div>
+        {% endif %}
+        {% if story.recorded_at %}
+        <div>
+          <dt class="text-xs font-bold uppercase tracking-wide text-secondary-text">Recorded</dt>
+          <dd class="mt-0.5">{{ story.recorded_at|date:'M j, Y' }}</dd>
+        </div>
+        {% endif %}
+        {% if story.attribution %}
+        <div class="sm:col-span-2">
+          <dt class="text-xs font-bold uppercase tracking-wide text-secondary-text">Credit</dt>
+          <dd class="mt-0.5">{{ story.attribution }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+
+      {% if story.provenance_notes %}
+      <p class="mt-4 border-l-4 border-cam-bronze/50 pl-4 text-sm leading-relaxed text-secondary-text">
+        {{ story.provenance_notes|linebreaksbr }}
+      </p>
+      {% endif %}
+
+      {# Consent is stated plainly, including the awkward states. A reader who
+         sees "consent pending" learns something true about this record. #}
+      {% if story.consent_status == 'withheld' %}
+      <p class="mt-4 rounded-xl bg-brand-error/10 px-4 py-3 text-sm text-brand-error">
+        <span class="font-bold">Consent withheld.</span> The people behind this story have
+        not agreed to its publication here. If you believe this is an error, please
+        {% if story.author %}contact {{ story.author.username }}{% else %}contact us{% endif %}.
+      </p>
+      {% elif story.consent_status == 'pending' or story.consent_status == 'not_requested' %}
+      <p class="mt-4 text-xs leading-relaxed text-secondary-text">
+        We have not yet recorded consent from the source community for this version.
+        Treat it as unverified.
+      </p>
+      {% elif story.consent_status == 'granted_restricted' %}
+      <p class="mt-4 rounded-xl bg-ochre-tint/60 px-4 py-3 text-sm dark:bg-ochre/10">
+        <span class="font-bold">Consent granted with restrictions.</span> The source
+        community agreed to this publication on conditions we are still recording.
+      </p>
+      {% endif %}
+    </section>
 
     {# ── Cultural context & moral lesson — mirrors mobile info cards ── #}
     {% if story.cultural_context %}

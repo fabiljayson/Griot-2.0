@@ -53,6 +53,11 @@ class LumaAIService:
     Subclass or replace this when a real Luma AI API key is available.
     """
 
+    # Recorded on every VideoGenerationJob so the player can state that the
+    # video is AI-generated and name the engine, rather than leaving the
+    # provenance implicit in a provider URL.
+    engine = 'luma-dream-machine'
+
     def submit_video_generation(
         self,
         prompt: str,
@@ -195,6 +200,10 @@ class MockLumaAIService(LumaAIService):
     pending -> processing -> completed so the frontend can test the full
     lifecycle.
     """
+
+    # Named apart from the live engine so a job generated against the mock is
+    # never credited to Dream Machine, which did not make it.
+    engine = 'luma-mock'
 
     def submit_video_generation(
         self,

@@ -132,6 +132,10 @@ class StoryRepository {
     String? culturalContext,
     String? moralLesson,
     String? source,
+    String? origin,
+    String? provenanceNotes,
+    String? rightsHolder,
+    String? licence,
   }) async {
     if (_offline) {
       return _local.createStory(
@@ -148,6 +152,10 @@ class StoryRepository {
         culturalContext: culturalContext,
         moralLesson: moralLesson,
         source: source,
+        origin: origin,
+        provenanceNotes: provenanceNotes,
+        rightsHolder: rightsHolder,
+        licence: licence,
       );
     }
 
@@ -166,6 +174,13 @@ class StoryRepository {
     if (culturalContext != null) data['cultural_context'] = culturalContext;
     if (moralLesson != null) data['moral_lesson'] = moralLesson;
     if (source != null) data['source'] = source;
+    // Provenance a contributor declares about their own text. `consent_status`
+    // is deliberately absent: the server owns that field, and a self-declared
+    // "consent granted" is precisely the claim the app must not make.
+    if (origin != null) data['origin'] = origin;
+    if (provenanceNotes != null) data['provenance_notes'] = provenanceNotes;
+    if (rightsHolder != null) data['rights_holder'] = rightsHolder;
+    if (licence != null) data['licence'] = licence;
 
     try {
       final response = await _api.dio.post('/api/stories/', data: data);
@@ -189,6 +204,10 @@ class StoryRepository {
         culturalContext: culturalContext,
         moralLesson: moralLesson,
         source: source,
+        origin: origin,
+        provenanceNotes: provenanceNotes,
+        rightsHolder: rightsHolder,
+        licence: licence,
       );
     }
   }
@@ -204,6 +223,10 @@ class StoryRepository {
     String? region,
     String? tags,
     String? status,
+    String? origin,
+    String? provenanceNotes,
+    String? rightsHolder,
+    String? licence,
   }) async {
     if (_offline) {
       return _local.updateStory(
@@ -216,6 +239,10 @@ class StoryRepository {
         region: region,
         tags: tags,
         status: status,
+        origin: origin,
+        provenanceNotes: provenanceNotes,
+        rightsHolder: rightsHolder,
+        licence: licence,
       );
     }
 
@@ -228,6 +255,10 @@ class StoryRepository {
     if (region != null) data['region'] = region;
     if (tags != null) data['tags'] = tags;
     if (status != null) data['status'] = status;
+    if (origin != null) data['origin'] = origin;
+    if (provenanceNotes != null) data['provenance_notes'] = provenanceNotes;
+    if (rightsHolder != null) data['rights_holder'] = rightsHolder;
+    if (licence != null) data['licence'] = licence;
 
     try {
       final response = await _api.dio.patch('/api/stories/$slug/', data: data);
@@ -245,6 +276,10 @@ class StoryRepository {
         region: region,
         tags: tags,
         status: status,
+        origin: origin,
+        provenanceNotes: provenanceNotes,
+        rightsHolder: rightsHolder,
+        licence: licence,
       );
     }
   }

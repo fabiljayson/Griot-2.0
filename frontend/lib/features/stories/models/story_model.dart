@@ -25,6 +25,17 @@ class StoryModel {
     this.source = '',
     this.estimatedReadTime = 0,
     this.status = 'published',
+    // Wire values are spelled out rather than read off the enums: a const
+    // default cannot read an instance field. They mirror
+    // `StoryOrigin.unknown.value` and friends.
+    this.origin = 'unknown',
+    this.provenanceNotes = '',
+    this.consentStatus = 'not_requested',
+    this.rightsHolder = '',
+    this.licence = 'undetermined',
+    this.recordedAt,
+    this.attribution = '',
+    this.isSyntheticOrigin = false,
     this.viewCount = 0,
     this.likeCount = 0,
     this.bookmarkCount = 0,
@@ -54,6 +65,26 @@ class StoryModel {
   final String source;
   final int estimatedReadTime;
   final String status;
+
+  // --- Provenance & rights ---
+  //
+  // The app renders oral traditions it did not record. These fields let the
+  // reader tell a community recording from seeded demo content, and let the
+  // UI state plainly when consent has not been established.
+  final String origin;
+  final String provenanceNotes;
+  final String consentStatus;
+  final String rightsHolder;
+  final String licence;
+  final String? recordedAt;
+
+  /// Credit line composed server-side so the app can never word it differently
+  /// from the web. Empty when the server sent nothing.
+  final String attribution;
+
+  /// True when this text is generated or seeded rather than sourced.
+  final bool isSyntheticOrigin;
+
   final int viewCount;
   final int likeCount;
   final int bookmarkCount;
@@ -88,6 +119,14 @@ class StoryModel {
       source: json['source'] as String? ?? '',
       estimatedReadTime: json['estimated_read_time'] as int? ?? 0,
       status: json['status'] as String? ?? 'published',
+      origin: json['origin'] as String? ?? 'unknown',
+      provenanceNotes: json['provenance_notes'] as String? ?? '',
+      consentStatus: json['consent_status'] as String? ?? 'not_requested',
+      rightsHolder: json['rights_holder'] as String? ?? '',
+      licence: json['licence'] as String? ?? 'undetermined',
+      recordedAt: json['recorded_at'] as String?,
+      attribution: json['attribution'] as String? ?? '',
+      isSyntheticOrigin: json['is_synthetic_origin'] as bool? ?? false,
       viewCount: json['view_count'] as int? ?? 0,
       likeCount: json['like_count'] as int? ?? 0,
       bookmarkCount: json['bookmark_count'] as int? ?? 0,
@@ -122,6 +161,14 @@ class StoryModel {
         'source': source,
         'estimated_read_time': estimatedReadTime,
         'status': status,
+        'origin': origin,
+        'provenance_notes': provenanceNotes,
+        'consent_status': consentStatus,
+        'rights_holder': rightsHolder,
+        'licence': licence,
+        'recorded_at': recordedAt,
+        'attribution': attribution,
+        'is_synthetic_origin': isSyntheticOrigin,
         'view_count': viewCount,
         'like_count': likeCount,
         'bookmark_count': bookmarkCount,
@@ -144,6 +191,24 @@ class StoryModel {
   /// needs the same notion of "public" rather than re-deriving it.
   bool get isPublished =>
       status == StoryStatus.published.value;
+
+  /// The origin as a display label, resolved locally for the offline case.
+  String get originLabel => StoryOrigin.fromString(origin).label;
+
+  /// The licence as a display label, resolved locally for the offline case.
+  String get licenceLabel => StoryLicence.fromString(licence).label;
+
+  /// Whether the source community has agreed to this publication.
+  ///
+  /// Only [StoryConsent.granted] and [StoryConsent.grantedRestricted] count —
+  /// "we haven't asked" is not permission.
+  bool get hasEstablishedConsent =>
+      consentStatus == StoryConsent.granted.value ||
+      consentStatus == StoryConsent.grantedRestricted.value;
+
+  /// True when the reader should be warned that consent is not established.
+  bool get needsConsentDisclosure =>
+      !hasEstablishedConsent || consentStatus == StoryConsent.withheld.value;
 
   /// Formatted view count (e.g., "1.2K").
   String get formattedViewCount => _formatCount(viewCount);
@@ -186,6 +251,14 @@ class StoryModel {
     String? source,
     int? estimatedReadTime,
     String? status,
+    String? origin,
+    String? provenanceNotes,
+    String? consentStatus,
+    String? rightsHolder,
+    String? licence,
+    String? recordedAt,
+    String? attribution,
+    bool? isSyntheticOrigin,
     int? viewCount,
     int? likeCount,
     int? bookmarkCount,
@@ -215,6 +288,14 @@ class StoryModel {
       source: source ?? this.source,
       estimatedReadTime: estimatedReadTime ?? this.estimatedReadTime,
       status: status ?? this.status,
+      origin: origin ?? this.origin,
+      provenanceNotes: provenanceNotes ?? this.provenanceNotes,
+      consentStatus: consentStatus ?? this.consentStatus,
+      rightsHolder: rightsHolder ?? this.rightsHolder,
+      licence: licence ?? this.licence,
+      recordedAt: recordedAt ?? this.recordedAt,
+      attribution: attribution ?? this.attribution,
+      isSyntheticOrigin: isSyntheticOrigin ?? this.isSyntheticOrigin,
       viewCount: viewCount ?? this.viewCount,
       likeCount: likeCount ?? this.likeCount,
       bookmarkCount: bookmarkCount ?? this.bookmarkCount,
@@ -329,8 +410,7 @@ enum StoryStatus {
 }
 
 /// Story language enum.
-enum StoryLanguage {
-  english('en', 'English', '🇬🇧'),
+enum StoryLanguage {  english('en', 'English', '🇬🇧'),
   french('fr', 'French', '🇫🇷'),
   fula('ful', 'Fula', '🌍'),
   duala('dua', 'Duala', '🌍'),
@@ -348,6 +428,96 @@ enum StoryLanguage {
     return StoryLanguage.values.firstWhere(
       (l) => l.value == value,
       orElse: () => StoryLanguage.english,
+    );
+  }
+}
+/// Where a story's text came from, before it entered this database.
+///
+/// Mirrors `Story.Origin` in the backend. The labels are duplicated rather
+/// than fetched so the app can label a cached story while offline; the values
+/// are the contract, the labels are presentation.
+enum StoryOrigin {
+  communityRecorded(
+    'community_recorded',
+    'Recorded from a community member',
+  ),
+  oralTranscription(
+    'oral_transcription',
+    'Transcribed from an oral telling',
+  ),
+  publishedCollection(
+    'published_collection',
+    'From a published collection',
+  ),
+  contributorOriginal(
+    'contributor_original',
+    'Original contribution',
+  ),
+  seeded('seeded', 'Seeded demonstration content'),
+  unknown('unknown', 'Unknown');
+
+  const StoryOrigin(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  factory StoryOrigin.fromString(String value) {
+    return StoryOrigin.values.firstWhere(
+      (o) => o.value == value,
+      orElse: () => StoryOrigin.unknown,
+    );
+  }
+}
+
+/// Whether the people behind a story agreed to its publication.
+///
+/// Mirrors `Story.Consent` in the backend. The app never writes this field —
+/// a contributor recording their own community's consent is the claim this
+/// exists to make trustworthy.
+enum StoryConsent {
+  notRequested('not_requested', 'Consent not yet requested'),
+  pending('pending', 'Consent pending'),
+  granted('granted', 'Consent granted'),
+  grantedRestricted(
+    'granted_restricted',
+    'Consent granted with restrictions',
+  ),
+  withheld('withheld', 'Consent withheld');
+
+  const StoryConsent(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  factory StoryConsent.fromString(String value) {
+    return StoryConsent.values.firstWhere(
+      (c) => c.value == value,
+      orElse: () => StoryConsent.notRequested,
+    );
+  }
+}
+
+/// Rights under which a story's text is shared.
+///
+/// Mirrors `Story.Licence` in the backend.
+enum StoryLicence {
+  allRightsReserved('all_rights_reserved', 'All rights reserved'),
+  ccBy('cc_by', 'CC BY 4.0'),
+  ccBySa('cc_by_sa', 'CC BY-SA 4.0'),
+  ccByNc('cc_by_nc', 'CC BY-NC 4.0'),
+  ccByNcSa('cc_by_nc_sa', 'CC BY-NC-SA 4.0'),
+  publicDomain('public_domain', 'Public domain'),
+  undetermined('undetermined', 'Undetermined');
+
+  const StoryLicence(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  factory StoryLicence.fromString(String value) {
+    return StoryLicence.values.firstWhere(
+      (l) => l.value == value,
+      orElse: () => StoryLicence.undetermined,
     );
   }
 }

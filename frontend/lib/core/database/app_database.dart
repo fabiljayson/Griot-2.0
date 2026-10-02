@@ -258,6 +258,14 @@ class AppDatabase {
           bookmark_count INTEGER DEFAULT 0,
           is_bookmarked  INTEGER DEFAULT 0,
           is_liked      INTEGER DEFAULT 0,
+          origin        TEXT DEFAULT 'unknown',
+          provenance_notes TEXT DEFAULT '',
+          consent_status TEXT DEFAULT 'not_requested',
+          rights_holder TEXT DEFAULT '',
+          licence       TEXT DEFAULT 'undetermined',
+          recorded_at   TEXT,
+          attribution   TEXT DEFAULT '',
+          is_synthetic_origin INTEGER DEFAULT 0,
           created_at    TEXT NOT NULL DEFAULT (datetime('now')),
           published_at  TEXT,
           FOREIGN KEY (author_id) REFERENCES local_users(id)
@@ -443,6 +451,47 @@ class AppDatabase {
       await _purgeQueuedAuthHeaders(db);
 
       await db.execute('PRAGMA defer_foreign_keys = OFF');
+    }
+
+    if (oldVersion < 9) {
+      // v9 — carry story provenance into the offline cache.
+      //
+      // Without these columns a story read offline silently lost its "this is
+      // demonstration content" label and its consent state, which is exactly
+      // the case where a reader is most likely to be misled: they are offline,
+      // they cannot check, and the page looks identical to a verified one.
+      await _addStoryProvenanceColumns(db);
+    }
+  }
+
+  /// Add the provenance and rights columns to `local_stories`.
+  ///
+  /// `ALTER TABLE ... ADD COLUMN` is used rather than a table rebuild because
+  /// these are all additive with defaults, and the older SQLite shipped in the
+  /// web wasm build is fine with it. Existing rows take the defaults, which
+  // say "unknown" — an honest answer for a story cached before we tracked it.
+  Future<void> _addStoryProvenanceColumns(Database db) async {
+    if (!await _hasTable(db, 'local_stories')) return;
+
+    const columns = <String, String>{
+      'origin': "TEXT DEFAULT 'unknown'",
+      'provenance_notes': "TEXT DEFAULT ''",
+      'consent_status': "TEXT DEFAULT 'not_requested'",
+      'rights_holder': "TEXT DEFAULT ''",
+      'licence': "TEXT DEFAULT 'undetermined'",
+      'recorded_at': 'TEXT',
+      'attribution': "TEXT DEFAULT ''",
+      'is_synthetic_origin': 'INTEGER DEFAULT 0',
+    };
+
+    final existing = await db.rawQuery('PRAGMA table_info(local_stories)');
+    final present = existing.map((row) => row['name'] as String).toSet();
+    for (final entry in columns.entries) {
+      // Re-running the migration must not fail on a column it already added.
+      if (present.contains(entry.key)) continue;
+      await db.execute(
+        'ALTER TABLE local_stories ADD COLUMN ${entry.key} ${entry.value}',
+      );
     }
   }
 
@@ -854,6 +903,14 @@ class AppDatabase {
         ...s,
         'author_id': authorId,
         'cover_image': ?coverImage,
+        // Every bundled story was written or collected for this app as sample
+        // material, so it is labelled as demonstration content. Without this,
+        // the offline library — the one place a reader has no way to check —
+        // would present it as recorded oral tradition.
+        'origin': 'seeded',
+        'is_synthetic_origin': 1,
+        'licence': 'undetermined',
+        'consent_status': 'not_requested',
       });
       if (categorySlug != null) {
         final catRows = await db.query(

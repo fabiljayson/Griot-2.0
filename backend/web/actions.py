@@ -8,6 +8,7 @@ app continues to use the JSON API — these share the exact same models,
 keeping both platforms in sync. Business logic lives in ``web/services.py``.
 """
 
+import datetime
 import urllib.parse
 
 from django.contrib import messages
@@ -54,6 +55,21 @@ def _safe_next(request, fallback):
     if next_url and next_url.startswith('/') and not next_url.startswith('//'):
         return next_url
     return fallback
+
+
+def _parse_recorded_at(raw):
+    """Parse a ``<input type="date">`` value, or ``None`` if blank/garbage.
+
+    A malformed date must not 500 the save form; provenance is metadata, and
+    an unreadable one is simply absent.
+    """
+    raw = (raw or '').strip()
+    if not raw:
+        return None
+    try:
+        return datetime.date.fromisoformat(raw)
+    except ValueError:
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +221,13 @@ def story_moderate(request, slug):
 def story_save(request, slug=None):
     """Create or update a story from the web form (fields mirror the mobile
     StoryFormScreen: title, content, summary, language, region, tags,
-    cultural context, moral lesson, source, categories and status)."""
+    cultural context, moral lesson, source, categories and status, plus the
+    provenance and licence a contributor is asked to declare).
+
+    ``consent_status`` is deliberately not read from the POST body: a
+    contributor recording their own community's consent is the claim this
+    field exists to make trustworthy.
+    """
     title = (request.POST.get('title') or '').strip()
     content = (request.POST.get('content') or '').strip()
     if not title or not content:
@@ -228,6 +250,11 @@ def story_save(request, slug=None):
         source=(request.POST.get('source') or '').strip(),
         status=request.POST.get('status', 'draft'),
         category_ids=request.POST.getlist('categories'),
+        origin=(request.POST.get('origin') or '').strip(),
+        provenance_notes=(request.POST.get('provenance_notes') or '').strip(),
+        rights_holder=(request.POST.get('rights_holder') or '').strip(),
+        licence=(request.POST.get('licence') or '').strip(),
+        recorded_at=_parse_recorded_at(request.POST.get('recorded_at')),
     )
     messages.success(request, message)
     return redirect('web:story-detail', slug=story.slug)

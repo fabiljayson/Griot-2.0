@@ -175,6 +175,10 @@ def _normalise_language(language: str, voice_id: Optional[str]) -> tuple:
 class GTTSNarrationService:
     """Generate speech narration with gTTS."""
 
+    # Recorded on every AudioNarrationJob so the UI can state which engine
+    # produced the audio instead of leaving provenance implicit.
+    engine = 'gtts'
+
     def __init__(self, max_chars: int = None):
         self.max_chars = max_chars or getattr(
             settings, 'TTS_MAX_CHARS', DEFAULT_MAX_CHARS

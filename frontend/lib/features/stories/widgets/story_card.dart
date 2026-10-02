@@ -73,6 +73,19 @@ class StoryCard extends StatelessWidget {
                     emphasized: true,
                   ),
                 ),
+              // On the card, not only on the detail page: a reader scanning
+              // the grid must be able to tell demo content from a community's
+              // own account before they tap in.
+              if (story.isSyntheticOrigin)
+                Positioned(
+                  bottom: AppSpacing.sm,
+                  left: AppSpacing.sm,
+                  child: _OverlayPill(
+                    icon: AppIcons.science_outlined,
+                    label: 'Demo',
+                    emphasized: true,
+                  ),
+                ),
             ],
           ),
 

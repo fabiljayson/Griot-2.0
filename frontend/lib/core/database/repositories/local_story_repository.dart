@@ -169,6 +169,10 @@ class LocalStoryRepository {
     String? culturalContext,
     String? moralLesson,
     String? source,
+    String? origin,
+    String? provenanceNotes,
+    String? rightsHolder,
+    String? licence,
     int? authorId,
   }) async {
     final db = await _db;
@@ -188,6 +192,13 @@ class LocalStoryRepository {
       'cultural_context': culturalContext ?? '',
       'moral_lesson': moralLesson ?? '',
       'source': source ?? '',
+      // Provenance travels with the local copy: a draft written offline must
+      // not lose its declared origin when it syncs. `consent_status` is left at
+      // the column default because only a moderator records it.
+      'origin': origin ?? 'contributor_original',
+      'provenance_notes': provenanceNotes ?? '',
+      'rights_holder': rightsHolder ?? '',
+      'licence': licence ?? 'undetermined',
       'estimated_read_time': _estimateReadTime(content),
       'status': 'published',
       'author_id': authorId,
@@ -218,6 +229,10 @@ class LocalStoryRepository {
     String? region,
     String? tags,
     String? status,
+    String? origin,
+    String? provenanceNotes,
+    String? rightsHolder,
+    String? licence,
   }) async {
     final db = await _db;
     final updates = <String, dynamic>{};
@@ -231,6 +246,15 @@ class LocalStoryRepository {
     if (region != null) updates['region'] = region;
     if (tags != null) updates['tags'] = tags;
     if (status != null) updates['status'] = status;
+    if (origin != null) {
+      updates['origin'] = origin;
+      // Keep the derived flag in step with the source of truth, so a story
+      // relabelled as seeded immediately loses its "verified" presentation.
+      updates['is_synthetic_origin'] = origin == 'seeded' ? 1 : 0;
+    }
+    if (provenanceNotes != null) updates['provenance_notes'] = provenanceNotes;
+    if (rightsHolder != null) updates['rights_holder'] = rightsHolder;
+    if (licence != null) updates['licence'] = licence;
 
     if (updates.isNotEmpty) {
       await db.update(
@@ -533,6 +557,16 @@ class LocalStoryRepository {
       'source': story.source,
       'estimated_read_time': story.estimatedReadTime,
       'status': story.status,
+      // Provenance is stored with the cached copy so a story read offline
+      // still says where it came from — an offline reader cannot check.
+      'origin': story.origin,
+      'provenance_notes': story.provenanceNotes,
+      'consent_status': story.consentStatus,
+      'rights_holder': story.rightsHolder,
+      'licence': story.licence,
+      'recorded_at': story.recordedAt,
+      'attribution': story.attribution,
+      'is_synthetic_origin': story.isSyntheticOrigin ? 1 : 0,
       'view_count': story.viewCount,
       'like_count': story.likeCount,
       'bookmark_count': story.bookmarkCount,
@@ -599,6 +633,14 @@ class LocalStoryRepository {
       source: (row['source'] as String?) ?? '',
       estimatedReadTime: (row['estimated_read_time'] as int?) ?? 0,
       status: (row['status'] as String?) ?? 'published',
+      origin: (row['origin'] as String?) ?? 'unknown',
+      provenanceNotes: (row['provenance_notes'] as String?) ?? '',
+      consentStatus: (row['consent_status'] as String?) ?? 'not_requested',
+      rightsHolder: (row['rights_holder'] as String?) ?? '',
+      licence: (row['licence'] as String?) ?? 'undetermined',
+      recordedAt: row['recorded_at'] as String?,
+      attribution: (row['attribution'] as String?) ?? '',
+      isSyntheticOrigin: (row['is_synthetic_origin'] as int?) == 1,
       viewCount: (row['view_count'] as int?) ?? 0,
       likeCount: (row['like_count'] as int?) ?? 0,
       bookmarkCount: (row['bookmark_count'] as int?) ?? 0,

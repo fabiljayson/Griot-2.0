@@ -35,6 +35,11 @@ class StoryListSerializer(serializers.ModelSerializer):
     categories = StoryCategorySerializer(many=True, read_only=True)
     is_bookmarked = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    # A story card can claim to be recorded oral tradition. The reader must be
+    # able to tell seeded demo content from a community recording without
+    # opening it, so the origin travels with the listing.
+    attribution = serializers.CharField(read_only=True)
+    is_synthetic_origin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Story
@@ -55,6 +60,9 @@ class StoryListSerializer(serializers.ModelSerializer):
             'bookmark_count',
             'is_bookmarked',
             'is_liked',
+            'origin',
+            'attribution',
+            'is_synthetic_origin',
             'created_at',
             'published_at',
         )
@@ -99,6 +107,12 @@ class StoryDetailSerializer(serializers.ModelSerializer):
     tag_list = serializers.ListField(
         child=serializers.CharField(), read_only=True,
     )
+    # Provenance and rights are part of the story, not an internal note: the
+    # reader is entitled to know how this text was obtained and under what
+    # licence it is shared. Derived rather than stored so they cannot drift
+    # from `source`/`rights_holder`.
+    attribution = serializers.CharField(read_only=True)
+    is_synthetic_origin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Story
@@ -124,6 +138,14 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'source',
             'estimated_read_time',
             'status',
+            'origin',
+            'provenance_notes',
+            'consent_status',
+            'rights_holder',
+            'licence',
+            'recorded_at',
+            'attribution',
+            'is_synthetic_origin',
             'view_count',
             'like_count',
             'bookmark_count',
@@ -207,8 +229,18 @@ class StoryCreateUpdateSerializer(serializers.ModelSerializer):
             'moral_lesson',
             'source',
             'status',
+            'origin',
+            'provenance_notes',
+            'rights_holder',
+            'licence',
+            'recorded_at',
         )
-        read_only_fields = ('status',)
+        # `status` is moderator-owned (the review workflow sets it), and
+        # `consent_status` is the one field a contributor must never set for
+        # themselves: self-declared consent is exactly the claim this app exists
+        # not to make on a community's behalf. Moderators record it through the
+        # admin review queue, where the decision is attributable.
+        read_only_fields = ('status', 'consent_status')
 
     def create(self, validated_data):
         categories = validated_data.pop('categories', [])
