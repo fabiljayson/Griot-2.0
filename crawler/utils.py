@@ -17,14 +17,34 @@ def slugify(text: str) -> str:
     return text.strip("-")[:80]
 
 
-def classify_category(text: str) -> str:
-    """Auto-classify content into a category based on keyword matching."""
-    text_lower = text.lower()
-    scores = {}
-    for cat, keywords in config.CATEGORY_KEYWORDS.items():
-        scores[cat] = sum(1 for kw in keywords if kw in text_lower)
+def _best_match(text_lower: str, keywords_by_label: dict[str, list[str]], default: str) -> str:
+    """Return the label whose keywords hit most often, or `default`.
+
+    `max` over a dict is insertion-ordered, so a tie resolves to the first
+    label declared in the config rather than to set/hash order. That keeps
+    classification deterministic across runs and interpreter versions.
+    """
+    scores = {
+        label: sum(1 for kw in keywords if kw in text_lower)
+        for label, keywords in keywords_by_label.items()
+    }
     best = max(scores, key=scores.get)
-    return best if scores[best] > 0 else "Culture"
+    return best if scores[best] > 0 else default
+
+
+def classify_content_type(text: str) -> str:
+    """Classify what kind of page this is: Kingdom, Landmark, Artifact, Legend, Culture."""
+    return _best_match(text.lower(), config.CONTENT_TYPE_KEYWORDS, "Culture")
+
+
+def classify_material_type(text: str) -> str:
+    """Classify what the object is, as a qr_codes.Artifact.Category value.
+
+    Returns "other" when nothing matches — which is a real answer meaning
+    "not enough signal", and is why the backend counts it rather than
+    treating it as a fallback for values it failed to understand.
+    """
+    return _best_match(text.lower(), config.MATERIAL_TYPE_KEYWORDS, "other")
 
 
 def get_location_from_url(url: str) -> str:

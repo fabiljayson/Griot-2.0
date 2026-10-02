@@ -11,6 +11,7 @@ Usage:
     python manage.py import_crawl_data
     python manage.py import_crawl_data --dry-run
     python manage.py import_crawl_data --json-path /path/to/file.json
+    python manage.py import_crawl_data --strict
 """
 
 import json
@@ -23,9 +24,10 @@ from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils.text import slugify
 
+from qr_codes.classification import classify_material, classification_text
 from qr_codes.models import Artifact
 
 
@@ -41,6 +43,52 @@ def _short_description(text: str, max_length: int = 240) -> str:
 
     excerpt = sentence[:max_length - 3].rsplit(' ', 1)[0].rstrip(' ,;:-')
     return f'{excerpt}...'
+
+
+def resolve_taxonomy(item: dict) -> tuple[str, str, list[str]]:
+    """Work out (content_type, category, problems) for one crawl item.
+
+    `content_type` answers "what kind of page was this" and `category`
+    answers "what is the object". They are separate vocabularies because a
+    carved mask is both `artifact` and `mask`, and no single field holds that.
+
+    `problems` lists values we could not interpret — an unrecognised
+    content_type or material_type that came *in* the crawl file. The previous
+    implementation funnelled everything through a map to `other`, which is why
+    127 of 134 rows ended up there: an uninterpretable value and a genuinely
+    unclassifiable object became indistinguishable. Callers now report them.
+    """
+    problems: list[str] = []
+
+    valid_content_types = {value for value, _ in Artifact.ContentType.choices}
+    raw_content_type = (item.get('content_type') or item.get('category') or '').strip().lower()
+    if raw_content_type in valid_content_types:
+        content_type = raw_content_type
+    else:
+        if raw_content_type:
+            problems.append(f'unrecognised content_type {raw_content_type!r}')
+        # No usable value: say so, rather than guessing a content type.
+        content_type = Artifact.ContentType.UNKNOWN
+
+    valid_materials = {value for value, _ in Artifact.Category.choices}
+    raw_material = (item.get('material_type') or '').strip().lower()
+    if raw_material in valid_materials:
+        category = raw_material
+    else:
+        if raw_material:
+            problems.append(f'unrecognised material_type {raw_material!r}')
+        # Fall back to classifying the text ourselves. A bad incoming value is
+        # a warning, not a reason to discard a row we can still classify.
+        category = classify_material(
+            classification_text(
+                item.get('title'),
+                item.get('short_description'),
+                item.get('description'),
+                item.get('historical_significance'),
+            )
+        )
+
+    return content_type, category, problems
 
 
 class Command(BaseCommand):
@@ -68,12 +116,21 @@ class Command(BaseCommand):
             action='store_true',
             help='Update existing artifacts if slug matches',
         )
+        parser.add_argument(
+            '--strict',
+            action='store_true',
+            help=(
+                'Abort on the first unrecognised content_type or material_type '
+                'instead of warning and continuing.'
+            ),
+        )
 
     def handle(self, *args, **options):
         json_path = options['json_path']
         dry_run = options['dry_run']
         skip_images = options['skip_images']
         update_existing = options['update_existing']
+        strict = options['strict']
 
         self.stdout.write(self.style.NOTICE(f'\n📂 Reading data from: {json_path}\n'))
 
@@ -101,11 +158,15 @@ class Command(BaseCommand):
         updated_count = 0
         skipped_count = 0
         image_count = 0
+        # Rows whose incoming taxonomy we could not interpret. Reported rather
+        # than silently swallowed: a rising count means the crawler's
+        # vocabulary has drifted from the model's choices.
+        problem_count = 0
+        other_count = 0
 
         for i, item in enumerate(crawl_data, 1):
             slug = item.get('id', '')
             title = item.get('title', '')
-            category = item.get('category', 'culture').lower()
             location = item.get('location', '')
             full_description = item.get('description', '')
             description = item.get('short_description', '').strip()
@@ -130,15 +191,20 @@ class Command(BaseCommand):
                 skipped_count += 1
                 continue
 
-            # Map old category values to the new qr_codes.Artifact categories
-            category_map = {
-                'kingdom': 'other',
-                'landmark': 'other',
-                'artifact': 'other',
-                'legend': 'other',
-                'culture': 'other',
-            }
-            category = category_map.get(category, 'other')
+            # Resolve both taxonomies, reporting anything we could not read.
+            content_type, category, problems = resolve_taxonomy(item)
+            if problems:
+                problem_count += 1
+                if strict:
+                    raise CommandError(
+                        f'[{i}] "{title}": ' + '; '.join(problems)
+                        + '. Re-run without --strict to import and report them.'
+                    )
+                self.stdout.write(
+                    self.style.WARNING(f'  ⚠️  [{i}] "{title}": ' + '; '.join(problems))
+                )
+            if category == Artifact.Category.OTHER:
+                other_count += 1
 
             # Check for existing artifact
             existing = Artifact.objects.filter(slug=slug).first()
@@ -151,6 +217,7 @@ class Command(BaseCommand):
                     else:
                         existing.title = title[:200]
                         existing.category = category
+                        existing.content_type = content_type
                         existing.region = location[:100]
                         existing.description = description
                         existing.story = story
@@ -167,7 +234,10 @@ class Command(BaseCommand):
                 continue
 
             if dry_run:
-                self.stdout.write(f'  ✅ [{i}] Would create: {title} ({category}) — {len(story)} chars')
+                self.stdout.write(
+                    f'  ✅ [{i}] Would create: {title} '
+                    f'({content_type}/{category}) — {len(story)} chars'
+                )
                 created_count += 1
                 continue
 
@@ -177,6 +247,7 @@ class Command(BaseCommand):
                 slug=slug,
                 description=description,
                 category=category,
+                content_type=content_type,
                 region=location[:100],
                 story=story,
                 historical_significance=historical_significance,
@@ -184,7 +255,11 @@ class Command(BaseCommand):
                 is_published=True,
             )
             artifact.save()
-            self.stdout.write(self.style.SUCCESS(f'  ✅ [{i}] Created: {title} ({category})'))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'  ✅ [{i}] Created: {title} ({content_type}/{category})'
+                )
+            )
             created_count += 1
 
             # Download images
@@ -203,6 +278,13 @@ class Command(BaseCommand):
         self.stdout.write(f'  Updated:  {updated_count}')
         self.stdout.write(f'  Skipped:  {skipped_count}')
         self.stdout.write(f'  Images:   {image_count}')
+        self.stdout.write(f'  Unreadable taxonomy values: {problem_count}')
+        self.stdout.write(
+            self.style.NOTICE(
+                f'  Classified as "other":       {other_count} '
+                f'(genuinely unclassifiable, not a parse failure)'
+            )
+        )
         self.stdout.write(f'  Total:    {Artifact.objects.count()} artifacts in database')
         self.stdout.write(f'{"="*60}\n')
 

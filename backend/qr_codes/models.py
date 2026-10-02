@@ -25,6 +25,25 @@ class Artifact(models.Model):
         TOOL = 'tool', 'Tool'
         OTHER = 'other', 'Other'
 
+    class ContentType(models.TextChoices):
+        """What KIND OF THING this is, as opposed to `Category`'s material.
+
+        A carved mask is both `ContentType.ARTIFACT` and `Category.MASK`.
+        Forcing both onto one field is why the crawl importer used to collapse
+        every row into `Category.OTHER`: the two vocabularies have different
+        shapes and no single mapping between them is correct.
+        """
+
+        KINGDOM = 'kingdom', 'Kingdom'
+        LANDMARK = 'landmark', 'Landmark'
+        ARTIFACT = 'artifact', 'Artifact'
+        LEGEND = 'legend', 'Legend'
+        CULTURE = 'culture', 'Culture'
+        # An honest default: the row exists but nothing has classified it yet.
+        # Distinguishable from a genuine `Category.OTHER`, which means "we
+        # looked and it genuinely doesn't fit".
+        UNKNOWN = 'unknown', 'Unclassified'
+
     # --- Core fields ---
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=250, unique=True, blank=True)
@@ -35,6 +54,14 @@ class Artifact(models.Model):
         max_length=20,
         choices=Category.choices,
         default=Category.OTHER,
+        db_index=True,
+    )
+    content_type = models.CharField(
+        max_length=20,
+        choices=ContentType.choices,
+        default=ContentType.UNKNOWN,
+        db_index=True,
+        help_text='What kind of thing this is: kingdom, landmark, artifact, legend, culture.',
     )
 
     # --- Ownership & creation ---

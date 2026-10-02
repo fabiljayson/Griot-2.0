@@ -43,7 +43,11 @@ PAGES_TO_CRAWL = [
 ]
 
 # Category keywords for auto-classification
-CATEGORY_KEYWORDS = {
+# Content type = what KIND OF PAGE this was: a kingdom, a landmark, a legend.
+# Distinct from material type (config.MATERIAL_TYPE_KEYWORDS), which is what
+# the object is. A carved mask is content type "Artifact" and material type
+# "mask" at once, so these cannot share one field.
+CONTENT_TYPE_KEYWORDS = {
     "Kingdom": [
         "kingdom", "palace", "sultan", "sultanate", "royal", "chief",
         "bandjoun", "baham", "bangoulap", "batoufam", "bamoun",
@@ -66,6 +70,45 @@ CATEGORY_KEYWORDS = {
         "culture", "tradition", "festival", "ceremony", "language",
         "religion", "ethnic", "people", "pygmy", "ba'aka", "bayaka",
         "fang-beti", "coastal people", "sudano-sahelian",
+    ],
+}
+
+# Material type = what the object is. These values are the backend's
+# qr_codes.Artifact.Category choices, lowercased, so the crawler can emit them
+# directly without a lossy mapping on the way in.
+MATERIAL_TYPE_KEYWORDS = {
+    "sculpture": [
+        "sculpture", "statue", "statuette", "carving", "carved figure",
+        "bas-relief", "relief", "effigy", "figurine", "wood carving",
+    ],
+    "instrument": [
+        "drum", "xylophone", "balafon", "horn", "flute", "rattle",
+        "musical instrument", "kenkeni", "mbira", "ngon", "talking drum",
+    ],
+    "pottery": [
+        "pottery", "pot", "vase", "terracotta", "ceramic", "earthenware",
+        "water jar", "cooking pot", "clay pot",
+    ],
+    "mask": ["mask", "masquerade", "helmet mask", "wooden mask"],
+    "textile": [
+        "textile", "cloth", "cotton", "embroidery", "embroidered",
+        "wrapper", "garment", "attire", "clothes",
+    ],
+    "jewelry": [
+        "necklace", "bracelet", "bead", "beads", "earring", "bangle",
+        "jewelry", "jewellery", "anklet",
+    ],
+    "weapon": [
+        "spear", "sword", "dagger", "shield", "knife", "cutlass",
+        "matchet", "war axe", "machete",
+    ],
+    "fabric": [
+        "fabric", "raffia", "fibre", "fiber", "mat", "basket",
+        "weaving", "loom", "woven", "plaited", "plait",
+    ],
+    "tool": [
+        "tool", "hoe", "fishing net", "agricultural implement", "farm tool",
+        "gourd", "calabash", "container", "weaving tool",
     ],
 }
 

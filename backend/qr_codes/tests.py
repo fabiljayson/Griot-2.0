@@ -15,6 +15,24 @@ from .models import Artifact, QRCodeScan
 User = get_user_model()
 
 
+class SeedArtifactCaptionTests(TestCase):
+    def test_seed_command_refreshes_existing_artifact_caption(self):
+        artifact = Artifact.objects.create(
+            title='Bamoun Royal Mask',
+            description='An older, longer artifact description.',
+            category='mask',
+        )
+
+        call_command('seed_qr_codes', stdout=StringIO())
+
+        artifact.refresh_from_db()
+        self.assertEqual(
+            artifact.description,
+            'A carved Bamoun royal mask decorated with beads and cowrie shells, '
+            'worn in Foumban ceremonies.',
+        )
+
+
 class ArtifactTests(APITestCase):
     def setUp(self):
         self.manager = User.objects.create_user(
@@ -266,3 +284,243 @@ class CrawlImportTests(TestCase):
             'A ceremonial drum carved from a single tree trunk.',
         )
         self.assertIn(full_description, artifact.story)
+
+
+class ArtifactTaxonomyTests(TestCase):
+    """Content type and material category are separate vocabularies.
+
+    A carved mask is both `ContentType.ARTIFACT` and `Category.MASK`. The
+    importer used to funnel both through one field, which forced a map to
+    `other` and left 127 of 134 artifacts unclassified.
+    """
+
+    def test_content_type_defaults_to_unknown(self):
+        artifact = Artifact.objects.create(
+            title='Unclassified thing',
+            slug='unclassified-thing',
+            description='Something we have not looked at yet.',
+        )
+        self.assertEqual(artifact.content_type, Artifact.ContentType.UNKNOWN)
+
+    def test_content_type_and_category_are_independent(self):
+        artifact = Artifact.objects.create(
+            title='Bamoun Royal Mask',
+            slug='bamoun-royal-mask-2',
+            description='A carved wooden mask with beads.',
+            category=Artifact.Category.MASK,
+            content_type=Artifact.ContentType.ARTIFACT,
+        )
+        artifact.refresh_from_db()
+        self.assertEqual(artifact.content_type, Artifact.ContentType.ARTIFACT)
+        self.assertEqual(artifact.category, Artifact.Category.MASK)
+
+    def test_artifacts_can_be_filtered_by_content_type(self):
+        Artifact.objects.create(
+            title='Foumban Palace', slug='foumban-palace',
+            description='Royal palace.', content_type=Artifact.ContentType.KINGDOM,
+        )
+        Artifact.objects.create(
+            title='Lobe Falls', slug='lobe-falls',
+            description='Waterfall.', content_type=Artifact.ContentType.LANDMARK,
+        )
+        kingdoms = Artifact.objects.filter(content_type=Artifact.ContentType.KINGDOM)
+        self.assertEqual([a.slug for a in kingdoms], ['foumban-palace'])
+
+
+class MaterialClassificationTests(TestCase):
+    def test_classifies_distinct_materials(self):
+        from .classification import classify_material
+
+        cases = {
+            'A carved wooden mask worn at ceremonies.': Artifact.Category.MASK,
+            'A talking drum used to call people together.': Artifact.Category.INSTRUMENT,
+            'A handwoven cotton wrapper with embroidery.': Artifact.Category.TEXTILE,
+            'A terracotta water jar for storing water.': Artifact.Category.POTTERY,
+            'A bronze necklace of heavy beads.': Artifact.Category.JEWELRY,
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(classify_material(text), expected)
+
+    def test_unmatched_text_is_other_not_a_guess(self):
+        from .classification import classify_material
+
+        self.assertEqual(
+            classify_material('Practical advice about electrical outlets.'),
+            Artifact.Category.OTHER,
+        )
+
+    def test_min_score_rejects_a_single_weak_hit(self):
+        from .classification import classify_material
+
+        # "pot" appears once, inside unrelated prose. One hit is not evidence.
+        text = 'Visitors are advised to carry drinking water; a pot of palm wine costs little.'
+        self.assertEqual(classify_material(text), Artifact.Category.POTTERY)
+        self.assertEqual(classify_material(text, min_score=2), Artifact.Category.OTHER)
+
+
+class CrawlTaxonomyTests(TestCase):
+    """resolve_taxonomy: read the crawler's two fields, report what we can't."""
+
+    def _resolve(self, item):
+        from .management.commands.import_crawl_data import resolve_taxonomy
+        return resolve_taxonomy(item)
+
+    def test_reads_content_type_and_material_type(self):
+        content_type, category, problems = self._resolve({
+            'content_type': 'Artifact',
+            'material_type': 'mask',
+            'title': 'Bamoun Royal Mask',
+        })
+        self.assertEqual(content_type, Artifact.ContentType.ARTIFACT)
+        self.assertEqual(category, Artifact.Category.MASK)
+        self.assertEqual(problems, [])
+
+    def test_falls_back_to_legacy_category_key_as_content_type(self):
+        # Crawl files written before the split used `category` for content type.
+        content_type, _, problems = self._resolve({'category': 'Legend', 'title': 'A myth'})
+        self.assertEqual(content_type, Artifact.ContentType.LEGEND)
+        self.assertEqual(problems, [])
+
+    def test_unreadable_content_type_is_reported_not_guessed(self):
+        content_type, _, problems = self._resolve({'category': 'Wibble', 'title': 'x'})
+        self.assertEqual(content_type, Artifact.ContentType.UNKNOWN)
+        self.assertEqual(len(problems), 1)
+        self.assertIn('wibble', problems[0])
+
+    def test_unreadable_material_type_falls_back_to_text_and_still_reports(self):
+        content_type, category, problems = self._resolve({
+            'material_type': 'wibble',
+            'title': 'Carved wooden mask',
+            'description': 'A mask worn at ceremonies.',
+        })
+        self.assertEqual(category, Artifact.Category.MASK)
+        self.assertEqual(len(problems), 1)
+
+    def test_missing_material_type_classifies_from_text(self):
+        _, category, problems = self._resolve({
+            'title': 'Carved wooden mask',
+            'description': 'A mask worn at ceremonies.',
+        })
+        self.assertEqual(category, Artifact.Category.MASK)
+        self.assertEqual(problems, [])
+
+    def test_empty_item_is_unknown_other_and_clean(self):
+        content_type, category, problems = self._resolve({'title': 'Nothing here'})
+        self.assertEqual(content_type, Artifact.ContentType.UNKNOWN)
+        self.assertEqual(category, Artifact.Category.OTHER)
+        self.assertEqual(problems, [])
+
+
+class CrawlImportTaxonomyTests(TestCase):
+    def _write_crawl(self, payload):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name) / 'crawl.json'
+        path.write_text(json.dumps(payload), encoding='utf-8')
+        return str(path)
+
+    def _item(self, **overrides):
+        base = {
+            'id': 'some-object',
+            'title': 'Some Object',
+            'description': 'A carved wooden mask used at ceremonies. ' * 3,
+            'historical_significance': '',
+            'images': [],
+        }
+        base.update(overrides)
+        return base
+
+    def test_import_stores_both_taxonomies(self):
+        path = self._write_crawl([
+            self._item(content_type='Artifact', material_type='mask'),
+        ])
+        call_command('import_crawl_data', json_path=path, skip_images=True, stdout=StringIO())
+        artifact = Artifact.objects.get(slug='some-object')
+        self.assertEqual(artifact.content_type, Artifact.ContentType.ARTIFACT)
+        self.assertEqual(artifact.category, Artifact.Category.MASK)
+
+    def test_import_no_longer_defaults_everything_to_other(self):
+        # The regression that motivated the split.
+        path = self._write_crawl([
+            self._item(id='a-drum', title='Kenkeni drum', material_type='instrument'),
+            self._item(id='a-vase', title='Foumban vase', material_type='pottery'),
+        ])
+        call_command('import_crawl_data', json_path=path, skip_images=True, stdout=StringIO())
+        self.assertEqual(Artifact.objects.filter(category=Artifact.Category.OTHER).count(), 0)
+
+    def test_strict_aborts_on_unreadable_value(self):
+        from django.core.management.base import CommandError
+
+        path = self._write_crawl([
+            self._item(content_type='Wibble'),
+            self._item(id='second', title='Second'),
+        ])
+        with self.assertRaises(CommandError):
+            call_command(
+                'import_crawl_data', json_path=path, skip_images=True,
+                stdout=StringIO(), strict=True,
+            )
+        # Abort before writing anything, not halfway through.
+        self.assertEqual(Artifact.objects.count(), 0)
+
+    def test_non_strict_warns_and_continues(self):
+        path = self._write_crawl([
+            self._item(content_type='Wibble', material_type='pottery'),
+            self._item(id='second', title='Second object', material_type='instrument'),
+        ])
+        out = StringIO()
+        call_command('import_crawl_data', json_path=path, skip_images=True, stdout=out)
+        self.assertEqual(Artifact.objects.count(), 2)
+        self.assertIn('Unreadable taxonomy values: 1', out.getvalue())
+        bad = Artifact.objects.get(slug='some-object')
+        self.assertEqual(bad.content_type, Artifact.ContentType.UNKNOWN)
+        self.assertEqual(bad.category, Artifact.Category.POTTERY)
+
+
+class ReclassifyArtifactsTests(TestCase):
+    def test_does_not_overwrite_a_curated_category(self):
+        curated = Artifact.objects.create(
+            title='Bamoun Royal Mask', slug='bamoun-royal-mask',
+            description='A carved wooden mask hung with beads and cowries.',
+            category=Artifact.Category.MASK,
+            content_type=Artifact.ContentType.ARTIFACT,
+        )
+        call_command('reclassify_artifacts', stdout=StringIO())
+        curated.refresh_from_db()
+        # Measured corruption before this guard: mask -> jewelry, because the
+        # description mentions beads more often than it says "mask".
+        self.assertEqual(curated.category, Artifact.Category.MASK)
+        self.assertEqual(curated.content_type, Artifact.ContentType.ARTIFACT)
+
+    def test_sets_content_type_on_previously_other_rows(self):
+        artifact = Artifact.objects.create(
+            title='Lobe Waterfalls', slug='lobe-waterfalls',
+            description='A spectacular waterfall and national park.',
+            category=Artifact.Category.OTHER,
+            content_type=Artifact.ContentType.UNKNOWN,
+        )
+        call_command('reclassify_artifacts', stdout=StringIO())
+        artifact.refresh_from_db()
+        self.assertEqual(artifact.content_type, Artifact.ContentType.LANDMARK)
+
+    def test_dry_run_writes_nothing(self):
+        artifact = Artifact.objects.create(
+            title='Lobe Waterfalls', slug='lobe-waterfalls-dry',
+            description='A spectacular waterfall and national park.',
+            category=Artifact.Category.OTHER,
+            content_type=Artifact.ContentType.UNKNOWN,
+        )
+        call_command('reclassify_artifacts', dry_run=True, stdout=StringIO())
+        artifact.refresh_from_db()
+        self.assertEqual(artifact.content_type, Artifact.ContentType.UNKNOWN)
+
+    def test_report_flags_rows_that_are_not_artifacts(self):
+        Artifact.objects.create(
+            title='Electrical outlets', slug='electrical-outlets',
+            description='Voltage and plug types.',
+            category=Artifact.Category.OTHER,
+        )
+        out = StringIO()
+        call_command('reclassify_artifacts', stdout=out)
+        self.assertIn('not artifacts at all', out.getvalue())

@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup, Tag
 
 import config
 from utils import (
-    classify_category,
+    classify_content_type,
+    classify_material_type,
     clean_description,
     infer_location,
     is_skip_heading,
@@ -273,11 +274,12 @@ def sections_to_items(
         title_names_artifact = any(
             term in title.casefold() for term in artifact_title_terms
         )
-        category = default_category or (
+        content_type = default_category or (
             "Artifact"
             if title_names_artifact
-            else classify_category(classification_text)
+            else classify_content_type(classification_text)
         )
+        material_type = classify_material_type(classification_text)
         location = default_location
 
         # Try to infer location from content
@@ -290,7 +292,11 @@ def sections_to_items(
         items.append({
             "id": slugify(title),
             "title": title,
-            "category": category,
+            # `category` is retained as an alias of `content_type` so crawl
+            # files written by older runs stay readable. Prefer content_type.
+            "category": content_type,
+            "content_type": content_type,
+            "material_type": material_type,
             "location": location,
             "short_description": summarize_description(description),
             "description": description,
@@ -381,14 +387,17 @@ def extract_tours_page(soup: BeautifulSoup, page_info: dict) -> list[dict]:
             continue
 
         combined = title + " " + description
-        category = classify_category(combined)
+        content_type = classify_content_type(combined)
+        material_type = classify_material_type(combined)
 
         location = infer_location(combined) or start_location
 
         items.append({
             "id": slugify(title),
             "title": title,
-            "category": category,
+            "category": content_type,
+            "content_type": content_type,
+            "material_type": material_type,
             "location": location,
             "description": description,
             "historical_significance": extract_historical_significance(
@@ -428,7 +437,9 @@ def extract_overview_page(soup: BeautifulSoup, page_info: dict) -> list[dict]:
             items.append({
                 "id": f"about-cameroon-{i+1:02d}",
                 "title": first_line.strip(),
-                "category": classify_category(combined),
+                "category": classify_content_type(combined),
+                "content_type": classify_content_type(combined),
+                "material_type": classify_material_type(combined),
                 "location": "Cameroon",
                 "description": para,
                 "historical_significance": extract_historical_significance(para),
