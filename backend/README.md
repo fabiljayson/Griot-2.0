@@ -10,6 +10,17 @@ traditions, museum artifact QR codes, AI-generated video, gamified learning).
 - SimpleJWT (auth), CORS, Pillow, qrcode, blurhash-python
 - Tailwind CSS (Play CDN for web UI)
 
+## Python version
+
+**3.12.10 is the supported version.** It is what `render.yaml` deploys and what
+the backend CI job pins, so a green local run and a green CI run mean the same
+thing. 3.14 also works locally and the suite passes on it, but it is not what
+production runs — prefer 3.12.10 for anything you intend to deploy.
+
+```bash
+python3.12 -m venv .venv-linux
+```
+
 ## Color Palette
 
 The platform uses a **Cameroonian heritage-inspired** color system:
@@ -60,6 +71,31 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
+
+### Testing the app on a USB-connected device
+
+A phone on Wi-Fi cannot always reach this machine (guest/captive-portal
+networks, or `ufw` blocking the port). Over the cable it always can — the
+traffic goes through `adbd` instead of the network stack, so no firewall rule
+or Wi-Fi reachability is involved:
+
+```bash
+./scripts/dev_usb_setup.sh
+```
+
+Starts Django on `0.0.0.0:8000` if it is not already up, then maps the
+phone's `127.0.0.1:8000` onto it with `adb reverse`. The app then talks to the
+local SQLite database through that tunnel — build it with:
+
+```bash
+cd ../frontend
+flutter run -d <device-id> --dart-define=API_BASE_URL=http://127.0.0.1:8000
+```
+
+`adb reverse` does not survive unplugging the cable or rebooting the phone;
+re-run the script afterwards. Both steps are idempotent, so it is safe to run
+before every test session. Override the port or log with `PORT=9000
+LOG=/tmp/g.log ./scripts/dev_usb_setup.sh`.
 
 ### Import Crawl Data
 
