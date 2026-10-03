@@ -21,8 +21,6 @@ import unittest
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.files.storage import default_storage
-from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status as http_status
 from rest_framework.test import APITestCase

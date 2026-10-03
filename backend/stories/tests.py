@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import ReadingProgress, Story, StoryCategory, StoryBookmark, StoryLike, StoryFlag
+from .models import ReadingProgress, Story, StoryBookmark, StoryCategory, StoryFlag
 
 User = get_user_model()
 

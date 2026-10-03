@@ -22,7 +22,6 @@ import io
 from contextlib import redirect_stderr
 
 from django.test import SimpleTestCase
-
 from drf_spectacular.generators import SchemaGenerator
 
 

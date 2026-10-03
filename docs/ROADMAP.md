@@ -1,6 +1,6 @@
 # Prolificity Roadmap
 
-**Date**: 2026-10-02 | **Baseline commit**: `1b57e34` | **Revision**: 2 (reviewed)
+**Date**: 2026-10-03 | **Baseline commit**: `ef2a8a8` | **Revision**: 3 (phasing reviewed)
 
 A plan to raise output on all four axes we agreed on: shipping code faster,
 producing more content, growing the community, and raising the quality floor.
@@ -10,6 +10,32 @@ expanded here in full task detail rather than deferred to separate specs — the
 review asked for concrete work items, so that is what this document contains.
 Each of 4–6 still needs a constitution check before implementation, but the
 scope is no longer open.
+
+**Revision 3 changed the phasing, not the work.** Four sequencing adjustments
+out of the review:
+
+1. The history-purge phase is split into **8a** (containment: rotate
+   credentials, delete the on-disk backup, ignore the pattern — do it now) and
+   **8b** (the actual rewrite, which waits on sign-off rather than on any
+   engineering phase).
+2. The shared translation model moved out of Phase 5 into a new **Phase 0**,
+   because a cheap written decision was silently gating Phase 4's schema. Phase 4
+   and Phase 5 are now parallel.
+3. Phases 6 and 7 keep their scope, but the **dependency arrows were wrong**:
+   moderation at volume needs the corpus, so 7 runs before 6.
+4. Voice capture left Phase 4 for a **Phase 10** of its own.
+
+### Where things stand
+
+| Phase | State |
+|---|---|
+| 1. Artifact taxonomy | **Landed** at `ef2a8a8` |
+| 2. Gates | **Landed** — ruff clean, coverage 84% / floor 80, crawler CI job, pre-commit config |
+| 8a. Contain the leak | **Done except rotation** — `.bak` deleted, ignore rule was already present; credential rotation is user-owned |
+| Everything else | Not started |
+
+Revision 3 was written against this state so the sequencing below is honest
+about what is left rather than what was planned.
 
 ## Verified baseline
 
@@ -32,6 +58,29 @@ Every number here was measured on the dev database at `1b57e34`, not estimated.
 Two numbers carry most of the argument below: **127/134 artifacts are
 `other`**, and **0 badges have ever been awarded** despite 12 existing.
 
+This table is **frozen at `1b57e34`**. Phase 1 has since landed and moved the
+artifact counts; rather than track a moving number here, re-measure once after
+Phase 9 and update in one pass.
+
+---
+
+## Phase 0 — Decisions before Phase 4 writes schema
+
+**Added in revision 3.** This is not a build phase. It exists because a
+decision that costs an afternoon was filed under "Phase 5, task 6", which made
+Phase 5 an implicit blocker for Phase 4 and for any schema work at all.
+
+1. **Shared translation model.** Stories must not be duplicated per language.
+   Decide whether translation is a relation on `Story` (or a separate
+   translation object), what happens to `Story.language` when one story exists
+   in several languages, and how moderation queues stay single per story rather
+   than tripling. Settle this **before Phase 4 touches schema and before the
+   first non-English story is written** — after content exists, it is a data
+   migration instead of a design choice.
+
+Deliverable is a written decision in this document, not code. Everything from
+Phase 4 onward reads it as an assumption.
+
 ---
 
 ## Phase 1 — Split the artifact taxonomy
@@ -41,6 +90,9 @@ quality gain in the data. It also unblocks browse, filtering, QR labelling,
 and search, all of which are currently fed garbage.
 
 **Review decision**: do the full field split now, not a minimal patch.
+
+**Status (revision 3)**: landed at `ef2a8a8`. Note that *unblocking* a surface
+is not the same as *delivering* it — see the deferral note under Tasks.
 
 ### The defect
 
@@ -75,8 +127,9 @@ never be made correct.
 
 1. **Add `Artifact.content_type`** with choices `kingdom`, `landmark`,
    `artifact`, `legend`, `culture`, plus `unknown` as an honest default for
-   rows we cannot classify. Indexed, because browse filters on it. Migrate.
-   `category` keeps its nine existing values and choices untouched.
+   rows we cannot classify. Indexed, because browse *will* filter on it once
+   Phase 9 settles what the taxonomy is for. Migrate. `category` keeps its nine
+   existing values and choices untouched.
 2. **Split the crawler classifier.** Rename `classify_category` to
    `classify_content_type` (its actual behaviour) and add
    `classify_material_type`. Rename `config.CATEGORY_KEYWORDS` →
@@ -101,6 +154,13 @@ never be made correct.
    unknown material logs and counts rather than silently defaulting; `--strict`
    aborts; backfill corrects a seeded `other` row; `content_type` defaults to
    `unknown` and is queryable.
+
+**Deliberately deferred to Phase 9**: wiring `content_type` into consumers.
+Phase 1 ships a field nobody reads — `/artifacts/` still filters on `category`
+(`backend/web/views.py:113`) and QR labels are still drawn from the material
+taxonomy. Which of the two taxonomies a user should filter on is the same
+question Phase 9 has to answer, so the wiring waits for that answer rather
+than guessing twice.
 
 ### Done when
 
@@ -164,6 +224,12 @@ Three consequences:
    `Artifact`.
 4. **Fix the empty descriptions.** 127 rows render a detail page with no
    description because the source had no first sentence.
+5. **Wire `content_type` into its consumers.** Phase 1 landed the field and
+   nothing reads it: `/artifacts/` still filters on `category`
+   (`backend/web/views.py:113`) and QR labels come from the material taxonomy.
+   Whichever home task 2 picks, the browse filter and the QR label should read
+   `content_type` — otherwise the taxonomy fix never reaches a user, which is
+   the payoff Phase 1 was justified on.
 
 ---
 
@@ -172,18 +238,49 @@ Three consequences:
 Every later phase adds code. These are the mechanisms that stop the same class
 of defect as Phase 1 recurring unnoticed.
 
+### Status — landed (revision 3)
+
+| Gate | State |
+|---|---|
+| ruff | `ruff check .` clean under `backend/ruff.toml`. Pinned `ruff==0.16.10` in the new `backend/requirements-dev.txt`. 11 real E702s in `web/templatetags/web_extras.py` fixed; the rest of the in-flight diff was unused imports and dead locals. |
+| coverage | **Measured 84%** on 4966 statements (migrations and test modules excluded), **floor set to 80** in `backend/.coveragerc`. Measured before set, as the task requires. |
+| crawler CI | New `crawler` job in `ci.yml`, running `python -m unittest discover -p 'test_*.py'` from `crawler/`. |
+| pre-commit | `.pre-commit-config.yaml` written: ruff + the migration drift check. Needs `pip install pre-commit && pre-commit install` per clone — that step is not run for you. |
+
+| Verification | Result |
+|---|---|
+| `ruff check .` | All checks passed |
+| `coverage report` | 84% (≥ 80 floor) |
+| `makemigrations --check` | No changes detected |
+| Backend suite | **486 tests, OK (6 skipped)** |
+| Crawler suite | **5 tests, OK** |
+
 ### Tasks
 
 1. **Run the crawler tests in CI.** `ci.yml` has backend, frontend, and deps
    jobs; the 5 tests in `crawler/test_*.py` run in none of them. Add a
    `crawler` job.
-   - Blocker first: there is **no crawler environment**. Those tests only run
-     under `backend/.venv-linux/bin/python`, because `bs4`/`lxml`/`httpx` live
-     there. Add `crawler/requirements-dev.txt` or document the shared
-     interpreter explicitly. Today the fact is undocumented and breaks for
-     anyone else.
+   - **Blocker resolved**: there was never a separate crawler *environment*
+     problem — `crawler/requirements.txt` already declares `requests`,
+     `beautifulsoup4`, `lxml`, and `httpx`. What was missing is that nothing in
+     CI ever installed it or ran the tests, so they only passed on whichever
+     machine happened to have those packages (here, `backend/.venv-linux`). The
+     new job installs from `crawler/requirements.txt` into its own interpreter
+     and runs with `crawler/` as the working directory, which is what puts
+     `extractors`/`runner` on `sys.path` for the tests' `from extractors import …`.
 2. **Add `ruff`** for lint. `manage.py check` is a Django system check, not a
    lint. Budget for a cleanup commit separate from the enabling commit.
+   - **Pin it first.** `ruff` is currently in neither `backend/requirements.txt`
+     nor on `PATH` — an unpinned `pip install ruff` in CI will drift and fail a
+     different way next month. Add it to requirements (or a dev-requirements
+     file) in the enabling commit.
+   - **State check**: the enabling config (`backend/ruff.toml`) and a first
+     cleanup pass already exist as uncommitted working-tree changes. That diff
+     currently touches 43 files / 553 lines, of which only ~205 differ when
+     CR-at-EOL is ignored — line-ending normalization is mixed in with the real
+     fixes, and one *applied* migration was edited. Split the normalization
+     into its own commit (or add `.gitattributes`), keep `migrations/` out of
+     autofix, and land the lint fixes reviewable.
 3. **Add `coverage.py`** with `--fail-under`. **Measure first, set the floor
    second** — a threshold the repo fails on day one trains people to ignore
    red. Publish the current number in the log, floor slightly below, then
@@ -238,9 +335,11 @@ about getting real people through it.
    rejection reason. Add the missing path if not.
 4. **Provenance backfill** for the 12 seeded stories — at minimum `origin` and
    `provenance_notes` — so the model reflects reality rather than `seeded`.
-5. **Voice capture.** Oral tradition has a sound dimension the current model
-   only half-represents (`AudioNarrationJob` exists for TTS). Decide whether
-   contributor-recorded audio is in scope; if yes, this is the schema for it.
+
+**Moved out in revision 3**: contributor-recorded audio is now Phase 10. Phase
+4 is consent capture, the contributor submission path, and provenance — a
+coherent unit that does not need a schema debate to land. Read Phase 0 first;
+tasks 2–4 are schema-free, task 1 is the constitution check.
 
 ---
 
@@ -276,10 +375,9 @@ be faster, but Track B is the one that validates the claim the project makes.
 5. **Translation contributor workflow** — this is what makes it prolific rather
    than a one-off. Someone must be able to submit a translation without
    touching Django.
-6. **Shared translation model.** Stories must not be duplicated per language.
-   Model translation as a relation on `Story`, or the same tale ends up in
-   three rows and three moderation queues. Decide this **before** the first
-   non-English story is written, not after.
+6. ~~**Shared translation model**~~ — **moved to Phase 0** in revision 3. It
+   was sitting here while gating Phase 4's schema, which is the wrong direction
+   for a dependency. This phase now starts from that decision already made.
 
 ---
 
@@ -287,6 +385,10 @@ be faster, but Track B is the one that validates the claim the project makes.
 
 0 story flags, 0 badges, 9 quiz attempts: the engagement loop has never run
 with real traffic, so its behaviour under load is unknown.
+
+**Depends on 7.** Task 1 is a load test, and there is nothing to load until
+Phase 7 has built the corpus. Tasks 2 and 3 do not need volume and can start
+any time after Phase 4.
 
 ### Tasks
 
@@ -305,12 +407,22 @@ with real traffic, so its behaviour under load is unknown.
    gamification paths are exercised in development. Marked synthetic via
    `origin`, so it never masquerades as real.
 
+   **Scope note**: this is the *engagement artefacts* only — the story corpus
+   they hang off comes from Phase 7, which runs first. Like Phase 7 task 4,
+   these rows must be produced by exercising the real code paths, not inserted.
+   Keeping the two phases separate is a review decision: 7 owns "enough
+   content to demo", 6 owns "the loop behaves under traffic".
+
 ---
 
 ## Phase 7 — Seed data at volume
 
 **Added after review.** The corpus is thin in a way that limits what can be
 demonstrated and tested: 12 stories, 9 quiz attempts, 0 flags, 0 badges.
+
+**Depends on 3 and 4.** Badge awards only arise from real code once Phase 3's
+trigger is fixed, and story submissions only arise once Phase 4's contributor
+path exists. Runs **before** Phase 6 — see the sequencing table.
 
 ### Tasks
 
@@ -324,61 +436,124 @@ demonstrated and tested: 12 stories, 9 quiz attempts, 0 flags, 0 badges.
    is the point of the provenance work in `ee3b0c9`.
 4. **Do not seed away the diagnostic signal.** Badges awarded, flags raised,
    and non-`other` artifact categories should be produced by *exercising the
-   real code paths* (Phase 3, Phase 6), not by inserting rows directly. A
-   seeded `UserBadge` would hide exactly the bug Phase 3 exists to find.
+   real code paths* (Phase 3's fixed award trigger, and the app's own flagging,
+   submission, and quiz paths), not by inserting rows directly. A seeded
+   `UserBadge` would hide exactly the bug Phase 3 exists to find.
 
 ---
 
-## Phase 8 — Purge the leaked database from history
+## Phase 8 — The leaked database
 
-**Added after review.** `backend/db.sqlite3.bak-20261002-180422` is
-untracked as of `1b57e34`, but it remains in history at `54ef15c` containing
-523 users and their password hashes. Ignoring the pattern prevents recurrence;
-it does not remove what is already published.
+**Added after review; split in revision 3.**
+`backend/db.sqlite3.bak-20261002-180422` is untracked but **still on disk**
+(1.9 MB, 523 users and their password hashes), and the blob entered history at
+`ee3b0c9`, so it is present in every commit from there forward. Ignoring the
+pattern prevents recurrence; it does not remove what is already published.
 
-### Tasks
+The split matters because the two halves run on different clocks. **8a is the
+least expensive item in this document and the only one whose cost rises with
+delay** — it needs no sign-off and no coordination. **8b is destructive,
+irreversible, and waits on people**, not on phases. So 8a moves to the front of
+the sequence and 8b moves to the back.
+
+### 8a — Contain now
 
 1. **Rotate the affected credentials first.** Any password hashes that reached
    a remote are compromised regardless of what happens to the file. This is
    the step that actually protects users, and it must happen *before* the
    rewrite, because the rewrite invalidates nothing on its own.
-2. **Rewrite history** (`git filter-repo`, or BFG) to purge
+2. **Delete the file and ignore the pattern.** Remove
+   `backend/db.sqlite3.bak-20261002-180422` from the working tree and add a
+   `.gitignore` rule covering `db.sqlite3*` and `*.bak-*`. "Untracked" is not
+   "deleted", and an ignore rule alone protects nothing that is already there.
+
+### 8b — Rewrite later
+
+_Behind explicit sign-off; not scheduled against any engineering phase._
+
+1. **Rewrite history** (`git filter-repo`, or BFG) to purge
    `db.sqlite3.bak-*` from every commit.
-3. **Force-push** and have collaborators re-clone. Destructive and
+2. **Force-push** and have collaborators re-clone. Destructive and
    irreversible — needs explicit sign-off, and anyone with a stale clone will
    re-push the blob on their next push.
-4. **Verify** `git log --all --diff-filter=A -- '*sqlite3*'` returns nothing.
-5. **If the repo was ever public**, assume the hashes are already in someone's
-   clone and treat step 1 as the actual remediation.
+3. **Verify** `git log --all --diff-filter=A -- '*sqlite3*'` returns nothing.
+4. **If the repo was ever public**, assume the hashes are already in someone's
+   clone and treat 8a step 1 as the actual remediation.
+
+---
+
+## Phase 10 — Voice capture
+
+**Split out of Phase 4 in revision 3.** Oral tradition has a sound dimension
+the current model only half-represents: `AudioNarrationJob` exists for TTS, but
+there is no path for a contributor's own recording.
+
+1. **Decide whether it is in scope at all.** This is a product question, and it
+   was parked inside a phase that already had four unambiguous tasks. Answering
+   it up front keeps Phase 4 shippable.
+2. **If yes, this is the schema for it.** Language-specific, so it lands after
+   Phase 0 has settled the translation model and after Phase 4's consent capture
+   — a recording is a rights-holder artefact and consent is collected in 4.2.
 
 ---
 
 ## Sequencing
 
-| Phase | Leverage | Cost | Depends on |
-|---|---|---|---|
-| 1. Artifact taxonomy | Very high | Low–Med | — |
-| 2. Gates | High | Low | — |
-| 3. Gamification | High | Low–Med | — |
-| 4. Stories | Very high | High | constitution check |
-| 5. Multilingual (2 tracks) | Very high | High | 5.6 decides 4's schema |
-| 6. Community at volume | Medium | Medium | 4 |
-| 7. Seed data | Medium | Low–Med | 3, 6 |
-| 8. History purge | High (security) | Low | credential rotation |
-| 9. What an Artifact is | High | Med | Phase 1 |
+| # | Phase | Leverage | Cost | Depends on | State |
+|---|---|---|---|---|---|
+| 1 | **8a. Contain the leak** | High (security) | Very low | your go-ahead | Done — rotation outstanding |
+| 2 | 1. Artifact taxonomy | Very high | Low–Med | — | **Landed** `ef2a8a8` |
+| 3 | 2. Gates | High | Low | — | **Landed** |
+| 4 | 3. Gamification | High | Low–Med | — | Not started |
+| 5 | **0. Translation-model decision** | High | Very low | — | Not started |
+| 6 | 4. Stories | Very high | High | 0, constitution check | Not started |
+| 7 | 5. Multilingual (2 tracks) | Very high | High | 0 | Not started |
+| 8 | 7. Seed data | Medium | Low–Med | 3, 4 | Not started |
+| 9 | 6. Community at volume | Medium | Medium | 4, 7 | Not started |
+| 10 | 9. What an Artifact is | High | Med | 1 | Not started |
+| 11 | 10. Voice capture | Medium | Med | 0, 4 | Not started |
+| 12 | **8b. Rewrite history** | High (security) | Low | 8a + sign-off | Not started |
 
-Phases 1–3 are independent and can run in any order or in parallel. Phase 8 is
-low effort and should be scheduled early rather than deferred indefinitely,
-but step 1 (credential rotation) is a decision that belongs to the user, not
-the schedule.
+The `#` column is execution order. The label carries each phase's own number,
+which no longer runs in sequence — Phase 9 was written mid-implementation, and
+Phases 0 and 10 were added by this review — so read `#`, not the label.
 
-**Critical path**: Phase 5 task 6 (shared translation model) must be decided
-before Phase 4 writes non-English stories, or the schema will have to change
-after content exists.
+**What revision 3 changed, and why:**
 
-**Recommended first move**: Phase 1. Roughly a day, fixes a defect actively
-degrading the data, and Phase 2's linter would otherwise run against a
-codebase that still had the bug in it.
+- **8a moved to the front.** It takes minutes, needs no engineering, and is the
+  only item in this plan that gets worse the longer it waits. Everything else
+  here is recoverable; leaked password hashes are not. 8b is deliberately last:
+  it is irreversible and blocked on coordinating re-clones, not on code.
+- **The old critical path is dissolved.** It read *"Phase 5 task 6 (shared
+  translation model) must be decided before Phase 4 writes non-English stories"*
+  — serialising an entire High-cost phase behind a decision that takes an
+  afternoon. That decision is now Phase 0, so **Phases 4 and 5 run in parallel**
+  and neither waits on the other.
+- **The 6 ↔ 7 arrows were backwards.** The old table said 7 depends on 6, while
+  6's headline task is a load test needing the corpus 7 builds. Both phases stay
+  separate (review decision) but the arrow runs **7 → 6**. Phase 7 in turn needs
+  3 — so badge awards come from the fixed trigger rather than a seeded row — and
+  4, so there is a submission and flagging path to exercise.
+- **Voice capture left Phase 4.** It was the one task in that phase with an
+  unresolved *whether* rather than a *how*, sitting inside a phase already rated
+  High cost.
+- **Phase 1's consumer wiring moved to Phase 9**, because choosing which
+  taxonomy a user filters on is the same question Phase 9 exists to answer.
+
+**Recommended first move**: Phase 8a, today — no code, no sign-off, and the
+highest-irreversibility item on the list. Second, finish Phase 2, which is now
+done: ruff clean, coverage measured and gated, crawler tests in CI,
+pre-commit config written. Phase 1 itself is done too; its payoff waits on
+Phase 9. Next up is Phase 3.
+
+One correction carried into the working tree: the earlier in-flight lint diff
+concentrated all of its line-ending churn in a single file —
+`backend/users/views.py` showed 349 changed lines, of which exactly 1 was
+substantive. The churn was reverted rather than committed, so that file's diff
+is now just the real fix (an unused local removed) and its original CRLF
+endings are untouched. Repo-wide line-ending consistency remains open; if it is
+wanted, do it deliberately in its own `.gitattributes` commit, never as
+collateral in a lint pass.
 
 ## Still excluded
 

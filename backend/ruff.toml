@@ -1,0 +1,49 @@
+# Ruff configuration.
+#
+# Started deliberately narrow. Ruff 0.16's out-of-the-box defaults flag 289
+# issues in this codebase, but 161 of those are two rules that are noise in a
+# Django project (RUF012 mutable-class-default fires on every `class Meta`,
+# EXE002 on every management command). Enabling a linter that fails on day one
+# trains people to ignore it.
+#
+# This selects the rules that find real defects — pyflakes (unused imports,
+# undefined names, f-strings without placeholders), pycodestyle errors, and
+# import sorting — and leaves the opinionated style rules out until the
+# high-signal set is clean.
+
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = [
+    "F",    # pyflakes: unused imports/names, undefined names, f-string bugs
+    "E4",   # pycodestyle: imports, whitespace, ambiguous constructs
+    "E7",   # pycodestyle: statements that are almost always wrong
+    "E9",   # pycodestyle: syntax and IO errors
+    "I",    # isort: unsorted and unformatted imports
+]
+ignore = [
+    # Line length is enforced by convention, not by the linter. The codebase
+    # has long docstrings and migration descriptions that would otherwise be
+    # churned for no benefit.
+    "E501",
+]
+
+[lint.per-file-ignores]
+# Tests read better with long fixture literals than with wrapped ones.
+"**/tests.py" = ["E501"]
+"**/tests_*.py" = ["E501"]
+"**/test_*.py" = ["E501"]
+# Management commands are executed directly in documentation and are not
+# always marked executable in a fresh checkout.
+"**/management/commands/*.py" = ["EXE002"]
+
+[lint.isort]
+known-first-party = ["api", "artifacts", "config", "gamification", "media_app", "notifications", "qr_codes", "stories", "users", "web"]
+
+[format]
+quote-style = "single"
+indent-style = "space"
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "parents"

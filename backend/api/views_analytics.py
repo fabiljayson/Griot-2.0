@@ -6,26 +6,26 @@ and institution managers.
 """
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from rest_framework import permissions, status
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .analytics import (
-    get_user_stats,
-    get_story_stats,
+    get_dashboard_summary,
+    get_engagement_summary,
     get_gamification_stats,
     get_qr_stats,
-    get_engagement_summary,
-    get_dashboard_summary,
+    get_story_stats,
+    get_user_stats,
 )
 from .serializers_analytics import (
-    UserStatsSerializer,
-    StoryStatsSerializer,
+    AdminUserListSerializer,
+    DashboardSummarySerializer,
+    EngagementSummarySerializer,
     GamificationStatsSerializer,
     QRStatsSerializer,
-    EngagementSummarySerializer,
-    DashboardSummarySerializer,
-    AdminUserListSerializer,
+    StoryStatsSerializer,
+    UserStatsSerializer,
 )
 
 User = get_user_model()

@@ -24,8 +24,8 @@ from django.test import SimpleTestCase
 
 from media_app.services.luma_ai import (
     LUMA_API_BASE,
-    LumaAIError,
     LiveLumaAIService,
+    LumaAIError,
     _normalise_progress,
 )
 

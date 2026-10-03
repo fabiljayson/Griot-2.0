@@ -9,8 +9,8 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 from rest_framework import generics, permissions, status, viewsets
-from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.response import Response
 
 from qr_codes.models import Artifact

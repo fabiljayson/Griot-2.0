@@ -1,0 +1,12 @@
+# Development-only tooling. Deliberately separate from requirements.txt:
+# Render installs requirements.txt, so the deployed image carries neither a
+# linter nor a coverage tracer.
+#
+# Install both with:
+#   pip install -r requirements.txt -r requirements-dev.txt
+#
+# Versions pinned to what docs/ROADMAP.md revision 3 was measured against —
+# unpinning either one silently changes what `ruff check` flags and what
+# `coverage report` counts.
+ruff==0.16.10
+coverage==7.16.2

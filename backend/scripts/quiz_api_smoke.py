@@ -29,12 +29,13 @@ def main():
 
     from django.contrib.auth import get_user_model
     from rest_framework.test import APIRequestFactory, force_authenticate
+
     from gamification.models import (
         Quiz,
         QuizAttempt,
-        UserProfile,
-        UserBadge,
         QuizQuestion,
+        UserBadge,
+        UserProfile,
     )
     from gamification.views import QuizViewSet
 
@@ -140,7 +141,7 @@ def main():
 
     # 6. Check user profile
     profile, _ = UserProfile.objects.get_or_create(user=user)
-    print(f"\n[Step 6] User profile")
+    print("\n[Step 6] User profile")
     print(f"   Level: {profile.level}")
     print(f"   Total XP: {profile.total_xp}")
     print(f"   Quizzes passed: {profile.quizzes_passed}")
@@ -199,7 +200,7 @@ def main():
             print(f"   Could not submit answer: {result}")
 
     print(f"\n{'='*60}")
-    print(f"  QUIZ API TEST COMPLETE")
+    print("  QUIZ API TEST COMPLETE")
     print("=" * 60)
 
 

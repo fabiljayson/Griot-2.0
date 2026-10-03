@@ -225,7 +225,7 @@ class Artifact(models.Model):
         super().save(*args, **kwargs)
         # Auto-resize and generate BlurHash placeholder for the artifact image
         if self.image:
-            from media_app.services.blurhash_utils import resize_image, generate_blurhash
+            from media_app.services.blurhash_utils import generate_blurhash, resize_image
             resize_image(self.image)
             if not self.image_blurhash:
                 blurhash_str = generate_blurhash(self.image)

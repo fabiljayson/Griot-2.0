@@ -10,7 +10,6 @@ import logging
 from datetime import datetime
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import landscape
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 

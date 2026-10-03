@@ -21,7 +21,6 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from config.rate_limit import rate_limit
-
 from gamification.models import Quiz, QuizQuestion
 from qr_codes.models import Artifact
 from stories.models import Story
@@ -40,12 +39,14 @@ from .services import (
     refresh_video_job,
     register_user,
     save_story,
-    set_language as persist_language,
     start_quiz,
     submit_quiz_answer,
     toggle_story_bookmark,
     toggle_story_like,
     update_profile,
+)
+from .services import (
+    set_language as persist_language,
 )
 
 
@@ -367,7 +368,7 @@ def profile_delete(request):
 @login_required
 @require_POST
 def set_language(request):
-    code = persist_language(request.user, request.POST.get('language', 'en'))
+    persist_language(request.user, request.POST.get('language', 'en'))
     return HttpResponseRedirect(_safe_next(request, reverse('web:home')))
 
 

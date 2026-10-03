@@ -1,0 +1,37 @@
+# Coverage configuration.
+#
+# The floor was measured before it was set, per docs/ROADMAP.md Phase 2:
+#   84% on 4969 statements, with migrations and test modules excluded.
+#
+# `fail_under` sits 4 points below the measured number rather than at it. A
+# threshold the repo passes by a hair breaks on the first unrelated refactor,
+# and a gate that is often red is a gate people learn to ignore. Ratchet it
+# upward once — after each phase that adds tests — never downward.
+#
+# Migrations are excluded because they are execution records, not authored
+# logic: covering them measures import order, not behaviour. Test modules are
+# excluded for the obvious reason.
+[run]
+source =
+    users
+    stories
+    qr_codes
+    gamification
+    notifications
+    media_app
+    api
+    web
+omit =
+    */migrations/*
+    */tests.py
+    */tests_*.py
+    */test_*.py
+    *tests*
+
+[report]
+fail_under = 80
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError

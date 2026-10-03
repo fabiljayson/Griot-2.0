@@ -7,7 +7,7 @@ which is UTC — a reader in Cameroon (UTC+1) reading at 23:30 was credited to t
 previous day and could lose a streak they had actually kept.
 """
 
-from datetime import date, timedelta
+from datetime import timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.db import transaction

@@ -12,7 +12,6 @@ is `blank=True`.
 
 import django.db.models.functions.text
 from django.db import migrations, models
-from django.db.models import F
 
 # Login is by username (the JWT serializer is fed `username`), so clearing a
 # duplicate's email does not lock that account out of signing in.

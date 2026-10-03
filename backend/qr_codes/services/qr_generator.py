@@ -5,6 +5,7 @@ Generates QR codes that link to artifact detail pages.
 Supports PNG and SVG output formats.
 """
 import io
+
 import qrcode
 import segno
 

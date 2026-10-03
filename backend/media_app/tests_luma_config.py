@@ -21,7 +21,6 @@ explicitly allowed (`LUMA_ALLOW_MOCK`, defaulted to `DEBUG`).
 These tests pin that gate and the three call sites that have to honour it.
 """
 
-from unittest import mock
 
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse

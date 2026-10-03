@@ -271,7 +271,7 @@ class Story(models.Model):
         super().save(*args, **kwargs)
         # Auto-resize and generate BlurHash placeholder for the cover image
         if self.cover_image:
-            from media_app.services.blurhash_utils import resize_image, generate_blurhash
+            from media_app.services.blurhash_utils import generate_blurhash, resize_image
             resize_image(self.cover_image)
             if not self.cover_image_blurhash:
                 blurhash_str = generate_blurhash(self.cover_image)

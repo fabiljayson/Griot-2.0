@@ -15,7 +15,6 @@ Usage:
 """
 
 import json
-import os
 import re
 import shutil
 import time
@@ -25,9 +24,8 @@ from urllib.parse import urlparse
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.text import slugify
 
-from qr_codes.classification import classify_material, classification_text
+from qr_codes.classification import classification_text, classify_material
 from qr_codes.models import Artifact
 
 
@@ -272,7 +270,7 @@ class Command(BaseCommand):
 
         # Summary
         self.stdout.write(f'\n{"="*60}')
-        self.stdout.write(self.style.SUCCESS(f'✅ IMPORT COMPLETE'))
+        self.stdout.write(self.style.SUCCESS('✅ IMPORT COMPLETE'))
         self.stdout.write(f'{"="*60}')
         self.stdout.write(f'  Created:  {created_count}')
         self.stdout.write(f'  Updated:  {updated_count}')

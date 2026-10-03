@@ -9,20 +9,26 @@ Provides functions to compute:
 - Engagement metrics (shares, likes, bookmarks, reading time)
 """
 from datetime import timedelta
-from collections import Counter
 
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Avg, Sum, Q, F
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 
-from stories.models import (
-    Story, StoryCategory, StoryBookmark, StoryLike,
-    StoryShare, StoryFlag, ReadingProgress,
-)
 from gamification.models import (
-    Quiz, QuizAttempt, Badge, UserBadge, UserProfile, Certificate,
+    Quiz,
+    QuizAttempt,
+    UserBadge,
+    UserProfile,
 )
 from qr_codes.models import Artifact, QRCodeScan
+from stories.models import (
+    ReadingProgress,
+    Story,
+    StoryBookmark,
+    StoryFlag,
+    StoryLike,
+    StoryShare,
+)
 
 User = get_user_model()
 
@@ -61,9 +67,7 @@ def daily_growth(queryset, date_field: str, days: int = 30):
 
 def get_user_stats():
     """Aggregate user statistics."""
-    now = timezone.now()
-    thirty_days_ago = now - timedelta(days=30)
-    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     total_users = User.objects.count()
     active_users_30d = User.objects.filter(
@@ -255,9 +259,7 @@ def get_qr_stats():
 
 def get_engagement_summary():
     """High-level engagement summary."""
-    now = timezone.now()
-    thirty_days_ago = now - timedelta(days=30)
-    seven_days_ago = now - timedelta(days=7)
+    seven_days_ago = timezone.now() - timedelta(days=7)
 
     # Reading activity
     total_reading_time = ReadingProgress.objects.aggregate(

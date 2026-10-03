@@ -17,7 +17,6 @@ import uuid
 from typing import Optional
 
 from django.conf import settings
-
 from gtts import gTTS
 
 logger = logging.getLogger(__name__)

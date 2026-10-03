@@ -22,9 +22,9 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from qr_codes.classification import (
+    classification_text,
     classify_content_type,
     classify_material,
-    classification_text,
 )
 from qr_codes.models import Artifact
 

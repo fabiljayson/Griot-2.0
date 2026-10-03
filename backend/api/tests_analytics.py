@@ -2,15 +2,12 @@
 Tests for the admin analytics API endpoints.
 """
 from django.contrib.auth import get_user_model
-from django.test import override_settings
 from django.utils import timezone
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from stories.models import Story, StoryCategory, StoryLike, StoryBookmark, StoryShare
-from gamification.models import Quiz, QuizAttempt, UserProfile, UserBadge, Badge
-from qr_codes.models import Artifact, QRCodeScan
+from gamification.models import Quiz, QuizAttempt, UserProfile
+from stories.models import Story, StoryCategory
 
 User = get_user_model()
 
@@ -290,7 +287,7 @@ class DashboardGrowthSeriesTests(APITestCase):
     """
 
     def test_each_growth_series_has_30_chronological_points(self):
-        from api.analytics import daily_growth, get_qr_stats, get_user_stats
+        from api.analytics import get_qr_stats, get_user_stats
 
         for name, fn in (
             ('user_growth', get_user_stats),

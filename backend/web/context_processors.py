@@ -1,6 +1,5 @@
 """Context processors for the web interface."""
 
-from django.conf import settings
 
 
 def web_globals(request):

@@ -385,6 +385,7 @@ class Certificate(models.Model):
         Returns the URL of the generated PDF, or empty string on failure.
         """
         from django.core.files.base import ContentFile
+
         from gamification.services.certificate_generator import generate_certificate_pdf
 
         try:

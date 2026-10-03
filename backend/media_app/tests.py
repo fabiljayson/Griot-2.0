@@ -17,7 +17,6 @@ from .models import (
     AudioNarrationJob,
     MediaOriginKind,
     VideoGenerationJob,
-    normalise_engine,
 )
 from .services.luma_ai import LumaAIError
 
@@ -227,7 +226,6 @@ class VideoGenerationTests(APITestCase):
         storyId 0 with an empty url, so `isReady` was never true and a
         finished video could never play. Pin the wire contract.
         """
-        from .services import luma_ai
 
         job = VideoGenerationJob.objects.create(
             user=self.contributor,

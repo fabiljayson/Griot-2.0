@@ -24,9 +24,6 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from qr_codes.models import Artifact
-from stories.models import Story
-
 from media_app.models import AudioNarrationJob, normalise_engine
 from media_app.services.tts import (
     TTSGenerationError,
@@ -35,6 +32,8 @@ from media_app.services.tts import (
     resolve_language,
     strip_markdown,
 )
+from qr_codes.models import Artifact
+from stories.models import Story
 
 
 class Command(BaseCommand):

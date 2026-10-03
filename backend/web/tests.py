@@ -6,16 +6,16 @@ FUNCTIONALITY_OUTLINE.md — story form (§2), profile (§1), audio/video
 media UI (§6/§7), quizzes hub (§8) and the artifact audio guide (§5).
 """
 
+from django.template import Context, Template
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.template import Context, Template
 
-from gamification.models import Badge, Quiz, QuizAttempt, QuizQuestion, UserProfile
+from gamification.models import Badge, QuizAttempt, QuizQuestion, UserProfile
 from media_app.models import AudioNarrationJob, VideoGenerationJob
 from stories.models import Story, StoryCategory, StoryFlag
+from users.models import User
 
 from .services import admin_dashboard_data
-from users.models import User
 
 
 @override_settings(MEDIA_URL='/media/')
@@ -114,7 +114,7 @@ class StoryFormTests(WebSmokeTestCase):
         self.assertContains(response, self.story.title)
 
         # A different contributor may not edit someone else's story.
-        other = User.objects.create_user(
+        User.objects.create_user(
             username='web_other', password='testpass123', role='contributor',
         )
         self.client.login(username='web_other', password='testpass123')

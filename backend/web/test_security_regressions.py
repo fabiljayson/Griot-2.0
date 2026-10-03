@@ -217,6 +217,7 @@ class WebAuthControlsRegression(TestCase):
         """Weak passwords that AUTH_PASSWORD_VALIDATORS rejects must now be
         refused by the web form, matching the API."""
         from django.contrib.auth import password_validation
+
         from web.services import register_user
 
         weak = ('password1', '12345678', 'qwerty123', 'letmein1')

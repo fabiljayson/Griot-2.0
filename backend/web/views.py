@@ -29,7 +29,6 @@ from config.rate_limit import rate_limit, reset_client_budget
 
 from .auth import DEFAULT_LOGIN_REDIRECT
 from .services import (
-    SORT_OPTIONS,
     admin_dashboard_data,
     artifact_detail_data,
     artifact_list_data,
@@ -38,10 +37,10 @@ from .services import (
     library_data,
     profile_data,
     quiz_play_data,
+    quizzes_data,
     stories_data,
     story_detail_data,
     story_form_data,
-    quizzes_data,
 )
 
 

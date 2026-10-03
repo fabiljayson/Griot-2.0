@@ -234,28 +234,37 @@ def markdown(value: str) -> str:
         line = raw.rstrip()
 
         if line.strip().startswith('```'):
-            flush_paragraph(); close_list(); close_quote()
+            flush_paragraph()
+            close_list()
+            close_quote()
             out.append('<pre><code>' + html.escape(line.strip()[3:]) + '</code></pre>')
             continue
 
         if not line.strip():
-            flush_paragraph(); close_list(); close_quote()
+            flush_paragraph()
+            close_list()
+            close_quote()
             continue
 
         heading = re.match(r'^(#{1,3})\s+(.*)$', line)
         if heading:
-            flush_paragraph(); close_list(); close_quote()
+            flush_paragraph()
+            close_list()
+            close_quote()
             level = len(heading.group(1))
             out.append(f'<h{level}>{_inline(heading.group(2))}</h{level}>')
             continue
 
         if re.match(r'^\s*([-*_]\s*){3,}$', line):
-            flush_paragraph(); close_list(); close_quote()
+            flush_paragraph()
+            close_list()
+            close_quote()
             out.append('<hr>')
             continue
 
         if line.lstrip().startswith('>'):
-            flush_paragraph(); close_list()
+            flush_paragraph()
+            close_list()
             if not state['quote']:
                 out.append('<blockquote>')
                 state['quote'] = True
@@ -285,7 +294,9 @@ def markdown(value: str) -> str:
         close_list()
         paragraph.append(line.strip())
 
-    flush_paragraph(); close_list(); close_quote()
+    flush_paragraph()
+    close_list()
+    close_quote()
     return mark_safe('\n'.join(out))
 
 

@@ -1,17 +1,17 @@
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from users.views import MeView
 
 from .views import health_check, health_metrics, health_ready
 from .views_analytics import (
+    AdminUsersListView,
     DashboardSummaryView,
-    UserAnalyticsView,
-    StoryAnalyticsView,
+    EngagementAnalyticsView,
     GamificationAnalyticsView,
     QRAnalyticsView,
-    EngagementAnalyticsView,
-    AdminUsersListView,
+    StoryAnalyticsView,
+    UserAnalyticsView,
 )
 
 urlpatterns = [

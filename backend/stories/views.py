@@ -1,6 +1,5 @@
-from django.db.models import Q, Count, F
+from django.db.models import Count, F, Q
 from django.utils import timezone
-from django.utils.timesince import timesince
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response

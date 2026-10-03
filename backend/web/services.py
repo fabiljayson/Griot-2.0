@@ -12,7 +12,8 @@ from collections import OrderedDict
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.db.models import Count, F, Q, Sum

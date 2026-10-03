@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import (
@@ -19,11 +19,9 @@ from .models import (
     UserBadge,
     UserProfile,
 )
-from .services import quiz_xp, streaks
 from .serializers import (
     BadgeSerializer,
     CertificateSerializer,
-    QuizAttemptCreateSerializer,
     QuizAttemptDetailSerializer,
     QuizDetailSerializer,
     QuizListSerializer,
@@ -31,6 +29,7 @@ from .serializers import (
     UserBadgeSerializer,
     UserProfileSerializer,
 )
+from .services import quiz_xp, streaks
 
 
 class IsAuthenticatedOrReadOnly(permissions.BasePermission):

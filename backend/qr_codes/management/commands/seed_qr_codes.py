@@ -58,6 +58,10 @@ class Command(BaseCommand):
                 if published_stories:
                     artifact.stories.set(published_stories)
                 self.stdout.write(f'  Created artifact: {data["title"]}')
+            elif artifact.description != data['description']:
+                artifact.description = data['description']
+                artifact.save(update_fields=['description'])
+                self.stdout.write(f'  Updated artifact description: {data["title"]}')
             else:
                 self.stdout.write(f'  Artifact already exists: {data["title"]}')
 
@@ -72,9 +76,8 @@ class Command(BaseCommand):
             {
                 'title': 'Bamoun Royal Mask',
                 'description': (
-                    'An intricately carved royal mask of the Bamoun sultanate, '
-                    'adorned with beads and cowrie shells. Worn during '
-                    'ceremonial dances and royal celebrations in Foumban.'
+                    'A carved Bamoun royal mask decorated with beads and cowrie '
+                    'shells, worn in Foumban ceremonies.'
                 ),
                 'category': 'mask',
                 'culture': 'Bamoun',
@@ -88,9 +91,8 @@ class Command(BaseCommand):
             {
                 'title': 'Bamileke Elephant Mask',
                 'description': (
-                    'A spectacular beaded elephant mask from the Bamileke '
-                    'highlands. The elephant symbolizes strength and royalty '
-                    'and features prominently in the famous Elephant Dance.'
+                    'A beaded elephant mask from the Bamileke highlands, worn '
+                    'during the Elephant Dance.'
                 ),
                 'category': 'mask',
                 'culture': 'Bamileke',
@@ -104,9 +106,8 @@ class Command(BaseCommand):
             {
                 'title': 'Bronze Statue of King Njoya',
                 'description': (
-                    'A bronze statue commemorating King Njoya of the Bamoun '
-                    'sultanate, inventor of the Bamoun script and patron of '
-                    'the arts. A symbol of African innovation and statecraft.'
+                    'A bronze statue honoring King Njoya, Bamoun ruler, script '
+                    'inventor, and patron of the arts.'
                 ),
                 'category': 'sculpture',
                 'culture': 'Bamoun',
@@ -120,9 +121,8 @@ class Command(BaseCommand):
             {
                 'title': 'Kirdi Calabash Vessel',
                 'description': (
-                    'A decorated calabash vessel from the Kirdi (Montagnard) '
-                    'peoples of northern Cameroon, used for storing grain and '
-                    'water. The geometric burnt patterns encode clan identity.'
+                    'A decorated calabash vessel from northern Cameroon, used '
+                    'to store grain and water.'
                 ),
                 'category': 'pottery',
                 'culture': 'Kirdi (Montagnards)',
@@ -136,9 +136,8 @@ class Command(BaseCommand):
             {
                 'title': 'Mambila Headdress',
                 'description': (
-                    'A towering headdress from the Mambila people of the '
-                    'Adamawa plateau, combining wood and raffia. Worn during '
-                    'funerary and initiation ceremonies to honor ancestors.'
+                    'A wood-and-raffia Mambila headdress worn during funerary '
+                    'and initiation ceremonies.'
                 ),
                 'category': 'mask',
                 'culture': 'Mambila',
@@ -152,9 +151,8 @@ class Command(BaseCommand):
             {
                 'title': 'Ngondo Drum',
                 'description': (
-                    'A large slit drum associated with the Ngondo festival of '
-                    'the Sawa people. Its rhythms summon the spirits of the '
-                    'water and open the annual celebration on the Wouri river.'
+                    'A hardwood slit drum used by the Sawa people to open the '
+                    'annual Ngondo festival.'
                 ),
                 'category': 'instrument',
                 'culture': 'Douala (Sawa)',

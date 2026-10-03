@@ -164,7 +164,6 @@ class MeView(APIView):
         return Response(serializer.data)
 
     def delete(self, request):
-        username = request.user.username
         request.user.delete()
         # A 204 response carries no body by definition. Returning one anyway
         # produced a response that every client library treats differently:

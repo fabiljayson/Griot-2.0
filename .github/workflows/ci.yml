@@ -6,7 +6,8 @@ name: CI
 # claim that nothing enforced. This workflow makes those numbers real.
 #
 # Gates on every push and pull request:
-#   backend  — Django system checks, migration drift, full test suite
+#   backend  — ruff, Django system checks, migration drift, test suite + coverage
+#   crawler  — the standalone crawler's own test suite
 #   frontend — flutter analyze, full test suite
 #   deps     — pip-audit against the pinned backend requirements
 #
@@ -51,12 +52,20 @@ jobs:
         with:
           python-version: '3.12.10'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      # `manage.py check` below is a Django system check, not a linter: it
+      # finds neither an unused import nor an undefined name. ruff is the gate
+      # for that class of defect, which is how the Phase 1 placeholder got in.
+      - name: Lint (ruff)
+        run: ruff check .
 
       - name: Django system check
         run: python manage.py check
@@ -77,8 +86,42 @@ jobs:
           fi
           echo "prod correctly refused to boot without DJANGO_SECRET_KEY"
 
+      # Coverage and the suite in one pass. The floor lives in .coveragerc and
+      # was measured (84%) before it was set (80%) — read the header there
+      # before changing it, and ratchet it up only after tests are added.
+      - name: Test suite with coverage
+        run: |
+          coverage run manage.py test -v 1
+          coverage report
+
+  crawler:
+    name: Crawler
+    runs-on: ubuntu-latest
+    # The crawler is a standalone package with its own requirements.txt and is
+    # not importable from the backend. Its 5 tests previously ran only on a
+    # developer's machine, against whatever happened to be installed in
+    # backend/.venv-linux — nowhere in CI. Running with crawler/ as the working
+    # directory is what puts `extractors`/`runner` on sys.path for the
+    # `from extractors import ...` the tests do.
+    defaults:
+      run:
+        working-directory: crawler
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+          cache: pip
+          cache-dependency-path: crawler/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       - name: Test suite
-        run: python manage.py test -v 1
+        run: python -m unittest discover -p 'test_*.py' -v
 
   frontend:
     name: Frontend (Flutter)

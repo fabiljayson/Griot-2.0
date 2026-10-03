@@ -1,0 +1,32 @@
+# Pre-commit hooks — the same two gates CI runs, but before push rather than
+# after it. Enable once per clone:
+#
+#   pip install pre-commit && pre-commit install
+#
+# Run on demand instead of on commit:
+#
+#   pre-commit run --all-files
+#
+# Nothing here is a substitute for CI: a hook can be skipped with
+# `git commit --no-verify`, and someone will. CI is the gate of record.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Keep in sync with backend/requirements-dev.txt — a drift here means the
+    # hook and CI disagree about what counts as clean.
+    rev: v0.16.10
+    hooks:
+      - id: ruff
+        files: ^backend/
+
+  - repo: local
+    hooks:
+      # Django will let you edit a model with no migration; the failure only
+      # appears on deploy, where `migrate` runs at start-up. CI runs this too
+      # (`.github/workflows/ci.yml`) — this is the same check moved earlier.
+      # Needs the project virtualenv activated so `python manage.py` resolves.
+      - id: django-migration-check
+        name: Django migration drift
+        entry: bash -c "cd backend && python manage.py makemigrations --check --dry-run"
+        language: system
+        pass_filenames: false
+        files: ^backend/

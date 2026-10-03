@@ -12,7 +12,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *  # noqa: F401,F403
-from .base import SECRET_KEY, DATABASES
+from .base import DATABASES, SECRET_KEY
 
 # Hard fail in production if required env vars are missing or insecure.
 if not os.environ.get('DJANGO_SECRET_KEY'):
