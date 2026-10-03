@@ -64,8 +64,13 @@ abstract final class AppTheme {
       surfaceContainerHigh: AppColors.ivory,
       surfaceContainer: AppColors.ivory,
       surfaceTint: AppColors.indigo,
-      outline: AppColors.webBorder,
-      shadow: Color(0x14000000),
+      // `outline` is the functional boundary colour (inputs, focus rings,
+      // toggles) and now clears WCAG 1.4.11's 3:1. Decorative card and
+      // divider lines use `outlineVariant`, which stays quiet — a 3:1 hairline
+      // around every card would turn the whole app into a wireframe.
+      outline: AppColors.borderFunctional,
+      outlineVariant: AppColors.dividerSoft,
+      shadow: Color(0x141E2B58),
     );
 
     final base = ThemeData(
@@ -104,7 +109,9 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: scheme.outline,
+            // Decorative, not a control boundary: the card's content and
+            // elevation identify it, so this does not need 3:1.
+            color: scheme.outlineVariant,
           ),
         ),
       ),
@@ -186,7 +193,7 @@ abstract final class AppTheme {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       ),
       dividerTheme: DividerThemeData(
-        color: scheme.outline,
+        color: scheme.outlineVariant,
         thickness: 1,
       ),
       navigationBarTheme: NavigationBarThemeData(

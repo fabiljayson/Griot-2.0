@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:griot_ai/core/theme/app_colors.dart';
+import 'package:griot_ai/core/theme/app_theme.dart';
 
 /// WCAG 2.x relative luminance (0.0 – 1.0).
 ///
@@ -87,5 +88,36 @@ void main() {
         expect(_contrast(AppColors.bronze, AppColors.ivory), lessThan(4.5));
       },
     );
+  });
+
+  group('WCAG 1.4.11 non-text contrast — control boundaries', () {
+    // 3:1 is required for the boundary of a control the user has to be able to
+    // identify. `webBorder` is 1.24:1 on white, which is why every input in the
+    // app previously read as borderless and an empty field looked disabled.
+    test('borderFunctional clears 3:1 on white surfaces', () {
+      expect(
+        _contrast(AppColors.borderFunctional, AppColors.surfaceLight),
+        greaterThanOrEqualTo(3.0),
+      );
+    });
+
+    test('borderFunctional clears 3:1 on ivory', () {
+      expect(
+        _contrast(AppColors.borderFunctional, AppColors.ivory),
+        greaterThanOrEqualTo(3.0),
+      );
+    });
+
+    test('the theme wires the functional border to outline, not the soft one', () {
+      // The regression that mattered: `scheme.outline` was `webBorder`.
+      expect(AppTheme.light.colorScheme.outline, AppColors.borderFunctional);
+    });
+
+    test('card and divider borders use the quiet variant', () {
+      expect(
+        AppTheme.light.colorScheme.outlineVariant,
+        AppColors.dividerSoft,
+      );
+    });
   });
 }

@@ -80,7 +80,24 @@ abstract final class AppColors {
   static const Color muted = Color(0xFF6B7280);
 
   /// Web border neutral (web: `brand-border`).
+  ///
+  /// Kept as the *decorative* border. At #E5E7EB it sits at 1.24:1 on white,
+  /// which is fine for a line between two cards but below the 3:1 that WCAG
+  /// 1.4.11 requires of a boundary the user has to see to identify a control.
+  /// Use [borderFunctional] for anything the user must be able to find.
   static const Color webBorder = Color(0xFFE5E7EB);
+
+  /// Border for controls the user has to *identify* — input fields, focus
+  /// rings, unselected toggles. #8B8F98 clears 3:1 on white (3.24:1).
+  ///
+  /// The old `webBorder` at 1.24:1 was effectively invisible: `AppTheme` wired
+  /// `scheme.outline` to it, so every input border was a hairline that read as
+  /// "no border" and an empty field looked identical to a disabled one.
+  static const Color borderFunctional = Color(0xFF8B8F98);
+
+  /// Decorative divider between cards. Light enough to stay quiet, darker than
+  /// the old value so a divider is perceptible at all (1.77:1 on white).
+  static const Color dividerSoft = Color(0xFFBFC3C9);
 
   /// Mud charcoal — dark mode background (web: `mud-charcoal`).
   static const Color mudCharcoal = Color(0xFF0F1219);
