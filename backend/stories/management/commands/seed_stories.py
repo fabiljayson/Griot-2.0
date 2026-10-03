@@ -19,6 +19,17 @@ from stories.seed_data import CATEGORY_DATA, STORIES
 
 User = get_user_model()
 
+#: What every row this command inserts actually is, stated in full rather than
+#: left to a single enum value. `origin='seeded'` says the category; this says
+#: where the text came from, and that no community consent was sought for it.
+#: Seed content must never be presentable as real oral tradition — that
+#: distinction is the point of the provenance work in `ee3b0c9`.
+SEEDED_PROVENANCE_NOTE = (
+    'Demonstration content seeded from crawled pages of '
+    'discover-cameroon.com for this project. Not recorded from a community '
+    'member, and no community consent was sought for this text.'
+)
+
 
 class Command(BaseCommand):
     help = 'Seed the database with cultural stories and categories from Cameroon'
@@ -80,14 +91,27 @@ class Command(BaseCommand):
         already been filled in — by a moderator, or by a later crawl — is left
         exactly as it is; re-seeding must never overwrite a real record with
         the demo label.
+
+        `origin='seeded'` says the *category*; without `provenance_notes` the
+        model still could not say what was seeded, or that no community consent
+        was sought for it — which is the distinction the provenance work
+        exists to draw.
         """
-        if story.origin != Story.Origin.UNKNOWN:
-            return False
-        # `is_synthetic_origin` is derived from `origin`, so setting the origin
-        # is the whole job — there is no second column to keep in step.
-        story.origin = Story.Origin.SEEDED
-        story.save(update_fields=['origin', 'updated_at'])
-        return True
+        changed = False
+        if story.origin == Story.Origin.UNKNOWN:
+            # `is_synthetic_origin` is derived from `origin`, so setting the
+            # origin is what stops demo content reading as collected tradition.
+            story.origin = Story.Origin.SEEDED
+            changed = True
+        if (
+            story.origin == Story.Origin.SEEDED
+            and not story.provenance_notes.strip()
+        ):
+            story.provenance_notes = SEEDED_PROVENANCE_NOTE
+            changed = True
+        if changed:
+            story.save(update_fields=['origin', 'provenance_notes', 'updated_at'])
+        return changed
 
     def _create_stories(self, author, categories):
         """Create stories based on crawled content from discover-cameroon.com."""
@@ -112,6 +136,7 @@ class Command(BaseCommand):
                     # `seeded` is what stops demo content from reading as
                     # collected oral tradition on the site.
                     'origin': Story.Origin.SEEDED,
+                    'provenance_notes': SEEDED_PROVENANCE_NOTE,
                     'licence': Story.Licence.UNDETERMINED,
                     'consent_status': Story.Consent.NOT_REQUESTED,
                 }

@@ -25,6 +25,9 @@ export 'widgets/growth_chart.dart';
 export 'widgets/dashboard_section.dart';
 export 'widgets/ranked_tile.dart';
 export 'widgets/moderation_widgets.dart';
+export 'widgets/consent_review_card.dart';
+export 'widgets/consent_form_sheet.dart';
 
 // Screens
 export 'screens/admin_dashboard_screen.dart';
+export 'screens/consent_review_screen.dart';

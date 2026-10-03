@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../providers/admin_provider.dart';
+import 'consent_review_screen.dart';
 import '../widgets/count_pills.dart';
 import '../widgets/dashboard_error.dart';
 import '../widgets/dashboard_section.dart';
@@ -37,6 +38,18 @@ class AdminDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
+          // Consent is a different queue from flags: a complaint about a story
+          // is not the same record as the community's agreement to publish it,
+          // so it gets its own screen rather than another block here.
+          IconButton(
+            tooltip: 'Consent review',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ConsentReviewScreen(),
+              ),
+            ),
+            icon: const Icon(AppIcons.khanda),
+          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: () {

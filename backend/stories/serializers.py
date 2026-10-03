@@ -11,6 +11,7 @@ from .models import (
     StoryFlag,
     StoryLike,
 )
+from .services import MODERATOR_ROLES, resolve_status
 
 User = get_user_model()
 
@@ -99,6 +100,12 @@ class StoryDetailSerializer(serializers.ModelSerializer):
     is_bookmarked = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     reading_progress = serializers.SerializerMethodField()
+    # The rejection reason. Moderators write it as the reason for a rejection
+    # and it was previously read by *nobody* — no serializer, no template, no
+    # Flutter model — so a rejected contributor saw `status: rejected` and had
+    # no way to act on it. Visible to the author and to moderators only; it is
+    # internal notes to everyone else.
+    reviewer_notes = serializers.SerializerMethodField()
     # A model property returning a list of strings. `ReadOnlyField` leaves it
     # untyped in the schema, so drf-spectacular flags it and a generated client
     # has to guess. `ListField(child=CharField())` is the honest declaration
@@ -146,6 +153,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'recorded_at',
             'attribution',
             'is_synthetic_origin',
+            'reviewer_notes',
             'view_count',
             'like_count',
             'bookmark_count',
@@ -185,6 +193,15 @@ class StoryDetailSerializer(serializers.ModelSerializer):
                 user=request.user, story=obj
             ).exists()
         return False
+
+    def get_reviewer_notes(self, obj) -> str:
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if user is None or not user.is_authenticated:
+            return ''
+        if obj.author_id == user.id or user.role in MODERATOR_ROLES:
+            return obj.reviewer_notes
+        return ''
 
     def get_reading_progress(self, obj) -> dict | None:
         request = self.context.get('request')
@@ -235,14 +252,25 @@ class StoryCreateUpdateSerializer(serializers.ModelSerializer):
             'licence',
             'recorded_at',
         )
-        # `status` is moderator-owned (the review workflow sets it), and
-        # `consent_status` is the one field a contributor must never set for
-        # themselves: self-declared consent is exactly the claim this app exists
-        # not to make on a community's behalf. Moderators record it through the
-        # admin review queue, where the decision is attributable.
-        read_only_fields = ('status', 'consent_status')
+        # `consent_status` stays read-only: self-declared consent is exactly
+        # the claim this app exists not to make on a community's behalf.
+        #
+        # `status` used to be read-only too, which meant the Flutter client's
+        # `status: 'pending'` from the "submit for review" button was silently
+        # discarded and the story stayed a draft — while the UI reported
+        # success. It is writable now, but resolved through
+        # `stories.services.resolve_status`, which is what stops an author
+        # publishing their own story past the review queue.
+        read_only_fields = ('consent_status',)
+
+    def _resolve_status(self, validated_data):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if 'status' in validated_data and user is not None and user.is_authenticated:
+            validated_data['status'] = resolve_status(user, validated_data['status'])
 
     def create(self, validated_data):
+        self._resolve_status(validated_data)
         categories = validated_data.pop('categories', [])
         story = Story.objects.create(**validated_data)
         if categories:
@@ -250,6 +278,7 @@ class StoryCreateUpdateSerializer(serializers.ModelSerializer):
         return story
 
     def update(self, instance, validated_data):
+        self._resolve_status(validated_data)
         categories = validated_data.pop('categories', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

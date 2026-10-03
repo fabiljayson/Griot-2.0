@@ -82,6 +82,83 @@ Phase 5 an implicit blocker for Phase 4 and for any schema work at all.
 Deliverable is a written decision in this document, not code. Everything from
 Phase 4 onward reads it as an assumption.
 
+### Decision (2026-10-03): `StoryTranslation`, a child of `Story`
+
+**Alternatives considered:**
+
+| Option | Why not |
+|---|---|
+| One `Story` row per language, linked by `translation_of` | The failure mode the task named: three rows, three moderation queues, three sets of counters to reconcile, and a flag on the French copy leaving the English one published. |
+| A `translations` JSONField on `Story` | No per-language status, translator, or rights; nothing to review; unqueryable for "which languages is this available in"; and rewriting a key silently overwrites a translator's work — the habit Constitution IV forbids. |
+| **`StoryTranslation` child model** | **Chosen.** One row per (story, language), its own review state and provenance, original row untouched. |
+
+**The schema**
+
+```python
+class StoryTranslation(models.Model):
+    story = FK(Story, related_name='translations')
+    language = CharField(choices=Story.Language.choices)   # unique with story
+
+    # Translated text — and only text. See "what does not move" below.
+    title, summary, content, cultural_context, moral_lesson
+
+    # The translation's own provenance: who did it, and how.
+    translator = FK(User, null=True, blank=True)
+    method = CharField(choices=human, machine_assisted, machine)
+    provenance_notes = TextField(blank=True)
+
+    # Its own review state — same choices as Story.Status.
+    status = CharField(choices=draft, pending, published, rejected, archived)
+    reviewer_notes = TextField(blank=True)
+
+    created_at, updated_at, published_at
+    # Meta: unique_together = ('story', 'language')
+```
+
+**Seven consequences the rest of the plan depends on**
+
+1. **`Story` stays the single source row.** `view_count`, `like_count`,
+   `bookmark_count`, `share_count`, `ReadingProgress`, `StoryFlag`,
+   `StoryLike`, `StoryBookmark` and `StoryShare` all point at `Story` and stay
+   there. Reading the French copy increments the same counter. Totals are never
+   summed across languages, and Phase 6's load test measures one queue, not
+   three.
+2. **`Story.language` keeps its current meaning: the language of the
+   *original*.** It does not become "available in". All 12 seeded rows stay
+   correct, and `?language=fr` plus its existing test keep meaning "French
+   originals".
+3. **A second parameter carries availability.** `?in_language=fr` returns
+   stories readable in French — original *or* translated. Phase 5 builds this;
+   it does not repurpose `?language=`.
+4. **Translation does not fork moderation.** A `StoryTranslation` enters review
+   only when someone submits it, and appears in a separate "translations
+   awaiting review" view. The existing queue keeps showing one row per story. A
+   translation may not publish while its original is unpublished, and cannot
+   make an unpublished original visible.
+5. **Fallback is explicit, never silent.** Ask for a story in Ewondo, find no
+   translation, serve the original and mark the response `translated: false`.
+   Telling a French reader they got a French story when they did not is the
+   same class of dishonesty the provenance work in `ee3b0c9` exists to prevent.
+6. **What does not move.** `slug` is stable because QR codes and deep links
+   encode it (Constitution IV) — a translation shares the original's slug and
+   URL. `region`, `tags`, `categories`, `origin`, `consent_status`,
+   `rights_holder` and `licence` stay canonical on `Story`. Translations
+   *inherit* the original's rights by default and may override them only with a
+   `provenance_notes` entry saying on what basis. **Known limit, accepted for
+   v1**: tags stay in the original language, so a French reader searching a
+   French tag will not match.
+7. **The translated set is `title`, `summary`, `content`, `cultural_context`,
+   `moral_lesson`** — the prose a reader actually reads. `cultural_context` and
+   `moral_lesson` are translated rather than shared because they are narrative,
+   but the original is never overwritten.
+
+**Cost.** One migration, one model, one serializer, one fallback branch per
+reader — cheaper than untangling duplicated rows after content exists, which is
+why this lands before Phase 4 rather than inside Phase 5.
+
+**Deliberately open:** how a machine-assisted translation is *labelled* in the
+UI. `method` records the fact; the reader-facing badge is Phase 5's call.
+
 ---
 
 ## Phase 1 — Split the artifact taxonomy
@@ -448,8 +525,122 @@ about getting real people through it.
 
 **Moved out in revision 3**: contributor-recorded audio is now Phase 10. Phase
 4 is consent capture, the contributor submission path, and provenance — a
-coherent unit that does not need a schema debate to land. Read Phase 0 first;
-tasks 2–4 are schema-free, task 1 is the constitution check.
+coherent unit that needs no cross-phase design decision, because Phase 0 already
+settled the one that mattered. Task 2 does add three fields; they are local to
+`Story` and cannot destabilise anything else.
+
+### Task 1 — Constitution check: PASS
+
+| Principle | Status | Notes |
+|---|---|---|
+| I. API/Web/Flutter Parity | ✅ PASS | `resolve_status` is one rule called by both the API serializer and `web.services.save_story`. The two had already drifted: the API's read-only `status` silently discarded the identical `status: 'pending'` Flutter sends. Rejection reason now flows to API, web, and the Flutter model. The consent gap first recorded here is closed: both halves of the record now exist on **all three** surfaces — `record_consent` is one shared service called by an API action and a web action, and the *worklist* it reads from is one query (`consent_review_queue`) rather than three filters that could drift. |
+| II. Security by Default | ✅ PASS | A contributor may set only `draft`/`pending`, enforced in the shared service rather than per surface; `consent_status` stays read-only to contributors; consent recording is moderator-gated server-side, not in the view. |
+| III. Test-First Regression Coverage | ✅ PASS | 37 new tests: submit guard, reason visibility on all four viewer roles, both consent steps, withdrawal, provenance backfill, the consent queue (permissions, membership, payload), the web panel's role split, and the Flutter screen's mandatory basis. Migrations committed with the model change. |
+| IV. Cultural Data Integrity | ✅ PASS | Backfill scoped to `origin='seeded' AND provenance_notes=''` — it cannot touch a curated record. Withdrawing consent **archives** the story rather than failing or leaving it published. |
+| V. Observability & Operational Honesty | ✅ PASS | `consent_attested_by/at/basis` make the decision attributable; the seeded note says plainly that no community consent was sought. |
+
+### Four defects the tasks were hiding
+
+1. **The API could not submit a story at all.** `status` was in
+   `read_only_fields`, so the Flutter client's "submit for review" button sent
+   `status: 'pending'`, had it discarded, and reported **"Story submitted for
+   review"** while the row stayed a draft. The web form passed `status`
+   straight through, so the same click worked there. Nobody could have noticed
+   from the app: the failure was silent on the only surface that failed.
+2. **A rejected contributor was never told why.** Moderators write the reason
+   into `reviewer_notes`; it appeared in no serializer, no template, and no
+   Flutter model. The field is described as "internal notes", yet it is what
+   `moderate` stores as the rejection reason — so the reason existed and was
+   read by nobody.
+3. **No flow collected consent.** `consent_status` could only be changed by the
+   admin. There was no "I asked" step and no "here is the answer" step.
+4. **Even after the endpoints existed, no surface could reach them.** The first
+   pass of this phase added `POST /consent/` and `web:story-record-consent` and
+   stopped there — `web/actions.py` had both POST handlers and **no form**, and
+   Flutter had no call at all. So the phase shipped a server-validated field
+   that no moderator anywhere could see or change: all 12 seeded stories sat at
+   `not_requested` with no way out and no worklist to find them by. Defect 3 was
+   not fixed by adding endpoints; it was fixed by adding a queue and two forms.
+
+### Status — landed (revision 3)
+
+1. **One status rule.** `stories/services.py` (new, as spec `002` originally
+   planned) holds `resolve_status`, `request_consent` and `record_consent`.
+   Both surfaces call it; neither implements it.
+2. **Consent is two steps.** Author records `not_requested → pending` (API
+   `request-consent/`, web `…/request-consent/`); moderator records the answer
+   with `consent_attested_by`, `consent_attested_at` and a **required**
+   `consent_basis`. Migration `stories/0004` adds the three fields.
+3. **Withdrawing consent archives the story.** The model already refuses to
+   save published + withheld, so raising would have made consent impossible to
+   withdraw; leaving it published was not an option. The record is kept.
+4. **Rejection reason is visible** to the author and moderators only, on API
+   (`reviewer_notes`), web (a review-state banner), and Flutter
+   (`StoryModel.reviewerNotes` + `_ReviewStateBanner`).
+5. **Provenance backfilled.** Migration `stories/0005` fills the 12 seeded rows'
+   empty `provenance_notes`, scoped so it can never touch curated data;
+   `seed_stories` writes the same note on insert and backfills on re-run.
+   `origin='seeded'` is left exactly as it is — Phase 7 task 3 depends on it.
+6. **A moderator has somewhere to work.** `GET /api/stories/consent-queue/`
+   (`IsAdminOrManager`) lists the stories still awaiting a decision, using
+   `stories.services.consent_review_queue` — one definition of "awaiting",
+   because a worklist that each surface filters for itself is three things to
+   keep correct. The payload carries the contributor's declared origin,
+   provenance notes, rights holder and licence: the decision is about the text,
+   and a moderator shown only a title and a status dropdown is signing for a
+   tradition they have not read the provenance of.
+7. **Flutter gets the moderator screen.** `ConsentReviewScreen` (from the admin
+   dashboard app bar) lists the queue, and `ConsentFormSheet` records a
+   decision. Two rules the sheet enforces visibly, because a "pick a status"
+   control implies neither: **a basis is mandatory**, and **choosing "withheld"
+   on a published story archives it** — both stated before the tap, not after.
+   The sheet owns the write rather than returning a value to its caller, so a
+   failed save leaves the moderator's words on screen to retry; losing an
+   attestation because a request timed out would mean re-interviewing somebody.
+8. **The web story page gets the matching panel.** Same two halves, same split:
+   the moderator gets the decision form, the author gets only "I have asked".
+   `is_moderator` already existed in the context processor; neither half of the
+   record was ever rendered.
+9. **The author can say they asked, in the app.** `StoryRepository.requestConsent`
+   → `StoryDetailNotifier.requestConsent`, surfaced as a `_ConsentActionBar` on
+   the story page, gated by `StoryModel.canRequestConsent(user)` — author and
+   contributor only, mirroring what the server answers 403 to. The provenance
+   section already showed the *state*; it offered nothing to do about it.
+
+| Verification | Result |
+|---|---|
+| Backend suite | **535 tests, OK (6 skipped)** — 37 new |
+| `ruff check .` | All checks passed |
+| `makemigrations --check` | No changes detected |
+| Flutter | `analyze --fatal-infos` clean, **395 tests passed** |
+| Dev database | `stories/0004`, `stories/0005` migrated |
+
+### Gap carried out of Phase 4 — closed
+
+This section recorded a product question instead of an answer:
+
+> **No moderator consent screen in Flutter.** The API endpoint and the web action
+> both exist; Flutter's only moderation surface is the flagged-stories section of
+> the admin dashboard, and there is no moderator story browser to hang a consent
+> form on. ... Deciding this needs a product call: does the Flutter app grow a
+> moderator story list, or is consent recording a web-only job by design?
+
+**Answered: the app grows one.** The reasoning that settled it was not parity for
+its own sake. Consent is the only field in the schema whose absence means
+*someone's permission was never asked about*, and a curator working from a phone
+at a community meeting is closer to the community than a curator at a desk. A
+web-only form makes the record depend on somebody remembering to open a laptop.
+
+It also turned out the web half was not finished either — both POST handlers
+existed with no form to submit them (defect 4 above). So the gap was not
+Flutter-shaped; it was "no surface had a worklist", and both got one. Status
+items 6–9.
+
+**Accepted limit.** The queue is a screen and a form, not a full moderation
+workflow: it records consent, not the story's `status`. Approving, rejecting and
+reasoning still happen on the web admin dashboard and via `resolve_status`. A
+moderator working entirely on a phone can record what a community said but
+cannot yet act on the publication decision that follows from it.
 
 ---
 
@@ -615,8 +806,8 @@ there is no path for a contributor's own recording.
 | 2 | 1. Artifact taxonomy | Very high | Low–Med | — | **Landed** `ef2a8a8` |
 | 3 | 2. Gates | High | Low | — | **Landed** |
 | 4 | 3. Gamification | High | Low–Med | — | **Landed** |
-| 5 | **0. Translation-model decision** | High | Very low | — | Not started |
-| 6 | 4. Stories | Very high | High | 0, constitution check | Not started |
+| 5 | **0. Translation-model decision** | High | Very low | — | **Decided** |
+| 6 | 4. Stories | Very high | High | 0, constitution check | **Landed** — consent gap closed |
 | 7 | 5. Multilingual (2 tracks) | Very high | High | 0 | Not started |
 | 8 | 7. Seed data | Medium | Low–Med | 3, 4 | Not started |
 | 9 | 6. Community at volume | Medium | Medium | 4, 7 | Not started |

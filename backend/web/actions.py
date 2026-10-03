@@ -15,6 +15,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -24,6 +25,7 @@ from config.rate_limit import rate_limit
 from gamification.models import Quiz, QuizQuestion
 from qr_codes.models import Artifact
 from stories.models import Story
+from stories.services import record_consent, request_consent
 
 from .services import (
     delete_profile,
@@ -212,6 +214,60 @@ def story_moderate(request, slug):
     else:
         messages.success(request, f'Flags on "{story.title}" dismissed.')
     return HttpResponseRedirect(_safe_next(request, reverse('web:admin-dashboard')))
+
+
+# ---------------------------------------------------------------------------
+# Consent — mirrors POST /api/stories/{slug}/request-consent/ and
+# POST /api/stories/{slug}/consent/
+#
+# Two steps, deliberately. The author records that they *asked*; only a
+# moderator records what the community *answered*, with who attested, when, and
+# on what basis. A contributor declaring their own community's agreement is
+# the claim the consent field exists to keep trustworthy.
+# ---------------------------------------------------------------------------
+@login_required
+@require_POST
+def story_request_consent(request, slug):
+    story = get_object_or_404(Story, slug=slug)
+    request_consent(request.user, story)
+    messages.success(
+        request,
+        'Consent request recorded — awaiting the community\'s answer.',
+    )
+    return HttpResponseRedirect(
+        _safe_next(request, reverse('web:story-detail', args=[slug])),
+    )
+
+
+@login_required
+@require_POST
+def story_record_consent(request, slug):
+    story = get_object_or_404(Story, slug=slug)
+    try:
+        story, archived = record_consent(
+            request.user,
+            story,
+            status=request.POST.get('consent_status', ''),
+            basis=request.POST.get('basis', ''),
+            rights_holder=request.POST.get('rights_holder') or None,
+            licence=request.POST.get('licence') or None,
+        )
+    except ValidationError as exc:
+        messages.error(request, '; '.join(exc.messages))
+        return HttpResponseRedirect(
+            _safe_next(request, reverse('web:story-detail', args=[slug])),
+        )
+
+    if archived:
+        messages.warning(
+            request,
+            'Consent withheld — the story has been archived.',
+        )
+    else:
+        messages.success(request, f'Consent recorded for "{story.title}".')
+    return HttpResponseRedirect(
+        _safe_next(request, reverse('web:story-detail', args=[story.slug])),
+    )
 
 
 # ---------------------------------------------------------------------------

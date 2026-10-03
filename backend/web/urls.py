@@ -53,6 +53,16 @@ urlpatterns = [
     path('actions/story/<slug:slug>/share/', actions.story_share, name='story-share'),
     path('actions/story/<slug:slug>/progress/', actions.story_progress, name='story-progress'),
     path('actions/story/<slug:slug>/moderate/', actions.story_moderate, name='story-moderate'),
+    path(
+        'actions/story/<slug:slug>/request-consent/',
+        actions.story_request_consent,
+        name='story-request-consent',
+    ),
+    path(
+        'actions/story/<slug:slug>/consent/',
+        actions.story_record_consent,
+        name='story-record-consent',
+    ),
     path('actions/quiz/<int:quiz_id>/start/', actions.quiz_start, name='quiz-start'),
     path('actions/quiz/<int:quiz_id>/answer/<int:question_id>/', actions.quiz_answer, name='quiz-answer'),
     path('actions/quiz/<int:quiz_id>/finish/', actions.quiz_finish, name='quiz-finish'),

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/stories/models/story_model.dart';
 
 /// The app renders oral traditions it did not record.
@@ -79,6 +80,32 @@ void main() {
   });
 
   group('StoryModel consent', () {
+    test('only the author may record that they asked', () {
+      final story = storyWith({});
+
+      expect(
+        story.canRequestConsent(
+          const UserModel(id: 1, username: 'teller', role: UserRole.contributor),
+        ),
+        isTrue,
+      );
+      expect(
+        story.canRequestConsent(
+          const UserModel(id: 2, username: 'stranger', role: UserRole.admin),
+        ),
+        isFalse,
+        reason: 'a moderator asking on an author\'s behalf is not the author\'s record',
+      );
+      expect(
+        story.canRequestConsent(
+          const UserModel(id: 1, username: 'teller', role: UserRole.visitor),
+        ),
+        isFalse,
+        reason: 'the server answers a non-contributor with 403',
+      );
+      expect(story.canRequestConsent(null), isFalse);
+    });
+
     test('only granted statuses count as established consent', () {
       expect(
         storyWith({'consent_status': 'granted'}).hasEstablishedConsent,

@@ -81,6 +81,44 @@ class AdminApiService {
         .toList();
   }
 
+  /// Fetch the stories still awaiting a moderator's consent decision
+  /// (admin only).
+  ///
+  /// Mirrors `POST /api/stories/{slug}/consent/`: what the contributor
+  /// declared about the text travels with the row, because the decision is
+  /// about the tradition, not about the enum.
+  Future<List<ConsentReviewStory>> getConsentQueue() async {
+    final response = await _dio.get('$_storiesBasePath/consent-queue/');
+    return (response.data as List<dynamic>)
+        .map((e) => ConsentReviewStory.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Record the community's answer on a story (moderator only).
+  ///
+  /// [basis] is required by the server: a consent status with nothing behind
+  /// it cannot be defended if it is ever challenged. Withdrawing consent on a
+  /// published story archives it — the response reports that in `archived`.
+  Future<Map<String, dynamic>> recordStoryConsent({
+    required String slug,
+    required String status,
+    required String basis,
+    String? rightsHolder,
+    String? licence,
+  }) async {
+    final data = <String, dynamic>{'status': status, 'basis': basis};
+    if (rightsHolder != null && rightsHolder.trim().isNotEmpty) {
+      data['rights_holder'] = rightsHolder.trim();
+    }
+    if (licence != null && licence.isNotEmpty) data['licence'] = licence;
+
+    final response = await _dio.post(
+      '$_storiesBasePath/$slug/consent/',
+      data: data,
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   /// Resolve flags on a story.
   ///
   /// [action] is either `remove` (archives the story) or `dismiss` (keeps it).

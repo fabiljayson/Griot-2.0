@@ -195,6 +195,29 @@ class Story(models.Model):
         default=Consent.NOT_REQUESTED,
         help_text='Whether the source community agreed to this publication.',
     )
+    # Who recorded the consent decision, when, and on what basis. The status
+    # alone answers "is it agreed"; without these three it cannot answer "says
+    # who", which is the whole point of keeping the field out of a
+    # contributor's hands.
+    consent_attested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='consent_attestations',
+        help_text='Who recorded the consent decision.',
+    )
+    consent_attested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the consent decision was recorded.',
+    )
+    consent_basis = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='On what basis consent was granted or withheld.',
+    )
     rights_holder = models.CharField(
         max_length=200,
         blank=True,

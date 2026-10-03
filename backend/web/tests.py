@@ -9,6 +9,7 @@ media UI (§6/§7), quizzes hub (§8) and the artifact audio guide (§5).
 from django.template import Context, Template
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from gamification.models import Badge, QuizAttempt, QuizQuestion, UserProfile
 from media_app.models import AudioNarrationJob, VideoGenerationJob
@@ -702,3 +703,86 @@ class AdminModerationQueueTests(WebSmokeTestCase):
         self.client.login(username='web_visitor', password='testpass123')
         response = self.client.get(reverse('web:admin-dashboard'))
         self.assertEqual(response.status_code, 403)
+
+
+class ConsentPanelWebTests(WebSmokeTestCase):
+    """The two-step consent record on the story page.
+
+    `web/actions.py` had both POST handlers and no form to reach them from:
+    `consent_status` could be validated and recorded but never seen or set by
+    anyone, on any surface. These tests pin the two halves apart — a moderator
+    may record a decision, an author may only record that they asked.
+    """
+
+    def _detail(self):
+        return self.client.get(
+            reverse('web:story-detail', args=[self.story.slug])
+        )
+
+    def test_a_visitor_sees_no_consent_panel(self):
+        response = self._detail()
+        self.assertNotContains(response, 'data-testid="consent-panel"')
+
+    def test_the_author_gets_the_ask_button_and_no_decision_field(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self._detail()
+
+        self.assertContains(response, 'data-testid="consent-panel"')
+        self.assertContains(
+            response, reverse(
+                'web:story-request-consent', args=[self.story.slug],
+            ),
+        )
+        # The decision field is the claim this field exists to keep trustworthy:
+        # a contributor must not be able to type "granted".
+        self.assertNotContains(response, 'name="consent_status"')
+
+    def test_a_moderator_gets_the_decision_form(self):
+        self.client.login(username='web_manager', password='testpass123')
+        response = self._detail()
+
+        self.assertContains(response, 'name="consent_status"')
+        self.assertContains(response, 'name="basis"')
+        self.assertContains(response, 'Consent withheld')
+
+    def test_recording_a_decision_from_the_form(self):
+        self.client.login(username='web_manager', password='testpass123')
+        self.client.post(
+            reverse('web:story-record-consent', args=[self.story.slug]),
+            {
+                'consent_status': Story.Consent.GRANTED,
+                'basis': 'Agreed by the family elder.',
+                'rights_holder': 'The Kom kingdom',
+                'licence': Story.Licence.CC_BY_NC,
+            },
+        )
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.GRANTED)
+        self.assertEqual(self.story.consent_basis, 'Agreed by the family elder.')
+        self.assertEqual(self.story.consent_attested_by, self.manager)
+        self.assertEqual(self.story.rights_holder, 'The Kom kingdom')
+
+    def test_the_recorded_basis_is_shown_to_the_moderator(self):
+        Story.objects.filter(pk=self.story.pk).update(
+            consent_status=Story.Consent.GRANTED,
+            consent_basis='Agreed by the family elder.',
+            consent_attested_by=self.manager,
+            consent_attested_at=timezone.now(),
+        )
+        self.client.login(username='web_manager', password='testpass123')
+        response = self._detail()
+
+        self.assertContains(response, 'Agreed by the family elder.')
+        self.assertContains(response, 'web_manager')
+
+    def test_the_author_records_that_they_asked(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        self.client.post(
+            reverse('web:story-request-consent', args=[self.story.slug]),
+        )
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.PENDING)
+        # Asking is not a decision, and must not forge an attestation.
+        self.assertIsNone(self.story.consent_attested_by)

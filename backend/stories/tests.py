@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -556,3 +557,425 @@ class StoryProvenanceTests(APITestCase):
         self.story.refresh_from_db()
         self.assertEqual(self.story.origin, Story.Origin.ORAL_TRANSCRIPTION)
         self.assertEqual(self.story.licence, Story.Licence.CC_BY)
+
+
+class StorySubmissionTests(APITestCase):
+    """Phase 4 — submitting for review, and seeing why you were rejected.
+
+    `status` was read-only in the API while the web form passed it straight
+    through, so the Flutter client's "submit for review" button sent
+    `status: 'pending'` and had it silently discarded: the story stayed a draft
+    and the UI reported success. Making it writable reopens the question it was
+    read-only to close — an author publishing their own story — which is why
+    the rule now lives in `stories.services.resolve_status`.
+    """
+
+    def setUp(self):
+        self.contributor = User.objects.create_user(
+            'submitter', email='submitter@example.com', password='hunter2secure',
+            role='contributor',
+        )
+        self.reader = User.objects.create_user(
+            'reader9', email='reader9@example.com', password='hunter2secure',
+        )
+        self.manager = User.objects.create_user(
+            'manager9', email='manager9@example.com', password='hunter2secure',
+            role='institution_manager',
+        )
+        self.story = Story.objects.create(
+            title='A Tale of the Forest',
+            content='Once upon a time in the forests of Cameroon...',
+            author=self.contributor,
+            status=Story.Status.DRAFT,
+        )
+        self.url = reverse('stories:story-detail', kwargs={'slug': self.story.slug})
+
+    def test_contributor_can_submit_for_review(self):
+        self.client.force_authenticate(self.contributor)
+        resp = self.client.patch(self.url, {'status': 'pending'}, format='json')
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PENDING)
+
+    def test_a_contributor_cannot_publish_their_own_story(self):
+        """The guard that must survive `status` becoming writable."""
+        self.client.force_authenticate(self.contributor)
+        resp = self.client.patch(self.url, {'status': 'published'}, format='json')
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(
+            self.story.status,
+            Story.Status.DRAFT,
+            'an author must not be able to publish past the review queue',
+        )
+
+    def test_a_contributor_cannot_reject_or_archive_either(self):
+        self.client.force_authenticate(self.contributor)
+        for blocked in (Story.Status.REJECTED, Story.Status.ARCHIVED):
+            self.client.patch(self.url, {'status': blocked}, format='json')
+            self.story.refresh_from_db()
+            self.assertEqual(self.story.status, Story.Status.DRAFT)
+
+    def test_a_moderator_can_publish(self):
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(self.url, {'status': 'published'}, format='json')
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PUBLISHED)
+
+    def test_a_stranger_cannot_change_the_status_at_all(self):
+        self.client.force_authenticate(self.reader)
+        resp = self.client.patch(self.url, {'status': 'pending'}, format='json')
+        self.assertIn(
+            resp.status_code,
+            (status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND),
+        )
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.DRAFT)
+
+    def test_the_web_form_follows_the_same_rule(self):
+        """Constitution I: one rule, both surfaces. A contributor POSTing
+        `published` at the web form must land on draft, exactly as the API
+        coerces it."""
+        from web.services import save_story
+
+        story, _ = save_story(
+            self.contributor,
+            slug=None,
+            title='Web Tale',
+            content='Content.',
+            summary='',
+            language='en',
+            region='',
+            tags='',
+            cultural_context='',
+            moral_lesson='',
+            source='',
+            status=Story.Status.PUBLISHED,
+            category_ids=[],
+        )
+        self.assertEqual(story.status, Story.Status.DRAFT)
+
+
+class RejectionReasonTests(APITestCase):
+    """The moderator writes a rejection reason and nobody ever read it — not in
+    a serializer, not in a template, not in the Flutter model."""
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'author7', email='author7@example.com', password='hunter2secure',
+            role='contributor',
+        )
+        self.reader = User.objects.create_user(
+            'reader7', email='reader7@example.com', password='hunter2secure',
+        )
+        self.manager = User.objects.create_user(
+            'manager7', email='manager7@example.com', password='hunter2secure',
+            role='institution_manager',
+        )
+        self.story = Story.objects.create(
+            title='Flagged Tale', content='Content.', author=self.author,
+            status=Story.Status.PUBLISHED,
+            reviewer_notes='Cite the source for the opening claim.',
+        )
+        self.url = reverse('stories:story-detail', kwargs={'slug': self.story.slug})
+
+    def test_the_author_sees_the_note(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.data['reviewer_notes'], 'Cite the source for the opening claim.')
+
+    def test_a_moderator_sees_the_note(self):
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.data['reviewer_notes'], 'Cite the source for the opening claim.')
+
+    def test_a_stranger_does_not(self):
+        self.client.force_authenticate(self.reader)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.data['reviewer_notes'], '')
+
+    def test_an_anonymous_reader_does_not(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.data['reviewer_notes'], '')
+
+
+class ConsentCaptureTests(APITestCase):
+    """Two steps, deliberately: the author records that they *asked*, only a
+    moderator records what the community *answered*."""
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'author8', email='author8@example.com', password='hunter2secure',
+            role='contributor',
+        )
+        self.other = User.objects.create_user(
+            'other8', email='other8@example.com', password='hunter2secure',
+            role='contributor',
+        )
+        self.manager = User.objects.create_user(
+            'manager8', email='manager8@example.com', password='hunter2secure',
+            role='institution_manager',
+        )
+        self.story = Story.objects.create(
+            title='A Living Tradition', content='Content.', author=self.author,
+            status=Story.Status.PUBLISHED,
+        )
+        self.ask_url = reverse(
+            'stories:story-request-consent', kwargs={'slug': self.story.slug},
+        )
+        self.answer_url = reverse(
+            'stories:story-record-consent', kwargs={'slug': self.story.slug},
+        )
+
+    def test_the_author_records_that_they_asked(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.post(self.ask_url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.PENDING)
+
+    def test_asking_twice_changes_nothing(self):
+        self.client.force_authenticate(self.author)
+        self.client.post(self.ask_url)
+        self.client.post(self.ask_url)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.PENDING)
+
+    def test_another_contributor_cannot_ask_on_your_behalf(self):
+        self.client.force_authenticate(self.other)
+        resp = self.client.post(self.ask_url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.NOT_REQUESTED)
+
+    def test_a_contributor_cannot_record_the_answer(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.post(
+            self.answer_url,
+            {'status': 'granted', 'basis': 'Said yes to me'},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.NOT_REQUESTED)
+
+    def test_a_moderator_records_the_answer_with_attribution(self):
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            self.answer_url,
+            {'status': 'granted', 'basis': 'Agreed by the family elder'},
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.GRANTED)
+        self.assertEqual(self.story.consent_basis, 'Agreed by the family elder')
+        self.assertEqual(self.story.consent_attested_by, self.manager)
+        self.assertIsNotNone(self.story.consent_attested_at)
+        self.assertEqual(resp.data['consent_attested_by'], 'manager8')
+
+    def test_a_status_without_a_basis_is_refused(self):
+        """A consent status with no basis behind it cannot be defended later."""
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(self.answer_url, {'status': 'granted'})
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.consent_status, Story.Consent.NOT_REQUESTED)
+
+    def test_withdrawing_consent_from_a_published_story_archives_it(self):
+        """The model refuses to save published + withheld, so raising would mean
+        consent could not be withdrawn at all. The record is kept, not deleted."""
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            self.answer_url,
+            {'status': 'withheld', 'basis': 'The family withdrew permission'},
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.ARCHIVED)
+        self.assertEqual(self.story.consent_status, Story.Consent.WITHHELD)
+        self.assertTrue(resp.data['archived'])
+
+    def test_withdrawing_consent_from_a_draft_leaves_it_a_draft(self):
+        self.story.status = Story.Status.DRAFT
+        self.story.save(update_fields=['status'])
+
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            self.answer_url,
+            {'status': 'withheld', 'basis': 'Withdrawn'},
+        )
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.DRAFT)
+        self.assertFalse(resp.data['archived'])
+
+
+class SeededProvenanceBackfillTests(TestCase):
+    """Phase 4 task 4 — the 12 seeded stories said `origin='seeded'` and
+    nothing else: empty provenance notes, empty rights holder, undetermined
+    licence."""
+
+    def _run_migration(self):
+        import importlib
+
+        from django.apps import apps
+
+        module = importlib.import_module(
+            'stories.migrations.0005_story_seeded_provenance_note',
+        )
+        module.backfill_seeded_provenance(apps, None)
+
+    def test_fills_empty_notes_on_a_seeded_story(self):
+        story = Story.objects.create(
+            title='Seeded', content='x', author=self._author(),
+            origin=Story.Origin.SEEDED,
+        )
+        self._run_migration()
+        story.refresh_from_db()
+        self.assertIn('Demonstration content', story.provenance_notes)
+        self.assertIn('no community consent was sought', story.provenance_notes)
+
+    def test_leaves_a_curated_story_alone(self):
+        story = Story.objects.create(
+            title='Curated', content='x', author=self._author(),
+            origin=Story.Origin.ORAL_TRANSCRIPTION,
+            provenance_notes='Told by Madame Ngo Bassong, 1998.',
+        )
+        self._run_migration()
+        story.refresh_from_db()
+        self.assertEqual(story.provenance_notes, 'Told by Madame Ngo Bassong, 1998.')
+
+    def test_never_overwrites_a_moderators_own_note(self):
+        story = Story.objects.create(
+            title='Seeded but noted', content='x', author=self._author(),
+            origin=Story.Origin.SEEDED,
+            provenance_notes='Reviewed and confirmed as project-written.',
+        )
+        self._run_migration()
+        story.refresh_from_db()
+        self.assertEqual(story.provenance_notes, 'Reviewed and confirmed as project-written.')
+
+    def test_is_idempotent(self):
+        Story.objects.create(
+            title='Seeded', content='x', author=self._author(),
+            origin=Story.Origin.SEEDED,
+        )
+        self._run_migration()
+        first = Story.objects.get(title='Seeded').provenance_notes
+        self._run_migration()
+        self.assertEqual(Story.objects.get(title='Seeded').provenance_notes, first)
+
+    def _author(self):
+        return User.objects.create_user(
+            'provenance-author', email='prov@example.com',
+            password='hunter2secure', role='contributor',
+        )
+
+
+class ConsentQueueTests(APITestCase):
+    """The moderator worklist — the surface both consent forms hang off.
+
+    Without it, `consent_status` was a field the server validated and no
+    moderator could ever see or set: 12 seeded stories sat at
+    `not_requested` with nothing anywhere in the product that listed them.
+    """
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'queue-author', email='queue-author@example.com',
+            password='hunter2secure', role='contributor',
+        )
+        self.manager = User.objects.create_user(
+            'queue-manager', email='queue-manager@example.com',
+            password='hunter2secure', role='institution_manager',
+        )
+        self.url = reverse('stories:story-consent-queue')
+
+    def _story(self, title, consent_status, **kwargs):
+        return Story.objects.create(
+            title=title, content='Content.', author=self.author,
+            consent_status=consent_status, **kwargs,
+        )
+
+    def test_a_contributor_cannot_read_the_queue(self):
+        self._story('Waiting', Story.Consent.NOT_REQUESTED)
+        self.client.force_authenticate(self.author)
+        self.assertEqual(
+            self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_an_anonymous_visitor_cannot_read_the_queue(self):
+        self._story('Waiting', Story.Consent.NOT_REQUESTED)
+        self.assertEqual(
+            self.client.get(self.url).status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_lists_stories_still_awaiting_a_decision(self):
+        self._story('Never asked', Story.Consent.NOT_REQUESTED)
+        self._story('Asked', Story.Consent.PENDING)
+
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            sorted(row['title'] for row in resp.data), ['Asked', 'Never asked'],
+        )
+
+    def test_a_recorded_decision_leaves_the_queue(self):
+        self._story('Answered', Story.Consent.GRANTED)
+        self._story('Refused', Story.Consent.WITHHELD)
+        self._story('Conditional', Story.Consent.GRANTED_RESTRICTED)
+
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(self.url)
+
+        self.assertEqual(resp.data, [])
+
+    def test_the_carries_everything_needed_to_make_the_decision(self):
+        """A consent status recorded without these is a claim, not a record."""
+        self._story(
+            'Fully described', Story.Consent.PENDING,
+            origin=Story.Origin.ORAL_TRANSCRIPTION,
+            provenance_notes='Recorded in Bafoussam in 2019.',
+            rights_holder='The Mambila community',
+            licence=Story.Licence.CC_BY_NC,
+            status=Story.Status.PENDING,
+            region='West Region',
+        )
+
+        self.client.force_authenticate(self.manager)
+        row = self.client.get(self.url).data[0]
+
+        self.assertEqual(row['slug'], 'fully-described')
+        self.assertEqual(row['author_username'], 'queue-author')
+        self.assertEqual(row['origin'], Story.Origin.ORAL_TRANSCRIPTION)
+        self.assertIn('Bafoussam', row['provenance_notes'])
+        self.assertEqual(row['rights_holder'], 'The Mambila community')
+        self.assertEqual(row['licence'], Story.Licence.CC_BY_NC)
+        self.assertEqual(row['status'], Story.Status.PENDING)
+        self.assertTrue(row['created_at'])
+
+    def test_recording_an_answer_clears_the_story_from_the_queue(self):
+        """The end-to-end path the screen exists for."""
+        story = self._story('Waiting', Story.Consent.PENDING)
+        self.client.force_authenticate(self.manager)
+
+        self.client.get(self.url)
+        resp = self.client.post(
+            reverse(
+                'stories:story-record-consent', kwargs={'slug': story.slug},
+            ),
+            {'status': 'granted', 'basis': 'Agreed by the family elder'},
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.get(self.url).data, [])

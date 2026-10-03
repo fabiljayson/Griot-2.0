@@ -214,6 +214,30 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
           actions: [StoryActionsMenu(story: story)],
         ),
 
+        // --- Review state: the author and moderators only. The API returns
+        // `reviewer_notes` to nobody else, so a stranger renders nothing here.
+        // A rejected contributor used to see a bare status with no reason to
+        // act on — the moderator's note was rendered on no surface at all. ---
+        if (story.status != 'published' || story.reviewerNotes.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.md,
+                AppSpacing.xl,
+                0,
+              ),
+              child: _ReviewStateBanner(story: story),
+            ),
+          ),
+
+        // --- Consent, author half: "I have asked". The answer is a moderator's
+        // to record, so this is the only consent action on this screen — the
+        // author is never offered the decision itself. Without it the field
+        // had no way out of `not_requested` from the app at all. ---
+        if (story.consentStatus == StoryConsent.notRequested.value)
+          const SliverToBoxAdapter(child: _ConsentActionBar()),
+
         // --- Reading progress: dedicated row, never over the title ---
         SliverToBoxAdapter(
           child: Container(
@@ -863,4 +887,181 @@ class _ProvenanceRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Where the story stands in review, and the moderator's reason.
+///
+/// Rendered only when the API actually sent a reason or the story is not
+/// published — the API returns `reviewer_notes` to the author and to
+/// moderators, and '' to everyone else, so this is invisible to a stranger
+/// without the widget having to know who is looking.
+class _ReviewStateBanner extends StatelessWidget {
+  const _ReviewStateBanner({required this.story});
+
+  final StoryModel story;
+
+  String get _label => switch (story.status) {
+        'draft' => 'Draft — not submitted for review',
+        'pending' => 'Awaiting review',
+        'rejected' => 'Changes requested',
+        'archived' => 'Archived',
+        _ => 'Not published',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(AppIcons.info_outline, size: 15, color: scheme.primary),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                _label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.primary,
+                ),
+              ),
+            ],
+          ),
+          if (story.reviewerNotes.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              story.reviewerNotes,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The author's half of the consent record: "I have asked the community".
+///
+/// Shown only to the story's own author, and only while consent is
+/// `not_requested`. Deliberately not a decision control — recording what the
+/// community *answered* is a moderator's job, on the consent review screen,
+/// because a contributor signing off their own community's agreement is the
+/// claim this field exists to make trustworthy.
+class _ConsentActionBar extends ConsumerStatefulWidget {
+  const _ConsentActionBar();
+
+  @override
+  ConsumerState<_ConsentActionBar> createState() => _ConsentActionBarState();
+}
+
+class _ConsentActionBarState extends ConsumerState<_ConsentActionBar> {
+  bool _busy = false;
+
+  Future<void> _recordAsked() async {
+    setState(() => _busy = true);
+    try {
+      await ref.read(storyDetailProvider.notifier).requestConsent();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Recorded — a moderator will follow up with what the community '
+            'says.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not record that you asked: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final user = ref.watch(authProvider).valueOrNull?.user;
+    final state = ref.watch(storyDetailProvider);
+    final story = state is StoryDetailReady ? state.story : null;
+
+    // The rule lives on the model, next to the roles it mirrors; see
+    // `StoryModel.canRequestConsent`.
+    if (story == null || !story.canRequestConsent(user)) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.sm,
+        AppSpacing.xl,
+        0,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.ochre.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.ochre.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Have you asked this story’s community?',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Recording that you asked is what we can do from here. What the '
+              'community answers is recorded by a moderator, who has to say '
+              'who they spoke to.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _recordAsked,
+              icon: _busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(AppIcons.send, size: 16),
+              label: const Text('I have asked the community'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.bronzeDark,
+                side: const BorderSide(color: AppColors.bronze),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }

@@ -414,6 +414,20 @@ class StoryRepository {
     }
   }
 
+  /// Record that we have *asked* the source community about this story.
+  ///
+  /// Moves `not_requested` → `pending`, and is idempotent. This is only ever
+  /// the author's half of the record: what the community answered is recorded
+  /// by a moderator, because a contributor declaring their own community's
+  /// agreement is precisely the claim the field exists to keep trustworthy.
+  /// Returns the consent status the server settled on.
+  Future<String> requestConsent(String slug) async {
+    final response = await _api.dio.post(
+      '/api/stories/$slug/request-consent/',
+    );
+    return response.data['consent_status'] as String? ?? 'pending';
+  }
+
   // --- Categories ---
 
   /// Get all story categories.

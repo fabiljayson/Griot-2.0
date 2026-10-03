@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, F, Q
 from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
@@ -6,6 +7,7 @@ from rest_framework.response import Response
 
 from config.client_ip import get_client_ip
 
+from . import services as story_services
 from .models import (
     ReadingProgress,
     Story,
@@ -85,11 +87,14 @@ class StoryViewSet(viewsets.ModelViewSet):
         POST   /api/stories/{slug}/bookmark/  — toggle bookmark
         POST   /api/stories/{slug}/like/      — toggle like
         POST   /api/stories/{slug}/flag/      — flag for inaccuracy
+        POST   /api/stories/{slug}/request-consent/ — "I have asked" (author)
+        POST   /api/stories/{slug}/consent/   — record the answer (moderator)
         POST   /api/stories/{slug}/progress/  — update reading progress
         GET    /api/stories/my/           — current user's stories
         GET    /api/stories/bookmarks/    — current user's bookmarks
         GET    /api/stories/moderation-queue/ — flagged stories (admin only)
         POST   /api/stories/{slug}/moderate/  — resolve flags (admin only)
+        GET    /api/stories/consent-queue/ — awaiting a consent decision (admin only)
     """
 
     lookup_field = 'slug'
@@ -101,8 +106,15 @@ class StoryViewSet(viewsets.ModelViewSet):
             permission_classes = [permissions.IsAuthenticated, IsContributorOrAbove]
         elif self.action in ('update', 'partial_update', 'destroy'):
             permission_classes = [permissions.IsAuthenticated, IsStoryOwnerOrReadOnly]
-        elif self.action in ('moderation_queue', 'moderate'):
+        elif self.action in (
+            'moderation_queue',
+            'moderate',
+            'record_consent',
+            'consent_queue',
+        ):
             permission_classes = [IsAdminOrManager]
+        elif self.action in ('request_consent',):
+            permission_classes = [permissions.IsAuthenticated, IsContributorOrAbove]
         else:
             permission_classes = [permissions.IsAuthenticated]
         return [p() for p in permission_classes]
@@ -362,6 +374,108 @@ class StoryViewSet(viewsets.ModelViewSet):
             'resolved_flags': StoryFlag.objects.filter(
                 story=story, resolved=True,
             ).count(),
+        })
+
+    @action(detail=False, methods=['get'])
+    def consent_queue(self, request):
+        """GET /api/stories/consent-queue/ — stories awaiting a consent decision.
+
+        The moderator worklist, and the surface the Flutter and web consent
+        forms hang off. Everything needed to *make* the decision travels with
+        the row — what the contributor declared about the text, who holds the
+        rights, which licence it currently carries — because a consent status
+        recorded without them is a claim rather than a record. See
+        `stories.services.consent_review_queue` for what "awaiting" means.
+        """
+        return Response([
+            {
+                'story_id': story.id,
+                'slug': story.slug,
+                'title': story.title,
+                'summary': story.summary,
+                'status': story.status,
+                'author_username': story.author.username,
+                'origin': story.origin,
+                'provenance_notes': story.provenance_notes,
+                'consent_status': story.consent_status,
+                'consent_basis': story.consent_basis,
+                'rights_holder': story.rights_holder,
+                'licence': story.licence,
+                'language': story.language,
+                'region': story.region,
+                'created_at': story.created_at.isoformat(),
+                'consent_attested_by': (
+                    story.consent_attested_by.username
+                    if story.consent_attested_by else None
+                ),
+                'consent_attested_at': (
+                    story.consent_attested_at.isoformat()
+                    if story.consent_attested_at else None
+                ),
+            }
+            for story in story_services.consent_review_queue()
+        ])
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsContributorOrAbove])
+    def request_consent(self, request, slug=None):
+        """POST /api/stories/{slug}/request-consent/ — consent has been *asked for*.
+
+        Moves `not_requested` -> `pending`. The contributor records that they
+        asked; only a moderator records what the community answered, at
+        `.../consent/`. Idempotent: asking twice changes nothing.
+        """
+        story = story_services.request_consent(request.user, self.get_object())
+        return Response({
+            'slug': story.slug,
+            'consent_status': story.consent_status,
+        })
+
+    @action(detail=True, methods=['post'])
+    def record_consent(self, request, slug=None):
+        """POST /api/stories/{slug}/consent/ — record the community's answer.
+
+        Body:
+            status:         one of Story.Consent
+            basis:          required — on what basis the decision was made
+            rights_holder:  optional override
+            licence:        optional override
+
+        Also stamps `consent_attested_by`, `consent_attested_at` and
+        `consent_basis`, because a status with no name and date behind it
+        cannot answer "says who". Withdrawing consent on a published story
+        archives it rather than failing — see `stories.services.record_consent`.
+        """
+        try:
+            story, archived = story_services.record_consent(
+                request.user,
+                self.get_object(),
+                status=request.data.get('status', ''),
+                basis=request.data.get('basis', ''),
+                rights_holder=request.data.get('rights_holder'),
+                licence=request.data.get('licence'),
+            )
+        except DjangoValidationError as exc:
+            return Response(
+                {'error': exc.message_dict},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({
+            'slug': story.slug,
+            'status': story.status,
+            'consent_status': story.consent_status,
+            'consent_basis': story.consent_basis,
+            'consent_attested_by': (
+                story.consent_attested_by.username
+                if story.consent_attested_by else None
+            ),
+            'consent_attested_at': (
+                story.consent_attested_at.isoformat()
+                if story.consent_attested_at else None
+            ),
+            'rights_holder': story.rights_holder,
+            'licence': story.licence,
+            'archived': archived,
         })
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])

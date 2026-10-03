@@ -53,6 +53,7 @@ from stories.models import (
     StoryLike,
     StoryShare,
 )
+from stories.services import resolve_status
 
 from .models import WebUserSettings
 
@@ -306,11 +307,34 @@ def story_detail_data(user, slug):
         .distinct()[:3]
     )
 
+    # The author and moderators see where the story stands, and why.
+    # `reviewer_notes` is the reason a moderator rejected it, and it was
+    # rendered nowhere on any surface: a rejected contributor saw `rejected`
+    # and had nothing to act on. Everyone else must not see it — it is
+    # internal notes to them.
+    is_owner_or_moderator = bool(
+        user.is_authenticated
+        and (
+            story.author_id == user.id
+            or user.role in ('institution_manager', 'admin')
+        )
+    )
+
     return {
         'story': story,
         'related_stories': related,
         'is_bookmarked': is_bookmarked,
         'is_liked': is_liked,
+        'is_owner_or_moderator': is_owner_or_moderator,
+        'reviewer_notes': (
+            story.reviewer_notes
+            if is_owner_or_moderator and story.reviewer_notes else ''
+        ),
+        # The consent decision and its licence, for the moderator form. Only a
+        # moderator ever reads these two keys — a contributor gets the single
+        # "I have asked" button instead, which cannot express a decision.
+        'consent_choices': Story.Consent.choices,
+        'licences': Story.Licence.choices,
         'progress_percent': progress.progress_percent if progress else 0,
         'quiz': quiz,
         'narration': narration,
@@ -775,8 +799,11 @@ def save_story(user, *, slug, title, content, summary, language,
         ):
             raise PermissionDenied('You can only edit your own stories.')
 
-    if status not in (Story.Status.DRAFT, Story.Status.PENDING):
-        status = Story.Status.DRAFT
+    # The rule lives in one place now. It used to be inline here and absent
+    # from the API entirely, which is how the two surfaces drifted: this form
+    # could submit for review while the API silently ignored the identical
+    # request from Flutter.
+    status = resolve_status(user, status) or Story.Status.DRAFT
     if language not in {choice for choice, _ in Story.Language.choices}:
         language = Story.Language.ENGLISH
     # An unrecognised choice falls back to the honest default rather than

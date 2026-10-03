@@ -75,3 +75,69 @@ final adminUsersProvider = FutureProvider.autoDispose<List<AdminUser>>((
 ) async {
   return AdminApiService.instance.getUsers();
 });
+
+/// State of an in-flight consent decision.
+class ConsentActionState {
+  const ConsentActionState({this.busySlug, this.errorMessage});
+
+  /// The story whose decision is being recorded, if any.
+  final String? busySlug;
+  final String? errorMessage;
+
+  bool isBusy(String slug) => busySlug == slug;
+  bool get isSubmitting => busySlug != null;
+}
+
+/// Notifier recording a moderator's consent decision.
+///
+/// Kept separate from [ModerationNotifier] because the two answer to different
+/// obligations: flags are about a complaint, consent about someone's tradition.
+/// Merging them into one "moderation" state would let a reviewer lose track of
+/// which record they were in the middle of writing.
+class ConsentActionNotifier extends StateNotifier<ConsentActionState> {
+  ConsentActionNotifier() : super(const ConsentActionState());
+
+  final AdminApiService _api = AdminApiService.instance;
+
+  /// Record a decision. Returns true on success.
+  ///
+  /// On success the caller is expected to refresh [consentQueueProvider]: the
+  /// story leaves the queue, and reading that from the response rather than
+  /// from the list is how the two would drift.
+  Future<bool> record({
+    required String slug,
+    required String status,
+    required String basis,
+    String? rightsHolder,
+    String? licence,
+  }) async {
+    state = ConsentActionState(busySlug: slug);
+    try {
+      await _api.recordStoryConsent(
+        slug: slug,
+        status: status,
+        basis: basis,
+        rightsHolder: rightsHolder,
+        licence: licence,
+      );
+      state = const ConsentActionState();
+      return true;
+    } catch (e) {
+      state = ConsentActionState(errorMessage: 'Could not record consent: $e');
+      return false;
+    }
+  }
+}
+
+/// The stories a moderator still owes a consent decision on.
+final consentQueueProvider = FutureProvider.autoDispose<List<ConsentReviewStory>>(
+  (ref) async {
+    return AdminApiService.instance.getConsentQueue();
+  },
+);
+
+/// Consent decision state provider.
+final consentActionProvider =
+    StateNotifierProvider<ConsentActionNotifier, ConsentActionState>(
+      (ref) => ConsentActionNotifier(),
+    );

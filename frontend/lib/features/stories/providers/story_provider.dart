@@ -391,6 +391,22 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
     }
   }
 
+  /// Record that we have asked the source community about this story.
+  ///
+  /// Returns the new consent status, or null if the story is not loaded.
+  /// Rethrows so the caller can explain the failure — a silently swallowed
+  /// "I have asked" would leave the contributor believing they had asked.
+  Future<String?> requestConsent() async {
+    final current = state;
+    if (current is! StoryDetailReady) return null;
+
+    final consentStatus = await _repository.requestConsent(current.story.slug);
+    state = StoryDetailReady(
+      story: current.story.copyWith(consentStatus: consentStatus),
+    );
+    return consentStatus;
+  }
+
   Future<void> flagStory({required String reason, String? details}) async {
     final current = state;
     if (current is! StoryDetailReady) return;

@@ -160,3 +160,46 @@ Map<String, dynamic> adminDashboardJson() => {
   'qr_codes': adminQrJson(),
   'engagement': adminEngagementJson(),
 };
+
+/// `/api/stories/consent-queue/` payload: two stories still awaiting a
+/// moderator's decision, one of them live and published.
+List<Map<String, dynamic>> adminConsentQueueJson() => [
+  {
+    'story_id': 21,
+    'slug': 'the-baobab-and-the-drum',
+    'title': 'The Baobab and the Drum',
+    'summary': 'A tale about rhythm and patience.',
+    'status': 'published',
+    'author_username': 'moussa',
+    'origin': 'oral_transcription',
+    'provenance_notes': 'Recorded in Foumban in 2019 with the elder\'s permission.',
+    'consent_status': 'pending',
+    'consent_basis': '',
+    'rights_holder': 'The Bamoun council of elders',
+    'licence': 'cc_by_nc',
+    'language': 'en',
+    'region': 'Northwest',
+    'created_at': '2026-07-01T10:00:00Z',
+    'consent_attested_by': null,
+    'consent_attested_at': null,
+  },
+  {
+    'story_id': 22,
+    'slug': 'a-tale-without-a-source',
+    'title': 'A Tale Without a Source',
+    'summary': '',
+    'status': 'draft',
+    'author_username': 'kemi',
+    'origin': 'seeded',
+    'provenance_notes': 'Seeded demonstration content.',
+    'consent_status': 'not_requested',
+    'consent_basis': '',
+    'rights_holder': '',
+    'licence': 'undetermined',
+    'language': 'en',
+    'region': '',
+    'created_at': '2026-07-02T10:00:00Z',
+    'consent_attested_by': null,
+    'consent_attested_at': null,
+  },
+];

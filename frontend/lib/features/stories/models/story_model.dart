@@ -25,6 +25,10 @@ class StoryModel {
     this.source = '',
     this.estimatedReadTime = 0,
     this.status = 'published',
+    // Only ever populated for the story's author and for moderators — the API
+    // returns '' to everyone else. It is why a rejection is actionable rather
+    // than a bare `rejected` label.
+    this.reviewerNotes = '',
     // Wire values are spelled out rather than read off the enums: a const
     // default cannot read an instance field. They mirror
     // `StoryOrigin.unknown.value` and friends.
@@ -65,6 +69,7 @@ class StoryModel {
   final String source;
   final int estimatedReadTime;
   final String status;
+  final String reviewerNotes;
 
   // --- Provenance & rights ---
   //
@@ -119,6 +124,7 @@ class StoryModel {
       source: json['source'] as String? ?? '',
       estimatedReadTime: json['estimated_read_time'] as int? ?? 0,
       status: json['status'] as String? ?? 'published',
+      reviewerNotes: json['reviewer_notes'] as String? ?? '',
       origin: json['origin'] as String? ?? 'unknown',
       provenanceNotes: json['provenance_notes'] as String? ?? '',
       consentStatus: json['consent_status'] as String? ?? 'not_requested',
@@ -161,6 +167,7 @@ class StoryModel {
         'source': source,
         'estimated_read_time': estimatedReadTime,
         'status': status,
+        'reviewer_notes': reviewerNotes,
         'origin': origin,
         'provenance_notes': provenanceNotes,
         'consent_status': consentStatus,
@@ -210,6 +217,17 @@ class StoryModel {
   bool get needsConsentDisclosure =>
       !hasEstablishedConsent || consentStatus == StoryConsent.withheld.value;
 
+  /// Whether [user] may record "I have asked the community" about this story.
+  ///
+  /// Only the author, and only a contributor. The server answers anything else
+  /// with a 403 (`stories.services.request_consent`), so offering the button to
+  /// a stranger would be a control that can only ever fail. Mirrors
+  /// `UserModel.canContribute` on the role half — the two lists of roles have
+  /// already drifted once, and a gate that is looser than the API is worse than
+  /// one that is stricter.
+  bool canRequestConsent(UserModel? user) =>
+      user != null && user.canContribute && user.id == author.id;
+
   /// Formatted view count (e.g., "1.2K").
   String get formattedViewCount => _formatCount(viewCount);
 
@@ -251,6 +269,7 @@ class StoryModel {
     String? source,
     int? estimatedReadTime,
     String? status,
+    String? reviewerNotes,
     String? origin,
     String? provenanceNotes,
     String? consentStatus,
@@ -288,6 +307,7 @@ class StoryModel {
       source: source ?? this.source,
       estimatedReadTime: estimatedReadTime ?? this.estimatedReadTime,
       status: status ?? this.status,
+      reviewerNotes: reviewerNotes ?? this.reviewerNotes,
       origin: origin ?? this.origin,
       provenanceNotes: provenanceNotes ?? this.provenanceNotes,
       consentStatus: consentStatus ?? this.consentStatus,

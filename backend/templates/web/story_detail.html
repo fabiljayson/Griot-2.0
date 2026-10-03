@@ -12,6 +12,100 @@ Reading progress posts back to the same model the mobile app syncs.
 
 {% block content %}
 <article data-story-slug="{{ story.slug }}">
+  {% if is_owner_or_moderator and story.status != 'published' %}
+  {# ── Review state — visible only to the author and moderators.
+     A rejected contributor used to see `rejected` and nothing else: the
+     reason a moderator wrote was rendered on no surface at all. ── #}
+  <div class="mb-5 rounded-xl border border-brand-border bg-ochre-tint/40 p-4 dark:bg-ochre/10" data-testid="review-state">
+    <p class="text-xs font-bold uppercase tracking-wide text-ochre">
+      {{ story.get_status_display }}
+    </p>
+    {% if reviewer_notes %}
+    <p class="mt-2 text-sm font-semibold text-secondary-text">Reviewer's note</p>
+    <p class="mt-1 text-sm text-secondary-text">{{ reviewer_notes }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Consent — the two-step record.
+     The author records that they *asked*; only a moderator records what the
+     community *answered*, with who attested and on what basis. The server
+     enforces both halves (`stories.services`); this form only chooses which
+     half the viewer is allowed to express. A contributor never gets a
+     decision field — self-declared consent is the claim this field exists to
+     keep trustworthy. ── #}
+  {% if is_owner_or_moderator %}
+  <section class="mb-5 rounded-xl border border-brand-border bg-white p-4 dark:border-warm-brown dark:bg-deep-earth" data-testid="consent-panel">
+    <p class="text-xs font-bold uppercase tracking-wide text-secondary-text">
+      Consent on record: {{ story.get_consent_status_display }}
+    </p>
+    {% if story.consent_basis %}
+    <p class="mt-2 text-sm text-secondary-text"><span class="font-semibold">Basis:</span> {{ story.consent_basis }}</p>
+    {% endif %}
+    {% if story.consent_attested_by %}
+    <p class="mt-1 text-xs text-secondary-text">
+      Recorded by {{ story.consent_attested_by.username }}{% if story.consent_attested_at %} on {{ story.consent_attested_at|date:"j M Y" }}{% endif %}
+    </p>
+    {% endif %}
+
+    {% if is_moderator %}
+    <form method="post" action="{% url 'web:story-record-consent' story.slug %}" class="mt-4 space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <div>
+        <label for="id_consent_status" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Decision</label>
+        <select id="id_consent_status" name="consent_status"
+                class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+          {% for code, label in consent_choices %}
+          <option value="{{ code }}" {% if story.consent_status == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="id_basis" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Basis <span class="font-normal normal-case">(required)</span></label>
+        <textarea id="id_basis" name="basis" rows="2" required
+                  placeholder="Who you spoke to, and what they said. This is what defends the decision later."
+                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">{{ story.consent_basis }}</textarea>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label for="id_consent_rights_holder" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Rights holder</label>
+          <input type="text" id="id_consent_rights_holder" name="rights_holder" maxlength="200" value="{{ story.rights_holder }}"
+                 placeholder="Leave unchanged to keep the current value"
+                 class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+        </div>
+        <div>
+          <label for="id_consent_licence" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Licence</label>
+          <select id="id_consent_licence" name="licence"
+                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
+            {% for code, label in licences %}
+            <option value="{{ code }}" {% if story.licence == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button class="w-full rounded-xl bg-cam-bronze px-5 py-3 text-sm font-bold text-white transition hover:opacity-90">
+        Record consent decision
+      </button>
+      <p class="text-xs leading-relaxed text-secondary-text">
+        Recording “withheld” on a published story archives it. The record is kept, never deleted.
+      </p>
+    </form>
+    {% elif story.consent_status == 'not_requested' %}
+    <form method="post" action="{% url 'web:story-request-consent' story.slug %}" class="mt-4">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <button class="w-full rounded-xl border border-cam-bronze/40 bg-cam-bronze/5 px-5 py-3 text-sm font-bold text-cam-bronze transition hover:bg-cam-bronze/10">
+        I have asked the community about this story
+      </button>
+      <p class="mt-2 text-xs leading-relaxed text-secondary-text">
+        Records that you asked. What the community answered is recorded by a moderator, who has to
+        record who they spoke to and on what basis.
+      </p>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
   {# ── Hero — mirrors mobile SliverAppBar with cover image ── #}
   <header class="relative -mx-4 -mt-6 overflow-hidden sm:-mx-6 lg:-mx-8 lg:rounded-b-3xl">
     <div class="aspect-[21/9] max-h-80 w-full bg-slate-50 dark:bg-slate-800">
