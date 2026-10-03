@@ -145,7 +145,14 @@ class BadgeSerializer(serializers.ModelSerializer):
             'description',
             'emoji',
             'category',
+            # Every requirement, not just XP. Only `xp_required` was exposed,
+            # so 9 of the 12 badges reached Flutter with nothing to display
+            # but a locked icon — a reader cannot chase a threshold they are
+            # never shown.
             'xp_required',
+            'stories_read_required',
+            'quizzes_passed_required',
+            'streak_required',
             'color',
             'is_secret',
             'earned',

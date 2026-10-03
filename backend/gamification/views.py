@@ -29,7 +29,7 @@ from .serializers import (
     UserBadgeSerializer,
     UserProfileSerializer,
 )
-from .services import quiz_xp, streaks
+from .services import awards, quiz_xp, streaks
 
 
 class IsAuthenticatedOrReadOnly(permissions.BasePermission):
@@ -201,32 +201,18 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
                 streaks.grant_xp_and_stats(
                     request.user, xp=quiz.xp_reward, quizzes_passed=1
                 )
-                # Check for badge eligibility
-                self._check_badges(request.user)
         else:
             streaks.record_activity(request.user)
 
         attempt.save()
 
+        # One sweep, after the counters above have landed, on every outcome —
+        # pass, fail, first attempt or retake. The web surface calls this same
+        # function at the same point in its flow, which is what Constitution I
+        # asks for and what the two divergent copies here did not do.
+        awards.award_eligible_badges(request.user)
+
         return Response(QuizAttemptDetailSerializer(attempt).data)
-
-    def _check_badges(self, user):
-        """Check and award any eligible badges."""
-        profile, _ = UserProfile.objects.get_or_create(user=user)
-        earned_badge_ids = UserBadge.objects.filter(user=user).values_list('badge_id', flat=True)
-
-        for badge in Badge.objects.filter(is_active=True).exclude(id__in=earned_badge_ids):
-            earned = False
-
-            if badge.xp_required and profile.total_xp >= badge.xp_required:
-                earned = True
-            if badge.stories_read_required and profile.stories_read >= badge.stories_read_required:
-                earned = True
-            if badge.quizzes_passed_required and profile.quizzes_passed >= badge.quizzes_passed_required:
-                earned = True
-
-            if earned:
-                UserBadge.objects.create(user=user, badge=badge)
 
 
 @extend_schema(

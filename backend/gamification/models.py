@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -207,6 +208,11 @@ class Badge(models.Model):
         default=0,
         help_text='Number of quizzes to pass.',
     )
+    streak_required = models.PositiveIntegerField(
+        default=0,
+        help_text='Consecutive active days required to earn this badge.',
+    )
+
 
     # Visual
     color = models.CharField(
@@ -230,6 +236,31 @@ class Badge(models.Model):
 
     class Meta:
         ordering = ['category', 'xp_required']
+
+    def clean(self):
+        """A badge has to demand something.
+
+        Each award check reads a requirement of 0 as "not required", which is
+        right per field — a badge wanting only stories correctly ignores XP. But
+        a badge with *all* of them at 0 can then never be earned, and the row
+        looks entirely normal while being dead. "Dedicated Reader" shipped that
+        way, and its description asked for a 3-day streak the model had no field
+        to express.
+
+        Refuse the state at the source: Django's admin already calls
+        ``full_clean()``, and the seed command calls it explicitly.
+        """
+        super().clean()
+        if not any((
+            self.xp_required,
+            self.stories_read_required,
+            self.quizzes_passed_required,
+            self.streak_required,
+        )):
+            raise ValidationError(
+                'A badge needs at least one requirement above zero, otherwise '
+                'it can never be awarded.'
+            )
 
     def __str__(self):
         return f'{self.emoji} {self.name}'

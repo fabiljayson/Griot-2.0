@@ -31,6 +31,7 @@ out of the review:
 |---|---|
 | 1. Artifact taxonomy | **Landed** at `ef2a8a8` |
 | 2. Gates | **Landed** — ruff clean, coverage 84% / floor 80, crawler CI job, pre-commit config |
+| 3. Gamification | **Landed** — one award service on three call sites, `streak_required`, certificates now issued |
 | 8a. Contain the leak | **Done except rotation** — `.bak` deleted, ignore rule was already present; credential rotation is user-owned |
 | Everything else | Not started |
 
@@ -309,6 +310,115 @@ The entire rewards system is currently decoration.
 4. **Surface progress.** If badges are unreachable in the UI, that is a second
    defect — a user cannot chase what they cannot see.
 
+### Finding from the Phase 3 diagnosis (2026-10-03)
+
+**Task 1 answered: design gap, not a one-line bug.** Written before any fix was
+decided, as the task requires.
+
+**1. The sweep has never executed.** Both `UserBadge` write sites sit inside
+`if attempt.passed:` (`gamification/views.py:205` and
+`web/services.py:723-731`). Of the 9 quiz attempts in the dev database, **1
+completed and it failed**; the other 8 are still `in_progress`. `attempt.passed`
+has never once been true, so neither sweep has ever run its award branch.
+
+**2. The predicates are not the problem.** Existing profile state already clears
+most thresholds by a wide margin:
+
+| Badge | Requires | Profiles that qualify today |
+|---|---|---|
+| First Steps | 1 story read | **503** |
+| Rising Star | 100 XP | **501** |
+| Quiz Rookie | 1 quiz passed | **376** |
+| Story Seeker | 5 stories read | well clear (max observed 9) |
+
+503 profiles qualify for First Steps and zero hold it. The thresholds are
+satisfiable and satisfied — the sweep simply never runs against that state.
+
+**3. The counters move on paths that contain no sweep at all.**
+`web/services.py:636-642` increments `stories_read` on every completed read;
+`streaks.grant_xp_and_stats` increments `total_xp` and `quizzes_passed`.
+Neither calls any badge check. Reading stories — the app's main activity — can
+never earn a reading badge, and 5 of the 12 badges are reading badges.
+
+**4. `Certificate` has no write path at all.** `Certificate.objects.create`
+appears nowhere in the codebase. The model, serializer, admin, read-only
+viewset, and the PDF generator in `certificate_generator.py` all exist and all
+read; nothing ever writes. 0 certificates is not a malfunction, it is the
+absence of a feature that was built everywhere except the one place that would
+produce one.
+
+**5. Two further defects found while tracing:**
+
+- **`Dedicated Reader` (badge 60) is unreachable by construction.** All three
+  requirements are `0`, and every check is written `if badge.xp_required and
+  profile.total_xp >= badge.xp_required`. `0` is falsy, so all three branches
+  short-circuit false. A badge demanding nothing can never be earned — the
+  exact inverse of its meaning, and silently so, because the row looks
+  perfectly normal.
+- **The two surfaces disagree, violating Constitution I.** The web sweep runs on
+  *every* passing attempt (its own comment notes the profile is resolved before
+  the payout branch precisely so retakes are covered). The API's `_check_badges`
+  runs only inside the `not already_paid` branch — **first pass only**. The same
+  capability, implemented twice, with different behaviour.
+
+### Consequence for the fix
+
+Because the answer was "design gap", this is not a patch. The shared rule
+Constitution I already states — gamification "implemented once in
+models/services and reused, never duplicated per surface" — is precisely what
+the current code does not do. Any fix that edits the two existing copies in
+place will have to keep them in sync forever, and the API/web divergence above
+is the proof that this already failed once.
+
+The fix therefore needs a single award service, called from every path that
+moves a counter a badge can read — quiz completion on both surfaces *and* story
+reading — plus a decision on whether `Certificate` gets a creation path at all.
+
+### Status — landed (revision 3)
+
+Decisions taken before writing code: one shared sweep (Constitution I already
+mandated it), a real `streak_required` field rather than faking the streak as a
+read count, and certificates issued on badge award.
+
+1. **One service.** `gamification/services/awards.py::award_eligible_badges`
+   is now the only implementation. Both surfaces call it at the same point in
+   their flow, after the counters have been written; the API's `_check_badges`
+   and the web's inline copy are gone.
+2. **Called from three places**, not two: API `finish`, web `finish_quiz`, and
+   web `record_progress`. Reading badges are earnable for the first time. A
+   failed quiz now sweeps *and* extends the streak on both surfaces — the web
+   flow had drifted to counting only passes, which the API never did.
+3. **`Badge.streak_required`** added by migration `0004`, with a data fix scoped
+   to `slug='dedicated-reader'` so an operator's own badge is left alone.
+   `Badge.clean()` now refuses a badge that demands nothing, and
+   `seed_gamification` validates before creating. The dev database was migrated:
+   `dedicated-reader` reads `streak_required=3`.
+4. **Certificates get a writer.** A reading or quiz badge award issues the
+   matching `Certificate`, keyed on `(user, type, title)` so a replay cannot
+   mint a second copy. `EXPLORER` and `CONTRIBUTOR` are deliberately unwired —
+   that is a product call this phase did not take.
+5. **Task 4 — progress is now actually visible.** Both surfaces did render an
+   earned/locked grid, but the API exposed only `xp_required`, so 9 of the 12
+   badges reached Flutter as a bare locked icon with no threshold to chase, and
+   the web template had no streak branch (it fell through to `Locked`). All four
+   requirements are exposed by `BadgeSerializer`, rendered on web, and rendered
+   in Flutter via `BadgeModel.requirementLabel` using the same precedence.
+
+| Verification | Result |
+|---|---|
+| Backend suite | **501 tests, OK (6 skipped)** — 15 added |
+| Coverage | **85%** (was 84%; floor 80) |
+| `ruff check .` | All checks passed |
+| `makemigrations --check` | No changes detected |
+| Flutter | `analyze --fatal-infos` clean, **381 tests passed** |
+| Dev database | `0004` applied, `dedicated-reader` repaired |
+
+The four `AwardWiringTests` target the paths that did not sweep before this
+change: story read, API finish on a failed attempt, web finish on a failed
+attempt, and the streak-on-failure parity gap. The `BadgeAwardTests` cover the
+rules the old code could not express at all (streak thresholds) or got wrong
+(all-zero badges).
+
 ---
 
 ## Phase 4 — Stories are the bottleneck
@@ -504,7 +614,7 @@ there is no path for a contributor's own recording.
 | 1 | **8a. Contain the leak** | High (security) | Very low | your go-ahead | Done — rotation outstanding |
 | 2 | 1. Artifact taxonomy | Very high | Low–Med | — | **Landed** `ef2a8a8` |
 | 3 | 2. Gates | High | Low | — | **Landed** |
-| 4 | 3. Gamification | High | Low–Med | — | Not started |
+| 4 | 3. Gamification | High | Low–Med | — | **Landed** |
 | 5 | **0. Translation-model decision** | High | Very low | — | Not started |
 | 6 | 4. Stories | Very high | High | 0, constitution check | Not started |
 | 7 | 5. Multilingual (2 tracks) | Very high | High | 0 | Not started |
@@ -549,11 +659,11 @@ Phase 9. Next up is Phase 3.
 One correction carried into the working tree: the earlier in-flight lint diff
 concentrated all of its line-ending churn in a single file —
 `backend/users/views.py` showed 349 changed lines, of which exactly 1 was
-substantive. The churn was reverted rather than committed, so that file's diff
-is now just the real fix (an unused local removed) and its original CRLF
-endings are untouched. Repo-wide line-ending consistency remains open; if it is
-wanted, do it deliberately in its own `.gitattributes` commit, never as
-collateral in a lint pass.
+substantive. `.gitattributes` (`* text=auto eol=lf`) already normalises on
+checkin, but that file's HEAD blob predates it and still carries CRLF, so its
+next checkin will rewrite every line. The churn was reverted so the lint commit
+stayed reviewable; the normalisation is a one-file commit whenever someone
+wants it, never collateral inside a lint pass.
 
 ## Still excluded
 

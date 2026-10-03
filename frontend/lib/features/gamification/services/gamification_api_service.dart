@@ -114,6 +114,9 @@ class BadgeModel {
     this.emoji = '🏆',
     this.category = 'reading',
     this.xpRequired = 0,
+    this.storiesReadRequired = 0,
+    this.quizzesPassedRequired = 0,
+    this.streakRequired = 0,
     this.color = '#C85A32',
     this.isSecret = false,
     this.earned = false,
@@ -126,9 +129,28 @@ class BadgeModel {
   final String emoji;
   final String category;
   final int xpRequired;
+  final int storiesReadRequired;
+  final int quizzesPassedRequired;
+  final int streakRequired;
   final String color;
   final bool isSecret;
   final bool earned;
+
+  /// What the reader still has to do, or null when the badge is already held
+  /// or states no requirement at all.
+  ///
+  /// Only `xp_required` used to reach the client, so nine of the twelve badges
+  /// rendered as a bare locked icon with nothing to chase. The precedence below
+  /// mirrors `templates/web/gamification.html` so both surfaces read the same
+  /// badge the same way.
+  String? get requirementLabel {
+    if (earned) return null;
+    if (xpRequired > 0) return '$xpRequired XP needed';
+    if (quizzesPassedRequired > 0) return '$quizzesPassedRequired quizzes needed';
+    if (storiesReadRequired > 0) return '$storiesReadRequired reads needed';
+    if (streakRequired > 0) return '$streakRequired-day streak';
+    return null;
+  }
 
   factory BadgeModel.fromJson(Map<String, dynamic> json) {
     return BadgeModel(
@@ -139,6 +161,9 @@ class BadgeModel {
       emoji: json['emoji'] as String? ?? '🏆',
       category: json['category'] as String? ?? 'reading',
       xpRequired: json['xp_required'] as int? ?? 0,
+      storiesReadRequired: json['stories_read_required'] as int? ?? 0,
+      quizzesPassedRequired: json['quizzes_passed_required'] as int? ?? 0,
+      streakRequired: json['streak_required'] as int? ?? 0,
       color: json['color'] as String? ?? '#C85A32',
       isSecret: json['is_secret'] as bool? ?? false,
       earned: json['earned'] as bool? ?? false,

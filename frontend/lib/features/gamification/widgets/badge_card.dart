@@ -131,11 +131,12 @@ class BadgeCard extends StatelessWidget {
             ),
           ),
 
-          // XP requirement — fixed single line, ellipsised.
-          if (!badge.earned && badge.xpRequired > 0) ...[
+          // Requirement — fixed single line, ellipsised. `requirementLabel`
+          // covers all four thresholds and returns null once earned.
+          if (badge.requirementLabel != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '${badge.xpRequired} XP needed',
+              badge.requirementLabel!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall?.copyWith(

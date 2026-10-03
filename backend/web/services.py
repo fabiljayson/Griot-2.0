@@ -31,6 +31,7 @@ from gamification.models import (
     UserBadge,
     UserProfile,
 )
+from gamification.services.awards import award_eligible_badges
 from gamification.services.quiz_xp import already_earned_quiz_xp
 from gamification.services.streaks import record_activity
 from media_app import quota
@@ -644,6 +645,12 @@ def record_progress(user, story, percent):
     # because record_activity re-reads and re-writes the same row under a lock.
     record_activity(user)
 
+    # The counters a reading badge reads (`stories_read` and streak) just moved,
+    # so this is the one moment a reading badge can become earnable. Nothing
+    # else in the request path checked — which is how 503 profiles cleared
+    # "First Steps" while none of them held it.
+    award_eligible_badges(user)
+
 
 # ---------------------------------------------------------------------------
 # Quiz mutations
@@ -703,11 +710,6 @@ def finish_quiz(user, quiz):
     )
 
     if attempt.passed:
-        # Resolved before the payout branch below: the badge sweep needs
-        # profile.total_xp / quizzes_passed on every passing attempt, including
-        # a retake that was not paid.
-        profile, _ = UserProfile.objects.get_or_create(user=user)
-
         if already_earned_quiz_xp(user, quiz, exclude_attempt=attempt):
             # F-06: already paid for this quiz. A retake still records the
             # attempt and still extends the streak, it just does not pay out
@@ -715,23 +717,23 @@ def finish_quiz(user, quiz):
             attempt.xp_earned = 0
         else:
             attempt.xp_earned = quiz.xp_reward
+            profile, _ = UserProfile.objects.get_or_create(user=user)
             profile.add_xp(quiz.xp_reward)
             profile.quizzes_passed += 1
             profile.total_quiz_xp += quiz.xp_reward
             profile.save(update_fields=['quizzes_passed', 'total_quiz_xp'])
 
-        earned_ids = UserBadge.objects.filter(user=user).values_list(
-            'badge_id', flat=True,
-        )
-        for badge in Badge.objects.filter(is_active=True).exclude(id__in=earned_ids):
-            if (
-                (badge.xp_required and profile.total_xp >= badge.xp_required)
-                or (badge.stories_read_required and profile.stories_read >= badge.stories_read_required)
-                or (badge.quizzes_passed_required and profile.quizzes_passed >= badge.quizzes_passed_required)
-            ):
-                UserBadge.objects.create(user=user, badge=badge)
-
     attempt.save()
+
+    # Attempting a quiz is activity whether or not it passed — the API finish
+    # view has always said so, and this flow had drifted to extending the streak
+    # only on a pass. Same call, same place, both surfaces.
+    record_activity(user)
+
+    # One sweep, after the counters above have landed, on every outcome — pass,
+    # fail, first attempt or retake. See gamification.services.awards for why
+    # there is exactly one of these now.
+    award_eligible_badges(user)
     return attempt
 
 

@@ -156,12 +156,21 @@ class Command(BaseCommand):
                 'description': 'Read stories 3 days in a row',
                 'emoji': '🔥',
                 'category': 'reading',
-                'xp_required': 0,
+                # Shipped with `xp_required: 0` and no other requirement, which
+                # made it unearnable — the model then had no field to express a
+                # streak at all. `Badge.clean()` now refuses that shape.
+                'streak_required': 3,
                 'color': '#FF4500',
             },
         ]
 
         for data in badge_data:
+            # Validate the requirement fields before the row exists: a badge
+            # with every requirement at zero can never be awarded, and
+            # `get_or_create` would happily store it. `clean()` rather than
+            # `full_clean()` — the unique slug of an already-seeded badge would
+            # otherwise fail the check on a re-run.
+            Badge(**data).clean()
             badge, created = Badge.objects.get_or_create(
                 slug=data['slug'],
                 defaults=data,

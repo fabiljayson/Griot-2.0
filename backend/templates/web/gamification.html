@@ -94,7 +94,7 @@ All glyphs are Font Awesome icons.
       </span>
       {% else %}
       <span class="mt-2 text-[10px] font-semibold uppercase tracking-wide text-secondary-text">
-        {% if badge.xp_required %}{{ badge.xp_required }} XP{% elif badge.quizzes_passed_required %}{{ badge.quizzes_passed_required }} quizzes{% elif badge.stories_read_required %}{{ badge.stories_read_required }} reads{% else %}Locked{% endif %}
+        {% if badge.xp_required %}{{ badge.xp_required }} XP{% elif badge.quizzes_passed_required %}{{ badge.quizzes_passed_required }} quizzes{% elif badge.stories_read_required %}{{ badge.stories_read_required }} reads{% elif badge.streak_required %}{{ badge.streak_required }} days{% else %}Locked{% endif %}
       </span>
       {% endif %}
     </div>

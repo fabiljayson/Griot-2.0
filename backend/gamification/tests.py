@@ -3,6 +3,7 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -10,8 +11,17 @@ from rest_framework.test import APITestCase
 
 from stories.models import Story
 
-from .models import Badge, Quiz, QuizAttempt, QuizQuestion, UserBadge, UserProfile
+from .models import (
+    Badge,
+    Certificate,
+    Quiz,
+    QuizAttempt,
+    QuizQuestion,
+    UserBadge,
+    UserProfile,
+)
 from .services import streaks
+from .services.awards import award_eligible_badges
 from .services.quiz_provisioner import ensure_quizzes_for_published_stories
 
 User = get_user_model()
@@ -825,3 +835,281 @@ class TimezonePersistenceTests(TestCase):
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.timezone, 'Europe/London')
         self.assertEqual(self.profile.current_streak, 5)
+
+
+class BadgeAwardTests(TestCase):
+    """Phase 3 — one award function, called from every path that moves a
+    counter a badge reads.
+
+    These exist because the sweep used to be two copies, both nested inside
+    ``if attempt.passed``, and no attempt in the database had ever passed:
+    503 profiles already cleared the easiest threshold and none held the badge.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            'reader1', email='reader1@example.com', password='hunter2secure',
+        )
+        self.profile, _ = UserProfile.objects.get_or_create(user=self.user)
+
+    def make_badge(self, slug, category=Badge.Category.READING, **requirements):
+        return Badge.objects.create(
+            name=slug.replace('-', ' ').title(),
+            slug=slug,
+            description=f'Description for {slug}',
+            category=category,
+            **requirements,
+        )
+
+    # --- earning, and not earning -------------------------------------
+
+    def test_awards_when_the_threshold_is_met(self):
+        badge = self.make_badge('first-steps', stories_read_required=1)
+        self.profile.stories_read = 1
+        self.profile.save(update_fields=['stories_read'])
+
+        awarded = award_eligible_badges(self.user)
+
+        self.assertEqual([b.slug for b in awarded], ['first-steps'])
+        self.assertTrue(
+            UserBadge.objects.filter(user=self.user, badge=badge).exists(),
+        )
+
+    def test_does_not_award_below_the_threshold(self):
+        self.make_badge('first-steps', stories_read_required=1)
+
+        self.assertEqual(award_eligible_badges(self.user), [])
+        self.assertEqual(UserBadge.objects.filter(user=self.user).count(), 0)
+
+    def test_the_threshold_boundary_is_inclusive(self):
+        self.make_badge('story-seeker', stories_read_required=5)
+
+        self.profile.stories_read = 4
+        self.profile.save(update_fields=['stories_read'])
+        self.assertEqual(award_eligible_badges(self.user), [])
+
+        self.profile.stories_read = 5
+        self.profile.save(update_fields=['stories_read'])
+        self.assertEqual(
+            [b.slug for b in award_eligible_badges(self.user)],
+            ['story-seeker'],
+        )
+
+    # --- idempotency ---------------------------------------------------
+
+    def test_a_replay_awards_once_and_issues_one_certificate(self):
+        self.make_badge('first-steps', stories_read_required=1)
+        self.profile.stories_read = 1
+        self.profile.save(update_fields=['stories_read'])
+
+        first = award_eligible_badges(self.user)
+        second = award_eligible_badges(self.user)
+
+        self.assertEqual([b.slug for b in first], ['first-steps'])
+        self.assertEqual(second, [])
+        self.assertEqual(UserBadge.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(Certificate.objects.filter(user=self.user).count(), 1)
+
+    # --- streaks -------------------------------------------------------
+
+    def test_a_streak_badge_earns_at_three_days(self):
+        badge = self.make_badge('dedicated-reader', streak_required=3)
+        self.profile.current_streak = 3
+        self.profile.save(update_fields=['current_streak'])
+
+        self.assertEqual(
+            [b.slug for b in award_eligible_badges(self.user)],
+            ['dedicated-reader'],
+        )
+        self.assertTrue(UserBadge.objects.filter(badge=badge).exists())
+
+    def test_a_streak_badge_does_not_earn_at_two_days(self):
+        self.make_badge('dedicated-reader', streak_required=3)
+        self.profile.current_streak = 2
+        self.profile.save(update_fields=['current_streak'])
+
+        self.assertEqual(award_eligible_badges(self.user), [])
+
+    def test_a_broken_run_does_not_unearn_a_streak_already_reached(self):
+        """The badge says "3 days in a row", so the reader who did that keeps it
+        once the run breaks — the run was counted when it happened."""
+        self.make_badge('dedicated-reader', streak_required=3)
+        self.profile.current_streak = 0
+        self.profile.longest_streak = 3
+        self.profile.save(update_fields=['current_streak', 'longest_streak'])
+
+        self.assertEqual(
+            [b.slug for b in award_eligible_badges(self.user)],
+            ['dedicated-reader'],
+        )
+
+    # --- the shape of a dead badge -------------------------------------
+
+    def test_a_badge_with_no_requirement_is_skipped_not_issued_to_all(self):
+        # objects.create bypasses clean() deliberately: this is the exact state
+        # the guard exists to prevent, and it still must not hand out a badge.
+        self.make_badge('dedicated-reader')
+
+        self.assertEqual(award_eligible_badges(self.user), [])
+        self.assertEqual(UserBadge.objects.filter(user=self.user).count(), 0)
+
+    def test_badge_clean_refuses_a_badge_that_demands_nothing(self):
+        with self.assertRaises(ValidationError):
+            Badge(
+                name='Dead', slug='dead', description='x',
+                category=Badge.Category.READING,
+            ).clean()
+
+        # A badge with exactly one requirement is fine.
+        Badge(
+            name='Alive', slug='alive', description='x',
+            category=Badge.Category.READING, streak_required=3,
+        ).clean()
+
+    # --- certificates ---------------------------------------------------
+
+    def test_reading_and_quiz_badges_issue_a_certificate(self):
+        reading = self.make_badge('first-steps', stories_read_required=1)
+        quiz = self.make_badge(
+            'quiz-rookie', category=Badge.Category.QUIZ,
+            quizzes_passed_required=1,
+        )
+        self.profile.stories_read = 1
+        self.profile.quizzes_passed = 1
+        self.profile.save(update_fields=['stories_read', 'quizzes_passed'])
+
+        award_eligible_badges(self.user)
+
+        certs = Certificate.objects.filter(user=self.user)
+        self.assertEqual(certs.count(), 2)
+        self.assertTrue(
+            certs.filter(
+                certificate_type=Certificate.Type.READING, title=reading.name,
+            ).exists(),
+        )
+        self.assertTrue(
+            certs.filter(
+                certificate_type=Certificate.Type.QUIZ, title=quiz.name,
+            ).exists(),
+        )
+
+    def test_an_exploration_badge_issues_no_certificate(self):
+        self.make_badge(
+            'cultural-explorer', category=Badge.Category.EXPLORATION,
+            stories_read_required=10,
+        )
+        self.profile.stories_read = 10
+        self.profile.save(update_fields=['stories_read'])
+
+        award_eligible_badges(self.user)
+
+        self.assertEqual(UserBadge.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(Certificate.objects.filter(user=self.user).count(), 0)
+
+
+class AwardWiringTests(APITestCase):
+    """Both surfaces must reach the sweep — and not only on a pass.
+
+    The API used to sweep inside ``attempt.passed`` *and* inside the
+    first-pass-only branch; the web swept inside ``attempt.passed`` only, and
+    never extended the streak on a failure either. A reader who failed the quiz
+    was therefore never checked at all, on either surface.
+    """
+
+    def setUp(self):
+        self.contributor = User.objects.create_user(
+            'contrib2', email='contrib2@example.com', password='hunter2secure',
+            role='contributor',
+        )
+        self.user = User.objects.create_user(
+            'reader2', email='reader2@example.com', password='hunter2secure',
+        )
+        self.profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        # Eligible before the quiz is even opened: the badge is cleared by
+        # reading, and only the sweep can notice it.
+        self.profile.stories_read = 1
+        self.profile.save(update_fields=['stories_read'])
+
+        self.badge = Badge.objects.create(
+            name='First Steps', slug='first-steps',
+            description='Read your first story',
+            category=Badge.Category.READING, stories_read_required=1,
+        )
+
+        # Draft first so the quiz can be attached before publishing provisions
+        # its own; publishing must not disturb a quiz an editor already built.
+        self.story = Story.objects.create(
+            title='The Wise Spider',
+            content='A story about a clever spider.',
+            author=self.contributor,
+            status=Story.Status.DRAFT,
+        )
+        self.quiz = Quiz.objects.create(
+            story=self.story, title='Test Quiz', passing_score=70,
+        )
+        self.question = QuizQuestion.objects.create(
+            quiz=self.quiz,
+            question_text='What animal is the story about?',
+            option_a='Spider', option_b='Tortoise', option_c='Elephant',
+            correct_answer='a',
+            explanation='The story is about a spider.',
+            order=1,
+        )
+        self.story.status = Story.Status.PUBLISHED
+        self.story.save()
+
+    def test_reading_a_story_awards_the_badge_it_clears(self):
+        from web.services import record_progress
+
+        record_progress(self.user, self.story, 95)
+
+        self.assertEqual(
+            UserBadge.objects.filter(
+                user=self.user, badge=self.badge,
+            ).count(),
+            1,
+        )
+        self.assertEqual(Certificate.objects.filter(user=self.user).count(), 1)
+
+    def test_api_finish_awards_even_when_the_attempt_fails(self):
+        self.client.force_authenticate(self.user)
+        self.client.post(reverse('gamification:quiz-start', kwargs={'pk': self.quiz.id}))
+        # Wrong answer: 0% against a 70% pass mark.
+        self.client.post(
+            reverse('gamification:quiz-submit-answer', kwargs={'pk': self.quiz.id}),
+            {'question_id': self.question.id, 'selected_answer': 'b'},
+        )
+        resp = self.client.post(
+            reverse('gamification:quiz-finish', kwargs={'pk': self.quiz.id}),
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertFalse(resp.data['passed'])
+        self.assertEqual(
+            UserBadge.objects.filter(user=self.user).count(), 1,
+        )
+
+    def test_web_finish_awards_even_when_the_attempt_fails(self):
+        from web.services import finish_quiz, start_quiz, submit_quiz_answer
+
+        attempt = start_quiz(self.user, self.quiz)
+        self.assertIsNotNone(attempt)
+        submit_quiz_answer(self.user, self.quiz, self.question, 'b')
+        attempt = finish_quiz(self.user, self.quiz)
+
+        self.assertFalse(attempt.passed)
+        self.assertEqual(
+            UserBadge.objects.filter(user=self.user).count(), 1,
+        )
+
+    def test_web_finish_extends_the_streak_on_a_failed_attempt(self):
+        """Constitution I: attempting is activity on both surfaces. The API has
+        always counted it; the web flow had drifted to counting only passes."""
+        from web.services import finish_quiz, start_quiz, submit_quiz_answer
+
+        start_quiz(self.user, self.quiz)
+        submit_quiz_answer(self.user, self.quiz, self.question, 'b')
+        finish_quiz(self.user, self.quiz)
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.current_streak, 1)
