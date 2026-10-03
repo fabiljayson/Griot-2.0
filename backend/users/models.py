@@ -1,15 +1,16 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.functions import Lower
+from django.utils.translation import gettext_lazy as _
 
 
 class UserRole(models.TextChoices):
     """Application-level roles for the African Teller platform."""
 
-    VISITOR = 'visitor', 'Visitor'
-    CONTRIBUTOR = 'contributor', 'Contributor'
-    INSTITUTION_MANAGER = 'institution_manager', 'Institution Manager'
-    ADMIN = 'admin', 'Admin'
+    VISITOR = 'visitor', _('Visitor')
+    CONTRIBUTOR = 'contributor', _('Contributor')
+    INSTITUTION_MANAGER = 'institution_manager', _('Institution Manager')
+    ADMIN = 'admin', _('Admin')
 
 
 class User(AbstractUser):

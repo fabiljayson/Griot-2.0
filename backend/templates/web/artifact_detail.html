@@ -1,5 +1,6 @@
 {% extends 'web/base.html' %}
 {% load static %}
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Artifact detail — mirrors mobile ArtifactDetailScreen: hero image, metadata
@@ -38,37 +39,37 @@ QR deep link info and related stories.
     <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
       {% if artifact.culture %}
       <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
-        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'users' 'text-[10px]' %} Culture</p>
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'users' 'text-[10px]' %} {% translate "Culture" %}</p>
         <p class="mt-1 text-sm font-bold">{{ artifact.culture }}</p>
       </div>
       {% endif %}
       {% if artifact.region %}
       <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
-        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'location' 'text-[10px]' %} Region</p>
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'location' 'text-[10px]' %} {% translate "Region" %}</p>
         <p class="mt-1 text-sm font-bold">{{ artifact.region }}</p>
       </div>
       {% endif %}
       {% if artifact.estimated_date %}
       <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
-        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'calendar' 'text-[10px]' %} Estimated Date</p>
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'calendar' 'text-[10px]' %} {% translate "Estimated Date" %}</p>
         <p class="mt-1 text-sm font-bold">{{ artifact.estimated_date }}</p>
       </div>
       {% endif %}
       {% if artifact.materials %}
       <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
-        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'layer-group' 'text-[10px]' %} Materials</p>
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'layer-group' 'text-[10px]' %} {% translate "Materials" %}</p>
         <p class="mt-1 text-sm font-bold">{{ artifact.materials }}</p>
       </div>
       {% endif %}
       {% if artifact.dimensions %}
       <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
-        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'gauge' 'text-[10px]' %} Dimensions</p>
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'gauge' 'text-[10px]' %} {% translate "Dimensions" %}</p>
         <p class="mt-1 text-sm font-bold">{{ artifact.dimensions }}</p>
       </div>
       {% endif %}
       {% if artifact.museum_name %}
       <div class="rounded-xl border border-brand-border bg-white p-3.5 dark:border-warm-brown dark:bg-deep-earth">
-        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'landmark' 'text-[10px]' %} Location</p>
+        <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-secondary-text">{% icon 'landmark' 'text-[10px]' %} {% translate "Location" %}</p>
         <p class="mt-1 text-sm font-bold">
           {{ artifact.museum_name }}{% if artifact.floor %} • {{ artifact.floor }}{% endif %}{% if artifact.display_case %} • {{ artifact.display_case }}{% endif %}
         </p>
@@ -82,8 +83,8 @@ QR deep link info and related stories.
     </div>
 
     {% if artifact.additional_images %}
-    <section class="mt-8" aria-label="More views of {{ artifact.title }}">
-      <h2 class="mb-4 font-display text-xl font-bold">More views</h2>
+    <section class="mt-8" aria-label="{% blocktranslate with title=artifact.title %}More views of {{ title }}{% endblocktranslate %}">
+      <h2 class="mb-4 font-display text-xl font-bold">{% translate "More views" %}</h2>
       <div class="grid gap-4 sm:grid-cols-2">
         {% for image_url in artifact.additional_images %}
         <img src="{{ image_url }}" alt="{{ artifact.title }}" class="aspect-[4/3] w-full rounded-2xl object-cover">
@@ -98,12 +99,12 @@ QR deep link info and related stories.
       <div class="flex flex-wrap items-center gap-4">
         <button type="button" id="audio-toggle" data-audio-src="{{ narration.url }}"
                 class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark"
-                aria-label="Play audio guide">
+                aria-label="{% translate 'Play audio guide' %}">
           <span id="audio-icon" class="fa-solid fa-play" aria-hidden="true"></span>
         </button>
         <div class="min-w-0 flex-1">
-          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-ochre' %} Audio guide</h2>
-          <p class="text-xs text-secondary-text">Listen to the story of this artifact{% if narration.duration %} • {{ narration.duration }}s{% endif %}</p>
+          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-ochre' %} {% translate "Audio guide" %}</h2>
+          <p class="text-xs text-secondary-text">{% translate "Listen to the story of this artifact" %}{% if narration.duration %} • {% blocktranslate with seconds=narration.duration %}{{ seconds }}s{% endblocktranslate %}{% endif %}</p>
         </div>
       </div>
       <audio id="story-audio" preload="none" class="mt-3 w-full"></audio>
@@ -117,13 +118,13 @@ QR deep link info and related stories.
           {% icon 'microphone' 'text-lg' %}
         </span>
         <div class="min-w-0 flex-1">
-          <h2 class="font-display text-base font-bold">No audio guide yet</h2>
-          <p class="text-xs text-secondary-text">Generate a narrated guide so visitors can listen to this artifact's story.</p>
+          <h2 class="font-display text-base font-bold">{% translate "No audio guide yet" %}</h2>
+          <p class="text-xs text-secondary-text">{% translate "Generate a narrated guide so visitors can listen to this artifact's story." %}</p>
         </div>
         <form method="post" action="{% url 'web:artifact-generate-audio' artifact.slug %}">
           {% csrf_token %}
           <button class="rounded-xl bg-ochre px-5 py-2.5 text-sm font-bold text-deep-earth transition hover:opacity-90">
-            {% icon 'microphone' 'text-xs' %} Generate audio guide
+            {% icon 'microphone' 'text-xs' %} {% translate "Generate audio guide" %}
           </button>
         </form>
       </div>
@@ -134,8 +135,8 @@ QR deep link info and related stories.
     <div class="mt-8 flex items-center gap-4 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
       <span class="fa-solid fa-qrcode text-4xl text-terracotta" aria-hidden="true"></span>
       <div>
-        <h2 class="font-display text-base font-bold">Found this in a museum?</h2>
-        <p class="text-sm text-secondary-text">Scan the QR code beside the artifact to open this page instantly.</p>
+        <h2 class="font-display text-base font-bold">{% translate "Found this in a museum?" %}</h2>
+        <p class="text-sm text-secondary-text">{% translate "Scan the QR code beside the artifact to open this page instantly." %}</p>
       </div>
     </div>
 
@@ -143,7 +144,7 @@ QR deep link info and related stories.
     {% if related_stories %}
     <section class="mt-10 mb-4">
       <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-        {% icon 'book-open' 'text-lg text-terracotta' %} Related Stories
+        {% icon 'book-open' 'text-lg text-terracotta' %} {% translate "Related Stories" %}
       </h2>
       <div class="grid gap-5 sm:grid-cols-3">
         {% for story in related_stories %}

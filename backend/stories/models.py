@@ -2,6 +2,20 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
+
+# The choice labels below are wrapped in `gettext_lazy` because they are shown
+# to readers and moderators on screen — as a status pill, as the consent
+# dropdown, as the licence line on a consent record. They were English-only,
+# which meant a moderator recording a consent decision read the English labels
+# while the rest of the page was in French.
+#
+# `Language` is deliberately NOT translated. Its values are the names of
+# languages, which are proper nouns in every language that has them: "English"
+# is not the French for "English".
+#
+# `gettext_lazy` proxies compare equal to their string, so `makemigrations
+# --check` stays clean and the choices keep their on-disk values.
 
 
 class StoryCategory(models.Model):
@@ -35,11 +49,11 @@ class Story(models.Model):
     """
 
     class Status(models.TextChoices):
-        DRAFT = 'draft', 'Draft'
-        PENDING = 'pending', 'Pending Review'
-        PUBLISHED = 'published', 'Published'
-        REJECTED = 'rejected', 'Rejected'
-        ARCHIVED = 'archived', 'Archived'
+        DRAFT = 'draft', _('Draft')
+        PENDING = 'pending', _('Pending Review')
+        PUBLISHED = 'published', _('Published')
+        REJECTED = 'rejected', _('Rejected')
+        ARCHIVED = 'archived', _('Archived')
 
     class Language(models.TextChoices):
         ENGLISH = 'en', 'English'
@@ -58,32 +72,32 @@ class Story(models.Model):
         seeded demo content, is what lets a reader trust the label on the page.
         """
 
-        COMMUNITY_RECORDED = 'community_recorded', 'Recorded from a community member'
-        ORAL_TRANSCRIPTION = 'oral_transcription', 'Transcribed from an oral telling'
-        PUBLISHED_COLLECTION = 'published_collection', 'From a published collection'
-        CONTRIBUTOR_ORIGINAL = 'contributor_original', 'Original contribution'
-        SEEDED = 'seeded', 'Seeded demonstration content'
-        UNKNOWN = 'unknown', 'Unknown'
+        COMMUNITY_RECORDED = 'community_recorded', _('Recorded from a community member')
+        ORAL_TRANSCRIPTION = 'oral_transcription', _('Transcribed from an oral telling')
+        PUBLISHED_COLLECTION = 'published_collection', _('From a published collection')
+        CONTRIBUTOR_ORIGINAL = 'contributor_original', _('Original contribution')
+        SEEDED = 'seeded', _('Seeded demonstration content')
+        UNKNOWN = 'unknown', _('Unknown')
 
     class Consent(models.TextChoices):
         """Whether the people behind the story agreed to its publication."""
 
-        NOT_REQUESTED = 'not_requested', 'Consent not yet requested'
-        PENDING = 'pending', 'Consent pending'
-        GRANTED = 'granted', 'Consent granted'
-        GRANTED_RESTRICTED = 'granted_restricted', 'Consent granted with restrictions'
-        WITHHELD = 'withheld', 'Consent withheld'
+        NOT_REQUESTED = 'not_requested', _('Consent not yet requested')
+        PENDING = 'pending', _('Consent pending')
+        GRANTED = 'granted', _('Consent granted')
+        GRANTED_RESTRICTED = 'granted_restricted', _('Consent granted with restrictions')
+        WITHHELD = 'withheld', _('Consent withheld')
 
     class Licence(models.TextChoices):
         """Rights under which the text is shared."""
 
-        ALL_RIGHTS_RESERVED = 'all_rights_reserved', 'All rights reserved'
+        ALL_RIGHTS_RESERVED = 'all_rights_reserved', _('All rights reserved')
         CC_BY = 'cc_by', 'CC BY 4.0'
         CC_BY_SA = 'cc_by_sa', 'CC BY-SA 4.0'
         CC_BY_NC = 'cc_by_nc', 'CC BY-NC 4.0'
         CC_BY_NC_SA = 'cc_by_nc_sa', 'CC BY-NC-SA 4.0'
-        PUBLIC_DOMAIN = 'public_domain', 'Public domain'
-        UNDETERMINED = 'undetermined', 'Undetermined'
+        PUBLIC_DOMAIN = 'public_domain', _('Public domain')
+        UNDETERMINED = 'undetermined', _('Undetermined')
 
     # --- Core fields ---
     title = models.CharField(max_length=200)
@@ -397,11 +411,11 @@ class StoryFlag(models.Model):
     """User reports/flags for cultural inaccuracy or inappropriate content."""
 
     class Reason(models.TextChoices):
-        CULTURAL_INACCURACY = 'cultural_inaccuracy', 'Cultural Inaccuracy'
-        INAPPROPRIATE_CONTENT = 'inappropriate_content', 'Inappropriate Content'
-        COPYRIGHT_VIOLATION = 'copyright_violation', 'Copyright Violation'
-        WRONG_CATEGORY = 'wrong_category', 'Wrong Category'
-        OTHER = 'other', 'Other'
+        CULTURAL_INACCURACY = 'cultural_inaccuracy', _('Cultural Inaccuracy')
+        INAPPROPRIATE_CONTENT = 'inappropriate_content', _('Inappropriate Content')
+        COPYRIGHT_VIOLATION = 'copyright_violation', _('Copyright Violation')
+        WRONG_CATEGORY = 'wrong_category', _('Wrong Category')
+        OTHER = 'other', _('Other')
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

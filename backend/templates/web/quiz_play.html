@@ -1,4 +1,5 @@
 {% extends 'web/base.html' %}
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Quiz player — mirrors mobile QuizPlayerWidget:
@@ -7,23 +8,23 @@ Quiz player — mirrors mobile QuizPlayerWidget:
 Server-rendered flow: start attempt → answer each question (POST) → finish.
 {% endcomment %}
 
-{% block title %}Quiz: {{ quiz.story.title|default:quiz.title }} — Griot AI{% endblock %}
+{% block title %}{% translate "Quiz" %}: {{ quiz.story.title|default:quiz.title }} — Griot AI{% endblock %}
 
 {% block content %}
 <div class="mx-auto max-w-2xl">
   <a href="{% url 'web:story-detail' quiz.story.slug %}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary-text hover:text-terracotta">
-    {% icon 'arrow-left' 'text-xs' %} Back to story
+    {% icon 'arrow-left' 'text-xs' %} {% translate "Back to story" %}
   </a>
 
   {# ── Quiz header card ── #}
   <div class="mb-6 rounded-3xl bg-gradient-to-br from-terracotta to-terracotta-dark p-6 text-white shadow-lg">
     <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/75">
-      {% icon 'graduation' 'text-xs' %} Knowledge Quiz
+      {% icon 'graduation' 'text-xs' %} {% translate "Knowledge Quiz" %}
     </p>
     <h1 class="mt-2 font-display text-2xl font-bold">{{ quiz.title|default:quiz.story.title }}</h1>
     <p class="mt-1 text-sm text-white/85">
-      {{ quiz.question_count }} questions • pass at {{ quiz.passing_score }}% • earn {{ quiz.xp_reward }} XP
-      {% if quiz.time_limit_minutes %} • {{ quiz.time_limit_minutes }} min limit{% endif %}
+      {% blocktranslate count counter=quiz.question_count %}{{ counter }} question{% plural %}{{ counter }} questions{% endblocktranslate %} • {% blocktranslate with score=quiz.passing_score %}pass at {{ score }}%{% endblocktranslate %} • {% blocktranslate with xp=quiz.xp_reward %}earn {{ xp }} XP{% endblocktranslate %}
+      {% if quiz.time_limit_minutes %} • {% blocktranslate with minutes=quiz.time_limit_minutes %}{{ minutes }} min limit{% endblocktranslate %}{% endif %}
     </p>
   </div>
 
@@ -31,15 +32,15 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
   {# ── Intro / start screen ── #}
   <div class="rounded-3xl border border-brand-border bg-white p-8 text-center dark:border-warm-brown dark:bg-deep-earth">
     <span class="fa-solid fa-circle-question text-5xl text-terracotta" aria-hidden="true"></span>
-    <h2 class="mt-4 font-display text-xl font-bold">Ready to test your knowledge?</h2>
+    <h2 class="mt-4 font-display text-xl font-bold">{% translate "Ready to test your knowledge?" %}</h2>
     <p class="mx-auto mt-2 max-w-sm text-sm text-secondary-text">
-      Answer {{ quiz.question_count }} questions about this story.
-      Score {{ quiz.passing_score }}% or higher to earn {{ quiz.xp_reward }} XP and level up.
+      {% blocktranslate count counter=quiz.question_count %}Answer {{ counter }} question about this story.{% plural %}Answer {{ counter }} questions about this story.{% endblocktranslate %}
+      {% blocktranslate with score=quiz.passing_score xp=quiz.xp_reward %}Score {{ score }}% or higher to earn {{ xp }} XP and level up.{% endblocktranslate %}
     </p>
     <form method="post" action="{% url 'web:quiz-start' quiz.id %}" class="mt-6">
       {% csrf_token %}
       <button class="w-full rounded-xl bg-terracotta px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark sm:w-auto">
-        {% icon 'play' 'text-xs' %} Start quiz
+        {% icon 'play' 'text-xs' %} {% translate "Start quiz" %}
       </button>
     </form>
   </div>
@@ -50,8 +51,8 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
   {# Progress bar — mirrors mobile progress indicator #}
   <div class="mb-6">
     <div class="mb-1.5 flex justify-between text-xs font-semibold text-secondary-text">
-      <span>Question {{ answered|add:1 }} of {{ quiz.question_count }}</span>
-      <span>{{ answered }} answered</span>
+      <span>{% blocktranslate with number=answered|add:1 total=quiz.question_count %}Question {{ number }} of {{ total }}{% endblocktranslate %}</span>
+      <span>{% blocktranslate count counter=answered %}{{ counter }} answered{% plural %}{{ counter }} answered{% endblocktranslate %}</span>
     </div>
     <div class="h-2 overflow-hidden rounded-full bg-terracotta/10">
       <div class="h-full rounded-full bg-terracotta transition-all" style="width: {% widthratio answered quiz.question_count 100 %}%"></div>
@@ -72,7 +73,7 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
         </label>
         {% endfor %}
         <button type="submit" class="mt-3 w-full rounded-xl bg-terracotta px-6 py-3.5 text-sm font-bold text-white transition hover:bg-terracotta-dark">
-          Submit answer
+          {% translate "Submit answer" %}
         </button>
       </form>
     </div>
@@ -81,12 +82,12 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
   {# All questions answered — show finish button #}
   <div class="rounded-3xl border border-brand-border bg-white p-8 text-center dark:border-warm-brown dark:bg-deep-earth">
     <span class="fa-solid fa-circle-check text-5xl text-savannah" aria-hidden="true"></span>
-    <h2 class="mt-4 font-display text-xl font-bold">All questions answered!</h2>
-    <p class="mt-2 text-sm text-secondary-text">Submit your answers to see your score.</p>
+    <h2 class="mt-4 font-display text-xl font-bold">{% translate "All questions answered!" %}</h2>
+    <p class="mt-2 text-sm text-secondary-text">{% translate "Submit your answers to see your score." %}</p>
     <form method="post" action="{% url 'web:quiz-finish' quiz.id %}" class="mt-6">
       {% csrf_token %}
       <button class="w-full rounded-xl bg-terracotta px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark sm:w-auto">
-        See results
+        {% translate "See results" %}
       </button>
     </form>
   </div>
@@ -100,31 +101,31 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
                 {% if attempt.passed %}border-savannah bg-savannah-tint/50{% else %}border-terracotta bg-terracotta-tint/50{% endif %}">
       <span class="font-display text-4xl font-bold {% if attempt.passed %}text-savannah{% else %}text-terracotta{% endif %}">{{ attempt.score }}%</span>
       <span class="text-xs font-bold {% if attempt.passed %}text-savannah{% else %}text-terracotta{% endif %}">
-        {% if attempt.passed %}Passed{% else %}Try again{% endif %}
+        {% if attempt.passed %}{% translate "Passed" %}{% else %}{% translate "Try again" %}{% endif %}
       </span>
     </div>
 
     <h2 class="mt-6 font-display text-xl font-bold">
-      {% if attempt.passed %}Congratulations!{% else %}Keep learning!{% endif %}
+      {% if attempt.passed %}{% translate "Congratulations!" %}{% else %}{% translate "Keep learning!" %}{% endif %}
     </h2>
     <p class="mt-2 text-sm text-secondary-text">
-      {{ attempt.correct_count }} of {{ attempt.total_questions }} correct in {{ attempt.time_taken_seconds }}s
+      {% blocktranslate with correct=attempt.correct_count total=attempt.total_questions seconds=attempt.time_taken_seconds %}{{ correct }} of {{ total }} correct in {{ seconds }}s{% endblocktranslate %}
     </p>
     {% if attempt.passed %}
     <p class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ochre-tint px-4 py-1.5 text-sm font-bold text-ochre dark:bg-ochre/15">
-      {% icon 'bolt' 'text-xs' %} +{{ attempt.xp_earned }} XP earned
+      {% icon 'bolt' 'text-xs' %} {% blocktranslate with xp=attempt.xp_earned %}+{{ xp }} XP earned{% endblocktranslate %}
     </p>
     {% endif %}
 
     {# Answer review — mirrors mobile answer review list #}
     {% if attempt.answers %}
     <div class="mt-8 space-y-3 text-left">
-      <h3 class="text-xs font-bold uppercase tracking-wide text-secondary-text">Review answers</h3>
+      <h3 class="text-xs font-bold uppercase tracking-wide text-secondary-text">{% translate "Review answers" %}</h3>
       {% for answer in attempt.answers %}
       <div class="rounded-xl border p-3.5 {% if answer.is_correct %}border-savannah/40 bg-savannah-tint/30{% else %}border-brand-error/40 bg-brand-error/5{% endif %}">
         <p class="flex items-center gap-2 text-sm font-semibold">
           {% if answer.is_correct %}{% icon 'check-circle' 'text-sm text-savannah' %}{% else %}{% icon 'times-circle' 'text-sm text-brand-error' %}{% endif %}
-          {{ forloop.counter }}. {{ answer.selected_answer|upper }} — {% if answer.is_correct %}Correct{% else %}Incorrect (answer: {{ answer.correct_answer|upper }}){% endif %}
+          {{ forloop.counter }}. {{ answer.selected_answer|upper }} — {% if answer.is_correct %}{% translate "Correct" %}{% else %}{% blocktranslate with letter=answer.correct_answer|upper %}Incorrect (answer: {{ letter }}){% endblocktranslate %}{% endif %}
         </p>
         {% if answer.explanation %}
         <p class="mt-1.5 pl-6 text-xs leading-relaxed text-secondary-text">{{ answer.explanation }}</p>
@@ -138,11 +139,11 @@ Server-rendered flow: start attempt → answer each question (POST) → finish.
       <form method="post" action="{% url 'web:quiz-start' quiz.id %}">
         {% csrf_token %}
         <button class="w-full rounded-xl bg-terracotta px-6 py-3 text-sm font-bold text-white hover:bg-terracotta-dark sm:w-auto">
-          {% if not attempt.passed %}Try again{% else %}Retake quiz{% endif %}
+          {% if not attempt.passed %}{% translate "Try again" %}{% else %}{% translate "Retake quiz" %}{% endif %}
         </button>
       </form>
       <a href="{% url 'web:gamification' %}" class="rounded-xl border border-brand-border px-6 py-3 text-sm font-semibold hover:bg-terracotta-tint/40 dark:border-warm-brown">
-        View rewards
+        {% translate "View rewards" %}
       </a>
     </div>
   </div>

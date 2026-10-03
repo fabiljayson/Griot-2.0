@@ -1,17 +1,18 @@
 {% extends 'web/base.html' %}
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Artifacts catalog — mirrors the mobile QR-scanner feature's catalog:
 category chips, artifact cards with image, culture/region metadata.
 {% endcomment %}
 
-{% block title %}Museum Artifacts — Griot AI{% endblock %}
+{% block title %}{% translate "Museum Artifacts" %} — Griot AI{% endblock %}
 
 {% block content %}
 <header class="mb-6">
-  <h1 class="font-display text-2xl font-bold sm:text-3xl">Museum Artifacts</h1>
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">{% translate "Museum Artifacts" %}</h1>
   <p class="mt-1 text-sm text-secondary-text">
-    Cultural objects from Cameroon's museums — scan their QR codes on site or explore here.
+    {% translate "Cultural objects from Cameroon's museums — scan their QR codes on site or explore here." %}
   </p>
 </header>
 
@@ -20,7 +21,7 @@ category chips, artifact cards with image, culture/region metadata.
   <a href="{% url 'web:artifacts' %}"
      class="flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition
             {% if not selected_category %}border-cam-indigo bg-cam-indigo text-white{% else %}border-brand-border bg-white hover:border-cam-bronze/40 dark:border-warm-brown dark:bg-deep-earth{% endif %}">
-    {% icon 'layer-group' 'text-xs' %} All
+    {% icon 'layer-group' 'text-xs' %} {% translate "All" %}
   </a>
   {% for code, label in categories %}
   <a href="?category={{ code }}"
@@ -69,7 +70,7 @@ category chips, artifact cards with image, culture/region metadata.
 {% else %}
 <div class="py-24 text-center">
   <span class="fa-solid fa-landmark text-6xl text-ochre" aria-hidden="true"></span>
-  <p class="mx-auto mt-5 max-w-sm text-lg text-secondary-text">No artifacts published yet.</p>
+  <p class="mx-auto mt-5 max-w-sm text-lg text-secondary-text">{% translate "No artifacts published yet." %}</p>
 </div>
 {% endif %}
 {% endblock %}

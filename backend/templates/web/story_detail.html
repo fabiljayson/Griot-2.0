@@ -1,5 +1,6 @@
 {% extends 'web/base.html' %}
 {% load static %}
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Story detail — mirrors mobile StoryDetailScreen: hero image, category/region
@@ -13,38 +14,38 @@ Reading progress posts back to the same model the mobile app syncs.
 {% block content %}
 <article data-story-slug="{{ story.slug }}">
   {% if is_owner_or_moderator and story.status != 'published' %}
-  {# ── Review state — visible only to the author and moderators.
+  {% comment %} ── Review state — visible only to the author and moderators.
      A rejected contributor used to see `rejected` and nothing else: the
-     reason a moderator wrote was rendered on no surface at all. ── #}
+     reason a moderator wrote was rendered on no surface at all. ── {% endcomment %}
   <div class="mb-5 rounded-xl border border-brand-border bg-ochre-tint/40 p-4 dark:bg-ochre/10" data-testid="review-state">
     <p class="text-xs font-bold uppercase tracking-wide text-ochre">
       {{ story.get_status_display }}
     </p>
     {% if reviewer_notes %}
-    <p class="mt-2 text-sm font-semibold text-secondary-text">Reviewer's note</p>
+    <p class="mt-2 text-sm font-semibold text-secondary-text">{% translate "Reviewer's note" %}</p>
     <p class="mt-1 text-sm text-secondary-text">{{ reviewer_notes }}</p>
     {% endif %}
   </div>
   {% endif %}
 
-  {# ── Consent — the two-step record.
+  {% comment %} ── Consent — the two-step record.
      The author records that they *asked*; only a moderator records what the
      community *answered*, with who attested and on what basis. The server
      enforces both halves (`stories.services`); this form only chooses which
      half the viewer is allowed to express. A contributor never gets a
      decision field — self-declared consent is the claim this field exists to
-     keep trustworthy. ── #}
+     keep trustworthy. ── {% endcomment %}
   {% if is_owner_or_moderator %}
   <section class="mb-5 rounded-xl border border-brand-border bg-white p-4 dark:border-warm-brown dark:bg-deep-earth" data-testid="consent-panel">
     <p class="text-xs font-bold uppercase tracking-wide text-secondary-text">
-      Consent on record: {{ story.get_consent_status_display }}
+      {% blocktranslate with status=story.get_consent_status_display %}Consent on record: {{ status }}{% endblocktranslate %}
     </p>
     {% if story.consent_basis %}
-    <p class="mt-2 text-sm text-secondary-text"><span class="font-semibold">Basis:</span> {{ story.consent_basis }}</p>
+    <p class="mt-2 text-sm text-secondary-text"><span class="font-semibold">{% translate "Basis:" %}</span> {{ story.consent_basis }}</p>
     {% endif %}
     {% if story.consent_attested_by %}
     <p class="mt-1 text-xs text-secondary-text">
-      Recorded by {{ story.consent_attested_by.username }}{% if story.consent_attested_at %} on {{ story.consent_attested_at|date:"j M Y" }}{% endif %}
+      {% blocktranslate with name=story.consent_attested_by.username %}Recorded by {{ name }}{% endblocktranslate %}{% if story.consent_attested_at %} {% blocktranslate with date=story.consent_attested_at|date:"j M Y" %}on {{ date }}{% endblocktranslate %}{% endif %}
     </p>
     {% endif %}
 
@@ -53,7 +54,7 @@ Reading progress posts back to the same model the mobile app syncs.
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}">
       <div>
-        <label for="id_consent_status" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Decision</label>
+        <label for="id_consent_status" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">{% translate "Decision" %}</label>
         <select id="id_consent_status" name="consent_status"
                 class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
           {% for code, label in consent_choices %}
@@ -62,20 +63,20 @@ Reading progress posts back to the same model the mobile app syncs.
         </select>
       </div>
       <div>
-        <label for="id_basis" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Basis <span class="font-normal normal-case">(required)</span></label>
+        <label for="id_basis" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">{% translate "Basis" %} <span class="font-normal normal-case">({% translate "required" %})</span></label>
         <textarea id="id_basis" name="basis" rows="2" required
-                  placeholder="Who you spoke to, and what they said. This is what defends the decision later."
+                  placeholder="{% translate 'Who you spoke to, and what they said. This is what defends the decision later.' %}"
                   class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">{{ story.consent_basis }}</textarea>
       </div>
       <div class="grid gap-3 sm:grid-cols-2">
         <div>
-          <label for="id_consent_rights_holder" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Rights holder</label>
+          <label for="id_consent_rights_holder" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">{% translate "Rights holder" %}</label>
           <input type="text" id="id_consent_rights_holder" name="rights_holder" maxlength="200" value="{{ story.rights_holder }}"
-                 placeholder="Leave unchanged to keep the current value"
+                 placeholder="{% translate 'Leave unchanged to keep the current value' %}"
                  class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
         </div>
         <div>
-          <label for="id_consent_licence" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">Licence</label>
+          <label for="id_consent_licence" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-secondary-text">{% translate "Licence" %}</label>
           <select id="id_consent_licence" name="licence"
                   class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
             {% for code, label in licences %}
@@ -85,10 +86,10 @@ Reading progress posts back to the same model the mobile app syncs.
         </div>
       </div>
       <button class="w-full rounded-xl bg-cam-bronze px-5 py-3 text-sm font-bold text-white transition hover:opacity-90">
-        Record consent decision
+        {% translate "Record consent decision" %}
       </button>
       <p class="text-xs leading-relaxed text-secondary-text">
-        Recording “withheld” on a published story archives it. The record is kept, never deleted.
+        {% translate "Recording “withheld” on a published story archives it. The record is kept, never deleted." %}
       </p>
     </form>
     {% elif story.consent_status == 'not_requested' %}
@@ -96,11 +97,10 @@ Reading progress posts back to the same model the mobile app syncs.
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}">
       <button class="w-full rounded-xl border border-cam-bronze/40 bg-cam-bronze/5 px-5 py-3 text-sm font-bold text-cam-bronze transition hover:bg-cam-bronze/10">
-        I have asked the community about this story
+        {% translate "I have asked the community about this story" %}
       </button>
       <p class="mt-2 text-xs leading-relaxed text-secondary-text">
-        Records that you asked. What the community answered is recorded by a moderator, who has to
-        record who they spoke to and on what basis.
+        {% translate "Records that you asked. What the community answered is recorded by a moderator, who has to record who they spoke to and on what basis." %}
       </p>
     </form>
     {% endif %}
@@ -147,7 +147,7 @@ Reading progress posts back to the same model the mobile app syncs.
         <div>
           <p class="text-sm font-bold">{{ story.author.get_full_name|default:story.author.username }}</p>
           <p class="flex items-center gap-2 text-xs text-secondary-text">
-            <span class="flex items-center gap-1">{% icon 'clock' 'text-[10px]' %} {{ story.estimated_read_time }} min read</span>
+            <span class="flex items-center gap-1">{% icon 'clock' 'text-[10px]' %} {% blocktranslate with minutes=story.estimated_read_time %}{{ minutes }} min read{% endblocktranslate %}</span>
             <span>•</span>
             <span class="flex items-center gap-1">{% icon 'eye' 'text-[10px]' %} {{ story.view_count }}</span>
             {% if story.region %}<span>•</span><span class="flex items-center gap-1">{% icon 'location' 'text-[10px]' %} {{ story.region }}</span>{% endif %}
@@ -165,7 +165,7 @@ Reading progress posts back to the same model the mobile app syncs.
     {% if progress_percent > 0 and progress_percent < 100 and user.is_authenticated %}
     <div class="mt-5 flex items-center gap-3 rounded-xl border border-ochre/40 bg-ochre-tint/60 px-4 py-3 dark:bg-ochre/10">
       {% icon 'book-open' 'text-ochre' %}
-      <p class="flex-1 text-sm">You're {{ progress_percent }}% through this story.</p>
+      <p class="flex-1 text-sm">{% blocktranslate with percent=progress_percent %}You're {{ percent }}% through this story.{% endblocktranslate %}</p>
       <div class="h-1.5 w-24 overflow-hidden rounded-full bg-ochre/20">
         <div class="h-full rounded-full bg-ochre" style="width: {{ progress_percent }}%"></div>
       </div>
@@ -190,16 +190,16 @@ Reading progress posts back to the same model the mobile app syncs.
       <div class="flex flex-wrap items-center gap-4">
         <button type="button" id="audio-toggle" data-audio-src="{{ narration.url }}"
                 class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cam-bronze text-white shadow-md shadow-cam-bronze/30 transition hover:bg-cam-bronze-dark"
-                aria-label="Play narration">
+                aria-label="{% translate 'Play narration' %}">
           <span id="audio-icon" class="fa-solid fa-play" aria-hidden="true"></span>
         </button>
         <div class="min-w-0 flex-1">
-          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-cam-bronze' %} Listen to this story</h2>
+          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-cam-bronze' %} {% translate "Listen to this story" %}</h2>
           {% comment %}
             Names the engine rather than saying "AI narration" — a listener
             should know which machine spoke, and that it is not the teller.
           {% endcomment %}
-          <p class="text-xs text-secondary-text">{{ narration.attribution }}{% if narration.duration %} • {{ narration.duration }}s{% endif %}</p>
+          <p class="text-xs text-secondary-text">{{ narration.attribution }}{% if narration.duration %} • {% blocktranslate with seconds=narration.duration %}{{ seconds }}s{% endblocktranslate %}{% endif %}</p>
         </div>
       </div>
       <audio id="story-audio" preload="none" class="mt-3 w-full"></audio>
@@ -211,13 +211,13 @@ Reading progress posts back to the same model the mobile app syncs.
           {% icon 'microphone' 'text-lg' %}
         </span>
         <div class="min-w-0 flex-1">
-          <h2 class="font-display text-base font-bold">No narration yet</h2>
-          <p class="text-xs text-secondary-text">Generate an AI voice-over so visitors can listen to this tale.</p>
+          <h2 class="font-display text-base font-bold">{% translate "No narration yet" %}</h2>
+          <p class="text-xs text-secondary-text">{% translate "Generate an AI voice-over so visitors can listen to this tale." %}</p>
         </div>
         <form method="post" action="{% url 'web:story-generate-audio' story.slug %}">
           {% csrf_token %}
           <button class="rounded-xl bg-cam-bronze px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90">
-            {% icon 'microphone' 'text-xs' %} Generate narration
+            {% icon 'microphone' 'text-xs' %} {% translate "Generate narration" %}
           </button>
         </form>
       </div>
@@ -229,11 +229,11 @@ Reading progress posts back to the same model the mobile app syncs.
     <section class="mt-10 overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
       <video controls preload="metadata" class="aspect-video w-full bg-black" {% if video_job.thumbnail_url %}poster="{{ video_job.thumbnail_url }}"{% endif %}>
         <source src="{{ video_job.video_url }}" type="video/mp4">
-        Your browser does not support video playback.
+        {% translate "Your browser does not support video playback." %}
       </video>
       <div class="flex items-center justify-between p-4">
         <p class="flex items-center gap-2 text-sm font-semibold">{% icon 'video' 'text-terracotta' %} {{ video_job.attribution }}</p>
-        {% if video_job.duration %}<span class="text-xs text-secondary-text">{{ video_job.duration }}s</span>{% endif %}
+        {% if video_job.duration %}<span class="text-xs text-secondary-text">{% blocktranslate with seconds=video_job.duration %}{{ seconds }}s{% endblocktranslate %}</span>{% endif %}
       </div>
     </section>
     {% elif video_job and video_job.is_processing %}
@@ -241,8 +241,8 @@ Reading progress posts back to the same model the mobile app syncs.
       <div class="flex items-center gap-4">
         {% icon 'spinner' 'text-xl text-terracotta' %}
         <div>
-          <h2 class="font-display text-base font-bold">Generating video…</h2>
-          <p class="text-xs text-secondary-text">Luma AI is bringing this tale to life — this page updates automatically.</p>
+          <h2 class="font-display text-base font-bold">{% translate "Generating video…" %}</h2>
+          <p class="text-xs text-secondary-text">{% translate "Luma AI is bringing this tale to life — this page updates automatically." %}</p>
         </div>
       </div>
     </section>
@@ -253,12 +253,12 @@ Reading progress posts back to the same model the mobile app syncs.
           {% icon 'sparkles' 'text-lg' %}
         </span>
         <div class="min-w-0 flex-1">
-          <h2 class="font-display text-base font-bold">Make it move</h2>
-          <p class="text-xs text-secondary-text">Generate an AI video of this story with Luma Dream Machine.</p>
+          <h2 class="font-display text-base font-bold">{% translate "Make it move" %}</h2>
+          <p class="text-xs text-secondary-text">{% translate "Generate an AI video of this story with Luma Dream Machine." %}</p>
         </div>
         <button type="button" data-sheet-open="video-sheet"
                 class="rounded-xl bg-cam-earth px-5 py-2.5 text-sm font-bold text-white transition hover:bg-cam-earth-dark">
-          {% icon 'video' 'text-xs' %} Generate video
+          {% icon 'video' 'text-xs' %} {% translate "Generate video" %}
         </button>
       </div>
     </section>
@@ -269,7 +269,7 @@ Reading progress posts back to the same model the mobile app syncs.
     {% if story.cultural_context %}
     <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth sm:p-6">
       <h2 class="flex items-center gap-2.5 font-display text-lg font-bold">
-        {% icon 'landmark' 'text-cam-bronze' %} Cultural Context
+        {% icon 'landmark' 'text-cam-bronze' %} {% translate "Cultural Context" %}
       </h2>
       <p class="mt-3 leading-relaxed text-secondary-text dark:text-sand/75">{{ story.cultural_context|linebreaks }}</p>
     </section>
@@ -278,7 +278,7 @@ Reading progress posts back to the same model the mobile app syncs.
     {% if story.moral_lesson %}
     <section class="mt-5 rounded-2xl border border-savannah/30 bg-savannah-tint/50 p-5 dark:bg-savannah/10 sm:p-6">
       <h2 class="flex items-center gap-2.5 font-display text-lg font-bold">
-        {% icon 'graduation' 'text-savannah' %} Moral Lesson
+        {% icon 'graduation' 'text-savannah' %} {% translate "Moral Lesson" %}
       </h2>
       <p class="mt-3 leading-relaxed text-secondary-text dark:text-sand/75">{{ story.moral_lesson|linebreaks }}</p>
     </section>
@@ -296,11 +296,11 @@ Reading progress posts back to the same model the mobile app syncs.
     <section class="mt-8 flex flex-wrap items-center gap-4 rounded-2xl bg-gradient-to-br from-cam-indigo to-cam-indigo-dark p-6 text-white">
       <span class="fa-solid fa-graduation-cap text-3xl" aria-hidden="true"></span>
       <div class="min-w-0 flex-1">
-        <h2 class="font-display text-lg font-bold">Test your knowledge</h2>
-        <p class="text-sm text-white/85">{{ quiz.question_count }} questions • earn {{ quiz.xp_reward }} XP if you pass</p>
+        <h2 class="font-display text-lg font-bold">{% translate "Test your knowledge" %}</h2>
+        <p class="text-sm text-white/85">{% blocktranslate count counter=quiz.question_count %}{{ counter }} question{% plural %}{{ counter }} questions{% endblocktranslate %} • {% blocktranslate with xp=quiz.xp_reward %}earn {{ xp }} XP if you pass{% endblocktranslate %}</p>
       </div>
       <a href="{% if user.is_authenticated %}{% url 'web:quiz-play' quiz.id %}{% else %}{% url 'web:login' %}?next={% url 'web:quiz-play' quiz.id %}{% endif %}" class="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-cam-indigo transition hover:bg-cam-bronze/10">
-        {% if user.is_authenticated %}Take the quiz{% else %}Sign in to take quiz{% endif %}
+        {% if user.is_authenticated %}{% translate "Take the quiz" %}{% else %}{% translate "Sign in to take quiz" %}{% endif %}
       </a>
     </section>
     {% endif %}
@@ -308,7 +308,7 @@ Reading progress posts back to the same model the mobile app syncs.
     {# ── Related stories ── #}
     {% if related_stories %}
     <section class="mt-12">
-      <h2 class="mb-4 font-display text-xl font-bold">Related Stories</h2>
+      <h2 class="mb-4 font-display text-xl font-bold">{% translate "Related Stories" %}</h2>
       <div class="grid gap-5 sm:grid-cols-3">
         {% for rel in related_stories %}
         {% include 'web/partials/story_card.html' with story=rel %}
@@ -336,7 +336,7 @@ Reading progress posts back to the same model the mobile app syncs.
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <button class="flex flex-col items-center gap-0.5 text-xs font-medium transition {% if is_bookmarked %}text-ochre{% else %}text-secondary-text hover:text-ochre{% endif %}">
         {% if is_bookmarked %}{% icon 'bookmark-solid' 'text-lg' %}{% else %}{% icon 'bookmark-regular' 'text-lg' %}{% endif %}
-        <span>Saved</span>
+        <span>{% translate "Saved" %}</span>
       </button>
     </form>
     {% else %}
@@ -344,40 +344,40 @@ Reading progress posts back to the same model the mobile app syncs.
       {% icon 'heart-regular' 'text-lg' %}<span>{{ story.like_count }}</span>
     </a>
     <a href="{% url 'web:login' %}?next={{ request.get_full_path|urlencode }}" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text hover:text-ochre">
-      {% icon 'bookmark-regular' 'text-lg' %}<span>Save</span>
+      {% icon 'bookmark-regular' 'text-lg' %}<span>{% translate "Save" %}</span>
     </a>
     {% endif %}
 
     {# Share sheet — mirrors the mobile share bottom sheet #}
     <button type="button" data-sheet-open="share-sheet" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta">
-      {% icon 'share' 'text-lg' %}<span>Share</span>
+      {% icon 'share' 'text-lg' %}<span>{% translate "Share" %}</span>
     </button>
 
     {# Flag sheet — mirrors the mobile flag dialog #}
     <button type="button" data-sheet-open="flag-sheet" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-brand-error">
-      {% icon 'flag' 'text-lg' %}<span>Report</span>
+      {% icon 'flag' 'text-lg' %}<span>{% translate "Report" %}</span>
     </button>
 
     {# Scroll-read progress auto-poster #}
-    <span class="hidden flex-col items-center gap-0.5 text-xs font-medium text-secondary-text sm:flex" title="Reading progress is saved automatically">
+    <span class="hidden flex-col items-center gap-0.5 text-xs font-medium text-secondary-text sm:flex" title="{% translate 'Reading progress is saved automatically' %}">
       {% icon 'check-circle' 'text-lg' %}<span id="progress-label">{% if progress_percent %}{{ progress_percent }}%{% else %}0%{% endif %}</span>
     </span>
 
     {% if is_contributor_plus and user.is_authenticated and story.author_id == user.id or user.role == 'admin' or user.role == 'institution_manager' %}
-    <a href="{% url 'web:story-edit' story.slug %}" title="Edit story" aria-label="Edit story"
+    <a href="{% url 'web:story-edit' story.slug %}" title="{% translate 'Edit story' %}" aria-label="{% translate 'Edit story' %}"
        class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta">
-      {% icon 'edit' 'text-lg' %}<span>Edit</span>
+      {% icon 'edit' 'text-lg' %}<span>{% translate "Edit" %}</span>
     </a>
     {% endif %}
   </div>
 </div>
 
 {# ── Share bottom sheet ── #}
-<div id="share-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Share story">
+<div id="share-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="{% translate 'Share story' %}">
   <div class="sheet-backdrop absolute inset-0 bg-black/50" data-sheet-close></div>
   <div class="sheet-panel absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-deep-earth sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="font-display text-lg font-bold">Share this story</h3>
+      <h3 class="font-display text-lg font-bold">{% translate "Share this story" %}</h3>
       <button type="button" data-sheet-close class="rounded-full p-2 text-secondary-text hover:bg-terracotta-tint/40">{% icon 'close' 'text-sm' %}</button>
     </div>
     <div class="grid grid-cols-4 gap-3">
@@ -397,57 +397,57 @@ Reading progress posts back to the same model the mobile app syncs.
 </div>
 
 {# ── Flag bottom sheet ── #}
-<div id="flag-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Report story">
+<div id="flag-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="{% translate 'Report story' %}">
   <div class="sheet-backdrop absolute inset-0 bg-black/50" data-sheet-close></div>
   <div class="sheet-panel absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-deep-earth sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="font-display text-lg font-bold">Report this story</h3>
+      <h3 class="font-display text-lg font-bold">{% translate "Report this story" %}</h3>
       <button type="button" data-sheet-close class="rounded-full p-2 text-secondary-text hover:bg-terracotta-tint/40">{% icon 'close' 'text-sm' %}</button>
     </div>
     <form method="post" action="{% url 'web:story-flag' story.slug %}" class="space-y-4">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <div>
-        <label for="flag-reason" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Reason</label>
+        <label for="flag-reason" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">{% translate "Reason" %}</label>
         <select id="flag-reason" name="reason" class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
-          <option value="cultural_inaccuracy">Cultural inaccuracy</option>
-          <option value="inappropriate_content">Inappropriate content</option>
-          <option value="copyright_violation">Copyright violation</option>
-          <option value="wrong_category">Wrong category</option>
-          <option value="other">Other</option>
+          <option value="cultural_inaccuracy">{% translate "Cultural inaccuracy" %}</option>
+          <option value="inappropriate_content">{% translate "Inappropriate content" %}</option>
+          <option value="copyright_violation">{% translate "Copyright violation" %}</option>
+          <option value="wrong_category">{% translate "Wrong category" %}</option>
+          <option value="other">{% translate "Other" %}</option>
         </select>
       </div>
       <div>
-        <label for="flag-details" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Details</label>
-        <textarea id="flag-details" name="details" rows="3" placeholder="Tell us more…"
+        <label for="flag-details" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">{% translate "Details" %}</label>
+        <textarea id="flag-details" name="details" rows="3" placeholder="{% translate 'Tell us more…' %}"
                   class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal"></textarea>
       </div>
       <button type="submit" class="w-full rounded-xl bg-brand-error px-4 py-3 text-sm font-bold text-white transition hover:opacity-90">
-        Submit report
+        {% translate "Submit report" %}
       </button>
     </form>
   </div>
 </div>
 {# ── AI video generation sheet — mirrors mobile VideoGenerationSheet ── #}
 {% if can_generate_media %}
-<div id="video-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Generate AI video">
+<div id="video-sheet" class="sheet fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="{% translate 'Generate AI video' %}">
   <div class="sheet-backdrop absolute inset-0 bg-black/50" data-sheet-close></div>
   <div class="sheet-panel absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-deep-earth sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-3xl">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="font-display text-lg font-bold">Generate AI video</h3>
+      <h3 class="font-display text-lg font-bold">{% translate "Generate AI video" %}</h3>
       <button type="button" data-sheet-close class="rounded-full p-2 text-secondary-text hover:bg-terracotta-tint/40">{% icon 'close' 'text-sm' %}</button>
     </div>
     <form method="post" action="{% url 'web:story-generate-video' story.slug %}" class="space-y-4">
       {% csrf_token %}
       <div>
-        <label for="video-prompt" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">Scene prompt</label>
+        <label for="video-prompt" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-secondary-text">{% translate "Scene prompt" %}</label>
         <textarea id="video-prompt" name="prompt" rows="4"
-                  placeholder="Describe the scenes: village square at dusk, talking drum circle, baobab silhouette…"
+                  placeholder="{% translate 'Describe the scenes: village square at dusk, talking drum circle, baobab silhouette…' %}"
                   class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal"></textarea>
-        <p class="mt-1.5 text-xs text-secondary-text">Leave empty to auto-generate a prompt from the story.</p>
+        <p class="mt-1.5 text-xs text-secondary-text">{% translate "Leave empty to auto-generate a prompt from the story." %}</p>
       </div>
       <button type="submit" class="w-full rounded-xl bg-terracotta px-4 py-3 text-sm font-bold text-white transition hover:bg-terracotta-dark">
-        {% icon 'sparkles' 'text-xs' %} Start generation
+        {% icon 'sparkles' 'text-xs' %} {% translate "Start generation" %}
       </button>
     </form>
   </div>

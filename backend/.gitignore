@@ -3,3 +3,23 @@
 # Timestamped database backups do not match `*.sqlite3`.
 *.sqlite3.bak*
 *.sqlite3-*
+
+# NOTE: `locale/**/*.mo` is deliberately NOT ignored.
+#
+# Django reads compiled catalogues, not `.po` files, so a checkout without
+# the `.mo` renders every page in the source language no matter what the
+# language switch says. Committing it is what lets `web/test_i18n.py` assert
+# from a clean CI checkout that French really reaches the page. The Render
+# build command still runs `compilemessages`, so a `.po` edit can never ship
+# alongside a stale binary — the committed `.mo` is a floor, not the
+# mechanism.
+#
+# Regenerate both together:
+#   python manage.py makemessages -l fr \
+#       --ignore=.venv-linux --ignore=node_modules --ignore=staticfiles
+#   python scripts/translate_fr.py locale/fr/LC_MESSAGES/django.po
+#   python manage.py compilemessages
+#
+# There is deliberately no `locale/en`: English is the source language, so
+# its msgid *is* the string and a catalogue for it could only say the same
+# thing twice.

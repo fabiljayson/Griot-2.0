@@ -12,7 +12,13 @@ services:
     rootDir: backend
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt && test -f static/web/css/tailwind.css || (npm install --no-save @tailwindcss/cli tailwindcss && npx tailwindcss -i static/web/css/tailwind.input.css -o static/web/css/tailwind.css --minify); python manage.py collectstatic --noinput
+    # `compilemessages` is Phase 5 Track A: the French catalogue ships as
+    # `locale/fr/LC_MESSAGES/django.po`, and Django reads the compiled `.mo`.
+    # The `.mo` is committed so the test suite can assert French actually
+    # renders from a clean checkout, but the deploy recompiles it so a `.po`
+    # edit can never ship alongside a stale binary. It needs the gettext
+    # `msgfmt`, which is not on the slim Python image — hence the apt line.
+    buildCommand: apt-get update && apt-get install -y --no-install-recommends gettext && rm -rf /var/lib/apt/lists/* && pip install -r requirements.txt && test -f static/web/css/tailwind.css || (npm install --no-save @tailwindcss/cli tailwindcss && npx tailwindcss -i static/web/css/tailwind.input.css -o static/web/css/tailwind.css --minify); python manage.py compilemessages; python manage.py collectstatic --noinput
     # preDeployCommand only runs on paid tiers, so startCommand fuses
     # `migrate` (idempotent) + gunicorn so free-plan deploys still get tables.
     preDeployCommand: python manage.py migrate --noinput

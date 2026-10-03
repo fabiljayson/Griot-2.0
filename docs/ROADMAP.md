@@ -680,6 +680,230 @@ be faster, but Track B is the one that validates the claim the project makes.
    was sitting here while gating Phase 4's schema, which is the wrong direction
    for a dependency. This phase now starts from that decision already made.
 
+### Task 0 — Diagnosis (run before task 1)
+
+Written first, per the same rule as Phase 3 and Phase 4: each of these phases
+has turned out to be hiding a defect that changes what the work is.
+
+#### The headline: i18n is configured and inert
+
+`USE_I18N = True` is set, and **`LocaleMiddleware` is not in `MIDDLEWARE`**
+(`backend/config/settings/base.py`). Nothing ever activates a language for a
+request, so every setting in that block is decorative. Django ships French,
+Ewondo and Duala translations of its own admin and its own validation messages
+in the venv; none of them can be reached, because no request ever has a language
+to reach them *in*. The most expensive part of Track A — French is the language
+of Cameroonian administration, and Django's own French is already downloaded —
+is being thrown away by a one-line omission.
+
+The same audit, in numbers:
+
+| Surface | State |
+|---|---|
+| Project `.po` files | **0** |
+| `{% trans %}` / `{% blocktrans %}` in 21 templates (2,892 lines) | **0** |
+| `gettext` / `gettext_lazy` calls in project Python | **0** |
+| `Story.language` values in the dev database | 12 rows, **all `'en'`** |
+| Flutter: `intl` dependency | **absent** |
+| Flutter: `l10n.yaml`, `*.arb`, `generate: true` | **absent** |
+| Flutter: own string literals (`Text('`, `label:`, `hintText:`) | **208**, none extracted |
+| Flutter: language switch anywhere | **none** (Settings has one tile: WhatsApp feedback) |
+
+#### Finding 1 — Flutter advertises French it does not have
+
+`lib/app.dart` sets `supportedLocales: [Locale('en'), Locale('fr')]` with the
+three `Global*Localizations` delegates. That localises **framework** strings
+only — date pickers, the Cancel/Save on a dialog. All 208 of the app's own
+strings stay English. So the one visible effect of the existing configuration is
+a French date picker inside an otherwise English app, which reads as a bug
+rather than as localisation.
+
+#### Finding 2 — Track B is blocked on fonts, for every candidate language
+
+Task 3 said to test non-Latin orthography early. Doing it early found the block.
+The app bundles exactly two fonts, and the `cmap` of each was read directly
+rather than assumed:
+
+| Glyph | Needed by | Fraunces | Plus Jakarta Sans |
+|---|---|---|---|
+| `é è à ù Ç œ` | French | present | present |
+| `ŋ` (eng) | Bamileke | present | present |
+| `ɓ` (b-hook) | Bamileke | **missing** | **missing** |
+| `ɛ` (e-open) | Bamileke | **missing** | **missing** |
+| `ɔ` (o-open) | Bamileke | **missing** | **missing** |
+| Arabic block U+0600–U+06FF | Duala, Ewondo, Fulfulde | **0 glyphs** | **0 glyphs** |
+
+So the split is sharper than the phase description assumed:
+
+- **Track A (French) is unblocked and cheap.** Both fonts already cover French
+  completely. The only missing work is the strings, which is task 2.
+- **Track B is blocked on a font decision** — for Latin extensions, not for a
+  script change. See the correction below.
+
+The web side is the same story: `templates/web/base.html` sets
+`font-family: 'Fraunces', Georgia, serif`, so a missing glyph falls through to
+whatever `serif` the device happens to have — a different typeface mid-paragraph,
+or tofu.
+
+#### Correction — neither Ewondo nor Duala is written in Arabic script
+
+This roadmap (and the phase brief) assumed Duala and Ewondo were Ajami, on the
+strength of Ajami being the region's best-known writing tradition. Checked
+against the orthographies rather than the reputation, that is wrong:
+
+| Language | Standard orthography | Evidence |
+|---|---|---|
+| **Ewondo** | **Latin** — AGLC, the *General Alphabet of Cameroon Languages* (Tadadjeu & Sadembouo 1979), a unified Roman alphabet | Omniglot files Ewondo under "Languages written with the Latin alphabet". SIL's own Ewondo teaching materials are published in that Latin alphabet, tone marks and all. |
+| **Duala** | **Latin** — AGLC, Latin augmented with phonetic symbols | Latin since 1870 (Saker's Bible translation). Mozilla's Duala-TTS dataset states its transcriptions "follow the General Alphabet of Cameroonian Languages, a standardised orthographic system based on the Latin alphabet augmented with phonetic…". |
+| **Fulfulde** | Arabic/Ajami *and* Latin (Pulaar) | The genuinely Arabic-script candidate in this list. |
+
+So **no Arabic-script font, no bidirectional runs, and no script-appropriate body
+text** are needed — the expensive half of Track B does not exist. That was the
+reason to pick the Arabic route, and it evaporates.
+
+What remains is smaller but real, and it applies to **every** Track B candidate
+including Bamileke. Probed against the actual AGLC requirement — the tone marks
+plus the phonetic extensions:
+
+| Set | Fraunces | Plus Jakarta Sans |
+|---|---|---|
+| French | 6/6 | 6/6 |
+| Ewondo / Duala (AGLC) | **5/16** | **5/16** |
+
+Missing from both, among others: `ǎ` (U+01CE, the low-high tone — a *tone mark*, not a rare
+consonant), `ǝ` U+01DD, `ǵ` U+01F5, `ǹ` U+01F9, `ɓ` U+0253, `ɗ` U+0257, `ɛ` U+025B,
+`ɔ` U+0254, `ɩ` U+0269, `ɲ` U+0272, `ʌ` U+028C. A single word in either language rendered
+today would drop its tone mark and show tofu for its open vowels — which for a tonal
+language is not a cosmetic defect, it is a wrong word.
+
+This is a routine, well-served problem (Latin Extended-B and IPA Extensions are
+common coverage in modern families) rather than an architectural one. It needs a
+**font-stack decision**, and that is the only thing standing between this
+roadmap and Track B.
+
+#### Finding 3 — `Story.language` is decoration
+
+The field has a filter on the API (`?language=`), a filter in
+`StoryRepository.getStories`, and a `Language` enum with four indigenous
+options — and no path anywhere sets a non-English value. `Phase 0` decided the
+`StoryTranslation` model that would make a translation reviewable rather than an
+overwrite; that model is still unbuilt, so today the only way to "translate" a
+story would be to edit its `content` field, which Constitution IV forbids.
+
+### Task 0 — Constitution check: PASS, one prerequisite
+
+| Principle | Status | Notes |
+|---|---|---|
+| I. API/Web/Flutter Parity | ✅ PASS | A translation has to be readable on web and in the app or it is a dead record. The shared piece this phase must not get wrong is the **fallback rule** — "no translation for this language, so serve the original and say so" — which is a decision, and belongs in one place both surfaces call, exactly as `resolve_status` did. |
+| II. Security by Default | ✅ PASS | Translation *status* is editorial, so it is moderator-only to set — the same split `consent_status` already established. A contributor may submit a translation; only a moderator may mark it publishable. |
+| III. Test-First Regression Coverage | ✅ PASS | The font-coverage probe above becomes a test: if a language is added to `Story.Language`, a test asserts the bundled fonts can actually render its alphabet. Silent tofu is exactly the failure a test suite should catch. |
+| IV. Cultural Data Integrity | ✅ PASS, and load-bearing | Phase 0's `StoryTranslation` exists for this. A translation is a **new row with its own status, translator and provenance**, never an overwrite of the original's text. The original is never edited by a translation, and withdrawing one leaves the original readable. |
+| V. Observability & Operational Honesty | ✅ PASS | The fallback marks `translated: false` rather than silently passing off the original as the requested language. |
+
+**Prerequisite before task 1**: the Track B font decision (Finding 2). Tasks 1
+and 2 — locale paths, `LocaleMiddleware`, string extraction, first `.po` files —
+are Track A work and unblocked; task 3 is not, and building task 2 first is
+explicitly the cheap order the roadmap asked for.
+
+### Status — Track A landed (tasks 1 and 2)
+
+The headline defect is closed: French is a real language of the interface, not
+a `USE_I18N` setting nobody ever activated. Four more turned up while doing it,
+and two of them are the same class of bug the phase exists to close.
+
+1. **`LocaleMiddleware` is installed.** `LANGUAGES`, `LOCALE_PATHS` and
+   `LANGUAGE_CODE = 'en'` in `config/settings/base.py`, with the middleware
+   after `SessionMiddleware` — without which no request has a language at all.
+2. **The switch works, for signed-out readers too.** `web:set-language` was
+   `@login_required`, so the reader who most needs this site in French — the
+   one who has not made an account yet — had no way to reach the control. The
+   switch is two submit buttons in a real form, so it works with JavaScript
+   off, which is the same constraint the rest of `web/actions.py` is written to.
+   It writes Django's own language cookie (Django 4 dropped the session key)
+   and persists the choice to `WebUserSettings` when signed in.
+3. **A stored preference now reaches a new browser.** `WebUserSettings.language`
+   had a docstring saying the web UI persists the language server-side "so the
+   experience matches across browsers", and nothing read it back —
+   `web_globals` *wrote* a row on every authenticated page view and never
+   consulted one. New `web/middleware.py` copies it into the cookie once per
+   browser; the context processor is now read-only, so a page view is no longer
+   an `INSERT`.
+4. **`set_language` validated against the wrong list.** It checked
+   `Story.Language.choices` — the languages a story can be *written in* — and
+   wrote the result into a column whose own choices are en/fr. A request could
+   therefore store `ful` and the switch would then offer a language with no
+   catalogue behind it. One definition now: `web.services.resolve_ui_language`,
+   read from `settings.LANGUAGES`, used by the endpoint, the model, the
+   middleware and the tests.
+5. **399 strings extracted** across 21 templates, `web/services.py`,
+   `web/actions.py`, and the model choice labels that are actually rendered
+   (`Story.Status/Origin/Consent/Licence`, `StoryFlag.Reason`,
+   `Artifact.Category/ContentType`, `UserRole`). The plural hacks —
+   `{{ n|yesno:'y,ies' }}`, and `stor{{ n|yesno:'y,ies' }}` which produced
+   "1 storie" — are real `blocktranslate count` now. `Story.Language` is
+   deliberately *not* translated: those are the names of languages, which are
+   proper nouns in every language that has them.
+6. **French is the source msgid.** The catalogue's `Language:` header is `fr`
+   and the msgids are English, per your instruction — no English catalogue is
+   kept, because it could only say the same thing twice. The translations
+   themselves are in `backend/scripts/translate_fr.py` as a literal table so
+   the wording is reviewable as code, and `makemessages` + that script +
+   `compilemessages` regenerate the `.po`/`.mo` together. **One consequence
+   worth naming**: a French translator reading the `.po` sees English msgids,
+   which is workable but not ideal for the Track B contributors this phase is
+   really for. Switching to English-as-msgid is a one-line change to the
+   script if you decide the other way.
+7. **The home page's fake bilingual toggle is gone.** It carried two
+   hand-written copies of the hero section, one per language, swapped by
+   `localStorage` and shown only to signed-in readers — which translated two
+   paragraphs and left the other ~200 strings on the page English. The switch
+   is server-rendered now, so every string on the page is translatable.
+
+#### Two defects found by the extraction itself
+
+- **Three multi-line `{# … #}` comments were being rendered into the page
+  source.** Django's lexer does not match `{#`/`#}` across newlines, so the
+  home page and the story page were shipping their own source comments to
+  readers. Converted to `{% comment %}`.
+- **Two mistyped tag terminators** (`%>` and `}}` where `%}` was meant). Django
+  emits a malformed construct as literal text rather than raising, so the pages
+  still rendered and looked right — one `{% url %}` was posting the language
+  form to a URL that was literally the string `{% url 'web:set-language' }}`.
+  `TemplateSyntaxTests` now walks the token stream of every template and fails
+  on any tag that came out as text.
+
+| Verification | Result |
+|---|---|
+| Backend suite | **560 tests, OK (6 skipped)** — 25 new |
+| `ruff check .` | All checks passed |
+| `makemigrations --check` | No changes detected (lazy labels compare equal, so the choice sets are unchanged on disk) |
+| `manage.py spectacular` | 0 warnings, 0 errors — `UserRoleEnum` pinned in `ENUM_NAME_OVERRIDES`, because wrapping its labels was enough to change the hash spectacular derives and re-trip the collision warning |
+| `msgfmt -c` | 399 translated messages, 0 untranslated |
+
+#### Accepted limits
+
+- **Not Flutter.** Task 4 — `intl`, ARB, a language switch, and
+  `Story.language` wired to the reader's choice — is untouched. The app's 208
+  literals and its `supportedLocales: [en, fr]` are still the Finding 1 defect
+  it was. This phase made the web half real; it did not make the two halves
+  agree, so Constitution I is satisfied per-surface, not across surfaces yet.
+- **Track B untouched**, blocked on the font decision in Finding 2 as stated.
+- **Enum labels outside the seven sets listed above** (gamification status and
+  difficulty, media job status, notification kind) are still English. They are
+  mostly dashboard-tile labels; they are the obvious next slice.
+- **Regional variants not offered.** `LANGUAGES` carries `fr` and no
+  `fr-CM`. French is the target language, so `fr` is right; a Cameroonian
+  reader who needs `fr-CM` formats specifically would not get them. Deliberate,
+  not forgotten.
+
+### Task 3 — still blocked, and the decision is now smaller than it looked
+
+Finding 2 concluded that Track B needs a font decision. It still does, and it
+is the only thing in front of it. The decision to make is which family covers
+Latin Extended-B plus the IPA Extensions that AGLC needs — a routine
+font-stack swap, not an architectural one — and the test that pins it is already
+described in the constitution check above.
+
 ---
 
 ## Phase 6 — Community and moderation at real volume

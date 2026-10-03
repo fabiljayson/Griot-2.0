@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 
 class Artifact(models.Model):
@@ -14,16 +15,16 @@ class Artifact(models.Model):
     """
 
     class Category(models.TextChoices):
-        SCULPTURE = 'sculpture', 'Sculpture'
-        TEXTILE = 'textile', 'Textile'
-        INSTRUMENT = 'instrument', 'Musical Instrument'
-        JEWELRY = 'jewelry', 'Jewelry'
-        POTTERY = 'pottery', 'Pottery'
-        MASK = 'mask', 'Mask'
-        WEAPON = 'weapon', 'Weapon'
-        FABRIC = 'fabric', 'Woven Fabric'
-        TOOL = 'tool', 'Tool'
-        OTHER = 'other', 'Other'
+        SCULPTURE = 'sculpture', _('Sculpture')
+        TEXTILE = 'textile', _('Textile')
+        INSTRUMENT = 'instrument', _('Musical Instrument')
+        JEWELRY = 'jewelry', _('Jewelry')
+        POTTERY = 'pottery', _('Pottery')
+        MASK = 'mask', _('Mask')
+        WEAPON = 'weapon', _('Weapon')
+        FABRIC = 'fabric', _('Woven Fabric')
+        TOOL = 'tool', _('Tool')
+        OTHER = 'other', _('Other')
 
     class ContentType(models.TextChoices):
         """What KIND OF THING this is, as opposed to `Category`'s material.
@@ -34,10 +35,10 @@ class Artifact(models.Model):
         shapes and no single mapping between them is correct.
         """
 
-        KINGDOM = 'kingdom', 'Kingdom'
-        LANDMARK = 'landmark', 'Landmark'
-        ARTIFACT = 'artifact', 'Artifact'
-        LEGEND = 'legend', 'Legend'
+        KINGDOM = 'kingdom', _('Kingdom')
+        LANDMARK = 'landmark', _('Landmark')
+        ARTIFACT = 'artifact', _('Artifact')
+        LEGEND = 'legend', _('Legend')
         CULTURE = 'culture', 'Culture'
         # An honest default: the row exists but nothing has classified it yet.
         # Distinguishable from a genuine `Category.OTHER`, which means "we

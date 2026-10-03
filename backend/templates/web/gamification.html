@@ -1,4 +1,5 @@
 {% extends 'web/base.html' %}
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Gamification — mirrors mobile GamificationScreen: XP/level profile card,
@@ -6,12 +7,12 @@ streak stats, badge grid (earned vs locked), certificates and leaderboard.
 All glyphs are Font Awesome icons.
 {% endcomment %}
 
-{% block title %}Rewards — Griot AI{% endblock %}
+{% block title %}{% translate "Rewards" %} — Griot AI{% endblock %}
 
 {% block content %}
 <header class="mb-8">
-  <h1 class="font-display text-2xl font-bold sm:text-3xl">Heritage Rewards</h1>
-  <p class="mt-1 text-sm text-secondary-text">Earn XP, unlock badges, and climb the storyteller ranks.</p>
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">{% translate "Heritage Rewards" %}</h1>
+  <p class="mt-1 text-sm text-secondary-text">{% translate "Earn XP, unlock badges, and climb the storyteller ranks." %}</p>
 </header>
 
 {% if profile %}
@@ -20,36 +21,36 @@ All glyphs are Font Awesome icons.
   <div class="flex flex-wrap items-center gap-6">
     <div class="relative flex h-24 w-24 items-center justify-center rounded-full bg-white/15 ring-4 ring-white/25">
       <span class="font-display text-3xl font-bold">{{ profile.level }}</span>
-      <span class="absolute -bottom-2 rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-terracotta">Level</span>
+      <span class="absolute -bottom-2 rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-terracotta">{% translate "Level" %}</span>
     </div>
     <div class="min-w-0 flex-1">
       <p class="font-display text-xl font-bold">{{ user.username }}</p>
       <p class="flex items-center gap-1.5 text-sm text-white/85">
         {% icon 'bolt' 'text-xs' %} {{ profile.total_xp }} XP
-        {% if my_rank %} • Rank #{{ my_rank }}{% endif %}
+        {% if my_rank %} • {% blocktranslate with rank=my_rank %}Rank #{{ rank }}{% endblocktranslate %}{% endif %}
       </p>
       <div class="mt-3 h-2 max-w-md overflow-hidden rounded-full bg-white/20">
         <div class="h-full rounded-full bg-white transition-all" style="width: {{ profile.xp_progress|xp_width }}%"></div>
       </div>
-      <p class="mt-1.5 text-xs text-white/75">{{ profile.xp_for_next_level }} XP to next level</p>
+      <p class="mt-1.5 text-xs text-white/75">{% blocktranslate with xp=profile.xp_for_next_level %}{{ xp }} XP to next level{% endblocktranslate %}</p>
     </div>
   </div>
 
   <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
     <div class="rounded-xl bg-white/10 p-3.5 text-center ring-1 ring-white/15">
-      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'book-open' 'text-[10px]' %} Stories read</p>
+      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'book-open' 'text-[10px]' %} {% translate "Stories read" %}</p>
       <p class="mt-1 font-display text-xl font-bold">{{ profile.stories_read }}</p>
     </div>
     <div class="rounded-xl bg-white/10 p-3.5 text-center ring-1 ring-white/15">
-      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'check-circle' 'text-[10px]' %} Completed</p>
+      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'check-circle' 'text-[10px]' %} {% translate "Completed" %}</p>
       <p class="mt-1 font-display text-xl font-bold">{{ profile.stories_completed }}</p>
     </div>
     <div class="rounded-xl bg-white/10 p-3.5 text-center ring-1 ring-white/15">
-      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'graduation' 'text-[10px]' %} Quizzes passed</p>
+      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'graduation' 'text-[10px]' %} {% translate "Quizzes passed" %}</p>
       <p class="mt-1 font-display text-xl font-bold">{{ profile.quizzes_passed }}</p>
     </div>
     <div class="rounded-xl bg-white/10 p-3.5 text-center ring-1 ring-white/15">
-      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'flame' 'text-[10px]' %} Day streak</p>
+      <p class="flex items-center justify-center gap-1.5 text-xs text-white/75">{% icon 'flame' 'text-[10px]' %} {% translate "Day streak" %}</p>
       <p class="mt-1 font-display text-xl font-bold">{{ profile.current_streak }}</p>
     </div>
   </div>
@@ -58,9 +59,9 @@ All glyphs are Font Awesome icons.
 {# Guest teaser — same card, sign-in CTA #}
 <section class="mb-10 rounded-3xl bg-gradient-to-br from-terracotta to-terracotta-dark p-8 text-center text-white shadow-lg">
   <span class="fa-solid fa-trophy text-4xl" aria-hidden="true"></span>
-  <h2 class="mt-3 font-display text-xl font-bold">Track your heritage journey</h2>
-  <p class="mx-auto mt-2 max-w-md text-sm text-white/85">Sign in to earn XP, collect badges, and appear on the leaderboard.</p>
-  <a href="{% url 'web:login' %}?next={% url 'web:gamification' %}" class="mt-5 inline-block rounded-xl bg-white px-6 py-3 text-sm font-bold text-terracotta hover:bg-ochre-tint">Sign in</a>
+  <h2 class="mt-3 font-display text-xl font-bold">{% translate "Track your heritage journey" %}</h2>
+  <p class="mx-auto mt-2 max-w-md text-sm text-white/85">{% translate "Sign in to earn XP, collect badges, and appear on the leaderboard." %}</p>
+  <a href="{% url 'web:login' %}?next={% url 'web:gamification' %}" class="mt-5 inline-block rounded-xl bg-white px-6 py-3 text-sm font-bold text-terracotta hover:bg-ochre-tint">{% translate "Sign in" %}</a>
 </section>
 {% endif %}
 
@@ -68,10 +69,10 @@ All glyphs are Font Awesome icons.
 <section class="mb-10">
   <div class="mb-4 flex items-center justify-between">
     <h2 class="flex items-center gap-2.5 font-display text-xl font-bold">
-      {% icon 'medal' 'text-lg text-ochre' %} Badges
+      {% icon 'medal' 'text-lg text-ochre' %} {% translate "Badges" %}
     </h2>
     <a href="{% url 'web:quizzes' %}" class="flex items-center gap-1.5 text-sm font-semibold text-terracotta hover:underline">
-      {% icon 'graduation' 'text-xs' %} All quizzes {% icon 'arrow-right' 'text-xs' %}
+      {% icon 'graduation' 'text-xs' %} {% translate "All quizzes" %} {% icon 'arrow-right' 'text-xs' %}
     </a>
   </div>
   <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -90,11 +91,11 @@ All glyphs are Font Awesome icons.
       <p class="mt-1 line-clamp-2 text-[11px] leading-snug text-secondary-text">{{ badge.description }}</p>
       {% if badge.id in earned_ids %}
       <span class="mt-2 flex items-center gap-1 rounded-full bg-savannah px-2 py-0.5 text-[10px] font-bold text-white">
-        {% icon 'check-circle' 'text-[9px]' %} Earned
+        {% icon 'check-circle' 'text-[9px]' %} {% translate "Earned" %}
       </span>
       {% else %}
       <span class="mt-2 text-[10px] font-semibold uppercase tracking-wide text-secondary-text">
-        {% if badge.xp_required %}{{ badge.xp_required }} XP{% elif badge.quizzes_passed_required %}{{ badge.quizzes_passed_required }} quizzes{% elif badge.stories_read_required %}{{ badge.stories_read_required }} reads{% elif badge.streak_required %}{{ badge.streak_required }} days{% else %}Locked{% endif %}
+        {% if badge.xp_required %}{% blocktranslate with xp=badge.xp_required %}{{ xp }} XP{% endblocktranslate %}{% elif badge.quizzes_passed_required %}{% blocktranslate count counter=badge.quizzes_passed_required %}{{ counter }} quiz{% plural %}{{ counter }} quizzes{% endblocktranslate %}{% elif badge.stories_read_required %}{% blocktranslate count counter=badge.stories_read_required %}{{ counter }} read{% plural %}{{ counter }} reads{% endblocktranslate %}{% elif badge.streak_required %}{% blocktranslate count counter=badge.streak_required %}{{ counter }} days{% plural %}{{ counter }} days{% endblocktranslate %}{% else %}{% translate "Locked" %}{% endif %}
       </span>
       {% endif %}
     </div>
@@ -106,7 +107,7 @@ All glyphs are Font Awesome icons.
 {% if certificates %}
 <section class="mb-10">
   <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-    {% icon 'certificate' 'text-lg text-savannah' %} Certificates
+    {% icon 'certificate' 'text-lg text-savannah' %} {% translate "Certificates" %}
   </h2>
   <div class="grid gap-4 sm:grid-cols-2">
     {% for cert in certificates %}
@@ -125,7 +126,7 @@ All glyphs are Font Awesome icons.
 {# ── Leaderboard — mirrors mobile leaderboard list ── #}
 <section class="mb-4">
   <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-    {% icon 'trophy' 'text-lg text-terracotta' %} Leaderboard
+    {% icon 'trophy' 'text-lg text-terracotta' %} {% translate "Leaderboard" %}
   </h2>
   <div class="overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
     <ul class="divide-y divide-brand-border dark:divide-warm-brown">
@@ -137,12 +138,12 @@ All glyphs are Font Awesome icons.
         </span>
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold">{{ entry.user.username }}</p>
-          <p class="text-xs text-secondary-text">Level {{ entry.level }} • {{ entry.stories_read }} read • {{ entry.quizzes_passed }} quizzes</p>
+          <p class="text-xs text-secondary-text">{% blocktranslate with level=entry.level stories=entry.stories_read quizzes=entry.quizzes_passed %}Level {{ level }} • {{ stories }} read • {{ quizzes }} quizzes{% endblocktranslate %}</p>
         </div>
         <span class="flex items-center gap-1 text-sm font-bold text-ochre">{% icon 'bolt' 'text-xs' %} {{ entry.total_xp }}</span>
       </li>
       {% empty %}
-      <li class="px-4 py-8 text-center text-sm text-secondary-text">No XP earned yet — be the first on the board!</li>
+      <li class="px-4 py-8 text-center text-sm text-secondary-text">{% translate "No XP earned yet — be the first on the board!" %}</li>
       {% endfor %}
     </ul>
   </div>

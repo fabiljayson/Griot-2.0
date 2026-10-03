@@ -11,6 +11,7 @@ keeping both platforms in sync. Business logic lives in ``web/services.py``.
 import datetime
 import urllib.parse
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
@@ -19,6 +20,8 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import translation
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from config.rate_limit import rate_limit
@@ -40,6 +43,7 @@ from .services import (
     record_story_share,
     refresh_video_job,
     register_user,
+    resolve_ui_language,
     save_story,
     start_quiz,
     submit_quiz_answer,
@@ -104,7 +108,7 @@ def story_flag(request, slug):
         reason=request.POST.get('reason', 'other'),
         details=request.POST.get('details', ''),
     )
-    messages.success(request, 'Thanks — our moderators will review this story.')
+    messages.success(request, _('Thanks — our moderators will review this story.'))
     return HttpResponseRedirect(_safe_next(request, reverse('web:story-detail', args=[slug])))
 
 
@@ -119,7 +123,10 @@ def story_share(request, slug):
     )
 
     share_url = request.build_absolute_uri(f'/story/{story.slug}/')
-    share_text = f'Check out "{story.title}" on Griot AI! 🌍📖'
+    # The text a reader pastes into the platform they are sharing to, so it is
+    # written in the language the page is in — a French speaker sharing a story
+    # from the French interface should not paste English at their friends.
+    share_text = _('Check out "%(title)s" on Griot AI! 🌍📖') % {'title': story.title}
     targets = {
         'twitter': f'https://twitter.com/intent/tweet?url={share_url}&text={share_text}',
         'facebook': f'https://www.facebook.com/sharer/sharer.php?u={share_url}',
@@ -182,16 +189,18 @@ def quiz_finish(request, quiz_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id)
     attempt = finish_quiz(request.user, quiz)
     if attempt is None:
-        return HttpResponseBadRequest('No active attempt.')
+        return HttpResponseBadRequest(_('No active attempt.'))
 
     if attempt.passed:
         messages.success(
-            request, f'🎉 You passed and earned {attempt.xp_earned} XP!',
+            request,
+            _('🎉 You passed and earned %(xp)s XP!') % {'xp': attempt.xp_earned},
         )
     else:
         messages.info(
             request,
-            f'Scored {attempt.score}% — try again at {quiz.passing_score}% to pass.',
+            _('Scored %(score)s%% — try again at %(passing)s%% to pass.')
+            % {'score': attempt.score, 'passing': quiz.passing_score},
         )
     return redirect('web:quiz-play', quiz_id=quiz.id)
 
@@ -206,13 +215,19 @@ def story_moderate(request, slug):
     action = request.POST.get('action', '')
     notes = request.POST.get('notes', '')
     if action not in ('remove', 'dismiss'):
-        return HttpResponseBadRequest('action must be "remove" or "dismiss".')
+        return HttpResponseBadRequest(_('action must be "remove" or "dismiss".'))
 
     moderate_story(request.user, story, action, notes)
     if action == 'remove':
-        messages.success(request, f'Story "{story.title}" archived and flags resolved.')
+        messages.success(
+            request,
+            _('Story "%(title)s" archived and flags resolved.') % {'title': story.title},
+        )
     else:
-        messages.success(request, f'Flags on "{story.title}" dismissed.')
+        messages.success(
+            request,
+            _('Flags on "%(title)s" dismissed.') % {'title': story.title},
+        )
     return HttpResponseRedirect(_safe_next(request, reverse('web:admin-dashboard')))
 
 
@@ -232,7 +247,7 @@ def story_request_consent(request, slug):
     request_consent(request.user, story)
     messages.success(
         request,
-        'Consent request recorded — awaiting the community\'s answer.',
+        _("Consent request recorded — awaiting the community's answer."),
     )
     return HttpResponseRedirect(
         _safe_next(request, reverse('web:story-detail', args=[slug])),
@@ -261,10 +276,13 @@ def story_record_consent(request, slug):
     if archived:
         messages.warning(
             request,
-            'Consent withheld — the story has been archived.',
+            _('Consent withheld — the story has been archived.'),
         )
     else:
-        messages.success(request, f'Consent recorded for "{story.title}".')
+        messages.success(
+            request,
+            _('Consent recorded for "%(title)s".') % {'title': story.title},
+        )
     return HttpResponseRedirect(
         _safe_next(request, reverse('web:story-detail', args=[story.slug])),
     )
@@ -288,7 +306,7 @@ def story_save(request, slug=None):
     title = (request.POST.get('title') or '').strip()
     content = (request.POST.get('content') or '').strip()
     if not title or not content:
-        messages.error(request, 'Title and content are required.')
+        messages.error(request, _('Title and content are required.'))
         if slug:
             return redirect('web:story-edit', slug=slug)
         return redirect('web:story-new')
@@ -323,7 +341,7 @@ def story_delete(request, slug):
     """Delete a story — mirrors DELETE /api/stories/{slug}/."""
     story = get_object_or_404(Story, slug=slug)
     title = delete_story(request.user, story)
-    messages.success(request, f'Story "{title}" deleted.')
+    messages.success(request, _('Story "%(title)s" deleted.') % {'title': title})
     return redirect('web:library')
 
 
@@ -403,7 +421,7 @@ def profile_update(request):
         for error in errors:
             messages.error(request, error)
         return redirect('web:profile')
-    messages.success(request, 'Profile updated.')
+    messages.success(request, _('Profile updated.'))
     return redirect('web:profile')
 
 
@@ -414,18 +432,55 @@ def profile_delete(request):
     username = request.user.username
     auth_logout(request)
     delete_profile(username)
-    messages.success(request, f'Account "{username}" and associated data deleted.')
+    messages.success(
+        request,
+        _('Account "%(username)s" and associated data deleted.') % {'username': username},
+    )
     return redirect('web:home')
 
 
 # ---------------------------------------------------------------------------
 # Web settings — language + theme toggles (mirrors mobile settings provider)
 # ---------------------------------------------------------------------------
-@login_required
 @require_POST
 def set_language(request):
-    persist_language(request.user, request.POST.get('language', 'en'))
-    return HttpResponseRedirect(_safe_next(request, reverse('web:home')))
+    """Switch the interface language.
+
+    Deliberately *not* `@login_required`. French is the language of
+    administration and schooling, and the reader who most needs this page in
+    French is the one who has not made an account yet — gating the switch
+    behind a login showed the French-speaker an English home page and hid the
+    only control that would have fixed it.
+
+    Two stores, because there are two things to remember:
+      * the language cookie, which is what `LocaleMiddleware` reads on every
+        request and therefore covers anonymous visitors;
+      * `WebUserSettings`, so a signed-in reader gets their language on the
+        next device instead of on the next browser.
+
+    The cookie is written with Django's own `LANGUAGE_COOKIE_*` settings and
+    under `LANGUAGE_COOKIE_NAME`, which is the same cookie and the same
+    attribute set Django's built-in `set_language` view uses, so the two can
+    never disagree about which language is active.
+    """
+    code = resolve_ui_language(request.POST.get('language'))
+    if request.user.is_authenticated:
+        code = persist_language(request.user, code)
+    response = HttpResponseRedirect(_safe_next(request, reverse('web:home')))
+    response.set_cookie(
+        settings.LANGUAGE_COOKIE_NAME,
+        code,
+        max_age=settings.LANGUAGE_COOKIE_AGE,
+        path=settings.LANGUAGE_COOKIE_PATH,
+        domain=settings.LANGUAGE_COOKIE_DOMAIN,
+        secure=settings.LANGUAGE_COOKIE_SECURE,
+        httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
+        samesite=settings.LANGUAGE_COOKIE_SAMESITE,
+    )
+    # Activate for the rest of *this* request too, so the redirect target
+    # renders in the new language rather than the old one.
+    translation.activate(code)
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -449,7 +504,10 @@ def register(request):
             )
 
         auth_login(request, user)
-        messages.success(request, f'Welcome to Griot AI, {user.username}!')
+        messages.success(
+            request,
+            _('Welcome to Griot AI, %(username)s!') % {'username': user.username},
+        )
         # NOTE: deliberately *not* resetting the register budget on success.
         # Unlike login, a successful registration is itself the abuse signal
         # here — clearing the budget each time would let a caller mint unlimited

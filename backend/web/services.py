@@ -19,6 +19,7 @@ from django.db import IntegrityError
 from django.db.models import Count, F, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from api.analytics import get_dashboard_summary
 from config.client_ip import get_client_ip
@@ -69,13 +70,43 @@ HOME_REGIONS = [
 
 # Sort options — mirror the mobile Stories screen dropdown exactly.
 SORT_OPTIONS = OrderedDict([
-    ('-created_at', 'Newest'),
-    ('created_at', 'Oldest'),
-    ('-view_count', 'Most Viewed'),
-    ('-like_count', 'Most Liked'),
+    ('-created_at', _('Newest')),
+    ('created_at', _('Oldest')),
+    ('-view_count', _('Most Viewed')),
+    ('-like_count', _('Most Liked')),
 ])
 
 CATEGORY_EMOJI_FALLBACK = '📖'
+
+
+# ---------------------------------------------------------------------------
+# Interface language (Phase 5 Track A)
+# ---------------------------------------------------------------------------
+# The web interface speaks the codes in `settings.LANGUAGES` — 'en' and 'fr'
+# for now. This is deliberately *not* `Story.Language.choices`: those are the
+# languages a story can be *written in* (Ewondo, Duala, Bamileke...), not the
+# languages the buttons around it are labelled in. Validating a UI preference
+# against the story enum let a request write `ful` into a column whose own
+# choices are en/fr — a value the admin could not render and no catalogue
+# exists for. Which language a *reader* wants is a separate question, and it
+# is answered per story, not here (Phase 5 task 4).
+UI_LANGUAGES = [code for code, _ in settings.LANGUAGES]
+
+DEFAULT_UI_LANGUAGE = 'en'
+
+
+def resolve_ui_language(code):
+    """Return `code` if this project can actually render it, else English.
+
+    One definition of "a language this interface has", read from
+    `settings.LANGUAGES` so the settings file stays the single source of truth.
+    The model field, the form, the middleware and the tests all ask this
+    function rather than each keeping its own list.
+    """
+    if not code:
+        return DEFAULT_UI_LANGUAGE
+    # `settings.LANGUAGE_CODE` is the fallback for an unrecognised code.
+    return code if code in UI_LANGUAGES else DEFAULT_UI_LANGUAGE
 
 
 # ---------------------------------------------------------------------------
@@ -695,16 +726,16 @@ def submit_quiz_answer(user, quiz, question, selected):
     Returns an error message, or ``None`` when the answer was recorded.
     """
     if selected not in ('a', 'b', 'c', 'd'):
-        return 'Invalid answer.'
+        return _('Invalid answer.')
     attempt = QuizAttempt.objects.filter(
         user=user, quiz=quiz, status=QuizAttempt.Status.IN_PROGRESS,
     ).first()
     if attempt is None:
-        return 'No active attempt — start the quiz first.'
+        return _('No active attempt — start the quiz first.')
 
     answers = attempt.answers or []
     if any(answer.get('question_id') == question.id for answer in answers):
-        return 'Question already answered.'
+        return _('Question already answered.')
 
     answers.append({
         'question_id': question.id,
@@ -834,8 +865,8 @@ def save_story(user, *, slug, title, content, summary, language,
     if story is None:
         story = Story.objects.create(author=user, status=status, **fields)
         message = (
-            'Story saved as draft.' if status == Story.Status.DRAFT
-            else 'Story submitted for review.'
+            _('Story saved as draft.') if status == Story.Status.DRAFT
+            else _('Story submitted for review.')
         )
     else:
         for name, value in fields.items():
@@ -1098,7 +1129,7 @@ def update_profile(user, *, first_name, last_name, email, institution):
     """
     errors = []
     if email and User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
-        errors.append('A user with this email already exists.')
+        errors.append(_('A user with this email already exists.'))
     if errors:
         return errors, False
 
@@ -1118,12 +1149,12 @@ def delete_profile(username):
 
 
 def set_language(user, code):
-    """Persist the user's web UI language."""
-    if code not in {choice for choice, _ in Story.Language.choices}:
-        code = 'en'
+    """Persist the user's web UI language and return the code actually stored."""
+    code = resolve_ui_language(code)
     settings_obj, _ = WebUserSettings.objects.get_or_create(user=user)
-    settings_obj.language = code
-    settings_obj.save(update_fields=['language'])
+    if settings_obj.language != code:
+        settings_obj.language = code
+        settings_obj.save(update_fields=['language'])
     return code
 
 
@@ -1137,7 +1168,7 @@ def register_user(*, username, email, password, password2, role):
 
     errors = []
     if not username:
-        errors.append('Username is required.')
+        errors.append(_('Username is required.'))
 
     # F-03: an attacker cannot use this form to test whether a given username or
     # email is registered. Telling a caller *which* field collided, and whether
@@ -1146,7 +1177,10 @@ def register_user(*, username, email, password, password2, role):
     # per-field detail is dropped rather than softened, since a message like
     # "that looks like an existing username" is just as revealing.
     # The legitimate user resolves the ambiguity by trying a different value.
-    GENERIC_COLLISION = 'An account with those details already exists. Try a different username or email.'
+    GENERIC_COLLISION = _(
+        'An account with those details already exists. '
+        'Try a different username or email.'
+    )
     if User.objects.filter(username__iexact=username).exists():
         errors.append(GENERIC_COLLISION)
     if email and User.objects.filter(email__iexact=email).exists():
@@ -1155,9 +1189,9 @@ def register_user(*, username, email, password, password2, role):
     # Length/format problems are the *submitter's own* input, not a fact about
     # another account, so those stay specific — they help rather than enumerate.
     if len(password) < 8:
-        errors.append('Password must be at least 8 characters.')
+        errors.append(_('Password must be at least 8 characters.'))
     if password != password2:
-        errors.append('Passwords do not match.')
+        errors.append(_('Passwords do not match.'))
 
     if not errors:
         # F-04: AUTH_PASSWORD_VALIDATORS is configured in settings but was

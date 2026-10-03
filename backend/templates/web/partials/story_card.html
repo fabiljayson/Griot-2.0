@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Story card — mirrors mobile StoryCard: cover image, category icon chip,
@@ -18,7 +19,7 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
       {% endif %}
     </div>
     <span class="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-cam-indigo shadow-sm dark:bg-mud-charcoal/90 dark:text-cam-bronze">
-      {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-xs' %}{{ story.categories.first.name }}{% else %}{% icon 'book-open' 'text-xs' %}Story{% endif %}
+      {% if story.categories.first %}{% emoji_icon story.categories.first.icon 'text-xs' %}{{ story.categories.first.name }}{% else %}{% icon 'book-open' 'text-xs' %}{% translate "Story" %}{% endif %}
     </span>
     {% if story.region %}
     <span class="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-cam-indigo/70 px-2.5 py-1 text-xs font-medium text-white">
@@ -39,7 +40,7 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
       <span class="flex h-6 w-6 items-center justify-center rounded-full bg-cam-indigo/10 font-bold text-cam-indigo">{{ story.author.username|first|upper }}</span>
       <span class="font-medium">{{ story.author.username }}</span>
       <span>·</span>
-      <span class="flex items-center gap-1">{% icon 'clock' 'text-[10px]' %} {{ story.estimated_read_time }} min</span>
+      <span class="flex items-center gap-1">{% icon 'clock' 'text-[10px]' %} {% blocktranslate with minutes=story.estimated_read_time %}{{ minutes }} min{% endblocktranslate %}</span>
     </div>
 
     <div class="mt-4 flex items-center justify-between border-t border-brand-border pt-3 dark:border-warm-brown">
@@ -53,7 +54,7 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
         <form method="post" action="{% url 'web:story-like' story.slug %}">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button title="{% if story.liked %}Unlike{% else %}Like{% endif %}" aria-label="{% if story.liked %}Unlike{% else %}Like{% endif %}"
+          <button title="{% if story.liked %}{% translate "Unlike" %}{% else %}{% translate "Like" %}{% endif %}" aria-label="{% if story.liked %}{% translate "Unlike" %}{% else %}{% translate "Like" %}{% endif %}"
                   class="rounded-full p-1.5 transition hover:bg-cam-earth/10 {% if story.liked %}text-brand-error{% else %}text-secondary-text dark:text-sand/60{% endif %}">
             {% if story.liked %}{% icon 'heart' 'text-sm' %}{% else %}{% icon 'heart-regular' 'text-sm' %}{% endif %}
           </button>
@@ -61,13 +62,13 @@ All glyphs are Font Awesome icons (parity with the mobile FaIcon widgets).
         <form method="post" action="{% url 'web:story-bookmark' story.slug %}">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button title="{% if story.bookmarked %}Remove bookmark{% else %}Bookmark{% endif %}" aria-label="{% if story.bookmarked %}Remove bookmark{% else %}Bookmark{% endif %}"
+          <button title="{% if story.bookmarked %}{% translate "Remove bookmark" %}{% else %}{% translate "Bookmark" %}{% endif %}" aria-label="{% if story.bookmarked %}{% translate "Remove bookmark" %}{% else %}{% translate "Bookmark" %}{% endif %}"
                   class="rounded-full p-1.5 transition hover:bg-cam-bronze/10 {% if story.bookmarked %}text-cam-bronze{% else %}text-secondary-text dark:text-sand/60{% endif %}">
             {% if story.bookmarked %}{% icon 'bookmark-solid' 'text-sm' %}{% else %}{% icon 'bookmark-regular' 'text-sm' %}{% endif %}
           </button>
         </form>
         {% else %}
-        <a href="{% url 'web:story-detail' story.slug %}" class="flex items-center gap-1 text-xs font-semibold text-cam-bronze">Read {% icon 'arrow-right' 'text-[10px]' %}</a>
+        <a href="{% url 'web:story-detail' story.slug %}" class="flex items-center gap-1 text-xs font-semibold text-cam-bronze">{% translate "Read" %} {% icon 'arrow-right' 'text-[10px]' %}</a>
         {% endif %}
       </div>
     </div>

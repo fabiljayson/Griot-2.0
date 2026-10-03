@@ -1,4 +1,5 @@
 {% extends 'web/base.html' %}
+{% load i18n %}
 {% load web_extras %}
 {% comment %}
 Library — mirrors mobile LibraryScreen: personal reading hub with
@@ -6,18 +7,18 @@ continue-reading progress cards, recently-read list, bookmarks and
 my-stories (contributors) sections. All glyphs are Font Awesome icons.
 {% endcomment %}
 
-{% block title %}Library — Griot AI{% endblock %}
+{% block title %}{% translate "Library" %} — Griot AI{% endblock %}
 
 {% block content %}
 <header class="mb-8">
-  <h1 class="font-display text-2xl font-bold sm:text-3xl">Your Library</h1>
-  <p class="mt-1 text-sm text-secondary-text">Everything you've read, saved, and created.</p>
+  <h1 class="font-display text-2xl font-bold sm:text-3xl">{% translate "Your Library" %}</h1>
+  <p class="mt-1 text-sm text-secondary-text">{% translate "Everything you've read, saved, and created." %}</p>
 </header>
 
 {# ── Continue reading — mirrors mobile ContinueReadingWidget ── #}
 <section class="mb-10">
   <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-    {% icon 'book-open' 'text-lg text-terracotta' %} Continue Reading
+    {% icon 'book-open' 'text-lg text-terracotta' %} {% translate "Continue Reading" %}
   </h2>
   {% if continue_reading %}
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -30,7 +31,7 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
         </span>
         <div class="min-w-0 flex-1">
           <h3 class="truncate font-semibold group-hover:text-terracotta">{{ progress.story.title }}</h3>
-          <p class="text-xs text-secondary-text">{{ progress.story.author.username }} • {{ progress.story.estimated_read_time }} min</p>
+          <p class="text-xs text-secondary-text">{{ progress.story.author.username }} • {% blocktranslate with minutes=progress.story.estimated_read_time %}{{ minutes }} min{% endblocktranslate %}</p>
         </div>
       </div>
       <div class="mt-3 flex items-center gap-3">
@@ -45,8 +46,8 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
   {% else %}
   <div class="rounded-2xl border border-dashed border-brand-border p-8 text-center dark:border-warm-brown">
     {% icon 'book-open' 'text-3xl text-terracotta/50' %}
-    <p class="mt-3 text-sm text-secondary-text">Nothing in progress — start a story and it will appear here.</p>
-    <a href="{% url 'web:stories' %}" class="mt-4 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">Browse stories</a>
+    <p class="mt-3 text-sm text-secondary-text">{% translate "Nothing in progress — start a story and it will appear here." %}</p>
+    <a href="{% url 'web:stories' %}" class="mt-4 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">{% translate "Browse stories" %}</a>
   </div>
   {% endif %}
 </section>
@@ -54,7 +55,7 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
 {# ── Bookmarks — mirrors mobile bookmarks tab ── #}
 <section class="mb-10">
   <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-    {% icon 'bookmark' 'text-lg text-ochre' %} Bookmarked
+    {% icon 'bookmark' 'text-lg text-ochre' %} {% translate "Bookmarked" %}
   </h2>
   {% if bookmarks %}
   <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -65,7 +66,7 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
   {% else %}
   <div class="rounded-2xl border border-dashed border-brand-border p-8 text-center dark:border-warm-brown">
     {% icon 'bookmark-regular' 'text-3xl text-ochre/50' %}
-    <p class="mt-3 text-sm text-secondary-text">No saved stories yet. Tap the bookmark icon on any story.</p>
+    <p class="mt-3 text-sm text-secondary-text">{% translate "No saved stories yet. Tap the bookmark icon on any story." %}</p>
   </div>
   {% endif %}
 </section>
@@ -74,7 +75,7 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
 {% if recently_read %}
 <section class="mb-10">
   <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-    {% icon 'clock' 'text-lg text-savannah' %} Recently Read
+    {% icon 'clock' 'text-lg text-savannah' %} {% translate "Recently Read" %}
   </h2>
   <div class="overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
     <ul class="divide-y divide-brand-border dark:divide-warm-brown">
@@ -87,7 +88,7 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold group-hover:text-terracotta">{{ progress.story.title }}</p>
             <p class="text-xs text-secondary-text">
-              {% if progress.completed %}Completed{% else %}{{ progress.progress_percent }}% read{% endif %} • {{ progress.updated_at|date:'M j' }}
+              {% if progress.completed %}{% translate "Completed" %}{% else %}{% blocktranslate with percent=progress.progress_percent %}{{ percent }}% read{% endblocktranslate %}{% endif %} • {{ progress.updated_at|date:'M j' }}
             </p>
           </div>
           {% icon 'chevron-right' 'text-xs text-secondary-text' %}
@@ -103,7 +104,7 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
 {% if is_contributor_plus and my_stories is not None %}
 <section class="mb-4">
   <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-    {% icon 'feather' 'text-lg text-terracotta' %} My Stories
+    {% icon 'feather' 'text-lg text-terracotta' %} {% translate "My Stories" %}
   </h2>
   {% if my_stories %}
   <div class="overflow-hidden rounded-2xl border border-brand-border bg-white dark:border-warm-brown dark:bg-deep-earth">
@@ -115,10 +116,10 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
         </span>
         <div class="min-w-0 flex-1">
           <a href="{% url 'web:story-detail' story.slug %}" class="block truncate text-sm font-semibold hover:text-terracotta">{{ story.title }}</a>
-          <p class="text-xs text-secondary-text">{{ story.estimated_read_time }} min • {{ story.view_count }} views</p>
+          <p class="text-xs text-secondary-text">{% blocktranslate with minutes=story.estimated_read_time %}{{ minutes }} min{% endblocktranslate %} • {% blocktranslate count counter=story.view_count %}{{ counter }} view{% plural %}{{ counter }} views{% endblocktranslate %}</p>
         </div>
         {% if story.status == 'draft' or story.status == 'pending' or user.role == 'admin' or user.role == 'institution_manager' %}
-        <a href="{% url 'web:story-edit' story.slug %}" class="rounded-lg p-2 text-secondary-text transition hover:bg-terracotta-tint/40 hover:text-terracotta" title="Edit story" aria-label="Edit {{ story.title }}">
+        <a href="{% url 'web:story-edit' story.slug %}" class="rounded-lg p-2 text-secondary-text transition hover:bg-terracotta-tint/40 hover:text-terracotta" title="{% translate 'Edit story' %}" aria-label="{% blocktranslate with title=story.title %}Edit {{ title }}{% endblocktranslate %}">
           {% icon 'edit' 'text-sm' %}
         </a>
         {% endif %}
@@ -133,9 +134,9 @@ my-stories (contributors) sections. All glyphs are Font Awesome icons.
   {% else %}
   <div class="rounded-2xl border border-dashed border-brand-border p-8 text-center dark:border-warm-brown">
     {% icon 'feather' 'text-3xl text-terracotta/50' %}
-    <p class="mt-3 text-sm text-secondary-text">You haven't submitted any stories yet.</p>
+    <p class="mt-3 text-sm text-secondary-text">{% translate "You haven't submitted any stories yet." %}</p>
     <a href="{% url 'web:story-new' %}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">
-      {% icon 'feather' 'text-xs' %} Write your first story
+      {% icon 'feather' 'text-xs' %} {% translate "Write your first story" %}
     </a>
   </div>
   {% endif %}

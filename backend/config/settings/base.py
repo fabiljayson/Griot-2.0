@@ -77,10 +77,22 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # Phase 5 Track A. This one line is the difference between a language
+    # switch that works and one that only changes a URL parameter: without it
+    # no request ever *has* a language, so every setting in the i18n block
+    # below is decorative. It has to sit after SessionMiddleware (that is where
+    # the chosen language is read from) and before CommonMiddleware (which
+    # resolves the current URL).
+    'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Phase 5 Track A. After AuthenticationMiddleware because it reads
+    # request.user, and after LocaleMiddleware because it is that middleware's
+    # saved answer this one fills in — it copies the reader's stored
+    # preference into the session so the choice follows them to a new browser.
+    'web.middleware.WebUserSettingsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Phase 10 observability: one structured JSON log line per request.
@@ -256,6 +268,13 @@ SPECTACULAR_SETTINGS = {
         'MediaJobStatusEnum': 'media_app.models.MediaJobStatusChoices.choices',
         'BadgeCategoryEnum': 'gamification.models.BadgeCategoryChoices.choices',
         'ArtifactCategoryEnum': 'qr_codes.models.ArtifactCategoryChoices.choices',
+        # Pinned in Phase 5 Track A. `role` is the one remaining choice set
+        # that had no entry, and wrapping its labels in `gettext_lazy` was
+        # enough to change the hash spectacular appends to the auto-generated
+        # name, which turned it into `Role017Enum` and tripped the
+        # collision warning. The names are unstable by construction, so the
+        # fix is to stop deriving them.
+        'UserRoleEnum': 'users.models.UserRole.choices',
     },
 }
 
@@ -267,12 +286,34 @@ SIMPLE_JWT = {
 }
 
 # ---------------------------------------------------------------------------
-# Internationalization
+# Internationalization (Phase 5 Track A)
 # ---------------------------------------------------------------------------
-LANGUAGE_CODE = 'en-us'
+# 'en' rather than 'en-us': the web preference (`WebUserSettings.language`),
+# the `Language` codes in `Story` and the language switch all speak 'en', and
+# a default language that is not itself in LANGUAGES makes every lookup fall
+# back one step before it starts.
+LANGUAGE_CODE = 'en'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
+# The interface languages this project can actually render.
+#
+# Only languages with a compiled catalogue in `locale/` belong here. Adding a
+# code without one produces the exact defect Phase 5 was opened to close: a
+# language switch that offers a choice and then renders English anyway.
+# Track B's AGLC languages (ewo/dua/bml) are deliberately absent — they are
+# blocked on the font-stack decision (see docs/ROADMAP.md, Finding 2) and on a
+# translator, not on this list. `LocaleCatalogTests` fails if a code is ever
+# added here without a catalogue behind it.
+LANGUAGES = [
+    ('en', 'English'),
+    ('fr', 'Français'),
+]
+
+# Project catalogues. Django's own admin/validation translations ship inside
+# the venv and are found automatically; these are ours.
+LOCALE_PATHS = [BASE_DIR / 'locale']
 
 # ---------------------------------------------------------------------------
 # Logging (Phase 10 observability)

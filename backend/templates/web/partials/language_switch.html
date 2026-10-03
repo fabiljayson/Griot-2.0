@@ -1,0 +1,29 @@
+{% load i18n %}
+{% comment %}
+Interface language switch — one definition of the control, rendered twice.
+
+The buttons are real submit buttons inside a real form rather than a <select>
+with an onchange handler, so switching language works with JavaScript
+disabled. That is the same constraint the whole of web/actions.py is written
+to: these endpoints have to work on a page whose scripts never ran.
+
+Include with `variant='sidebar'` or `variant='compact'`.
+{% endcomment %}
+<form method="post" action="{% url 'web:set-language' %}"
+      {% if variant == 'compact' %}class="ml-1"{% endif %}>
+  {% csrf_token %}
+  {# Come back to the page the reader was on, not to the home page. #}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <div role="group" aria-label="{% translate 'Interface language' %}"
+       class="inline-flex items-center gap-0.5 rounded-lg bg-black/5 p-0.5 dark:bg-white/5">
+    {% for code, label in ui_languages %}
+    <button type="submit" name="language" value="{{ code }}"
+            {% if code == current_language %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}
+            title="{% blocktranslate with name=label %}Read this page in {{ name }}{% endblocktranslate %}"
+            class="rounded-md px-2.5 py-1 text-xs font-semibold transition
+                   {% if code == current_language %}bg-white text-cam-indigo shadow-sm dark:bg-deep-earth dark:text-cam-bronze{% else %}text-secondary-text hover:text-cam-indigo dark:text-sand/70{% endif %}">
+      {% if variant == 'compact' %}{{ code|upper }}{% else %}{{ label }}{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+</form>

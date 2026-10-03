@@ -1,11 +1,14 @@
 {% load static %}
+{% load i18n %}
 {% load web_extras %}
 <!DOCTYPE html>
-<html lang="{% if web_settings.language == 'fr' %}fr{% else %}en{% endif %}">
+{% comment %} The language this page is actually rendered in, not the one stored on the
+   user's row — see web.context_processors.web_globals. {% endcomment %}
+<html lang="{{ current_language }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Griot AI — Digital Heritage Platform{% endblock %}</title>
+  <title>{% block title %}{% translate "Griot AI" %} — {% translate "Digital Heritage Platform" %}{% endblock %}</title>
 
   <!--
     Hybrid asset loading: everything is served locally (works fully offline).
@@ -263,11 +266,11 @@
         </span>
         <span class="leading-tight">
           <span class="block font-display text-lg font-bold">Griot <span class="text-cam-bronze">AI</span></span>
-          <span class="block text-[11px] tracking-wide text-secondary-text">Digital Heritage Platform</span>
+          <span class="block text-[11px] tracking-wide text-secondary-text">{% translate "Digital Heritage Platform" %}</span>
         </span>
       </a>
 
-      <nav class="flex-1 px-3 space-y-1 text-sm font-medium" aria-label="Main">
+      <nav class="flex-1 px-3 space-y-1 text-sm font-medium" aria-label="{% translate 'Main' %}">
         {% include 'web/partials/nav_items.html' with variant='sidebar' %}
       </nav>
 
@@ -285,12 +288,18 @@
         <form method="post" action="{% url 'web:logout' %}" class="mt-3">
           {% csrf_token %}
           <button class="flex w-full items-center justify-center gap-2 rounded-lg border border-brand-border px-3 py-2 text-xs font-semibold text-secondary-text hover:bg-terracotta-tint/40 dark:border-warm-brown dark:hover:bg-warm-brown/40">
-            {% icon 'sign-out' 'text-xs' %} Sign out
+            {% icon 'sign-out' 'text-xs' %} {% translate "Sign out" %}
           </button>
         </form>
         {% else %}
-        <a href="{% url 'web:login' %}" class="block rounded-lg bg-cam-indigo px-3 py-2 text-center text-xs font-semibold text-white hover:bg-cam-indigo-dark">Sign in</a>
+        <a href="{% url 'web:login' %}" class="block rounded-lg bg-cam-indigo px-3 py-2 text-center text-xs font-semibold text-white hover:bg-cam-indigo-dark">{% translate "Sign in" %}</a>
         {% endif %}
+        {% comment %} Shown to signed-out readers too: French is the language of
+           administration and schooling, so the person who most needs this
+           page in French is the one without an account yet. {% endcomment %}
+        <div class="mt-3 flex justify-center">
+          {% include 'web/partials/language_switch.html' %}
+        </div>
       </div>
     </aside>
 
@@ -306,20 +315,21 @@
             </span>
             <span class="leading-tight">
               <span class="block font-body text-sm font-bold tracking-[0.18em] text-white">GRIOT AI</span>
-              <span class="block text-[11px] text-cam-bronze/80">Digital Heritage Platform</span>
+              <span class="block text-[11px] text-cam-bronze/80">{% translate "Digital Heritage Platform" %}</span>
             </span>
           </a>
           <div class="ml-auto flex items-center gap-1">
             {% if user.is_authenticated %}
-            <a href="{% url 'web:library' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="Library" title="Library"><span class="fa-solid fa-bookmark" aria-hidden="true"></span></a>
-            <a href="{% url 'web:gamification' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="Rewards" title="Rewards"><span class="fa-solid fa-trophy" aria-hidden="true"></span></a>
-            <a href="{% url 'web:profile' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="Profile" title="Profile"><span class="fa-solid fa-user" aria-hidden="true"></span></a>
+            <a href="{% url 'web:library' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="{% translate 'Library' %}" title="{% translate 'Library' %}"><span class="fa-solid fa-bookmark" aria-hidden="true"></span></a>
+            <a href="{% url 'web:gamification' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="{% translate 'Rewards' %}" title="{% translate 'Rewards' %}"><span class="fa-solid fa-trophy" aria-hidden="true"></span></a>
+            <a href="{% url 'web:profile' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="{% translate 'Profile' %}" title="{% translate 'Profile' %}"><span class="fa-solid fa-user" aria-hidden="true"></span></a>
             {% if user.is_staff or user.role == 'admin' or user.role == 'institution_manager' %}
-            <a href="{% url 'web:admin-dashboard' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="Dashboard" title="Dashboard"><span class="fa-solid fa-chart-simple" aria-hidden="true"></span></a>
+            <a href="{% url 'web:admin-dashboard' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="{% translate 'Dashboard' %}" title="{% translate 'Dashboard' %}"><span class="fa-solid fa-chart-simple" aria-hidden="true"></span></a>
             {% endif %}
             {% else %}
-            <a href="{% url 'web:login' %}" class="rounded-full bg-cam-bronze/80 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/30">Sign in</a>
+            <a href="{% url 'web:login' %}" class="rounded-full bg-cam-bronze/80 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/30">{% translate "Sign in" %}</a>
             {% endif %}
+            {% include 'web/partials/language_switch.html' with variant='compact' %}
           </div>
         </div>
       </header>
@@ -332,7 +342,7 @@
 
   {# Mobile bottom navigation — mirrors a mobile tab bar #}
   <nav class="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-brand-border dark:border-warm-brown bg-white/95 dark:bg-deep-earth/95 backdrop-blur"
-       aria-label="Bottom navigation">
+       aria-label="{% translate 'Bottom navigation' %}">
     <div class="mx-auto grid max-w-md grid-cols-5 text-[11px] font-medium">
       {% include 'web/partials/nav_items.html' with variant='bottom' %}
     </div>
