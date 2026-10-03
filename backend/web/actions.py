@@ -16,7 +16,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -27,6 +27,11 @@ from django.views.decorators.http import require_POST
 from config.rate_limit import rate_limit
 from gamification.models import Quiz, QuizQuestion
 from qr_codes.models import Artifact
+from qr_codes.services.qr_worklist import (
+    QR_WORKLIST_LIMIT,
+    generate_qr_for_artifacts,
+    missing_slugs,
+)
 from stories.models import Story
 from stories.services import record_consent, request_consent
 
@@ -401,6 +406,75 @@ def artifact_generate_audio(request, slug):
     message, kind = generate_artifact_audio(request.user, artifact, language)
     getattr(messages, kind)(request, message)
     return redirect('web:artifact-detail', slug=artifact.slug)
+
+
+# ---------------------------------------------------------------------------
+# QR codes — mirrors POST /api/artifacts/{slug}/generate-qr/
+#
+# A QR code is what a museum prints and pastes beside an object, so generating
+# one is a curator's job and not a visitor's. Same rule as the API:
+# institution managers and admins only, which is why this does not reuse
+# `@login_required` and then check inside.
+# ---------------------------------------------------------------------------
+def _require_moderator(request):
+    if request.user.role not in ('institution_manager', 'admin'):
+        raise PermissionDenied
+
+
+@login_required
+@require_POST
+def artifact_generate_qr(request, slug):
+    """Generate (or regenerate) one artifact's printable QR code."""
+    _require_moderator(request)
+    artifact = get_object_or_404(Artifact, slug=slug)
+    generate_qr_for_artifacts([artifact.slug])
+    messages.success(
+        request,
+        _('QR code generated for "%(title)s".') % {'title': artifact.title},
+    )
+    return HttpResponseRedirect(_safe_next(request, reverse('web:admin-dashboard')))
+
+
+@login_required
+@require_POST
+def artifacts_generate_qr(request):
+    """Generate QR codes for the ticked rows of the dashboard worklist.
+
+    ``scope`` says which button was pressed, and it is not cosmetic. Both
+    forms post to this one endpoint, so a form that simply carried no ``slugs``
+    could not tell "generate everything still missing" from "generate for
+    selected" where the curator forgot to tick anything — the second would
+    silently regenerate the whole backlog. So the tick-box form asks for
+    ``selected`` and an empty selection is reported rather than widened.
+    """
+    _require_moderator(request)
+    scope = request.POST.get('scope', 'missing')
+    slugs = request.POST.getlist('slugs')
+
+    if scope == 'selected':
+        if not slugs:
+            messages.info(request, _('Tick at least one artifact first.'))
+            return HttpResponseRedirect(
+                _safe_next(request, reverse('web:admin-dashboard')),
+            )
+    else:
+        slugs = missing_slugs(QR_WORKLIST_LIMIT)
+
+    generated, missing = generate_qr_for_artifacts(slugs)
+    if missing:
+        messages.warning(
+            request,
+            _('%(count)d artifact(s) were not found and were skipped.')
+            % {'count': len(missing)},
+        )
+    if generated:
+        messages.success(
+            request,
+            _('%(count)d QR code(s) generated.') % {'count': len(generated)},
+        )
+    if not generated and not missing:
+        messages.info(request, _('Nothing to generate — every artifact already has a code.'))
+    return HttpResponseRedirect(_safe_next(request, reverse('web:admin-dashboard')))
 
 
 # ---------------------------------------------------------------------------

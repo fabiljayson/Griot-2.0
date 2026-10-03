@@ -45,6 +45,7 @@ from media_app.services.tts import (
     strip_markdown,
 )
 from qr_codes.models import Artifact
+from qr_codes.services.qr_worklist import qr_worklist_data
 from stories.models import (
     ReadingProgress,
     Story,
@@ -540,7 +541,7 @@ def quiz_play_data(user, quiz_id):
 
 
 def admin_dashboard_data():
-    """KPI summary plus the flagged-story moderation queue."""
+    """KPI summary plus the flagged-story moderation queue and the QR worklist."""
     summary = get_dashboard_summary()
 
     flags = (
@@ -561,7 +562,16 @@ def admin_dashboard_data():
         'moderation_queue': list(grouped_flags.values()),
         'top_users': summary['gamification']['top_users'],
         'avg_score': summary['gamification']['avg_score'],
+        **qr_worklist_data(),
     }
+
+
+# ---------------------------------------------------------------------------
+# QR code worklist (Phase 5)
+# ---------------------------------------------------------------------------
+# The rules live in `qr_codes.services.qr_worklist`, not here, because the mobile
+# app reads the same list through `GET /api/artifacts/qr/worklist/`. This screen
+# is one of its two callers, not its owner.
 
 
 def story_form_data(user, slug):

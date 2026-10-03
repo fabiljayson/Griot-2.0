@@ -15,6 +15,19 @@ urlpatterns = [
         views.ArtifactLookupByDeepLinkView.as_view(),
         name='artifact-lookup',
     ),
+    # The admin QR worklist. Registered ahead of the router for the same
+    # reason: `artifacts/qr/...` would otherwise be swallowed by the
+    # `artifacts/<slug>/` detail route.
+    path(
+        'artifacts/qr/worklist/',
+        views.ArtifactQRWorklistView.as_view(),
+        name='artifact-qr-worklist',
+    ),
+    path(
+        'artifacts/qr/worklist/generate/',
+        views.ArtifactQRWorklistGenerateView.as_view(),
+        name='artifact-qr-worklist-generate',
+    ),
     path(
         'qr/<slug:slug>/',
         views.QRCodeRedirectView.as_view(),

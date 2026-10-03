@@ -11,6 +11,7 @@ library;
 
 // Models
 export 'models/analytics_models.dart';
+export 'models/qr_worklist_models.dart';
 export 'models/moderation_models.dart';
 
 // Services

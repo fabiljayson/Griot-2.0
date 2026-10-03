@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';
+import '../models/qr_worklist_models.dart';
 import '../services/admin_api_service.dart';
 
 /// Complete dashboard summary provider.
@@ -140,4 +141,70 @@ final consentQueueProvider = FutureProvider.autoDispose<List<ConsentReviewStory>
 final consentActionProvider =
     StateNotifierProvider<ConsentActionNotifier, ConsentActionState>(
       (ref) => ConsentActionNotifier(),
+    );
+
+/// The artifacts still missing a printable QR code (manager/admin only).
+final qrWorklistProvider = FutureProvider.autoDispose<QrWorklist>((ref) async {
+  return AdminApiService.instance.getQrWorklist();
+});
+
+/// State of an in-flight QR generation.
+class QrGenerationState {
+  const QrGenerationState({this.busySlug, this.generatingAll = false, this.errorMessage});
+
+  /// The single artifact being regenerated, if that is what is in flight.
+  final String? busySlug;
+
+  /// True while the "everything still missing" button is running.
+  final bool generatingAll;
+
+  final String? errorMessage;
+
+  bool isBusy(String slug) => busySlug == slug;
+  bool get isSubmitting => busySlug != null || generatingAll;
+}
+
+/// Notifier generating QR codes from the worklist.
+///
+/// On success the caller refreshes [qrWorklistProvider]: a generated row moves
+/// out of "no code yet", and reading that from the local list rather than from
+/// the server's ordering is how the screen would claim an object is still
+/// unlabelled moments after labelling it.
+class QrGenerationNotifier extends StateNotifier<QrGenerationState> {
+  QrGenerationNotifier() : super(const QrGenerationState());
+
+  final AdminApiService _api = AdminApiService.instance;
+
+  /// Regenerate one artifact's code. Returns the outcome, or null on failure.
+  Future<QrWorklistGeneration?> generateOne(String slug) async {
+    state = QrGenerationState(busySlug: slug);
+    try {
+      final result = await _api.generateQrCodes(slugs: [slug]);
+      state = const QrGenerationState();
+      return result;
+    } catch (e) {
+      state = QrGenerationState(errorMessage: 'Could not generate the QR code: $e');
+      return null;
+    }
+  }
+
+  /// Generate for every artifact with no code yet. Returns the outcome, or
+  /// null on failure.
+  Future<QrWorklistGeneration?> generateAllMissing() async {
+    state = const QrGenerationState(generatingAll: true);
+    try {
+      final result = await _api.generateQrCodes();
+      state = const QrGenerationState();
+      return result;
+    } catch (e) {
+      state = QrGenerationState(errorMessage: 'Could not generate the QR codes: $e');
+      return null;
+    }
+  }
+}
+
+/// QR generation state provider.
+final qrGenerationProvider =
+    StateNotifierProvider<QrGenerationNotifier, QrGenerationState>(
+      (ref) => QrGenerationNotifier(),
     );

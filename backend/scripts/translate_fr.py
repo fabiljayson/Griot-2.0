@@ -521,6 +521,33 @@ TRANSLATIONS = {
     'Account "%(username)s" and associated data deleted.':
         'Compte « %(username)s » et données associées supprimés.',
     'Welcome to Griot AI, %(username)s!': 'Bienvenue sur Griot AI, %(username)s !',
+    'QR code generated for "%(title)s".': 'Code QR généré pour « %(title)s ».',
+    'Tick at least one artifact first.': 'Cochez au moins un objet au préalable.',
+    '%(count)d artifact(s) were not found and were skipped.':
+        '%(count)d objet(s) introuvable(s) — ignoré(s).',
+    '%(count)d QR code(s) generated.': '%(count)d code(s) QR généré(s).',
+    'Nothing to generate — every artifact already has a code.':
+        'Rien à générer — chaque objet possède déjà un code.',
+
+    # --- QR code worklist (admin dashboard, Phase 5) ---
+    # "scan" stays untranslated: it is already a French word and is the term
+    # a museum counter actually uses. msgmerge had fuzzy-matched this msgid to
+    # the neighbouring "%(counter)s flag" entry, which would have rendered
+    # "3 signalement" on the QR list.
+    'QR Code Worklist': 'Liste de travail des codes QR',
+    'Printable codes for the artifacts on the museum floor.':
+        'Codes imprimables pour les objets exposés dans les musées.',
+    '%(generated)s of %(total)s artifacts have a printable code':
+        '%(generated)s objets sur %(total)s disposent d\'un code imprimable',
+    'Generate for selected': 'Générer pour la sélection',
+    'Generate all missing': 'Générer tous les codes manquants',
+    'Worklist truncated to the first %(counter)s artifact — the catalog is larger.':
+        'Liste tronquée aux %(counter)s premiers objets — le catalogue est plus volumineux.',
+    '%(counter)s scan': ('%(counter)s scan', '%(counter)s scans'),
+    'No code yet': 'Aucun code pour l\'instant',
+    'Regenerate': 'Régénérer',
+    'Generate': 'Générer',
+    'No artifacts to label yet.': 'Aucun objet à étiqueter pour l\'instant.',
 
     # --- Sort options ---
     'Newest': 'Plus récents',
@@ -556,6 +583,31 @@ def po_escape(value):
 MSGSTR_RUN = re.compile(
     r'^(?:msgstr(?:\[\d+\])? (?:(?:"(?:[^"\\]|\\.)*"\s*)+)\n?)+', re.M,
 )
+
+# `msgmerge` marks a msgid it fuzzy-matched to a renamed msgid with `#, fuzzy`,
+# and keeps the old msgid in a `#|` comment. That is a *suggestion* a human is
+# meant to accept or reject. This script is the human: when it supplies a
+# translation the suggestion has been reviewed and accepted, so the flag has to
+# go. Left in place, msgfmt reports the entry as fuzzy and gettext omits it —
+# an entry that looks translated in the .po and renders as English at runtime.
+#
+# Flags share a line (`#, fuzzy, python-format`), so the list is rebuilt rather
+# than the token deleted: dropping `#, fuzzy,` wholesale would leave a bare
+# `python-format` on the line and msgfmt rejects the whole catalogue with
+# 'keyword "python" unknown'.
+FLAG_LINE = re.compile(r'^#,[ \t]*(.*)$', re.M)
+
+
+def unfuzzy(entry):
+    """Drop the fuzzy marker, keeping every other flag on the line intact."""
+    def rebuild(match):
+        flags = [
+            flag.strip() for flag in match.group(1).split(',')
+            if flag.strip() and flag.strip() != 'fuzzy'
+        ]
+        return f'#, {", ".join(flags)}\n' if flags else ''
+
+    return FLAG_LINE.sub(rebuild, entry)
 
 
 def po_unquote(block):
@@ -644,6 +696,7 @@ def main(path):
             entry = MSGSTR_RUN.sub(
                 lambda _m: f'msgstr "{po_escape(value)}"\n', entry, count=1,
             )
+        entry = unfuzzy(entry)
         translated += 1
         out.append(entry)
 

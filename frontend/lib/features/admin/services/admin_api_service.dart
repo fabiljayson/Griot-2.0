@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';
+import '../models/qr_worklist_models.dart';
 
 /// API service for the admin analytics endpoints.
 ///
@@ -19,6 +20,7 @@ class AdminApiService {
 
   static const _basePath = '/api/analytics';
   static const _storiesBasePath = '/api/stories';
+  static const _artifactsBasePath = '/api/artifacts';
 
   /// Fetch the complete dashboard summary.
   Future<DashboardSummary> getDashboardSummary() async {
@@ -117,6 +119,33 @@ class AdminApiService {
       data: data,
     );
     return response.data as Map<String, dynamic>;
+  }
+
+  /// Fetch the QR code worklist: artifacts still missing a printable code,
+  /// already ordered "no code yet first" by the server (manager/admin only).
+  ///
+  /// The ordering, the limit and the counts are the server's, not this
+  /// client's — the web dashboard reads the same list, and two implementations
+  /// of "which objects need labelling" is how the two surfaces start telling a
+  /// curator different things about the same museum.
+  Future<QrWorklist> getQrWorklist() async {
+    final response = await _dio.get('$_artifactsBasePath/qr/worklist/');
+    return QrWorklist.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Generate QR codes for [slugs], or for everything still missing when
+  /// [slugs] is empty (manager/admin only).
+  ///
+  /// An empty list is not the same as "generate the whole catalog": the server
+  /// bounds that case, and reports the bound through [QrWorklist.generated].
+  Future<QrWorklistGeneration> generateQrCodes({List<String> slugs = const []}) async {
+    final response = await _dio.post(
+      '$_artifactsBasePath/qr/worklist/generate/',
+      data: <String, dynamic>{'slugs': slugs},
+    );
+    return QrWorklistGeneration.fromJson(
+      response.data as Map<String, dynamic>,
+    );
   }
 
   /// Resolve flags on a story.

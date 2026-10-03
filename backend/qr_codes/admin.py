@@ -74,13 +74,10 @@ class ArtifactAdmin(admin.ModelAdmin):
     unpublish_artifacts.short_description = 'Unpublish selected artifacts'
 
     def generate_qr_codes(self, request, queryset):
-        from .services.qr_generator import get_qr_generator
-        qr_gen = get_qr_generator()
+        from .services.qr_generator import generate_artifact_qr
         count = 0
         for artifact in queryset:
-            result = qr_gen.generate_for_artifact(artifact)
-            artifact.qr_code_svg = result['svg']
-            artifact.save(update_fields=['qr_code_svg'])
+            generate_artifact_qr(artifact, fmt='svg')
             count += 1
         self.message_user(request, f'{count} QR codes generated.')
     generate_qr_codes.short_description = 'Generate QR codes for selected artifacts'

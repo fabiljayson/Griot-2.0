@@ -16,10 +16,19 @@ from .serializers import (
     ArtifactCreateUpdateSerializer,
     ArtifactDetailSerializer,
     ArtifactListSerializer,
+    ArtifactWorklistSerializer,
     QRCodeGenerateSerializer,
     QRCodeScanSerializer,
+    QRWorklistGenerateSerializer,
+    QRWorklistSerializer,
 )
-from .services.qr_generator import get_qr_generator
+from .services.qr_generator import generate_artifact_qr
+from .services.qr_worklist import (
+    QR_WORKLIST_LIMIT,
+    generate_qr_for_artifacts,
+    missing_slugs,
+    qr_worklist_data,
+)
 
 
 class IsInstitutionManagerOrAbove(permissions.BasePermission):
@@ -90,47 +99,32 @@ class ArtifactViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        qr_gen = get_qr_generator()
-        fg = data.get('foreground', '#C85A32')
-        bg = data.get('background', '#FFFFFF')
-        fmt = data.get('format', 'svg')
-
-        deep_link = artifact.qr_deep_link
-
-        if fmt == 'svg':
-            svg = qr_gen.generate_svg(deep_link, foreground=fg, background=bg)
-            artifact.qr_code_svg = svg
-            artifact.save(update_fields=['qr_code_svg'])
-            return Response({
-                'svg': svg,
-                'deep_link': deep_link,
-            })
-
-        elif fmt == 'png':
-            png_bytes = qr_gen.generate_png(
-                deep_link, foreground=fg, background=bg,
+        # The rules live in the service, not here: the web admin dashboard
+        # calls the same function, and a change to what "persisted" means must
+        # not be able to land on one surface only.
+        try:
+            result = generate_artifact_qr(
+                artifact,
+                fmt=data.get('format', 'svg'),
+                foreground=data.get('foreground', '#C85A32'),
+                background=data.get('background', '#FFFFFF'),
             )
+        except ValueError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if result['format'] == 'png':
             return HttpResponse(
-                png_bytes,
+                result['png_bytes'],
                 content_type='image/png',
                 headers={
                     'Content-Disposition': f'attachment; filename="qr_{artifact.slug}.png"',
                 },
             )
-
-        elif fmt == 'data_uri':
-            data_uri = qr_gen.generate_data_uri(
-                deep_link, foreground=fg, background=bg,
-            )
-            return Response({
-                'data_uri': data_uri,
-                'deep_link': deep_link,
-            })
-
-        return Response(
-            {'error': 'Invalid format'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return Response({
+            key: value
+            for key, value in result.items()
+            if key in ('svg', 'data_uri', 'deep_link')
+        })
 
     @action(detail=True, methods=['post'])
     def scan(self, request, slug=None):
@@ -169,6 +163,93 @@ class ArtifactViewSet(viewsets.ModelViewSet):
 
     def _get_client_ip(self, request):
         return get_client_ip(request)
+
+
+@extend_schema(
+    responses={200: QRWorklistSerializer},
+    description=(
+        'Artifacts ordered by "has no printable QR code yet", mirroring the web '
+        'admin dashboard section. Manager/admin only.'
+    ),
+)
+class ArtifactQRWorklistView(generics.GenericAPIView):
+    """`GET /api/artifacts/qr/worklist/` — the curator's worklist.
+
+    Read-only. A QR code is not a record: it is derived from the artifact's
+    deep link and only exists once it is generated, so there is nothing here to
+    create. The ordering and the limit are `qr_codes.services.qr_worklist`'s,
+    the same ones the server-rendered dashboard uses — the two screens showing
+    different lists of the same museum is the failure this endpoint exists to
+    prevent.
+    """
+
+    serializer_class = QRWorklistSerializer
+    permission_classes = [IsInstitutionManagerOrAbove]
+
+    def get(self, request):
+        data = qr_worklist_data()
+        return Response({
+            'artifacts': ArtifactWorklistSerializer(
+                data['qr_artifacts'], many=True,
+            ).data,
+            'total': data['qr_total'],
+            'generated': data['qr_generated'],
+            'truncated': data['qr_truncated'],
+        })
+
+
+@extend_schema(
+    request=QRWorklistGenerateSerializer,
+    responses={200: inline_serializer(
+        name='QRWorklistGenerateResponse',
+        fields={
+            'generated': serializers.ListField(
+                child=serializers.CharField(),
+                help_text='Slugs a code was generated for.',
+            ),
+            'missing': serializers.ListField(
+                child=serializers.CharField(),
+                help_text='Requested slugs that do not resolve.',
+            ),
+            'skipped': serializers.BooleanField(
+                help_text='True when no slugs were given and nothing was missing.',
+            ),
+        },
+    )},
+    description=(
+        'Generate QR codes for named artifacts, or for everything still '
+        'missing when `slugs` is omitted. Manager/admin only.'
+    ),
+)
+class ArtifactQRWorklistGenerateView(generics.GenericAPIView):
+    """`POST /api/artifacts/qr/worklist/generate/` — batch generation.
+
+    Separate from the per-artifact `generate_qr` because a curator with a
+    printer and a tray of unlabelled objects wants one request, and because the
+    batch is bounded: a national collection must not be regenerable in a
+    single call. With no `slugs` the bound is the worklist limit; with them, it
+    is however many the caller asked for.
+    """
+
+    serializer_class = QRWorklistGenerateSerializer
+    permission_classes = [IsInstitutionManagerOrAbove]
+
+    def post(self, request):
+        serializer = QRWorklistGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        slugs = list(serializer.validated_data.get('slugs') or [])
+        if not slugs:
+            slugs = missing_slugs(QR_WORKLIST_LIMIT)
+            if not slugs:
+                return Response({'generated': [], 'missing': [], 'skipped': True})
+
+        generated, missing = generate_qr_for_artifacts(slugs)
+        return Response({
+            'generated': [artifact.slug for artifact in generated],
+            'missing': missing,
+            'skipped': False,
+        })
 
 
 @extend_schema(

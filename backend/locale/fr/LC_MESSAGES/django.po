@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Griot AI 0.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 21:59+0000\n"
+"POT-Creation-Date: 2026-10-03 22:50+0000\n"
 "PO-Revision-Date: 2026-10-03 00:00+0000\n"
 "Last-Translator: Track A translation table (backend/scripts/"
 "translate_fr.py)\n"
@@ -64,7 +64,7 @@ msgstr "Outil"
 
 
 #: qr_codes/models.py:27 stories/models.py:418
-#: templates/web/story_detail.html:418
+#: templates/web/story_detail.html:420
 msgid "Other"
 msgstr "Autre"
 
@@ -222,171 +222,256 @@ msgid "Send an announcement"
 msgstr "Envoyer une annonce"
 
 
-#: templates/web/admin_dashboard.html:10 templates/web/admin_dashboard.html:15
+#: templates/web/admin_dashboard.html:11 templates/web/admin_dashboard.html:16
 msgid "Admin Dashboard"
 msgstr "Tableau de bord"
 
 
-#: templates/web/admin_dashboard.html:16
+#: templates/web/admin_dashboard.html:17
 msgid "Platform overview and moderation tools."
 msgstr "Vue d'ensemble de la plateforme et outils de modération."
 
 
-#: templates/web/admin_dashboard.html:27
+#: templates/web/admin_dashboard.html:28
 msgid "Users"
 msgstr "Utilisateurs"
 
 
-#: templates/web/admin_dashboard.html:30
+#: templates/web/admin_dashboard.html:31
 #, python-format
+
 msgid "%(counter)s active (30d)"
 msgid_plural "%(counter)s active (30d)"
 msgstr[0] "%(counter)s actif sur 30 jours"
 msgstr[1] "%(counter)s actifs sur 30 jours"
 
 
-#: templates/web/admin_dashboard.html:34 templates/web/auth/base_auth.html:54
+#: templates/web/admin_dashboard.html:35 templates/web/auth/base_auth.html:54
 #: templates/web/partials/nav_items.html:21
 #: templates/web/partials/nav_items.html:60 templates/web/stories.html:10
 msgid "Stories"
 msgstr "Récits"
 
 
-#: templates/web/admin_dashboard.html:37
+#: templates/web/admin_dashboard.html:38
 #, python-format
+
 msgid "%(counter)s pending review"
 msgid_plural "%(counter)s pending review"
 msgstr[0] "%(counter)s en attente de révision"
 msgstr[1] "%(counter)s en attente de révision"
 
 
-#: templates/web/admin_dashboard.html:41 templates/web/quizzes.html:10
+#: templates/web/admin_dashboard.html:42 templates/web/quizzes.html:10
 msgid "Quizzes"
 msgstr "Quiz"
 
 
-#: templates/web/admin_dashboard.html:44
+#: templates/web/admin_dashboard.html:45
 #, python-format
+
 msgid "%(rate)s%% pass rate"
 msgstr "%(rate)s %% de réussite"
 
 
-#: templates/web/admin_dashboard.html:48
+#: templates/web/admin_dashboard.html:49
 msgid "QR Scans"
 msgstr "Scans QR"
 
 
-#: templates/web/admin_dashboard.html:51
+#: templates/web/admin_dashboard.html:52
 #, python-format
+
 msgid "%(counter)s published artifact"
 msgid_plural "%(counter)s published artifacts"
 msgstr[0] "%(counter)s objet publié"
 msgstr[1] "%(counter)s objets publiés"
 
 
-#: templates/web/admin_dashboard.html:59
+#: templates/web/admin_dashboard.html:60
 msgid "New users"
 msgstr "Nouveaux utilisateurs"
 
 
-#: templates/web/admin_dashboard.html:63
+#: templates/web/admin_dashboard.html:64
 msgid "New stories"
 msgstr "Nouveaux récits"
 
 
-#: templates/web/admin_dashboard.html:67
+#: templates/web/admin_dashboard.html:68
 msgid "Quiz attempts"
 msgstr "Tentatives de quiz"
 
 
-#: templates/web/admin_dashboard.html:71
+#: templates/web/admin_dashboard.html:72
 msgid "QR scans"
 msgstr "Scans QR"
 
 
-#: templates/web/admin_dashboard.html:75
+#: templates/web/admin_dashboard.html:76
 msgid "Shares"
 msgstr "Partages"
 
 
-#: templates/web/admin_dashboard.html:79
+#: templates/web/admin_dashboard.html:80
 msgid "Open flags"
 msgstr "Signalements ouverts"
 
 
-#: templates/web/admin_dashboard.html:89
+#: templates/web/admin_dashboard.html:90
 msgid "User Growth (30 days)"
 msgstr "Croissance des utilisateurs (30 jours)"
 
 
-#: templates/web/admin_dashboard.html:98
+#: templates/web/admin_dashboard.html:99
 msgid "Stories by Status"
 msgstr "Récits par statut"
 
 
-#: templates/web/admin_dashboard.html:117
+#: templates/web/admin_dashboard.html:118
 msgid "Top Storytellers"
 msgstr "Meilleurs conteurs"
 
 
-#: templates/web/admin_dashboard.html:124
+#: templates/web/admin_dashboard.html:125
 #, python-format
+
 msgid "Lvl %(level)s"
 msgstr "Niv. %(level)s"
 
 
-#: templates/web/admin_dashboard.html:128
+#: templates/web/admin_dashboard.html:129
 msgid "No gamification activity yet."
 msgstr "Aucune activité de jeu pour l'instant."
 
 
-#: templates/web/admin_dashboard.html:136
+#: templates/web/admin_dashboard.html:137
 msgid "Top Stories"
 msgstr "Récits les plus lus"
 
 
-#: templates/web/admin_dashboard.html:146
+#: templates/web/admin_dashboard.html:147
 msgid "No published stories yet."
 msgstr "Aucun récit publié pour l'instant."
 
 
-#: templates/web/admin_dashboard.html:155
+#: templates/web/admin_dashboard.html:156
 msgid "Moderation Queue"
 msgstr "File de modération"
 
 
-#: templates/web/admin_dashboard.html:168
+#: templates/web/admin_dashboard.html:169
 #, python-format
+
 msgid "by %(name)s • status: %(status)s"
 msgstr "par %(name)s • statut : %(status)s"
 
 
-#: templates/web/admin_dashboard.html:170
+#: templates/web/admin_dashboard.html:171
 #, python-format
+
 msgid "%(counter)s flag"
 msgid_plural "%(counter)s flags"
 msgstr[0] "%(counter)s signalement"
 msgstr[1] "%(counter)s signalements"
 
 
-#: templates/web/admin_dashboard.html:191
+#: templates/web/admin_dashboard.html:192
 msgid "Dismiss flags"
 msgstr "Classer sans suite"
 
 
-#: templates/web/admin_dashboard.html:194
+#: templates/web/admin_dashboard.html:195
 msgid "Archive this story and resolve all flags?"
 msgstr "Archiver ce récit et résoudre tous les signalements ?"
 
 
-#: templates/web/admin_dashboard.html:200
+#: templates/web/admin_dashboard.html:201
 msgid "Archive story"
 msgstr "Archiver le récit"
 
 
-#: templates/web/admin_dashboard.html:210
+#: templates/web/admin_dashboard.html:211
 msgid "Queue is clear — no unresolved flags."
 msgstr "File vide — aucun signalement en attente."
+
+
+#: templates/web/admin_dashboard.html:227
+msgid "QR Code Worklist"
+msgstr "Liste de travail des codes QR"
+
+
+#: templates/web/admin_dashboard.html:229
+msgid "Printable codes for the artifacts on the museum floor."
+msgstr "Codes imprimables pour les objets exposés dans les musées."
+
+
+#: templates/web/admin_dashboard.html:231
+#, python-format
+
+msgid "%(generated)s of %(total)s artifacts have a printable code"
+msgstr "%(generated)s objets sur %(total)s disposent d'un code imprimable"
+
+
+#: templates/web/admin_dashboard.html:241
+msgid "Generate for selected"
+msgstr "Générer pour la sélection"
+
+
+#: templates/web/admin_dashboard.html:249
+
+#| msgid "Generate narration"
+msgid "Generate all missing"
+msgstr "Générer tous les codes manquants"
+
+
+#: templates/web/admin_dashboard.html:258
+#, python-format
+
+msgid ""
+"Worklist truncated to the first %(counter)s artifact — the catalog is larger."
+msgid_plural ""
+"Worklist truncated to the first %(counter)s artifacts — the catalog is "
+"larger."
+msgstr[0] "Liste tronquée aux %(counter)s premiers objets — le catalogue est plus volumineux."
+msgstr[1] "Liste tronquée aux %(counter)s premiers objets — le catalogue est plus volumineux."
+
+
+#: templates/web/admin_dashboard.html:282
+#, python-format
+
+#| msgid "%(counter)s flag"
+#| msgid_plural "%(counter)s flags"
+msgid "%(counter)s scan"
+msgid_plural "%(counter)s scans"
+msgstr[0] "%(counter)s scan"
+msgstr[1] "%(counter)s scans"
+
+
+#: templates/web/admin_dashboard.html:293
+
+#| msgid "No audio guide yet"
+msgid "No code yet"
+msgstr "Aucun code pour l'instant"
+
+
+#: templates/web/admin_dashboard.html:300
+msgid "Regenerate"
+msgstr "Régénérer"
+
+
+#: templates/web/admin_dashboard.html:300
+
+#| msgid "Generate video"
+msgid "Generate"
+msgstr "Générer"
+
+
+#: templates/web/admin_dashboard.html:309
+
+#| msgid "No artifacts published yet."
+msgid "No artifacts to label yet."
+msgstr "Aucun objet à étiqueter pour l'instant."
 
 
 #: templates/web/artifact_detail.html:42
@@ -421,6 +506,7 @@ msgstr "Emplacement"
 
 #: templates/web/artifact_detail.html:86
 #, python-format
+
 msgid "More views of %(title)s"
 msgstr "Autres vues de %(title)s"
 
@@ -445,9 +531,10 @@ msgid "Listen to the story of this artifact"
 msgstr "Écoutez l'histoire de cet objet"
 
 
-#: templates/web/artifact_detail.html:107 templates/web/story_detail.html:203
-#: templates/web/story_detail.html:237
+#: templates/web/artifact_detail.html:107 templates/web/story_detail.html:205
+#: templates/web/story_detail.html:239
 #, python-format
+
 msgid "%(seconds)ss"
 msgstr "%(seconds) s"
 
@@ -478,7 +565,7 @@ msgid "Scan the QR code beside the artifact to open this page instantly."
 msgstr "Scannez le code QR placé à côté de l'objet pour ouvrir cette page immédiatement."
 
 
-#: templates/web/artifact_detail.html:147 templates/web/story_detail.html:312
+#: templates/web/artifact_detail.html:147 templates/web/story_detail.html:314
 msgid "Related Stories"
 msgstr "Récits liés"
 
@@ -537,9 +624,9 @@ msgstr "Toujours"
 
 
 #: templates/web/auth/login.html:4 templates/web/auth/login.html:36
-#: templates/web/auth/register.html:91 templates/web/base.html:295
-#: templates/web/base.html:330 templates/web/gamification.html:64
-#: templates/web/home.html:60
+#: templates/web/auth/register.html:91 templates/web/base.html:296
+#: templates/web/base.html:332 templates/web/gamification.html:64
+#: templates/web/home.html:60 web/test_i18n.py:389
 msgid "Sign in"
 msgstr "Se connecter"
 
@@ -680,53 +767,53 @@ msgid "Already have an account?"
 msgstr "Vous avez déjà un compte ?"
 
 
-#: templates/web/base.html:11 templates/web/home.html:10
+#: templates/web/base.html:12 templates/web/home.html:10
 msgid "Griot AI"
 msgstr "Griot AI"
 
 
-#: templates/web/base.html:11 templates/web/base.html:269
-#: templates/web/base.html:318
+#: templates/web/base.html:12 templates/web/base.html:270
+#: templates/web/base.html:320
 msgid "Digital Heritage Platform"
 msgstr "Plateforme du patrimoine vivant"
 
 
-#: templates/web/base.html:273
+#: templates/web/base.html:274
 msgid "Main"
 msgstr "Principal"
 
 
-#: templates/web/base.html:291 templates/web/profile.html:124
+#: templates/web/base.html:292 templates/web/profile.html:124
 msgid "Sign out"
 msgstr "Se déconnecter"
 
 
-#: templates/web/base.html:323 templates/web/library.html:10
+#: templates/web/base.html:325 templates/web/library.html:10
 #: templates/web/partials/nav_items.html:29
 #: templates/web/partials/nav_items.html:66
 msgid "Library"
 msgstr "Bibliothèque"
 
 
-#: templates/web/base.html:324 templates/web/gamification.html:10
+#: templates/web/base.html:326 templates/web/gamification.html:10
 #: templates/web/partials/nav_items.html:33
 #: templates/web/partials/nav_items.html:69
 msgid "Rewards"
 msgstr "Récompenses"
 
 
-#: templates/web/base.html:325 templates/web/profile.html:10
+#: templates/web/base.html:327 templates/web/profile.html:10
 #: templates/web/profile.html:15
 msgid "Profile"
 msgstr "Profil"
 
 
-#: templates/web/base.html:327 templates/web/partials/nav_items.html:44
+#: templates/web/base.html:329 templates/web/partials/nav_items.html:44
 msgid "Dashboard"
 msgstr "Tableau de bord"
 
 
-#: templates/web/base.html:345
+#: templates/web/base.html:347
 msgid "Bottom navigation"
 msgstr "Navigation inférieure"
 
@@ -748,12 +835,14 @@ msgstr "Niveau"
 
 #: templates/web/gamification.html:30
 #, python-format
+
 msgid "Rank #%(rank)s"
 msgstr "Rang n° %(rank)s"
 
 
 #: templates/web/gamification.html:35
 #, python-format
+
 msgid "%(xp)s XP to next level"
 msgstr "%(xp)s XP avant le niveau suivant"
 
@@ -805,12 +894,14 @@ msgstr "Obtenu"
 
 #: templates/web/gamification.html:98
 #, python-format
+
 msgid "%(xp)s XP"
 msgstr "%(xp)s XP"
 
 
 #: templates/web/gamification.html:98
 #, python-format
+
 msgid "%(counter)s quiz"
 msgid_plural "%(counter)s quizzes"
 msgstr[0] "%(counter)s quiz"
@@ -819,6 +910,7 @@ msgstr[1] "%(counter)s quiz"
 
 #: templates/web/gamification.html:98
 #, python-format
+
 msgid "%(counter)s read"
 msgid_plural "%(counter)s reads"
 msgstr[0] "%(counter)s lecture"
@@ -827,6 +919,7 @@ msgstr[1] "%(counter)s lectures"
 
 #: templates/web/gamification.html:98
 #, python-format
+
 msgid "%(counter)s days"
 msgid_plural "%(counter)s days"
 msgstr[0] "%(counter)s jour"
@@ -850,6 +943,7 @@ msgstr "Classement"
 
 #: templates/web/gamification.html:141
 #, python-format
+
 msgid "Level %(level)s • %(stories)s read • %(quizzes)s quizzes"
 msgstr "Niveau %(level)s • %(stories)s lectures • %(quizzes)s quiz"
 
@@ -859,13 +953,14 @@ msgid "No XP earned yet — be the first on the board!"
 msgstr "Aucun XP gagné pour l'instant — soyez le premier au classement !"
 
 
-#: templates/web/home.html:10 templates/web/home.html:76
+#: templates/web/home.html:10 templates/web/home.html:77
 msgid "Journey through Cameroon's living heritage"
 msgstr "Voyage à travers le patrimoine vivant du Cameroun"
 
 
 #: templates/web/home.html:24
 #, python-format
+
 msgid "%(name)s's Heritage Feed"
 msgstr "Le fil patrimonial de %(name)s"
 
@@ -887,9 +982,10 @@ msgid ""
 msgstr "Explorez des récits culturels, scannez les codes QR des objets de musées et gagnez des badges du patrimoine — au même endroit."
 
 
-#: templates/web/home.html:41 templates/web/home.html:150
-#: templates/web/stories.html:83 web/test_i18n.py:262 web/test_i18n.py:263
+#: templates/web/home.html:41 templates/web/home.html:151
+#: templates/web/stories.html:83 web/test_i18n.py:302 web/test_i18n.py:303
 #, python-format
+
 msgid "%(counter)s story"
 msgid_plural "%(counter)s stories"
 msgstr[0] "%(counter)s récit"
@@ -898,6 +994,7 @@ msgstr[1] "%(counter)s récits"
 
 #: templates/web/home.html:44
 #, python-format
+
 msgid "%(counter)s artifact"
 msgid_plural "%(counter)s artifacts"
 msgstr[0] "%(counter)s objet"
@@ -906,6 +1003,7 @@ msgstr[1] "%(counter)s objets"
 
 #: templates/web/home.html:47
 #, python-format
+
 msgid "%(counter)s languages"
 msgid_plural "%(counter)s languages"
 msgstr[0] "%(counter)s langue"
@@ -917,88 +1015,88 @@ msgid "Start Reading"
 msgstr "Commencer à lire"
 
 
-#: templates/web/home.html:78
+#: templates/web/home.html:79
 msgid ""
 "Tales carried by griots, preserved for generations. Read, listen, and "
 "explore the voices of the motherland."
 msgstr "Des contes transmis par les griots, préservés de génération en génération. Lisez, écoutez et explorez les voix de la mère patrie."
 
 
-#: templates/web/home.html:87
+#: templates/web/home.html:88
 msgid "Trending Now"
 msgstr "Tendances"
 
 
-#: templates/web/home.html:105
+#: templates/web/home.html:106
 msgid "Popular Stories"
 msgstr "Récits populaires"
 
 
-#: templates/web/home.html:107
+#: templates/web/home.html:108
 msgid "See all"
 msgstr "Tout voir"
 
 
-#: templates/web/home.html:122 templates/web/home.html:189
+#: templates/web/home.html:123 templates/web/home.html:190
 msgid "Browse by Category"
 msgstr "Parcourir par catégorie"
 
 
-#: templates/web/home.html:140
+#: templates/web/home.html:141
 msgid "Discover Regions"
 msgstr "Découvrir les régions"
 
 
-#: templates/web/home.html:160
+#: templates/web/home.html:161
 msgid "What awaits you"
 msgstr "Ce qui vous attend"
 
 
-#: templates/web/home.html:166
+#: templates/web/home.html:167
 msgid "Cultural Stories"
 msgstr "Récits culturels"
 
 
-#: templates/web/home.html:167
+#: templates/web/home.html:168
 msgid ""
 "Explore tales from every corner of Cameroon — from the highlands to the "
 "coast."
 msgstr "Explorez des récits de tous les coins du Cameroun — des hautes terres jusqu'au littoral."
 
 
-#: templates/web/home.html:173
+#: templates/web/home.html:174
 msgid "Museum QR Codes"
 msgstr "Codes QR de musées"
 
 
-#: templates/web/home.html:174
+#: templates/web/home.html:175
 msgid ""
 "Scan artifact codes for immersive digital experiences and hidden histories."
 msgstr "Scannez les codes des objets pour des expériences numériques et des histoires cachées."
 
 
-#: templates/web/home.html:180
+#: templates/web/home.html:181
 msgid "Earn Badges"
 msgstr "Gagnez des badges"
 
 
-#: templates/web/home.html:181
+#: templates/web/home.html:182
 msgid ""
 "Test your knowledge with quizzes, earn XP, and collect heritage certificates."
 msgstr "Testez vos connaissances avec des quiz, gagnez de l'XP et collectionnez des certificats du patrimoine."
 
 
-#: templates/web/home.html:203
+#: templates/web/home.html:204
 msgid "Ready to explore?"
 msgstr "Prêt à explorer ?"
 
 
-#: templates/web/home.html:204
+#: templates/web/home.html:205
 msgid "Join thousands discovering Cameroon's rich oral traditions."
 msgstr "Rejoignez des milliers de personnes qui découvrent les riches traditions orales du Cameroun."
 
 
-#: templates/web/home.html:207
+#: templates/web/home.html:208
 msgid "Get started — it's free"
 msgstr "Commencez — c'est gratuit"
 
@@ -1021,6 +1119,7 @@ msgstr "Poursuivre la lecture"
 #: templates/web/library.html:34 templates/web/library.html:119
 #: templates/web/partials/story_card.html:43
 #, python-format
+
 msgid "%(minutes)s min"
 msgstr "%(minutes)s min"
 
@@ -1047,6 +1146,7 @@ msgstr "Lus récemment"
 
 #: templates/web/library.html:91
 #, python-format
+
 msgid "%(percent)s%% read"
 msgstr "%(percent)s %% lu"
 
@@ -1058,19 +1158,21 @@ msgstr "Mes récits"
 
 #: templates/web/library.html:119
 #, python-format
+
 msgid "%(counter)s view"
 msgid_plural "%(counter)s views"
 msgstr[0] "%(counter)s vue"
 msgstr[1] "%(counter)s vues"
 
 
-#: templates/web/library.html:122 templates/web/story_detail.html:368
+#: templates/web/library.html:122 templates/web/story_detail.html:370
 msgid "Edit story"
 msgstr "Modifier le récit"
 
 
 #: templates/web/library.html:122
 #, python-format
+
 msgid "Edit %(title)s"
 msgstr "Modifier %(title)s"
 
@@ -1092,6 +1194,7 @@ msgstr "Langue de l'interface"
 
 #: templates/web/partials/language_switch.html:22
 #, python-format
+
 msgid "Read this page in %(name)s"
 msgstr "Lire cette page en %(name)s"
 
@@ -1150,6 +1253,7 @@ msgstr "Votre compte, votre rôle et votre parcours patrimonial."
 
 #: templates/web/profile.html:41
 #, python-format
+
 msgid "%(counter)s day streak"
 msgid_plural "%(counter)s day streak"
 msgstr[0] "%(counter)s jour consécutif"
@@ -1229,8 +1333,9 @@ msgstr "Quiz de connaissances"
 
 
 #: templates/web/quiz_play.html:26 templates/web/quizzes.html:29
-#: templates/web/story_detail.html:301
+#: templates/web/story_detail.html:303
 #, python-format
+
 msgid "%(counter)s question"
 msgid_plural "%(counter)s questions"
 msgstr[0] "%(counter)s question"
@@ -1239,18 +1344,21 @@ msgstr[1] "%(counter)s questions"
 
 #: templates/web/quiz_play.html:26 templates/web/quizzes.html:29
 #, python-format
+
 msgid "pass at %(score)s%%"
 msgstr "réussi à partir de %(score)s %%"
 
 
 #: templates/web/quiz_play.html:26 templates/web/quizzes.html:29
 #, python-format
+
 msgid "earn %(xp)s XP"
 msgstr "gagnez %(xp)s XP"
 
 
 #: templates/web/quiz_play.html:27
 #, python-format
+
 msgid "%(minutes)s min limit"
 msgstr "limite de %(minutes)s min"
 
@@ -1262,6 +1370,7 @@ msgstr "Prêt à tester vos connaissances ?"
 
 #: templates/web/quiz_play.html:37
 #, python-format
+
 msgid "Answer %(counter)s question about this story."
 msgid_plural "Answer %(counter)s questions about this story."
 msgstr[0] "Répondez à %(counter)s question sur ce récit."
@@ -1270,6 +1379,7 @@ msgstr[1] "Répondez à %(counter)s questions sur ce récit."
 
 #: templates/web/quiz_play.html:38
 #, python-format
+
 msgid "Score %(score)s%% or higher to earn %(xp)s XP and level up."
 msgstr "Obtenez %(score)s %% ou plus pour gagner %(xp)s XP et monter de niveau."
 
@@ -1281,12 +1391,14 @@ msgstr "Commencer le quiz"
 
 #: templates/web/quiz_play.html:54
 #, python-format
+
 msgid "Question %(number)s of %(total)s"
 msgstr "Question %(number)s sur %(total)s"
 
 
 #: templates/web/quiz_play.html:55
 #, python-format
+
 msgid "%(counter)s answered"
 msgid_plural "%(counter)s answered"
 msgstr[0] "%(counter)s réponse"
@@ -1335,12 +1447,14 @@ msgstr "Continuez à apprendre !"
 
 #: templates/web/quiz_play.html:112
 #, python-format
+
 msgid "%(correct)s of %(total)s correct in %(seconds)ss"
 msgstr "%(correct)s bonnes réponses sur %(total)s en %(seconds) s"
 
 
 #: templates/web/quiz_play.html:116
 #, python-format
+
 msgid "+%(xp)s XP earned"
 msgstr "+%(xp)s XP gagnés"
 
@@ -1357,6 +1471,7 @@ msgstr "Correcte"
 
 #: templates/web/quiz_play.html:128
 #, python-format
+
 msgid "Incorrect (answer: %(letter)s)"
 msgstr "Incorrecte (réponse : %(letter)s)"
 
@@ -1383,12 +1498,14 @@ msgstr "Vérifiez ce que les récits vous ont appris — réussissez pour gagner
 
 #: templates/web/quizzes.html:38
 #, python-format
+
 msgid "Passed with %(score)s%%"
 msgstr "Réussi avec %(score)s %%"
 
 
 #: templates/web/quizzes.html:38
 #, python-format
+
 msgid "Last try: %(score)s%%"
 msgstr "Dernier essai : %(score)s %%"
 
@@ -1450,6 +1567,7 @@ msgstr "Tout effacer"
 
 #: templates/web/stories.html:81
 #, python-format
+
 msgid "Results for \"%(term)s\""
 msgstr "Résultats pour « %(term)s »"
 
@@ -1461,6 +1579,7 @@ msgstr "Découvrir les récits"
 
 #: templates/web/stories.html:98
 #, python-format
+
 msgid "No stories found for \"%(term)s\""
 msgstr "Aucun récit trouvé pour « %(term)s »"
 
@@ -1475,307 +1594,313 @@ msgid "Browse all stories"
 msgstr "Parcourir tous les récits"
 
 
-#: templates/web/story_detail.html:25
+#: templates/web/story_detail.html:26
 msgid "Reviewer's note"
 msgstr "Note du modérateur"
 
 
-#: templates/web/story_detail.html:41
+#: templates/web/story_detail.html:43
 #, python-format
+
 msgid "Consent on record: %(status)s"
 msgstr "Consentement enregistré : %(status)s"
 
 
-#: templates/web/story_detail.html:44
+#: templates/web/story_detail.html:46
 msgid "Basis:"
 msgstr "Base :"
 
 
-#: templates/web/story_detail.html:48
+#: templates/web/story_detail.html:50
 #, python-format
+
 msgid "Recorded by %(name)s"
 msgstr "Enregistré par %(name)s"
 
 
-#: templates/web/story_detail.html:48
+#: templates/web/story_detail.html:50
 #, python-format
+
 msgid "on %(date)s"
 msgstr "le %(date)s"
 
 
-#: templates/web/story_detail.html:57
+#: templates/web/story_detail.html:59
 msgid "Decision"
 msgstr "Décision"
 
 
-#: templates/web/story_detail.html:66
+#: templates/web/story_detail.html:68
 msgid "Basis"
 msgstr "Base"
 
 
-#: templates/web/story_detail.html:66
+#: templates/web/story_detail.html:68
 msgid "required"
 msgstr "obligatoire"
 
 
-#: templates/web/story_detail.html:68
+#: templates/web/story_detail.html:70
 msgid ""
 "Who you spoke to, and what they said. This is what defends the decision "
 "later."
 msgstr "À qui vous avez parlé, et ce qu'il ou elle a dit. C'est ce qui défendra la décision plus tard."
 
 
-#: templates/web/story_detail.html:73
+#: templates/web/story_detail.html:75
 msgid "Rights holder"
 msgstr "Détenteur des droits"
 
 
-#: templates/web/story_detail.html:75
+#: templates/web/story_detail.html:77
 msgid "Leave unchanged to keep the current value"
 msgstr "Laisser vide pour conserver la valeur actuelle"
 
 
-#: templates/web/story_detail.html:79 templates/web/story_form.html:140
+#: templates/web/story_detail.html:81 templates/web/story_form.html:140
 msgid "Licence"
 msgstr "Licence"
 
 
-#: templates/web/story_detail.html:89
+#: templates/web/story_detail.html:91
 msgid "Record consent decision"
 msgstr "Enregistrer la décision de consentement"
 
 
-#: templates/web/story_detail.html:92
+#: templates/web/story_detail.html:94
 msgid ""
 "Recording “withheld” on a published story archives it. The record is kept, "
 "never deleted."
 msgstr "Enregistrer « refusé » sur un récit publié l'archive. L'enregistrement est conservé, jamais supprimé."
 
 
-#: templates/web/story_detail.html:100
+#: templates/web/story_detail.html:102
 msgid "I have asked the community about this story"
 msgstr "J'ai interrogé la communauté au sujet de ce récit"
 
 
-#: templates/web/story_detail.html:103
+#: templates/web/story_detail.html:105
 msgid ""
 "Records that you asked. What the community answered is recorded by a "
 "moderator, who has to record who they spoke to and on what basis."
 msgstr "Enregistre que vous avez posé la question. Ce que la communauté a répondu est enregistré par un modérateur, qui doit indiquer à qui il a parlé et sur quelle base."
 
 
-#: templates/web/story_detail.html:150
+#: templates/web/story_detail.html:152
 #, python-format
+
 msgid "%(minutes)s min read"
 msgstr "%(minutes)s min de lecture"
 
 
-#: templates/web/story_detail.html:168
+#: templates/web/story_detail.html:170
 #, python-format
+
 msgid "You're %(percent)s%% through this story."
 msgstr "Vous avez lu %(percent)s %% de ce récit."
 
 
-#: templates/web/story_detail.html:193
+#: templates/web/story_detail.html:195
 msgid "Play narration"
 msgstr "Lire la narration"
 
 
-#: templates/web/story_detail.html:197
+#: templates/web/story_detail.html:199
 msgid "Listen to this story"
 msgstr "Écouter ce récit"
 
 
-#: templates/web/story_detail.html:215
+#: templates/web/story_detail.html:217
 msgid "No narration yet"
 msgstr "Pas encore de narration"
 
 
-#: templates/web/story_detail.html:216
+#: templates/web/story_detail.html:218
 msgid "Generate an AI voice-over so visitors can listen to this tale."
 msgstr "Générez une voix off par IA pour que les visiteurs puissent écouter ce récit."
 
 
-#: templates/web/story_detail.html:221
+#: templates/web/story_detail.html:223
 msgid "Generate narration"
 msgstr "Générer la narration"
 
 
-#: templates/web/story_detail.html:233
+#: templates/web/story_detail.html:235
 msgid "Your browser does not support video playback."
 msgstr "Votre navigateur ne prend pas en charge la lecture vidéo."
 
 
-#: templates/web/story_detail.html:245
+#: templates/web/story_detail.html:247
 msgid "Generating video…"
 msgstr "Génération de la vidéo…"
 
 
-#: templates/web/story_detail.html:246
+#: templates/web/story_detail.html:248
 msgid ""
 "Luma AI is bringing this tale to life — this page updates automatically."
 msgstr "Luma AI donne vie à ce récit — cette page se met à jour automatiquement."
 
 
-#: templates/web/story_detail.html:257
+#: templates/web/story_detail.html:259
 msgid "Make it move"
 msgstr "Animez-le"
 
 
-#: templates/web/story_detail.html:258
+#: templates/web/story_detail.html:260
 msgid "Generate an AI video of this story with Luma Dream Machine."
 msgstr "Générez une vidéo IA de ce récit avec Luma Dream Machine."
 
 
-#: templates/web/story_detail.html:262
+#: templates/web/story_detail.html:264
 msgid "Generate video"
 msgstr "Générer la vidéo"
 
 
-#: templates/web/story_detail.html:273 templates/web/story_form.html:104
+#: templates/web/story_detail.html:275 templates/web/story_form.html:104
 msgid "Cultural Context"
 msgstr "Contexte culturel"
 
 
-#: templates/web/story_detail.html:282 templates/web/story_form.html:109
+#: templates/web/story_detail.html:284 templates/web/story_form.html:109
 msgid "Moral Lesson"
 msgstr "Enseignement moral"
 
 
-#: templates/web/story_detail.html:300
+#: templates/web/story_detail.html:302
 msgid "Test your knowledge"
 msgstr "Testez vos connaissances"
 
 
-#: templates/web/story_detail.html:301
+#: templates/web/story_detail.html:303
 #, python-format
+
 msgid "earn %(xp)s XP if you pass"
 msgstr "gagnez %(xp)s XP si vous réussissez"
 
 
-#: templates/web/story_detail.html:304
+#: templates/web/story_detail.html:306
 msgid "Take the quiz"
 msgstr "Faire le quiz"
 
 
-#: templates/web/story_detail.html:304
+#: templates/web/story_detail.html:306
 msgid "Sign in to take quiz"
 msgstr "Connectez-vous pour faire le quiz"
 
 
-#: templates/web/story_detail.html:340
+#: templates/web/story_detail.html:342
 msgid "Saved"
 msgstr "Enregistré"
 
 
-#: templates/web/story_detail.html:348
+#: templates/web/story_detail.html:350
 msgid "Save"
 msgstr "Enregistrer"
 
 
-#: templates/web/story_detail.html:354
+#: templates/web/story_detail.html:356
 msgid "Share"
 msgstr "Partager"
 
 
-#: templates/web/story_detail.html:359
+#: templates/web/story_detail.html:361
 msgid "Report"
 msgstr "Signaler"
 
 
-#: templates/web/story_detail.html:363
+#: templates/web/story_detail.html:365
 msgid "Reading progress is saved automatically"
 msgstr "La progression de lecture est enregistrée automatiquement"
 
 
-#: templates/web/story_detail.html:370 templates/web/story_form.html:11
+#: templates/web/story_detail.html:372 templates/web/story_form.html:11
 msgid "Edit"
 msgstr "Modifier"
 
 
-#: templates/web/story_detail.html:377
+#: templates/web/story_detail.html:379
 msgid "Share story"
 msgstr "Partager le récit"
 
 
-#: templates/web/story_detail.html:381
+#: templates/web/story_detail.html:383
 msgid "Share this story"
 msgstr "Partager ce récit"
 
 
-#: templates/web/story_detail.html:401
+#: templates/web/story_detail.html:403
 msgid "Report story"
 msgstr "Signaler le récit"
 
 
-#: templates/web/story_detail.html:405
+#: templates/web/story_detail.html:407
 msgid "Report this story"
 msgstr "Signaler ce récit"
 
 
-#: templates/web/story_detail.html:412
+#: templates/web/story_detail.html:414
 msgid "Reason"
 msgstr "Motif"
 
 
-#: templates/web/story_detail.html:414
+#: templates/web/story_detail.html:416
 msgid "Cultural inaccuracy"
 msgstr "Inexactitude culturelle"
 
 
-#: templates/web/story_detail.html:415
+#: templates/web/story_detail.html:417
 msgid "Inappropriate content"
 msgstr "Contenu inapproprié"
 
 
-#: templates/web/story_detail.html:416
+#: templates/web/story_detail.html:418
 msgid "Copyright violation"
 msgstr "Violation de droits d'auteur"
 
 
-#: templates/web/story_detail.html:417
+#: templates/web/story_detail.html:419
 msgid "Wrong category"
 msgstr "Mauvaise catégorie"
 
 
-#: templates/web/story_detail.html:422
+#: templates/web/story_detail.html:424
 msgid "Details"
 msgstr "Détails"
 
 
-#: templates/web/story_detail.html:423
+#: templates/web/story_detail.html:425
 msgid "Tell us more…"
 msgstr "Dites-nous en plus…"
 
 
-#: templates/web/story_detail.html:427
+#: templates/web/story_detail.html:429
 msgid "Submit report"
 msgstr "Envoyer le signalement"
 
 
-#: templates/web/story_detail.html:434 templates/web/story_detail.html:438
+#: templates/web/story_detail.html:436 templates/web/story_detail.html:440
 msgid "Generate AI video"
 msgstr "Générer une vidéo IA"
 
 
-#: templates/web/story_detail.html:444
+#: templates/web/story_detail.html:446
 msgid "Scene prompt"
 msgstr "Description des scènes"
 
 
-#: templates/web/story_detail.html:446
+#: templates/web/story_detail.html:448
 msgid ""
 "Describe the scenes: village square at dusk, talking drum circle, baobab "
 "silhouette…"
 msgstr "Décrivez les scènes : place du village au crépuscule, cercle de tambours parlants, silhouette de baobab…"
 
 
-#: templates/web/story_detail.html:448
+#: templates/web/story_detail.html:450
 msgid "Leave empty to auto-generate a prompt from the story."
 msgstr "Laissez vide pour générer automatiquement une description à partir du récit."
 
 
-#: templates/web/story_detail.html:451
+#: templates/web/story_detail.html:453
 msgid "Start generation"
 msgstr "Lancer la génération"
 
@@ -1944,6 +2069,7 @@ msgstr "Consentement enregistré :"
 
 #: templates/web/story_form.html:168
 #, python-format
+
 msgid "%(status)s."
 msgstr "%(status)s."
 
@@ -1965,6 +2091,7 @@ msgstr "Soumettre pour révision"
 
 #: templates/web/story_form.html:190
 #, python-format
+
 msgid "Permanently delete “%(title)s”? This cannot be undone."
 msgstr "Supprimer définitivement « %(title)s » ? Cette action est irréversible."
 
@@ -1994,162 +2121,205 @@ msgid "Admin"
 msgstr "Administrateur"
 
 
-#: web/actions.py:111
+#: web/actions.py:113
 msgid "Thanks — our moderators will review this story."
 msgstr "Merci — nos modérateurs examineront ce récit."
 
 
-#: web/actions.py:129
+#: web/actions.py:131
 #, python-format
+
 msgid "Check out \"%(title)s\" on Griot AI! 🌍📖"
 msgstr "Découvrez « %(title)s » sur Griot AI ! 🌍📖"
 
 
-#: web/actions.py:192
+#: web/actions.py:194
 msgid "No active attempt."
 msgstr "Aucune tentative en cours."
 
 
-#: web/actions.py:197
+#: web/actions.py:199
 #, python-format
+
 msgid "🎉 You passed and earned %(xp)s XP!"
 msgstr "🎉 Vous avez réussi et gagné %(xp)s XP !"
 
 
-#: web/actions.py:202
+#: web/actions.py:204
 #, python-format
+
 msgid "Scored %(score)s%% — try again at %(passing)s%% to pass."
 msgstr "Score de %(score)s %% — réessayez pour atteindre les %(passing)s %% requis."
 
 
-#: web/actions.py:218
+#: web/actions.py:220
 msgid "action must be \"remove\" or \"dismiss\"."
 msgstr "l'action doit être « remove » ou « dismiss »."
 
 
-#: web/actions.py:224
+#: web/actions.py:226
 #, python-format
+
 msgid "Story \"%(title)s\" archived and flags resolved."
 msgstr "Récit « %(title)s » archivé et signalements traités."
 
 
-#: web/actions.py:229
+#: web/actions.py:231
 #, python-format
+
 msgid "Flags on \"%(title)s\" dismissed."
 msgstr "Signalements sur « %(title)s » classés sans suite."
 
 
-#: web/actions.py:250
+#: web/actions.py:252
 msgid "Consent request recorded — awaiting the community's answer."
 msgstr "Demande de consentement enregistrée — en attente de la réponse de la communauté."
 
 
-#: web/actions.py:279
+#: web/actions.py:281
 msgid "Consent withheld — the story has been archived."
 msgstr "Consentement refusé — le récit a été archivé."
 
 
-#: web/actions.py:284
+#: web/actions.py:286
 #, python-format
+
 msgid "Consent recorded for \"%(title)s\"."
 msgstr "Consentement enregistré pour « %(title)s »."
 
 
-#: web/actions.py:309
+#: web/actions.py:311
 msgid "Title and content are required."
 msgstr "Le titre et le contenu sont obligatoires."
 
 
-#: web/actions.py:344
+#: web/actions.py:346
 #, python-format
+
 msgid "Story \"%(title)s\" deleted."
 msgstr "Récit « %(title)s » supprimé."
 
 
-#: web/actions.py:424
+#: web/actions.py:430
+#, python-format
+
+#| msgid "Consent recorded for \"%(title)s\"."
+msgid "QR code generated for \"%(title)s\"."
+msgstr "Code QR généré pour « %(title)s »."
+
+
+#: web/actions.py:453
+
+#| msgid "At least 8 characters."
+msgid "Tick at least one artifact first."
+msgstr "Cochez au moins un objet au préalable."
+
+
+#: web/actions.py:469
+#, python-format
+
+msgid "%(count)d artifact(s) were not found and were skipped."
+msgstr "%(count)d objet(s) introuvable(s) — ignoré(s)."
+
+
+#: web/actions.py:475
+#, python-format
+
+msgid "%(count)d QR code(s) generated."
+msgstr "%(count)d code(s) QR généré(s)."
+
+
+#: web/actions.py:478
+msgid "Nothing to generate — every artifact already has a code."
+msgstr "Rien à générer — chaque objet possède déjà un code."
+
+
+#: web/actions.py:500
 msgid "Profile updated."
 msgstr "Profil mis à jour."
 
 
-#: web/actions.py:437
+#: web/actions.py:513
 #, python-format
+
 msgid "Account \"%(username)s\" and associated data deleted."
 msgstr "Compte « %(username)s » et données associées supprimés."
 
 
-#: web/actions.py:509
+#: web/actions.py:585
 #, python-format
+
 msgid "Welcome to Griot AI, %(username)s!"
 msgstr "Bienvenue sur Griot AI, %(username)s !"
 
 
-#: web/services.py:73
+#: web/services.py:74
 msgid "Newest"
 msgstr "Plus récents"
 
 
-#: web/services.py:74
+#: web/services.py:75
 msgid "Oldest"
 msgstr "Plus anciens"
 
 
-#: web/services.py:75
+#: web/services.py:76
 msgid "Most Viewed"
 msgstr "Plus consultés"
 
 
-#: web/services.py:76
+#: web/services.py:77
 msgid "Most Liked"
 msgstr "Plus aimés"
 
 
-#: web/services.py:729
+#: web/services.py:789
 msgid "Invalid answer."
 msgstr "Réponse invalide."
 
 
-#: web/services.py:734
+#: web/services.py:794
 msgid "No active attempt — start the quiz first."
 msgstr "Aucune tentative en cours — commencez d'abord le quiz."
 
 
-#: web/services.py:738
+#: web/services.py:798
 msgid "Question already answered."
 msgstr "Question déjà répondue."
 
 
-#: web/services.py:868
+#: web/services.py:928
 msgid "Story saved as draft."
 msgstr "Récit enregistré comme brouillon."
 
 
-#: web/services.py:869
+#: web/services.py:929
 msgid "Story submitted for review."
 msgstr "Récit soumis pour révision."
 
 
-#: web/services.py:1132
+#: web/services.py:1192
 msgid "A user with this email already exists."
 msgstr "Un utilisateur avec cette adresse e-mail existe déjà."
 
 
-#: web/services.py:1171
+#: web/services.py:1231
 msgid "Username is required."
 msgstr "Le nom d'utilisateur est obligatoire."
 
 
-#: web/services.py:1181
+#: web/services.py:1241
 msgid ""
 "An account with those details already exists. Try a different username or "
 "email."
 msgstr "Un compte avec ces informations existe déjà. Essayez un autre nom d'utilisateur ou une autre adresse e-mail."
 
 
-#: web/services.py:1192
+#: web/services.py:1252
 msgid "Password must be at least 8 characters."
 msgstr "Le mot de passe doit contenir au moins 8 caractères."
 
 
-#: web/services.py:1194
+#: web/services.py:1254
 msgid "Passwords do not match."
 msgstr "Les mots de passe ne correspondent pas."

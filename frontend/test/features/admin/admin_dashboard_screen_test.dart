@@ -11,6 +11,7 @@ import 'package:griot_ai/features/admin/providers/admin_provider.dart';
 import 'package:griot_ai/features/admin/screens/admin_dashboard_screen.dart';
 
 import '../../support/admin_fixtures.dart';
+import 'qr_worklist_section_test.dart' show emptyQrWorklist;
 
 /// Renders the dashboard on a wide, tall surface so every section is laid out
 /// without scrolling.
@@ -42,6 +43,9 @@ Future<void> pumpDashboard(
         ),
         moderationProvider.overrideWith((ref) => ModerationNotifier()),
         adminUsersProvider.overrideWith((ref) async => users ?? const []),
+        // The QR section is its own provider; without this stub the dashboard
+        // would reach for the network on every dashboard test.
+        qrWorklistProvider.overrideWith((ref) async => emptyQrWorklist),
       ],
       child: const MaterialApp(home: AdminDashboardScreen()),
     ),

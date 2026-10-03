@@ -124,6 +124,51 @@ class ArtifactCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ArtifactWorklistSerializer(serializers.ModelSerializer):
+    """One row of the admin QR worklist.
+
+    Carries only what a curator decides on: which object it is, whether it is
+    already labelled, and enough to check the code points where it should.
+    """
+
+    qr_deep_link = serializers.CharField(read_only=True)
+    scan_total = serializers.IntegerField(read_only=True)
+    has_qr_code = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Artifact
+        fields = [
+            'id', 'slug', 'title', 'category', 'museum_name',
+            'is_published', 'qr_deep_link', 'scan_total', 'has_qr_code',
+        ]
+        read_only_fields = fields
+
+    def get_has_qr_code(self, obj) -> bool:
+        return bool(obj.qr_code_svg)
+
+
+class QRWorklistSerializer(serializers.Serializer):
+    """The whole worklist, plus the counts the screen reads as a summary."""
+
+    artifacts = ArtifactWorklistSerializer(many=True, read_only=True)
+    total = serializers.IntegerField(read_only=True)
+    generated = serializers.IntegerField(read_only=True)
+    truncated = serializers.BooleanField(read_only=True)
+
+
+class QRWorklistGenerateSerializer(serializers.Serializer):
+    """Body for `POST /api/artifacts/qr/worklist/generate/`."""
+
+    slugs = serializers.ListField(
+        child=serializers.CharField(max_length=250),
+        required=False,
+        help_text=(
+            'Artifacts to generate for. Omit to cover everything still '
+            'missing, bounded by the worklist limit.'
+        ),
+    )
+
+
 class QRCodeGenerateSerializer(serializers.Serializer):
     """Serializer for QR code generation requests."""
 

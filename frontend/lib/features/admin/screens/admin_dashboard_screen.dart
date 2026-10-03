@@ -13,6 +13,7 @@ import '../widgets/growth_card.dart';
 import '../widgets/growth_chart.dart';
 import '../widgets/moderation_section.dart';
 import '../widgets/quiz_stat_bar.dart';
+import '../widgets/qr_worklist_section.dart';
 import '../widgets/ranked_tile.dart';
 import '../widgets/role_breakdown.dart';
 import '../widgets/section_label.dart';
@@ -550,6 +551,12 @@ onRefresh: () => Future.wait([
               ModerationSection(
                 unresolvedCount: summary.engagement.unresolvedFlags,
               ),
+              const SizedBox(height: 20),
+
+              // --- QR code worklist -----------------------------------------
+              // Mirrors the web dashboard's QR section: artifacts still missing
+              // the printable code they carry on the museum wall.
+              const QrWorklistSection(),
             ],
           ),
         ),

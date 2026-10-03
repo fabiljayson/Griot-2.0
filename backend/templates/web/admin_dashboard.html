@@ -4,7 +4,8 @@
 {% comment %}
 Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   stat cards, growth sparkline charts (pure CSS bars), gamification stats,
-  top-content ranked tiles and the moderation queue with resolve actions.
+  top-content ranked tiles, the moderation queue with resolve actions, and
+  the QR code worklist (artifacts still missing a printable code).
 {% endcomment %}
 
 {% block title %}{% translate "Admin Dashboard" %} — Griot AI{% endblock %}
@@ -208,6 +209,110 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   <div class="rounded-2xl border border-dashed border-savannah/40 bg-savannah-tint/30 p-8 text-center dark:bg-savannah/10">
     {% icon 'check-circle' 'text-4xl text-savannah' %}
     <p class="mt-3 text-sm text-secondary-text">{% translate "Queue is clear — no unresolved flags." %}</p>
+  </div>
+  {% endif %}
+</section>
+
+{% comment %}
+QR code worklist — mirrors the mobile QR generation section.
+Ordered by "has no printable code yet", so the objects doing nothing on
+the wall are the ones at the top. Two forms post to one endpoint and are
+told apart by `scope`; nesting the per-row forms inside the bulk one is
+not legal HTML, so each row owns its form and its tick box is bound to
+`#qr-bulk` through the `form` attribute instead.
+
+(`{% comment %}` rather than `{# … #}`: Django's lexer does not match the
+latter across newlines, so a multi-line one is emitted as literal text.)
+{% endcomment %}
+<section id="qr-worklist" class="mt-8">
+  <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h2 class="flex items-center gap-2.5 font-display text-xl font-bold">
+        {% icon 'qrcode' 'text-terracotta' %} {% translate "QR Code Worklist" %}
+      </h2>
+      <p class="mt-1 text-sm text-secondary-text">{% translate "Printable codes for the artifacts on the museum floor." %}</p>
+      <p class="mt-1 text-xs font-semibold text-secondary-text">
+        {% blocktranslate with generated=qr_generated total=qr_total %}{{ generated }} of {{ total }} artifacts have a printable code{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <form id="qr-bulk" method="post" action="{% url 'web:artifacts-generate-qr' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'web:admin-dashboard' %}#qr-worklist">
+        <input type="hidden" name="scope" value="selected">
+        <button type="submit" class="rounded-xl border border-terracotta px-4 py-2.5 text-xs font-bold text-terracotta transition hover:bg-terracotta hover:text-white">
+          {% icon 'check-circle' 'text-xs' %} {% translate "Generate for selected" %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'web:artifacts-generate-qr' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'web:admin-dashboard' %}#qr-worklist">
+        <input type="hidden" name="scope" value="missing">
+        <button type="submit" class="rounded-xl bg-terracotta px-4 py-2.5 text-xs font-bold text-white transition hover:opacity-90">
+          {% icon 'sparkles' 'text-xs' %} {% translate "Generate all missing" %}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if qr_truncated %}
+  <p class="mb-3 flex items-start gap-2 rounded-xl bg-ochre-tint/50 p-3 text-xs text-secondary-text dark:bg-ochre/10">
+    {% icon 'info' 'mt-0.5 text-xs' %}
+    {% blocktranslate count counter=qr_artifacts|length %}Worklist truncated to the first {{ counter }} artifact — the catalog is larger.{% plural %}Worklist truncated to the first {{ counter }} artifacts — the catalog is larger.{% endblocktranslate %}
+  </p>
+  {% endif %}
+
+  {% if qr_artifacts %}
+  <ul class="divide-y divide-brand-border overflow-hidden rounded-2xl border border-brand-border bg-white dark:divide-warm-brown dark:border-warm-brown dark:bg-deep-earth">
+    {% for artifact in qr_artifacts %}
+    <li class="flex flex-wrap items-center gap-4 p-4">
+      <input type="checkbox" form="qr-bulk" name="slugs" value="{{ artifact.slug }}"
+             id="qr-slug-{{ forloop.counter }}"
+             class="h-4 w-4 shrink-0 accent-terracotta">
+
+      <label for="qr-slug-{{ forloop.counter }}" class="min-w-0 flex-1 cursor-pointer">
+        <span class="flex items-center gap-2 text-sm font-semibold">
+          {% artifact_category_icon artifact.category 'text-xs text-terracotta' %}
+          <a href="{% url 'web:artifact-detail' artifact.slug %}" class="truncate hover:text-terracotta">{{ artifact.title }}</a>
+        </span>
+        <span class="mt-1 block truncate text-xs text-secondary-text">
+          {{ artifact.get_category_display }}{% if artifact.museum_name %} · {{ artifact.museum_name }}{% endif %}
+        </span>
+        <span class="mt-1 block truncate text-[11px] text-secondary-text">{{ artifact.qr_deep_link }}</span>
+      </label>
+
+      <span class="shrink-0 text-xs text-secondary-text">
+        {% blocktranslate count counter=artifact.scan_total %}{{ counter }} scan{% plural %}{{ counter }} scans{% endblocktranslate %}
+      </span>
+
+      {% if artifact.qr_code_svg %}
+      {% comment %}
+      `|safe` is deliberate and narrow: this is segno's rendering of a URL
+      assembled from settings, written by generate_artifact_qr — never a
+      curator-typed string. See artifacts/security-review.md.
+      {% endcomment %}
+      <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-brand-border bg-white p-1 [&>svg]:h-full [&>svg]:w-full dark:border-warm-brown dark:bg-white">
+        {{ artifact.qr_code_svg|safe }}
+      </span>
+      {% else %}
+      <span class="shrink-0 rounded-full bg-ochre-tint px-2.5 py-1 text-[11px] font-bold text-ochre">{% translate "No code yet" %}</span>
+      {% endif %}
+
+      <form method="post" action="{% url 'web:artifact-generate-qr' artifact.slug %}" class="shrink-0">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'web:admin-dashboard' %}#qr-worklist">
+        <button type="submit" class="rounded-xl border border-terracotta px-3 py-2 text-xs font-bold text-terracotta transition hover:bg-terracotta hover:text-white">
+          {% if artifact.qr_code_svg %}{% icon 'refresh' 'text-xs' %} {% translate "Regenerate" %}{% else %}{% icon 'qrcode' 'text-xs' %} {% translate "Generate" %}{% endif %}
+        </button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-savannah/40 bg-savannah-tint/30 p-8 text-center dark:bg-savannah/10">
+    {% icon 'check-circle' 'text-4xl text-savannah' %}
+    <p class="mt-3 text-sm text-secondary-text">{% translate "No artifacts to label yet." %}</p>
   </div>
   {% endif %}
 </section>

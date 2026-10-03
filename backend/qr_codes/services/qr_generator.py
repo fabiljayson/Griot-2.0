@@ -3,11 +3,27 @@ QR code generation service for museum artifacts.
 
 Generates QR codes that link to artifact detail pages.
 Supports PNG and SVG output formats.
+
+`generate_artifact_qr` is the one place that knows what generating a QR code
+*means* — which formats exist, which one is persisted, and what the deep link
+encodes. The API endpoint and the web admin dashboard both call it. It was
+inline in the API view until Phase 5, which meant the rules existed once and
+had to be copied to be used anywhere else — the same drift the project has
+already paid for twice (`resolve_status`, `resolve_ui_language`).
 """
 import io
 
 import qrcode
 import segno
+
+# The formats a caller may ask for, and the one whose output is stored on the
+# artifact. Only SVG is persisted, because it is the only one that survives
+# being handed to a museum to print; PNG and data-uri are responses.
+QR_FORMATS = ('svg', 'png', 'data_uri')
+PERSISTED_FORMAT = 'svg'
+
+DEFAULT_FOREGROUND = '#C85A32'
+DEFAULT_BACKGROUND = '#FFFFFF'
 
 
 class QRCodeGenerator:
@@ -145,3 +161,49 @@ qr_generator = QRCodeGenerator()
 def get_qr_generator() -> QRCodeGenerator:
     """Get the QR code generator instance."""
     return qr_generator
+
+
+def generate_artifact_qr(
+    artifact,
+    *,
+    fmt: str = PERSISTED_FORMAT,
+    foreground: str = DEFAULT_FOREGROUND,
+    background: str = DEFAULT_BACKGROUND,
+    persist: bool = True,
+):
+    """Generate a QR code for `artifact` and, for SVG, store it on the row.
+
+    Returns a dict with `format`, `deep_link`, and exactly one of `svg`,
+    `png_bytes` or `data_uri` for the requested format.
+
+    `persist=False` is what the dashboard's preview uses: a moderator
+    recolouring a code should see the result without every colour they try
+    having overwritten the one that is actually printed in the museum.
+    """
+    if fmt not in QR_FORMATS:
+        raise ValueError(
+            f'Unsupported QR format {fmt!r}; expected one of {QR_FORMATS}.'
+        )
+
+    generator = get_qr_generator()
+    deep_link = artifact.qr_deep_link
+    result = {'format': fmt, 'deep_link': deep_link}
+
+    if fmt == 'svg':
+        svg = generator.generate_svg(
+            deep_link, foreground=foreground, background=background,
+        )
+        result['svg'] = svg
+        if persist:
+            artifact.qr_code_svg = svg
+            artifact.save(update_fields=['qr_code_svg'])
+    elif fmt == 'png':
+        result['png_bytes'] = generator.generate_png(
+            deep_link, foreground=foreground, background=background,
+        )
+    else:
+        result['data_uri'] = generator.generate_data_uri(
+            deep_link, foreground=foreground, background=background,
+        )
+
+    return result

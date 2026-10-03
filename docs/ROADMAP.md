@@ -32,6 +32,8 @@ out of the review:
 | 1. Artifact taxonomy | **Landed** at `ef2a8a8` |
 | 2. Gates | **Landed** — ruff clean, coverage 84% / floor 80, crawler CI job, pre-commit config |
 | 3. Gamification | **Landed** — one award service on three call sites, `streak_required`, certificates now issued |
+| 5. Multilingual | **Track A landed** — French is real on the web (415 msgids, 0 untranslated). Track A *app* side, Track B, and task 3's font decision are open |
+| 5. QR worklist | **Landed** — one service behind both admin surfaces; see the Phase 5 section |
 | 8a. Contain the leak | **Done except rotation** — `.bak` deleted, ignore rule was already present; credential rotation is user-owned |
 | Everything else | Not started |
 
@@ -895,6 +897,86 @@ and two of them are the same class of bug the phase exists to close.
   `fr-CM`. French is the target language, so `fr` is right; a Cameroonian
   reader who needs `fr-CM` formats specifically would not get them. Deliberate,
   not forgotten.
+
+### QR code worklist — both admin surfaces
+
+A QR code is not a record. There is no `QRCode` model: the code is derived from
+an artifact's deep link and only exists once someone generates it — which in
+practice means once a curator is standing next to the object with a printer.
+The dev catalog holds 134 artifacts and **not one** stored SVG, so the honest
+question for an admin was never "what artifacts are there" but "which ones
+still have nothing on the wall". That is now a screen, on both admin surfaces.
+
+#### Where the rules live
+
+`qr_codes.services.qr_worklist` owns the ordering, the limit and the batch
+behaviour. It did not start there. The rules were first written into
+`web/services.py`, which left the mobile app with no way to show the same list
+without a second, quietly diverging copy — the drift this project has already
+paid for twice (`resolve_status`, `resolve_ui_language`). Moving them behind
+both callers is the whole point of the change; the web dashboard and the app
+are now two renderers of one list, not two lists.
+
+#### Defects found and fixed while building it
+
+- **The generation rules were inline in the API view.** `generate_artifact_qr`
+  now owns what "persisted" means, which formats exist, and what the deep link
+  encodes. The API action, the web action, the Django admin bulk action and the
+  new worklist endpoints all call it.
+- **The Django admin bulk action duplicated the loop** rather than calling the
+  service; it does now.
+- **`artifacts_generate_qr` could widen an empty selection into the whole
+  backlog.** Both web forms post to one endpoint, so "generate for selected"
+  with nothing ticked was indistinguishable from "generate everything still
+  missing" — a mis-click regenerated up to 50 objects. The tick-box form now
+  sends `scope=selected` and an empty selection is *reported*, not widened.
+  Pinned by `test_generate_for_selected_with_nothing_ticked_does_nothing`.
+- **A stale checkbox could 404 the whole batch.** A tick list is editable state;
+  a row deleted between render and submit is reported in `missing` so the rest
+  of the curator's work survives.
+- **The worklist said nothing when it was truncated.** A partial list that
+  reads as complete is how an object goes unlabelled and nobody notices, so
+  both surfaces state the count.
+- **`msgmerge` fuzzy-matched `%(counter)s scan` to `%(counter)s flag`.** The
+  catalogue carried `#, fuzzy` with "signalement" — the QR list would have
+  counted *reports* instead of scans. The generator now clears the flag when it
+  supplies a translation, and rebuilds the flag line rather than deleting the
+  token (dropping `#, fuzzy,` wholesale left a bare `python-format` and
+  `msgfmt` rejected the catalogue with `keyword "python" unknown`).
+
+#### Surfaced on both surfaces
+
+`/dashboard/` gains a **QR Code Worklist** section (checkbox list, per-row
+Generate/Regenerate, SVG preview, deep link, scan counts, truncation notice);
+`AdminDashboardScreen` gains `QrWorklistSection` reading the same endpoint. Two
+new API routes back the app: `GET /api/artifacts/qr/worklist/` and
+`POST /api/artifacts/qr/worklist/generate/`. They are registered ahead of the
+router for the same reason `artifacts/lookup/` is — `artifacts/qr/...` would
+otherwise be swallowed by `artifacts/<slug>/`. Both are manager/admin only,
+matching the existing `generate_qr` action: reading the worklist is still
+curator-only, because it names unpublished objects too.
+
+| Verification | Result |
+|---|---|
+| Backend suite | **587 tests, OK (6 skipped)** — 27 new |
+| `ruff check .` | All checks passed |
+| `makemigrations --check` | No changes detected |
+| `manage.py spectacular` | 0 warnings, 0 errors |
+| `msgfmt -c` | 415 translated messages, 0 untranslated, 0 fuzzy |
+| `flutter analyze --fatal-infos` | No issues found |
+| `flutter test` | 409 tests, all passed — 14 new |
+
+#### Accepted limits
+
+- **No printable artefact is produced.** The screens generate and preview the
+  stored SVG; exporting a print-ready file (and the paper size a museum actually
+  needs) is not built. The endpoint has always offered PNG as a response, not a
+  download.
+- **The bulk bound is 50 objects per request** and the app does not paginate
+  past it. A national collection needs paging before it needs a bulk button.
+- **No foreground/background controls.** `generate_artifact_qr` accepts them and
+  `persist=False` exists for previewing a recolour without overwriting the code
+  already printed in the museum, but no surface exposes either yet.
 
 ### Task 3 — still blocked, and the decision is now smaller than it looked
 

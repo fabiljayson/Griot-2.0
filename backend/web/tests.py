@@ -3,9 +3,13 @@ Tests for the server-rendered web interface.
 
 Focus: the screens/actions added for parity with ARCHITECTURE.md and
 FUNCTIONALITY_OUTLINE.md — story form (§2), profile (§1), audio/video
-media UI (§6/§7), quizzes hub (§8) and the artifact audio guide (§5).
+media UI (§6/§7), quizzes hub (§8), the artifact audio guide (§5) and
+the admin QR code worklist.
 """
 
+from unittest.mock import patch
+
+from django.contrib.messages import get_messages
 from django.template import Context, Template
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -13,6 +17,8 @@ from django.utils import timezone
 
 from gamification.models import Badge, QuizAttempt, QuizQuestion, UserProfile
 from media_app.models import AudioNarrationJob, VideoGenerationJob
+from qr_codes.models import Artifact, QRCodeScan
+from qr_codes.services.qr_worklist import qr_worklist_data
 from stories.models import Story, StoryCategory, StoryFlag
 from users.models import User
 
@@ -786,3 +792,234 @@ class ConsentPanelWebTests(WebSmokeTestCase):
         self.assertEqual(self.story.consent_status, Story.Consent.PENDING)
         # Asking is not a decision, and must not forge an attestation.
         self.assertIsNone(self.story.consent_attested_by)
+
+
+class QRWorklistTests(WebSmokeTestCase):
+    """The admin dashboard's QR worklist (Phase 5).
+
+    Two claims are load-bearing and easy to break, so they are pinned here:
+
+    * generating a code is a curator's job, never a visitor's — the web action
+      must hold the same line the API action does; and
+    * "generate for selected" with nothing ticked must do *nothing*. Both forms
+      post to the same endpoint, so an empty checkbox list used to look
+      identical to "generate everything still missing" and a mis-click
+      regenerated the whole backlog.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.artifact = Artifact.objects.create(
+            title='Royal Bamoun Throne',
+            description='A ceremonial throne used by Bamoun kings.',
+            category=Artifact.Category.SCULPTURE,
+            museum_name='Foumban Royal Museum',
+            created_by=self.manager,
+        )
+        self.other = Artifact.objects.create(
+            title='Kenkeni Drum',
+            description='A carved drum used to call people together.',
+            category=Artifact.Category.INSTRUMENT,
+            created_by=self.manager,
+        )
+
+    def _messages(self, response):
+        return [str(message) for message in get_messages(response.wsgi_request)]
+
+    def _login_manager(self):
+        self.client.login(username='web_manager', password='testpass123')
+
+    # --- permissions -----------------------------------------------------
+
+    def test_single_generate_requires_a_manager(self):
+        url = reverse(
+            'web:artifact-generate-qr', args=[self.artifact.slug],
+        )
+
+        # Anonymous: bounced to login, nothing written.
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        self.artifact.refresh_from_db()
+        self.assertEqual(self.artifact.qr_code_svg, '')
+
+        # Signed in, but a contributor: refused outright.
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 403)
+        self.artifact.refresh_from_db()
+        self.assertEqual(self.artifact.qr_code_svg, '')
+
+    def test_bulk_generate_requires_a_manager(self):
+        self.client.login(username='web_contributor', password='testpass123')
+        response = self.client.post(
+            reverse('web:artifacts-generate-qr'),
+            {'scope': 'selected', 'slugs': [self.artifact.slug]},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.artifact.refresh_from_db()
+        self.assertEqual(self.artifact.qr_code_svg, '')
+
+    # --- single artifact -------------------------------------------------
+
+    def test_manager_generates_one_artifact_code(self):
+        self._login_manager()
+        response = self.client.post(
+            reverse('web:artifact-generate-qr', args=[self.artifact.slug]),
+            {'next': reverse('web:admin-dashboard')},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.artifact.refresh_from_db()
+        self.assertIn('<svg', self.artifact.qr_code_svg)
+        self.assertIn('Royal Bamoun Throne', ' '.join(self._messages(response)))
+
+    def test_generating_an_unknown_artifact_is_a_404(self):
+        self._login_manager()
+        response = self.client.post(
+            reverse('web:artifact-generate-qr', args=['no-such-object']),
+        )
+        self.assertEqual(response.status_code, 404)
+
+    # --- bulk ------------------------------------------------------------
+
+    def test_generate_for_selected_touches_only_the_ticked_rows(self):
+        self._login_manager()
+        self.client.post(
+            reverse('web:artifacts-generate-qr'),
+            {'scope': 'selected', 'slugs': [self.artifact.slug]},
+        )
+
+        self.artifact.refresh_from_db()
+        self.other.refresh_from_db()
+        self.assertIn('<svg', self.artifact.qr_code_svg)
+        self.assertEqual(self.other.qr_code_svg, '')
+
+    def test_generate_for_selected_with_nothing_ticked_does_nothing(self):
+        """The mis-click guard: an empty selection is reported, not widened."""
+        self._login_manager()
+        response = self.client.post(
+            reverse('web:artifacts-generate-qr'),
+            {'scope': 'selected'},
+        )
+
+        self.artifact.refresh_from_db()
+        self.other.refresh_from_db()
+        self.assertEqual(self.artifact.qr_code_svg, '')
+        self.assertEqual(self.other.qr_code_svg, '')
+        self.assertIn('Tick at least one artifact first.', self._messages(response))
+
+    def test_generate_missing_covers_everything_without_a_code(self):
+        self._login_manager()
+        response = self.client.post(
+            reverse('web:artifacts-generate-qr'), {'scope': 'missing'},
+        )
+
+        self.artifact.refresh_from_db()
+        self.other.refresh_from_db()
+        self.assertIn('<svg', self.artifact.qr_code_svg)
+        self.assertIn('<svg', self.other.qr_code_svg)
+        self.assertIn('2 QR code(s) generated.', ' '.join(self._messages(response)))
+
+    def test_generate_missing_is_bounded_by_the_worklist_limit(self):
+        """A national collection must not be regenerable in one request."""
+        self._login_manager()
+        with patch('web.actions.QR_WORKLIST_LIMIT', 1):
+            self.client.post(
+                reverse('web:artifacts-generate-qr'), {'scope': 'missing'},
+            )
+
+        self.artifact.refresh_from_db()
+        self.other.refresh_from_db()
+        generated = [
+            artifact for artifact in (self.artifact, self.other)
+            if artifact.qr_code_svg
+        ]
+        self.assertEqual(len(generated), 1)
+
+    def test_generate_missing_skips_artifacts_that_already_have_a_code(self):
+        Artifact.objects.filter(pk=self.artifact.pk).update(qr_code_svg='<svg>old</svg>')
+        self._login_manager()
+        self.client.post(
+            reverse('web:artifacts-generate-qr'), {'scope': 'missing'},
+        )
+
+        self.artifact.refresh_from_db()
+        self.other.refresh_from_db()
+        # The already-labelled object was left exactly as it was found.
+        self.assertEqual(self.artifact.qr_code_svg, '<svg>old</svg>')
+        self.assertIn('<svg', self.other.qr_code_svg)
+
+    def test_an_unknown_slug_is_reported_rather_than_failing_the_batch(self):
+        """A checkbox list is editable state — one stale row must not 404 the
+        whole POST and lose the curator's other work."""
+        self._login_manager()
+        response = self.client.post(
+            reverse('web:artifacts-generate-qr'),
+            {'scope': 'selected', 'slugs': [self.artifact.slug, 'deleted-row']},
+        )
+
+        self.artifact.refresh_from_db()
+        self.assertIn('<svg', self.artifact.qr_code_svg)
+        self.assertIn(
+            '1 artifact(s) were not found and were skipped.',
+            ' '.join(self._messages(response)),
+        )
+
+    def test_a_full_catalogue_says_so_instead_of_silently_doing_nothing(self):
+        Artifact.objects.filter(pk=self.artifact.pk).update(qr_code_svg='<svg>old</svg>')
+        Artifact.objects.filter(pk=self.other.pk).update(qr_code_svg='<svg>old</svg>')
+        self._login_manager()
+        response = self.client.post(
+            reverse('web:artifacts-generate-qr'), {'scope': 'missing'},
+        )
+
+        self.assertIn(
+            'Nothing to generate — every artifact already has a code.',
+            ' '.join(self._messages(response)),
+        )
+
+    # --- the worklist itself --------------------------------------------
+
+    def test_worklist_puts_artifacts_with_no_code_first(self):
+        Artifact.objects.filter(pk=self.artifact.pk).update(qr_code_svg='<svg>done</svg>')
+        data = qr_worklist_data()
+        slugs = [artifact.slug for artifact in data['qr_artifacts']]
+
+        self.assertEqual(slugs[0], self.other.slug)
+        self.assertEqual(data['qr_generated'], 1)
+        self.assertEqual(data['qr_total'], 2)
+        self.assertFalse(data['qr_truncated'])
+
+    def test_worklist_reports_when_it_is_not_the_whole_catalog(self):
+        """A truncated list that reads as complete is how an object goes
+        unlabelled and nobody notices."""
+        self.assertTrue(qr_worklist_data(limit=1)['qr_truncated'])
+
+    def test_worklist_counts_scans_without_an_n_plus_one(self):
+        QRCodeScan.objects.create(artifact=self.other, device_type='Web')
+        with self.assertNumQueries(4):
+            # 1 worklist page + 3 scalar counters, independent of row count.
+            qr_worklist_data()
+
+    def test_dashboard_renders_the_worklist_for_a_manager(self):
+        self._login_manager()
+        response = self.client.get(reverse('web:admin-dashboard'))
+
+        self.assertContains(response, 'QR Code Worklist')
+        self.assertContains(response, 'Generate all missing')
+        self.assertContains(response, 'No code yet')
+        self.assertContains(response, self.artifact.qr_deep_link)
+        # The tick box is bound to the bulk form rather than nested inside it.
+        self.assertContains(response, 'form="qr-bulk"')
+        self.assertContains(response, 'name="scope" value="selected"')
+
+    def test_dashboard_previews_a_code_that_has_been_generated(self):
+        Artifact.objects.filter(pk=self.artifact.pk).update(
+            qr_code_svg='<svg><rect width="10" height="10"/></svg>',
+        )
+        self._login_manager()
+        response = self.client.get(reverse('web:admin-dashboard'))
+
+        self.assertContains(response, '<svg><rect width="10" height="10"/></svg>', html=False)
+        self.assertContains(response, 'Regenerate')

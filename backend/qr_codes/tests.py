@@ -524,3 +524,155 @@ class ReclassifyArtifactsTests(TestCase):
         out = StringIO()
         call_command('reclassify_artifacts', stdout=out)
         self.assertIn('not artifacts at all', out.getvalue())
+class QRWorklistApiTests(APITestCase):
+    """`/api/artifacts/qr/worklist/` — the app's half of the same worklist.
+
+    These endpoints exist so the mobile admin dashboard and the web dashboard
+    cannot disagree about which objects still need a label. The assertions
+    that matter are the shared rules: the ordering, the bound, the permission,
+    and that a stale slug is reported instead of failing the batch.
+    """
+
+    def setUp(self):
+        self.manager = User.objects.create_user(
+            'wl_manager', email='wl_manager@example.com',
+            password='hunter2secure', role='institution_manager',
+        )
+        self.visitor = User.objects.create_user(
+            'wl_visitor', email='wl_visitor@example.com',
+            password='hunter2secure', role='visitor',
+        )
+        self.labelled = Artifact.objects.create(
+            title='Lobe Waterfalls', slug='lobe-waterfalls',
+            description='A waterfall and national park.',
+        )
+        self.bare = Artifact.objects.create(
+            title='Kenkeni Drum', slug='kenkeni-drum',
+            description='A carved drum used to call people together.',
+        )
+        self.url = reverse('qr_codes:artifact-qr-worklist')
+
+    def test_manager_gets_the_worklist_with_missing_codes_first(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [row['slug'] for row in response.data['artifacts']],
+            ['kenkeni-drum', 'lobe-waterfalls'],
+        )
+        self.assertEqual(response.data['total'], 2)
+        self.assertEqual(response.data['generated'], 0)
+        self.assertFalse(response.data['truncated'])
+
+    def test_worklist_reports_which_rows_already_have_a_code(self):
+        Artifact.objects.filter(pk=self.bare.pk).update(
+            qr_code_svg='<svg>done</svg>',
+        )
+        self.client.force_authenticate(self.manager)
+        response = self.client.get(self.url)
+
+        by_slug = {row['slug']: row for row in response.data['artifacts']}
+        self.assertTrue(by_slug['kenkeni-drum']['has_qr_code'])
+        self.assertFalse(by_slug['lobe-waterfalls']['has_qr_code'])
+        self.assertEqual(response.data['generated'], 1)
+
+    def test_worklist_carries_the_deep_link_the_code_will_encode(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.get(self.url)
+        row = response.data['artifacts'][0]
+        self.assertIn('africanteller.org', row['qr_deep_link'])
+        self.assertIn('/artifact/kenkeni-drum', row['qr_deep_link'])
+
+    def test_worklist_is_not_reachable_by_a_visitor(self):
+        """Read-only is still curator-only: it names unpublished objects too."""
+        self.client.force_authenticate(self.visitor)
+        self.assertEqual(
+            self.client.get(self.url).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_worklist_is_not_reachable_anonymously(self):
+        response = self.client.get(self.url)
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+
+    # Truncation itself is a property of the shared service and is pinned in
+    # `web.tests.QRWorklistTests`; the endpoint deliberately does not accept a
+    # caller-supplied limit, because the bound is what keeps one request from
+    # regenerating a national collection.
+
+    # --- batch generation ------------------------------------------------
+
+    def test_generate_covers_named_slugs(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.post(
+            reverse('qr_codes:artifact-qr-worklist-generate'),
+            {'slugs': ['kenkeni-drum']},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['generated'], ['kenkeni-drum'])
+        self.labelled.refresh_from_db()
+        self.bare.refresh_from_db()
+        self.assertIn('<svg', self.bare.qr_code_svg)
+        self.assertEqual(self.labelled.qr_code_svg, '')
+
+    def test_generate_with_no_slugs_covers_everything_still_missing(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.post(
+            reverse('qr_codes:artifact-qr-worklist-generate'), {}, format='json',
+        )
+
+        self.assertEqual(
+            sorted(response.data['generated']),
+            ['kenkeni-drum', 'lobe-waterfalls'],
+        )
+
+    def test_generate_with_no_slugs_leaves_already_labelled_objects_alone(self):
+        Artifact.objects.filter(pk=self.labelled.pk).update(
+            qr_code_svg='<svg>old</svg>',
+        )
+        self.client.force_authenticate(self.manager)
+        self.client.post(
+            reverse('qr_codes:artifact-qr-worklist-generate'), {}, format='json',
+        )
+
+        self.labelled.refresh_from_db()
+        self.assertEqual(self.labelled.qr_code_svg, '<svg>old</svg>')
+
+    def test_generate_reports_a_stale_slug_without_failing_the_batch(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.post(
+            reverse('qr_codes:artifact-qr-worklist-generate'),
+            {'slugs': ['kenkeni-drum', 'deleted-row']},
+            format='json',
+        )
+
+        self.assertEqual(response.data['generated'], ['kenkeni-drum'])
+        self.assertEqual(response.data['missing'], ['deleted-row'])
+
+    def test_generate_says_so_when_there_is_nothing_left_to_do(self):
+        Artifact.objects.filter(pk=self.labelled.pk).update(qr_code_svg='<svg>a</svg>')
+        Artifact.objects.filter(pk=self.bare.pk).update(qr_code_svg='<svg>b</svg>')
+        self.client.force_authenticate(self.manager)
+        response = self.client.post(
+            reverse('qr_codes:artifact-qr-worklist-generate'), {}, format='json',
+        )
+
+        self.assertTrue(response.data['skipped'])
+        self.assertEqual(response.data['generated'], [])
+
+    def test_generate_is_not_reachable_by_a_visitor(self):
+        self.client.force_authenticate(self.visitor)
+        response = self.client.post(
+            reverse('qr_codes:artifact-qr-worklist-generate'),
+            {'slugs': ['kenkeni-drum']},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.bare.refresh_from_db()
+        self.assertEqual(self.bare.qr_code_svg, '')
