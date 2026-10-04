@@ -128,6 +128,18 @@ void main() {
     expect(find.text('63'), findsOneWidget);
   });
 
+  testWidgets('separates quiz attempts from quizzes finished', (tester) async {
+    await pumpDashboard(tester);
+    await tester.pumpAndSettle();
+
+    // The two used to be one number under the name "taken", so abandoned
+    // attempts were invisible and the card contradicted the Engagement strip.
+    expect(find.text('Quizzes finished'), findsOneWidget);
+    expect(find.text('190'), findsOneWidget);
+    // Every attempt is still counted — 214 attempts, 190 completed.
+    expect(find.text('214'), findsOneWidget);
+  });
+
   testWidgets('renders all users from the local and deployed databases', (
     tester,
   ) async {

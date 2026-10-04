@@ -26,6 +26,7 @@ class StoryStatsSerializer(serializers.Serializer):
 class GamificationStatsSerializer(serializers.Serializer):
     """Gamification statistics."""
     total_quizzes_taken = serializers.IntegerField()
+    quizzes_completed = serializers.IntegerField()
     quizzes_passed = serializers.IntegerField()
     pass_rate = serializers.FloatField()
     avg_score = serializers.FloatField()

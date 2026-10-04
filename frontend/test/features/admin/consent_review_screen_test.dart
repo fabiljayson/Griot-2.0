@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:griot_ai/features/admin/models/moderation_models.dart';
 import 'package:griot_ai/features/admin/providers/admin_provider.dart';
 import 'package:griot_ai/features/admin/screens/consent_review_screen.dart';
+import 'package:griot_ai/features/admin/widgets/consent_review_card.dart';
 import 'package:griot_ai/features/stories/models/story_model.dart';
 
 import '../../support/admin_fixtures.dart';
@@ -97,8 +98,12 @@ void main() {
   ) async {
     await pumpReview(tester);
 
-    expect(find.text('Awaiting answer'), findsOneWidget);
-    expect(find.text('Not requested'), findsOneWidget);
+    // These are `Story.Consent` labels, the same ones the decision form's
+    // dropdown offers. The pill used to carry its own hand-copied wording
+    // ("Awaiting answer" / "Not requested"), so one state had two names on one
+    // screen.
+    expect(find.text('Consent pending'), findsOneWidget);
+    expect(find.text('Consent not yet requested'), findsOneWidget);
   });
 
   testWidgets('an empty queue says so without claiming everything is fine', (
@@ -107,7 +112,15 @@ void main() {
     await pumpReview(tester, queue: const []);
 
     expect(find.text('Nothing awaiting a decision'), findsOneWidget);
-    expect(find.textContaining('or none has been asked yet'), findsOneWidget);
+    // The old copy read "Every story on record has an answer from its source
+    // community, or none has been asked yet", which reads as an all-clear.
+    // An empty queue only means nothing is sitting in `not_requested` /
+    // `pending` — withheld and never-asked stories are not in this list.
+    expect(find.textContaining('or none has been asked yet'), findsNothing);
+    expect(
+      find.textContaining('withheld, or never asked about'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('refuses to record a decision with no basis', (tester) async {
@@ -230,5 +243,94 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(Text), findsWidgets);
+  });
+
+  // The consent form records what a community *answered*. `not_requested` and
+  // `pending` are the absence of an answer, so offering them as a "Decision"
+  // let a moderator file "not requested" as the community's answer — with a
+  // basis and an attestation behind it — while the story stayed in the queue.
+  // The backend refuses those now (`CONSENT_DECISIONS`); the dropdown has to
+  // stop offering them too.
+  group('StoryConsent.decisions', () {
+    test('holds exactly the three real answers', () {
+      expect(StoryConsent.decisions, [
+        StoryConsent.granted,
+        StoryConsent.grantedRestricted,
+        StoryConsent.withheld,
+      ]);
+    });
+
+    test('excludes the two states that are the absence of an answer', () {
+      expect(
+        StoryConsent.decisions,
+        isNot(contains(StoryConsent.notRequested)),
+      );
+      expect(StoryConsent.decisions, isNot(contains(StoryConsent.pending)));
+    });
+  });
+
+  group('ConsentStatePill.labelFor', () {    test('reads from the enum rather than a second copy of the labels', () {
+      for (final choice in StoryConsent.values) {
+        expect(
+          ConsentStatePill.labelFor(choice.value),
+          choice.label,
+          reason: '${choice.value} has one label, not two',
+        );
+      }
+    });
+
+    test('shows an unknown value verbatim instead of guessing a state', () {
+      // `StoryConsent.fromString` falls back to `notRequested`, which would
+      // render an unrecognised value as a real, reassuring state.
+      expect(ConsentStatePill.labelFor('maybe_one_day'), 'maybe_one_day');
+    });
+  });
+
+  testWidgets('the decision dropdown offers only real answers', (
+    tester,
+  ) async {
+    await pumpReview(tester);
+
+    await tester.tap(find.text('Record decision').first);
+    await tester.pumpAndSettle();
+
+    // Read the dropdown's own items rather than searching the screen: the card
+    // behind the sheet renders the story's status pill, which legitimately
+    // shows a non-decision label for a story still awaiting one.
+    // `DropdownButtonFormField` does not expose `items`/`value`, so read them
+    // off the `DropdownButton` it builds.
+    final dropdown = tester.widget<DropdownButton<StoryConsent>>(
+      find.byType(DropdownButton<StoryConsent>),
+    );
+    final offered = dropdown.items!.map((item) => item.value).toList();
+
+    expect(
+      offered,
+      StoryConsent.decisions,
+      reason: 'a moderator must only be able to record an actual answer',
+    );
+    expect(offered, isNot(contains(StoryConsent.notRequested)));
+    expect(offered, isNot(contains(StoryConsent.pending)));
+  });
+
+  testWidgets('an undecided story still opens on a valid decision', (
+    tester,
+  ) async {
+    // The first fixture story is `pending`, which is no longer in the
+    // dropdown's value set — opening on it would leave the form showing a
+    // selection that cannot be re-picked.
+    await pumpReview(tester);
+
+    await tester.tap(find.text('Record decision').first);
+    await tester.pumpAndSettle();
+
+    final dropdown = tester.widget<DropdownButton<StoryConsent>>(
+      find.byType(DropdownButton<StoryConsent>),
+    );
+    expect(
+      StoryConsent.decisions,
+      contains(dropdown.value),
+      reason: 'the preselected value must itself be a recordable decision',
+    );
   });
 }

@@ -334,3 +334,174 @@ class DashboardGrowthSeriesTests(APITestCase):
             f'dashboard issued {len(ctx.captured_queries)} queries; the growth '
             f'series must stay grouped rather than looping per day',
         )
+
+
+class DashboardMetricsMeanWhatTheySayTests(APITestCase):
+    """The numbers on the dashboard have to be the numbers they claim to be.
+
+    Each of these was a card that looked plausible and was wrong against the
+    real database, so none of them could be caught by a test that only checked
+    the shape of the payload. These assert the *value*.
+    """
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            'metrics_admin', email='ma@test.com', password='pass123',
+            role='admin',
+        )
+        self.client.force_authenticate(self.admin)
+
+    def _users_payload(self):
+        resp = self.client.get(USERS_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        return resp.data
+    def test_active_users_counts_activity_not_only_web_logins(self):
+        """`last_login` cannot carry this metric on its own.
+
+        Auth is JWT-only and simplejwt leaves `UPDATE_LAST_LOGIN` at its
+        default of `False`, so a mobile login never writes the field — only a
+        Django session login does, i.e. the web admin. Counting `last_login`
+        reported admins who had used the website as if they were platform
+        activity, and every app user read as inactive.
+        """
+        from api.analytics import get_user_stats
+
+        reader = User.objects.create_user(
+            'lapsed_reader', email='lr@test.com', password='pass123',
+        )
+        # A user who has genuinely never signed in, and so has no last_login.
+        self.assertIsNone(reader.last_login)
+
+        # Reading is an action, and it must be enough.
+        Story.objects.create(
+            title='Actively Read', slug='actively-read', content='Body',
+            author=self.admin,
+        )
+        from stories.models import ReadingProgress
+        ReadingProgress.objects.create(
+            user=reader, story=Story.objects.get(slug='actively-read'),
+        )
+
+        stats = get_user_stats()
+        self.assertGreaterEqual(
+            stats['active_users_30d'], 1,
+            'a user who read a story was not counted as active',
+        )
+        self.assertIsNone(
+            reader.last_login,
+            'this test is only meaningful while last_login stays unwritten',
+        )
+
+    def test_an_idle_user_is_not_active(self):
+        """The other direction: the metric must not count everyone."""
+        from api.analytics import get_user_stats
+
+        User.objects.create_user(
+            'lapsed_idle', email='li@test.com', password='pass123',
+        )
+        stats = get_user_stats()
+        self.assertLess(
+            stats['active_users_30d'], stats['total_users'],
+            'every user is "active" — the metric is not measuring anything',
+        )
+
+    def test_active_users_never_exceeds_total_users(self):
+        """It is a count of users, so it cannot exceed the user table."""
+        from api.analytics import get_user_stats
+
+        stats = get_user_stats()
+        self.assertLessEqual(stats['active_users_30d'], stats['total_users'])
+
+    def test_anonymous_scans_are_not_counted_as_a_scanner(self):
+        """`values('user').distinct()` counts the NULL group as one more.
+
+        Anonymous scans are routine on a museum floor, so the phantom was not
+        an edge case: it inflated the number by exactly 1 while naming nobody.
+        """
+        from api.analytics import get_qr_stats
+        from qr_codes.models import Artifact, QRCodeScan
+
+        artifact = Artifact.objects.create(
+            title='Scannable', slug='scannable',
+            description='For the scanner-count test.',
+        )
+        QRCodeScan.objects.create(artifact=artifact, user=None)
+        QRCodeScan.objects.create(artifact=artifact, user=None)
+        QRCodeScan.objects.create(artifact=artifact, user=self.admin)
+
+        stats = get_qr_stats()
+        self.assertEqual(
+            stats['total_scans'], 3,
+            'anonymous scans still count towards the total',
+        )
+        self.assertEqual(
+            stats['unique_scanners'], 1,
+            'two anonymous scans must not register as a scanner; only the '
+            'signed-in one is a person we can name',
+        )
+
+    def test_repeated_scans_by_one_user_count_as_one_scanner(self):
+        from api.analytics import get_qr_stats
+        from qr_codes.models import Artifact, QRCodeScan
+
+        artifact = Artifact.objects.create(
+            title='Repeat', slug='repeat',
+            description='For the repeat-scanner test.',
+        )
+        for _ in range(4):
+            QRCodeScan.objects.create(artifact=artifact, user=self.admin)
+
+        self.assertEqual(get_qr_stats()['unique_scanners'], 1)
+
+    def test_quizzes_taken_counts_attempts_a_user_abandoned(self):
+        """The card said "Quiz Attempts" while filtering to COMPLETED.
+
+        Abandoned attempts vanished from the total, and the Engagement strip
+        further down the same screen counted all attempts in its 7-day window
+        — so the same word meant two different numbers on one page.
+        """
+        from api.analytics import get_gamification_stats
+
+        quiz = self._quiz('Measured')
+        QuizAttempt.objects.create(
+            user=self.admin, quiz=quiz,
+            status=QuizAttempt.Status.IN_PROGRESS,
+        )
+        QuizAttempt.objects.create(
+            user=self.admin, quiz=quiz,
+            status=QuizAttempt.Status.COMPLETED, score=80, passed=True,
+        )
+
+        stats = get_gamification_stats()
+        self.assertEqual(
+            stats['total_quizzes_taken'], 2,
+            'an unfinished attempt is still an attempt',
+        )
+        self.assertEqual(stats['quizzes_completed'], 1)
+
+    def test_pass_rate_is_measured_over_completions(self):
+        from api.analytics import get_gamification_stats
+
+        quiz = self._quiz('Rate')
+        QuizAttempt.objects.create(
+            user=self.admin, quiz=quiz,
+            status=QuizAttempt.Status.TIMED_OUT,
+        )
+        QuizAttempt.objects.create(
+            user=self.admin, quiz=quiz,
+            status=QuizAttempt.Status.COMPLETED, score=90, passed=True,
+        )
+
+        stats = get_gamification_stats()
+        self.assertEqual(
+            stats['pass_rate'], 100.0,
+            'an unfinished attempt must not dilute the pass rate',
+        )
+
+    def _quiz(self, title):
+        """A quiz needs its own story — `Quiz.story` is one-to-one."""
+        story = Story.objects.create(
+            title=f'Story for {title}', slug=f'story-for-{title.lower()}',
+            content='Body', author=self.admin,
+        )
+        return Quiz.objects.create(story=story, title=title)

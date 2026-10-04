@@ -43,6 +43,7 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
     </p>
     <p class="mt-2 font-display text-3xl font-bold">{{ summary.gamification.total_quizzes_taken }}</p>
     <p class="mt-1 text-xs text-secondary-text">{% blocktranslate with rate=summary.gamification.pass_rate %}{{ rate }}% pass rate{% endblocktranslate %}</p>
+    <p class="mt-1 text-xs text-secondary-text">{% blocktranslate count counter=summary.gamification.quizzes_completed %}{{ counter }} finished{% plural %}{{ counter }} finished{% endblocktranslate %}</p>
   </div>
   <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm dark:border-warm-brown dark:bg-deep-earth">
     <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-secondary-text">

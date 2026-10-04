@@ -97,6 +97,23 @@ def request_consent(user, story):
 CONSENT_AWAITING_DECISION = (Story.Consent.NOT_REQUESTED, Story.Consent.PENDING)
 
 
+#: The consent states that are actually an answer from the community.
+#:
+#: `not_requested` and `pending` are the absence of an answer, so letting a
+#: moderator record one of them as a "decision" would let them file a basis and
+#: an attestation against a story nobody answered about — and leave the story in
+#: the queue, so the next moderator sees a decision that is not one. `granted`,
+#: `granted_restricted` and `withheld` are the three answers.
+#:
+#: One definition, because both consent forms (API and web) ask the same
+#: question and a second copy would be a second thing to keep correct.
+CONSENT_DECISIONS = (
+    Story.Consent.GRANTED,
+    Story.Consent.GRANTED_RESTRICTED,
+    Story.Consent.WITHHELD,
+)
+
+
 def consent_review_queue():
     """The stories a moderator still owes a consent decision on.
 
@@ -132,9 +149,13 @@ def record_consent(user, story, *, status, basis='', rights_holder=None,
     if not is_moderator(user):
         raise PermissionDenied('Moderator role required.')
 
-    valid = {choice for choice, _ in Story.Consent.choices}
-    if status not in valid:
-        raise ValidationError({'consent_status': f'Unknown consent status: {status}!r'})
+    # `Story.Consent.choices` is the wrong set to validate against here: it also
+    # holds the two states that mean nobody has answered yet.
+    if status not in CONSENT_DECISIONS:
+        raise ValidationError({'consent_status': (
+            f'{status!r} is not a consent decision. Record granted, granted '
+            'with restrictions, or withheld.'
+        )})
     if not basis.strip():
         raise ValidationError({'consent_basis': (
             'Record the basis for this decision — a consent status with no '

@@ -112,6 +112,9 @@ onRefresh: () => Future.wait([
                           value: formatCount(summary.users.totalUsers),
                           icon: AppIcons.people_outline,
                           color: AppColors.terracotta,
+                          // "Active" is users who did something in the window,
+                          // not logins — mobile auth is JWT, which never writes
+                          // `last_login`.
                           subtitle:
                               '${summary.users.activeUsers30d} active (30d)',
                         ),
@@ -309,6 +312,21 @@ onRefresh: () => Future.wait([
                             color: AppColors.terracottaDark,
                           ),
                         ),
+                        SizedBox(
+                          width: isWide ? 120 : 140,
+                          child: MiniStat(
+                            icon: AppIcons.task_alt,
+                            // `totalQuizzesTaken` counts every attempt, so the
+                            // gap to this is what people walked away from —
+                            // invisible when the card showed completions under
+                            // the name "attempts".
+                            label: 'Quizzes finished',
+                            value: formatCount(
+                              summary.gamification.quizzesCompleted,
+                            ),
+                            color: AppColors.charcoalMuted,
+                          ),
+                        ),
                       ],
                     ),
                     if (summary.gamification.topUsers.isNotEmpty) ...[
@@ -373,6 +391,8 @@ onRefresh: () => Future.wait([
                           width: isWide ? 120 : 140,
                           child: MiniStat(
                             icon: AppIcons.person_pin_outlined,
+                            // Signed-in scanners only: anonymous scans are in
+                            // `totalScans` but are not a person we can count.
                             label: 'Unique scanners',
                             value: formatCount(summary.qrCodes.uniqueScanners),
                             color: AppColors.savannahGreen,

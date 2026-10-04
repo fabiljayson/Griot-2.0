@@ -55,7 +55,7 @@ from stories.models import (
     StoryLike,
     StoryShare,
 )
-from stories.services import resolve_status
+from stories.services import CONSENT_DECISIONS, resolve_status
 
 from .models import WebUserSettings
 
@@ -365,7 +365,15 @@ def story_detail_data(user, slug):
         # The consent decision and its licence, for the moderator form. Only a
         # moderator ever reads these two keys — a contributor gets the single
         # "I have asked" button instead, which cannot express a decision.
-        'consent_choices': Story.Consent.choices,
+        #
+        # The decisions, not every `Story.Consent` member: `not_requested` and
+        # `pending` are the absence of an answer, so offering them in a
+        # "Decision" dropdown let a moderator file "not requested" as what the
+        # community said. See `stories.services.CONSENT_DECISIONS`.
+        'consent_choices': [
+            (code, Story.Consent(code).label)
+            for code in CONSENT_DECISIONS
+        ],
         'licences': Story.Licence.choices,
         'progress_percent': progress.progress_percent if progress else 0,
         'quiz': quiz,

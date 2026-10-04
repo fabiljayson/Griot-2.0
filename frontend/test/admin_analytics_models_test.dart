@@ -93,6 +93,7 @@ void main() {
       final stats = GamificationStats.fromJson(adminGamificationJson());
 
       expect(stats.totalQuizzesTaken, 214);
+      expect(stats.quizzesCompleted, 190);
       expect(stats.quizzesPassed, 168);
       expect(stats.passRate, 78.5);
       expect(stats.avgScore, 81.0);
@@ -122,6 +123,8 @@ void main() {
 
       expect(stats.passRate, 80.0);
       expect(stats.avgScore, 70.0);
+      expect(stats.totalQuizzesTaken, 0);
+      expect(stats.quizzesCompleted, 0);
       expect(stats.topUsers, isEmpty);
       expect(stats.quizStats, isEmpty);
     });

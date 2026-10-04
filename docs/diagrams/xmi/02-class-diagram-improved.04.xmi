@@ -1,0 +1,360 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_be7e454bf15127aa" name="Griot 2.0 — Web UI Classes (web app)">
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_79c8005383b587db" name="WebUserSettings">
+    <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_84441aff4bbe2fc2" name="id">
+      <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+    </uml:ownedAttribute>
+    <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c066ff1112ab4631" name="user">
+      <uml:type xmi:idref="_f899b54feec3f044" />
+    </uml:ownedAttribute>
+    <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8b29da8af3eecbac" name="language">
+      <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+    </uml:ownedAttribute>
+    <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_30546fb4d45e0da8" name="theme">
+      <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+    </uml:ownedAttribute>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_1858278c478a78de" name="WebLoginView">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_22101c8bc9109928" name="form_valid">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_2130d14d6d24016a" name="form" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_3b987edc7dca05dc" name="get_success_url">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_396307a28493cbb4" name="return" direction="return">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedParameter>
+    </uml:ownedOperation>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_46d2f5788a11da3e" name="WebLogoutView">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_196f7f9836a448b3" name="get_success_url">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_21145576eb0953ad" name="return" direction="return">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedParameter>
+    </uml:ownedOperation>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_c8e82f7b099c1637" name="web_views">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_945c710f082969d9" name="home_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_637bbbd5cae9affb" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_3f7c8a7dd7d2322f" name="stories_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_69235b1fb9317b95" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_cbf343356cfea3bb" name="story_detail_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_b35f1625a5b48ea7" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_783930b1ffdbb744" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_19c24c33db715d6c" name="story_form_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_fbcf9b2bf9cc254e" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_18622e59f691d99b" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_56506e36123f2968" name="library_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ac84d2249be63171" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_8946a711bdc02d2d" name="artifact_list_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_5d6bf7f08a4dba40" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_d09a70d265da9b72" name="artifact_detail_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_01c99b092bf2e36b" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ef9dc6a028f4e2ab" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_1ff02b77d5ce3dfb" name="gamification_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ff25a47f0a9a8f5b" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_7f4f2608ecb5621b" name="quizzes_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_c4dea44bbf27ec4d" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_9bde9f6e41461f12" name="quiz_play_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_1e9bc7c72cd901ca" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_35aafa5b43089815" name="quiz_id" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_c419c2a415efce89" name="profile_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_0f7b29b198341b5b" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_27a7a359a766a70f" name="admin_dashboard_view">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_1e3792647eb458ad" name="request" direction="in" />
+    </uml:ownedOperation>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_0c7158ed77540bda" name="web_services">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_e216ec6389e4b4d8" name="home_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ea8c79a33497f718" name="user" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_42eda5de424cb5a7" name="stories_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_32cf4197cb12d931" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_bb3a76fc7c952d78" name="search" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_e45a4ee0963760f9" name="language" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_880205f75990d0ef" name="category_slug" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d366e85a796d1e42" name="region" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_08063594ea00d2db" name="sort" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_dcfa419e0e8506a3" name="story_detail_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_6cc192a49eab3f39" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_b30b222d9170d1a1" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_f78298ed1e92bcba" name="artifact_list_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_0ef9923b3d9768a3" name="category" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_692e6014a2fcf5f7" name="artifact_detail_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_aadb30ab6895c615" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_3e909509faab1d15" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_7700ba37db6bd149" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_47c495c1427616c5" name="gamification_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_048dd025a2a30252" name="user" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_65c2a763e2f6c1d6" name="quiz_play_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_a8ca0f229181354d" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ea9caeece0271fdc" name="quiz_id" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_02e4a07cea996cda" name="admin_dashboard_data" />
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_44e5152cba1beb39" name="resolve_ui_language">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d17887140f4764df" name="code" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_fd471017b66a7937" name="toggle_story_like">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d859a14d00367793" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f51043b302f715b9" name="story" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_873145962ceddfed" name="flag_story">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_a98aa31ef10ce19a" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_e05542f09cee0990" name="story" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_74873a4eded6cb89" name="reason" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_73532647653e9868" name="details" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_3e74bb0944f543f6" name="start_quiz">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f77e894583a4075b" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_79bec08d616d1911" name="quiz" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_78a66602a9b5532d" name="finish_quiz">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_3906771f62f00b69" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_cadf42c6ffa5c6cb" name="quiz" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_65ee66ff6f1deb76" name="moderate_story">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_9daf580663a00dd5" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_08df146cfe6a2964" name="story" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_5bb18082fc9ef501" name="action" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ee7a4bce1df61d93" name="notes" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_e0b0ff679035bf6b" name="generate_story_audio">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_cdeaf1f827a62acf" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_68d47cc62efcde08" name="story" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_95e313898ef59aef" name="language" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_dbc339c199a332d8" name="generate_story_video">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d580b8447fd30481" name="user" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_7ea8586c25c51be4" name="story" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_326f2ae6597ab90e" name="prompt" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_0f20c325fa89bd06" name="qr_worklist_data">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_9643f8eb29be3bbf" name="limit" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_827f6d32150605e8" name="generate_qr_for_artifacts">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_2d7e08c14fe8ccfa" name="slugs" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f30d3fce6b2b137a" name="persist" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_19721bc551897f21" name="register_user">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_c22dc54828d631ba" name="username" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_c99b3f974600a957" name="email" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_bbb37a6a1f0df9db" name="password" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_e2254988f2b56cbd" name="password2" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d88c8833c0b025ad" name="role" direction="in" />
+    </uml:ownedOperation>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_ec867c7be8d4c8be" name="web_actions">
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_36408d1f3ecd8b79" name="story_like">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_62186b1bce6af835" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_a0d55c73f9a9cc30" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_d51cf9281b6e1c56" name="story_bookmark">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f25a8a014688b264" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_1c2c771f2f2b1e7f" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_f39f62137e9cda8e" name="story_flag">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_3dd8361c0aa13e1d" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_cc52d6566b2fe8b1" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_60536d8805a896a5" name="story_share">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_cea8548e50cb1128" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_7650f4cc1443b248" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_85521e770582a047" name="story_progress">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_be6775c22cecdf0d" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_a61cebc4283f8f29" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_1d93ac951e0a40c5" name="story_save">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_210bbce750cdb27c" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_6d662ce4b4c580ff" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_0b0ae6b38cd4e46a" name="story_delete">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_a2317a4fc8a5e0fc" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d709e0565f619984" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_eca7121c5c36bd50" name="story_generate_audio">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d535b9b1e567d70e" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_a91c279e55108dff" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_db65405eefbaf098" name="story_generate_video">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_b8126c39d306e2a6" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ab058529689e8e09" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_b088cf298d09e7ca" name="artifact_generate_audio">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d099de5826602a82" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_c3574db99a8e8a83" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_97c846fed795c95c" name="artifact_generate_qr">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_958ca76b05d0f259" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d346110730be0c87" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_f84075bcc9e5a950" name="artifacts_generate_qr">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f613e8a90999b687" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_7bc043e95b42e5d9" name="story_video_status">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_5f0201768736e4f9" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d2980b1c40a4971b" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_48f8d6d6689f0c0d" name="story_moderate">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_afa78c0368c763cd" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d8d0516252db61b4" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_907451016f28b45e" name="story_record_consent">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_e5d824aae7dbc558" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_fcd124e6c993b305" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_e65f43c4739eb08d" name="story_request_consent">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_8bd2cb0afacc5fda" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_7c91be580f7d5211" name="slug" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_dd860e9bc63adf3b" name="set_language">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_1dbe69d89174574f" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_62e1f268c71b2a11" name="quiz_start">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_97ec4fe68120e278" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_e1b110bd38729258" name="quiz_id" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_c7406c94b4c832df" name="quiz_answer">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d5ea412bc19038a4" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_39349e0a172ecc15" name="quiz_id" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d689b693888008ae" name="question_id" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_06d31219b5f3fcb3" name="quiz_finish">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_4a1a4d68998e40af" name="request" direction="in" />
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_92bd7e97ecff6a4e" name="quiz_id" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_3822785a0cbb14b7" name="profile_update">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_57c03269737e14a6" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_83ddfd6b0f812767" name="profile_delete">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_3e96cfc76601089d" name="request" direction="in" />
+    </uml:ownedOperation>
+    <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_93fac834f0b6736e" name="register">
+      <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_91bf31e35a5af418" name="request" direction="in" />
+    </uml:ownedOperation>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_8317b5880849aeea" name="StoryTemplates" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_87d0295038f94879" name="Story" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_74c26457b4bc5625" name="Artifact" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_9829321879c03dd5" name="AudioNarrationJob" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_3c72150e2663e6f9" name="VideoGenerationJob" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_f899b54feec3f044" name="User" />
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_c7f30c5f0a8ec430" name="redirects to">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_386aa3b439d6f7ca" name="web_views">
+      <uml:type xmi:idref="_ec867c7be8d4c8be" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_80f62c5aeee628fb" name="web_actions">
+      <uml:type xmi:idref="_c8e82f7b099c1637" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_5a78398d36a31b7b" name="delegates business logic">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f5fc7ee3369236b7" name="web_services">
+      <uml:type xmi:idref="_c8e82f7b099c1637" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_91e90f314ff37bb1" name="web_views">
+      <uml:type xmi:idref="_0c7158ed77540bda" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_7839dd937eb7b352" name="renders">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_cc41dd45b5b01f78" name="storytemplates">
+      <uml:type xmi:idref="_c8e82f7b099c1637" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f1081ed0a042120e" name="web_views">
+      <uml:type xmi:idref="_8317b5880849aeea" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_7f30662b6d289bc6" name="reads per-user prefs">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_56e3b8e0f9f16aa6" name="webusersettings">
+      <uml:type xmi:idref="_c8e82f7b099c1637" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5e2dab9168f5c341" name="web_views">
+      <uml:type xmi:idref="_79c8005383b587db" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_78b3ade9e39aac72" name="uses">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_30026113beca0906" name="webloginview">
+      <uml:type xmi:idref="_c8e82f7b099c1637" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9432f65fbdec1975" name="web_views">
+      <uml:type xmi:idref="_1858278c478a78de" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ec6df3b7acc6abe0" name="uses">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6fe6aa007d167460" name="weblogoutview">
+      <uml:type xmi:idref="_c8e82f7b099c1637" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e5c56fbf37358ed9" name="web_views">
+      <uml:type xmi:idref="_46d2f5788a11da3e" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_73f011a6246673a7" name="same models as the API">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_d432ade4d965167c" name="story">
+      <uml:type xmi:idref="_0c7158ed77540bda" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6d7e32d62f9cef3e" name="web_services">
+      <uml:type xmi:idref="_87d0295038f94879" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_13939c64ce335dde" name="reads and persists language">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8c500ad272a338d0" name="webusersettings">
+      <uml:type xmi:idref="_0c7158ed77540bda" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e42eebbb9c9b0985" name="web_services">
+      <uml:type xmi:idref="_79c8005383b587db" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_414ca8fdcdce919f" name="QR worklist source">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2b9b14903d2fd49a" name="artifact">
+      <uml:type xmi:idref="_0c7158ed77540bda" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c2977bcc563c57ac" name="web_services">
+      <uml:type xmi:idref="_74c26457b4bc5625" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_a2f6dbf1bc3170c8" name="generates via TTS">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_edec5c0ebacbb6ac" name="audionarrationjob">
+      <uml:type xmi:idref="_0c7158ed77540bda" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_26cf4cc26a93c958" name="web_services">
+      <uml:type xmi:idref="_9829321879c03dd5" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_25427b0dda9de2dc" name="generates via Luma AI">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_83a09b2f652fb786" name="videogenerationjob">
+      <uml:type xmi:idref="_0c7158ed77540bda" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_896f6e915246be78" name="web_services">
+      <uml:type xmi:idref="_3c72150e2663e6f9" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_83be37b1ee3eac05" name="generates QR codes for">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_005c6efe78cdcde4" name="artifact">
+      <uml:type xmi:idref="_ec867c7be8d4c8be" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4847bc2a8ea645f3" name="web_actions">
+      <uml:type xmi:idref="_74c26457b4bc5625" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_0596e635ceb84d42" name="records consent and moderates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_37645302ceee6811" name="story">
+      <uml:type xmi:idref="_ec867c7be8d4c8be" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c92491ad341145f2" name="web_actions">
+      <uml:type xmi:idref="_87d0295038f94879" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+</uml:Model>

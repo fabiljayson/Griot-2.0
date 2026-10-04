@@ -81,9 +81,13 @@ class _ConsentFormSheetState extends ConsumerState<ConsentFormSheet> {
   /// Prefilled with the story's current licence so that recording a decision
   /// without touching rights does not silently blank them out.
   late StoryLicence _licence = StoryLicence.fromString(widget.story.licence);
-  late StoryConsent _decision = StoryConsent.fromString(
-    widget.story.consentStatus,
-  );
+  /// Opens on the story's recorded decision when that *is* a decision, and on
+  /// `granted` otherwise. `fromString` alone would open on `notRequested` for
+  /// an undecided story, which is no longer in the dropdown's value set.
+  late StoryConsent _decision = () {
+    final current = StoryConsent.fromString(widget.story.consentStatus);
+    return StoryConsent.decisions.contains(current) ? current : StoryConsent.granted;
+  }();
 
   bool _showBasisError = false;
   bool _busy = false;
@@ -186,7 +190,11 @@ class _ConsentFormSheetState extends ConsumerState<ConsentFormSheet> {
                   border: OutlineInputBorder(),
                 ),
                 items: [
-                  for (final choice in StoryConsent.values)
+                  // Only the three real answers. Offering "not requested" and
+                  // "pending" here let a moderator record the absence of an
+                  // answer as the answer itself; the server now refuses it too
+                  // (`stories.services.CONSENT_DECISIONS`).
+                  for (final choice in StoryConsent.decisions)
                     DropdownMenuItem(
                       value: choice,
                       child: Text(choice.label),

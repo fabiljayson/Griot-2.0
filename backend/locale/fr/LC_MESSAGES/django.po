@@ -230,6 +230,13 @@ msgstr "%(rate)s %% de réussite"
 msgid "QR Scans"
 msgstr "Scans QR"
 
+#: templates/web/admin_dashboard.html:46
+#, python-format
+msgid "%(counter)s finished"
+msgid_plural "%(counter)s finished"
+msgstr[0] "%(counter)s terminé"
+msgstr[1] "%(counter)s terminés"
+
 #: templates/web/admin_dashboard.html:52
 #, python-format
 msgid "%(counter)s published artifact"

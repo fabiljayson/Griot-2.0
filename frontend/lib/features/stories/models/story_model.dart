@@ -509,6 +509,15 @@ enum StoryConsent {
   final String value;
   final String label;
 
+  /// The states that are an actual answer from the community.
+  ///
+  /// `notRequested` and `pending` are the *absence* of one, so a form offering
+  /// them as a "Decision" lets a moderator file "not requested" as what the
+  /// community said — complete with a basis and an attestation, and the story
+  /// stays in the queue for the next moderator. Mirrors
+  /// `stories.services.CONSENT_DECISIONS`.
+  static const decisions = [granted, grantedRestricted, withheld];
+
   factory StoryConsent.fromString(String value) {
     return StoryConsent.values.firstWhere(
       (c) => c.value == value,

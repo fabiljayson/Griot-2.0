@@ -979,3 +979,108 @@ class ConsentQueueTests(APITestCase):
 
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(self.client.get(self.url).data, [])
+
+
+class ConsentDecisionSetTests(APITestCase):
+    """A moderator records an *answer*, so a non-answer must be refused.
+
+    `not_requested` and `pending` are the absence of a decision. Validating
+    against `Story.Consent.choices` accepted both, so a moderator could file
+    "not requested" as what the community said — with a basis and an
+    attestation attached — and the story would stay in the review queue, so the
+    next moderator saw a decision that was not one.
+    """
+
+    def setUp(self):
+        self.manager = User.objects.create_user(
+            'decider9', email='decider9@example.com',
+            password='hunter2secure', role='institution_manager',
+        )
+        self.story = Story.objects.create(
+            title='A Tradition', content='Content.', author=self.manager,
+            status=Story.Status.PUBLISHED,
+        )
+        self.answer_url = reverse(
+            'stories:story-record-consent', kwargs={'slug': self.story.slug},
+        )
+
+    def _record(self, status_value):
+        self.client.force_authenticate(self.manager)
+        return self.client.post(
+            self.answer_url,
+            {'status': status_value, 'basis': 'Spoke to the family elder'},
+        )
+
+    def test_recording_not_requested_is_refused(self):
+        resp = self._record('not_requested')
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.story.refresh_from_db()
+        self.assertEqual(
+            self.story.consent_status, Story.Consent.NOT_REQUESTED,
+            '"not requested" is the absence of a decision, not one',
+        )
+
+    def test_recording_pending_is_refused(self):
+        self._record('pending')
+
+        resp = self.client.post(
+            self.answer_url,
+            {'status': 'pending', 'basis': 'Still waiting on a reply'},
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.story.refresh_from_db()
+        self.assertNotEqual(
+            self.story.consent_status, Story.Consent.PENDING,
+            'a decision with an attestation behind it is a claim, not a wait',
+        )
+
+    def test_a_refused_decision_forges_no_attestation(self):
+        """The dangerous half: a basis and a name must not stick either."""
+        self._record('not_requested')
+
+        self.story.refresh_from_db()
+        self.assertIsNone(self.story.consent_attested_by)
+        self.assertIsNone(self.story.consent_attested_at)
+        self.assertEqual(self.story.consent_basis, '')
+
+    def test_the_three_real_answers_are_all_accepted(self):
+        from .services import CONSENT_DECISIONS
+
+        for decision in CONSENT_DECISIONS:
+            with self.subTest(decision=decision):
+                self.story.refresh_from_db()
+                self.story.consent_status = Story.Consent.PENDING
+                self.story.save(update_fields=['consent_status'])
+
+                resp = self._record(decision)
+                self.assertEqual(
+                    resp.status_code, status.HTTP_200_OK,
+                    f'{decision} is a real answer and must be recordable',
+                )
+
+    def test_the_decision_set_is_exactly_the_three_answers(self):
+        from .services import CONSENT_AWAITING_DECISION, CONSENT_DECISIONS
+
+        self.assertEqual(
+            set(CONSENT_DECISIONS),
+            {Story.Consent.GRANTED, Story.Consent.GRANTED_RESTRICTED,
+             Story.Consent.WITHHELD},
+        )
+        self.assertFalse(
+            set(CONSENT_DECISIONS) & set(CONSENT_AWAITING_DECISION),
+            'a state cannot be both awaiting a decision and a decision',
+        )
+
+    def test_an_unknown_status_still_names_the_value_it_refused(self):
+        resp = self._record('maybe_one_day')
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        # The project exception handler nests field errors under `error`.
+        detail = str(resp.data.get('error', resp.data))
+        self.assertIn('consent_status', detail)
+        self.assertIn(
+            'maybe_one_day', detail,
+            'the error must name the value refused — an f-string that wrote '
+            '"{status}!r" rendered a literal "!r" instead of a repr',
+        )

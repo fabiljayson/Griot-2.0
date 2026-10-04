@@ -182,6 +182,7 @@ class QuizStat {
 class GamificationStats {
   const GamificationStats({
     this.totalQuizzesTaken = 0,
+    this.quizzesCompleted = 0,
     this.quizzesPassed = 0,
     this.passRate = 0.0,
     this.avgScore = 0.0,
@@ -191,7 +192,12 @@ class GamificationStats {
     this.quizStats = const [],
   });
 
+  /// Every attempt, including abandoned ones.
   final int totalQuizzesTaken;
+
+  /// The subset that reached `completed`, and so the denominator `passRate`
+  /// is measured over.
+  final int quizzesCompleted;
   final int quizzesPassed;
   final double passRate;
   final double avgScore;
@@ -203,6 +209,7 @@ class GamificationStats {
   factory GamificationStats.fromJson(Map<String, dynamic> json) {
     return GamificationStats(
       totalQuizzesTaken: (json['total_quizzes_taken'] as num?)?.toInt() ?? 0,
+      quizzesCompleted: (json['quizzes_completed'] as num?)?.toInt() ?? 0,
       quizzesPassed: (json['quizzes_passed'] as num?)?.toInt() ?? 0,
       passRate: (json['pass_rate'] as num?)?.toDouble() ?? 0.0,
       avgScore: (json['avg_score'] as num?)?.toDouble() ?? 0.0,

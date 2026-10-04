@@ -62,6 +62,10 @@ Map<String, dynamic> adminStoryStatsJson() => {
 
 Map<String, dynamic> adminGamificationJson() => {
   'total_quizzes_taken': 214,
+  // Distinct from `total_quizzes_taken`: the completed subset that
+  // `pass_rate` is measured over. The two used to be the same number under a
+  // field called "taken", which hid every abandoned attempt.
+  'quizzes_completed': 190,
   'quizzes_passed': 168,
   'pass_rate': 78.5,
   'avg_score': 81.0,

@@ -1,0 +1,677 @@
+classDiagram
+    title Griot 2.0 — Frontend Class Diagram
+
+    namespace Core_Network {
+        class ApiClient {
+            +Dio dio
+            -OfflineRequestRepository _offlineRepository
+            -ConnectivityService _connectivityService
+            +ApiClient instance
+            +ApiClient withAuth()
+            +queueOfflineRequest() Future
+        }
+
+        class AuthInterceptor {
+            -AuthRepository _authRepo
+            -bool _isRefreshing
+            +onRequest() void
+            +onError() void
+        }
+
+        class RetryInterceptor {
+            -int _maxRetries
+            +onError() void
+        }
+
+        class AppError {
+            <<sealed>>
+            -network / -auth / -validation / -offline / -unknown
+        }
+
+        class AppErrorMapper {
+            +appErrorFromDio(dioException) AppError
+        }
+
+        class ConnectivityService {
+            -Connectivity _connectivity
+            -OfflineRequestRepository _offlineRepository
+            -StreamController _connectivityController
+            -bool _isOnline
+            +bool isOnline
+            +Stream connectivityStream
+            +initialize() void
+            +dispose() void
+        }
+
+        class OfflineSyncManager {
+            -OfflineRequestRepository _offlineRepository
+            -ApiClient _apiClient
+            -ConnectivityService _connectivityService
+            -bool _isSyncing
+            +initialize() void
+            +triggerSync() Future
+            +dispose() void
+        }
+
+        class OfflineQueueInterceptor {
+            -OfflineRequestRepository _offlineRepository
+            -ConnectivityService _connectivityService
+            +onRequest() void
+        }
+
+        class OfflineRequestRepository {
+            +enqueue(request) int
+            +pending() List
+            +markSynced(id) void
+            +clear() void
+        }
+    }
+
+    namespace Core_Data {
+        class LocalStoryRepository {
+            <<SQLite>>
+            +Future getStories(...) List~StoryModel~
+            +Future createStory(...) StoryModel
+            +Future updateStory(...) StoryModel
+            +Future toggleBookmark(slug) bool
+            +Future toggleLike(slug) bool
+            +Future flagStory(slug,reason,details) void
+            +Future updateReadingProgress(...) void
+        }
+
+        class LocalGamificationRepository {
+            <<SQLite>>
+            +Future getQuizzes() List
+            +Future submitAnswer(...) Map
+            +Future finishQuiz(...) Map
+            +Future getLeaderboard() List
+        }
+
+        class LocalLibraryRepository {
+            <<SQLite>>
+            +Future getRecentStories() List~StoryModel~
+            +Future getBookmarks() List~StoryModel~
+            +Future getContinueReading() List~StoryModel~
+        }
+    }
+
+    namespace Auth {
+        class AuthRepository {
+            <<interface>>
+            +Future~bool~ isAuthenticated
+            +Future~String?~ accessToken
+            +Future~String?~ refreshToken
+            +Future clearTokens() void
+            +Future login(username,password) TokenPair
+            +Future register(...) UserModel
+            +Future refreshTokens() TokenPair
+            +Future getMe() UserModel
+            +Future updateProfile(...) UserModel
+            +Future deleteAccount() void
+            +Future logout() void
+        }
+
+        class ServerAuthRepository {
+            +Future login() TokenPair
+            +Future getMe() UserModel
+            +Future register() UserModel
+        }
+
+        class LocalAuthRepository {
+            <<SQLite + secure storage>>
+            +Future~bool~ isAuthenticated
+            +Future getMe() UserModel
+        }
+
+        class OfflineAuthRepository {
+            +registerQueued() Future
+        }
+
+        class OfflineUserRepository {
+            <<SQLite>>
+            +upsertUserFromServer() Future
+        }
+
+        class TokenPair {
+            +String accessToken
+            +String refreshToken
+            +DateTime expiresAt
+        }
+
+        class LoginScreen {
+            +build() Widget
+        }
+
+        class RegisterScreen {
+            +build() Widget
+        }
+
+        class ProfileScreen {
+            +TextEditingController _firstNameController
+            +TextEditingController _lastNameController
+            +bool _isEditing
+            +build() Widget
+        }
+
+        class RoleBadge {
+            +UserRole role
+            +build() Widget
+        }
+
+        class AuthProvider {
+            +AsyncValue authState
+            +login() Future
+            +register() Future
+            +logout() void
+        }
+
+        class AuthWrapper {
+            +Widget child
+            +build() Widget
+        }
+
+        class UserModel {
+            +int id
+            +String username
+            +String email
+            +String firstName
+            +String lastName
+            +String role
+            +String institution
+            +bool canContribute
+            +canGenerateMediaFor(int authorId) bool
+        }
+
+        class AuthStatus {
+            <<enumeration>>
+            initial
+            unauthenticated
+            authenticated
+            pendingSync
+            loading
+            error
+        }
+    }
+
+    namespace Stories {
+        class StoryModel {
+            +int id
+            +String slug
+            +String title
+            +String summary
+            +String content
+            +UserModel author
+            +String language
+            +String region
+            +List categories
+            +String coverImage
+            +String audioUrl
+            +String videoUrl
+            +int estimatedReadTime
+            +bool isBookmarked
+        }
+
+        class StoryRepository {
+            <<interface>>
+            +Future getStories(...) List~StoryModel~
+            +Future getStory(slug) StoryModel
+            +Future createStory(...) StoryModel
+            +Future updateStory(...) StoryModel
+            +Future deleteStory(slug) void
+            +Future getMyStories() List~StoryModel~
+            +Future getBookmarks() List~StoryModel~
+            +Future toggleBookmark(slug) bool
+            +Future toggleLike(slug) bool
+            +Future flagStory(...) void
+            +Future updateReadingProgress(...) void
+        }
+
+        class StoryListNotifier {
+            +StoryListState state
+            +loadStories() Future
+            +refresh() Future
+            +loadMore() Future
+            -_loadFromCache() Future
+        }
+
+        class StoryListState {
+            <<sealed>>
+            +InProgress()
+            +Ready()
+            +Failure()
+        }
+
+        class StoriesScreen {
+            +TextEditingController _searchController
+            +build() Widget
+        }
+
+        class StoryDetailScreen {
+            +build() Widget
+        }
+
+        class StoryFormScreen {
+            +TextEditingController _titleController
+            +TextEditingController _contentController
+            +TextEditingController _summaryController
+            +TextEditingController _tagsController
+            +TextEditingController _regionController
+            +TextEditingController _culturalContextController
+            +TextEditingController _moralLessonController
+            +TextEditingController _sourceController
+            +build() Widget
+        }
+
+        class StoryCard {
+            +StoryModel story
+            +build() Widget
+        }
+    }
+
+    namespace Gamification {
+        class GamificationApiService {
+            <<SQLite facade>>
+            +listQuizzes() List
+            +getQuiz() Quiz
+            +submitAnswer(...) void
+            +finishQuiz(...) QuizAttempt
+            +getLeaderboard() List
+        }
+
+        class LibraryApiService {
+            <<SQLite facade>>
+            +getRecentStories() List~StoryModel~
+            +getBookmarks() List~StoryModel~
+            +getContinueReading() List~StoryModel~
+        }
+
+        class GamificationScreen {
+            +build() Widget
+        }
+
+        class QuizPlayerWidget {
+            +Quiz quiz
+            +build() Widget
+        }
+
+        class BadgeCard {
+            +Badge badge
+            +bool earned
+            +build() Widget
+        }
+    }
+
+    namespace Admin {
+        class AdminApiService {
+            +getDashboardSummary() DashboardSummary
+            +getUsers(search) List~AdminUser~
+            +getModerationQueue() List~FlaggedStory~
+            +getConsentQueue() List~ConsentReviewStory~
+            +moderateStory(slug, action, notes) void
+            +recordStoryConsent(...) void
+            +getQrWorklist() QrWorklist
+            +generateQrCodes(slugs) QrWorklistGeneration
+        }
+
+        class AdminUser {
+            +int id
+            +String username
+            +String email
+            +String firstName
+            +String lastName
+            +String role
+            +String roleDisplay
+            +String institution
+            +String dateJoined
+            +bool isActive
+        }
+
+        class DashboardSummary {
+            +UserStats users
+            +StoryStats stories
+            +GamificationStats gamification
+            +QRStats qrCodes
+            +EngagementSummary engagement
+        }
+
+        class UserStats {
+            +int totalUsers
+            +int activeUsers30d
+            +List growth
+        }
+
+        class StoryStats {
+            +int totalStories
+            +int pendingReview
+            +Map storiesByStatus
+        }
+
+        class GamificationStats {
+            +int totalQuizzesTaken
+            +float passRate
+            +List topUsers
+        }
+
+        class QRStats {
+            +int totalScans
+            +int publishedArtifacts
+        }
+
+        class EngagementSummary {
+            +int unresolvedFlags
+            +RecentActivity recentActivity7d
+            +int totalReadingTime
+        }
+
+        class RecentActivity {
+            +int newUsers
+            +int newStories
+            +int quizAttempts
+            +int qrScans
+            +int shares
+        }
+
+        class FlaggedStory {
+            +int storyId
+            +String slug
+            +String title
+            +String status
+            +String authorUsername
+            +List flags
+        }
+
+        class ConsentReviewStory {
+            +String slug
+            +String title
+            +String declaredOrigin
+            +String provenanceNotes
+        }
+
+        class QrWorklist {
+            +List entries
+            +int total
+            +int generated
+            +bool truncated
+            +List unlabelled
+        }
+
+        class QrWorklistEntry {
+            +int id
+            +String slug
+            +String title
+            +String category
+            +String museumName
+            +bool isPublished
+            +String deepLink
+            +int scanTotal
+            +bool hasQrCode
+        }
+
+        class QrWorklistGeneration {
+            +List generated
+            +List missing
+            +bool skipped
+        }
+
+        class ModerationSection {
+            +Widget build() Widget
+        }
+
+        class QrWorklistSection {
+            +Widget build() Widget
+        }
+    }
+
+    namespace Artifacts {
+        class ArtifactsProvider {
+            +Future listArtifacts() List
+        }
+
+        class RegionModel {
+            +String slug
+            +String name
+            +String language
+            +String description
+        }
+
+        class RegionProvider {
+            +Future regions() List~RegionModel~
+        }
+    }
+
+    namespace Media {
+        class AudioApiService {
+            +generateNarration(storyId) void
+            +checkStatus(jobId) void
+        }
+
+        class AudioNarrationNotifier {
+            <<Riverpod>>
+            +play() void
+            +pause() void
+            +stop() void
+        }
+
+        class OfflineAudioService {
+            +cacheAudio() void
+            +playCached() void
+        }
+
+        class VideoApiService {
+            +createJob(storyId, prompt) void
+            +pollStatus(jobId) void
+        }
+
+        class VideoStatusPoller {
+            +Timer _timer
+            +start(jobId) void
+        }
+    }
+
+    namespace Navigation {
+        class AppRouter {
+            <<go_router>>
+            +String location
+            +goToStory(slug) void
+            +goToArtifact(slug) void
+            +routeTo(deepLinkKind, slug) void
+        }
+
+        class MainShell {
+            +int currentIndex
+            +int destinationCount
+            +build() Widget
+        }
+
+        class AppDeepLink {
+            <<enumeration>>
+            story / artifact / quiz / profile / library / scan
+        }
+    }
+
+    namespace Settings {
+        class SettingsScreen {
+            +SwitchValue _audioSync
+            +build() Widget
+        }
+
+        class WhatsAppFeedbackService {
+            +openWhatsApp() Future
+        }
+    }
+
+    class ApiClientConsumer {
+        <<feature services/packages>>
+        +admin_api_service     -> /api/analytics + /api/stories/moderation_queue/
+        +audio_api_service     -> /api/media/audio + status
+        +video_api_service     -> /api/media/videos + status
+        +qr_api_service        -> /api/artifacts/lookup/ + scans
+        +sharing_service       -> /api/stories/{slug}/share
+        +offline_auth_repository -> /api/auth/register (queued)
+        +story_repository -> /api/stories (online-first mirror)
+        +artifacts_provider    -> /api/artifacts
+        +region_provider -> /api/categories (discover)
+        +qr_worklist_provider  -> /api/artifacts/qr/worklist/
+    }
+
+    %% ── Core wiring ──
+    ApiClient --> AuthInterceptor : uses
+    ApiClient --> OfflineQueueInterceptor : uses
+    ApiClient --> RetryInterceptor : uses
+    ApiClient --> ConnectivityService : depends
+    OfflineSyncManager --> ConnectivityService : listens
+    OfflineSyncManager --> ApiClient : replays requests
+    OfflineSyncManager --> OfflineRequestRepository : reads queue
+    AuthInterceptor --> AuthRepository : uses
+    AuthInterceptor --> AppErrorMapper : maps failures
+    ApiClientConsumer --> AppErrorMapper : maps failures
+
+    %% ── Auth ──
+    AuthProvider --> AuthRepository : uses
+    AuthProvider --> AuthStatus : tracks
+    AuthWrapper --> AuthProvider : watches
+    ProfileScreen --> AuthProvider : watches
+    ProfileScreen --> RoleBadge : displays
+    RoleBadge --> UserModel : reads role
+    ProfileScreen --> UserModel : displays
+    AuthRepository <|-- ServerAuthRepository
+    AuthRepository <|-- LocalAuthRepository
+    AuthRepository <|-- OfflineAuthRepository
+    ServerAuthRepository --> ApiClient : POST /api/auth/token/
+    ServerAuthRepository --> TokenPair : returns
+    ServerAuthRepository --> UserModel : returns
+    LocalAuthRepository --> UserModel : returns
+    OfflineAuthRepository --> OfflineRequestRepository : enqueues
+
+    %% ── Stories ──
+    StoryRepository <|-- LocalStoryRepository
+    StoryListNotifier --> StoryRepository : uses
+    StoryListNotifier --> StoryListState : emits
+    StoryRepository --> ApiClient : online-first (GET covers/media)
+    StoryRepository --> LocalStoryRepository : offline mirror (SQLite upsert)
+    StoriesScreen --> StoryListNotifier : watches
+    StoryDetailScreen --> StoryRepository : reads
+    StoryFormScreen --> StoryRepository : saves
+    StoryCard --> StoryModel : displays
+    StoryListState --> StoryModel : carries
+
+    %% ── Gamification / library ──
+    GamificationApiService --> LocalGamificationRepository : delegates
+    LibraryApiService --> LocalLibraryRepository : delegates
+    GamificationScreen --> QuizPlayerWidget : contains
+    GamificationScreen --> BadgeCard : displays
+    BadgeCard --> Badge : reads
+
+    %% ── Admin ──
+    AdminApiService --> ApiClient : uses
+    AdminApiService --> AdminUser : returns
+    AdminApiService --> DashboardSummary : returns
+    AdminApiService --> FlaggedStory : returns
+    AdminApiService --> ConsentReviewStory : returns
+    AdminApiService --> QrWorklist : returns
+    AdminApiService --> QrWorklistGeneration : returns
+    DashboardSummary --> UserStats : composes
+    DashboardSummary --> StoryStats : composes
+    DashboardSummary --> GamificationStats : composes
+    DashboardSummary --> QRStats : composes
+    DashboardSummary --> EngagementSummary : composes
+    EngagementSummary --> RecentActivity : composes
+    QrWorklist --> QrWorklistEntry : contains
+    QrWorklistGeneration --> QrWorklistEntry : names
+    ModerationSection --> FlaggedStory : displays
+    QrWorklistSection --> QrWorklistEntry : displays
+
+    %% ── Artifacts ──
+    ArtifactsProvider --> ApiClient : uses
+    RegionProvider --> ApiClient : uses
+    RegionProvider --> RegionModel : returns
+
+    %% ── Media ──
+    VideoApiService --> ApiClient : uses
+    AudioApiService --> ApiClient : uses
+    VideoStatusPoller --> VideoApiService : polls
+    AudioApiService --> AudioNarrationNotifier : notifies
+    OfflineAudioService --> AudioNarrationNotifier : caches
+
+    %% ── Navigation ──
+    AppRouter --> AppDeepLink : maps moved URL to route
+    MainShell --> AppRouter : hosts
+
+    %% ── Settings ──
+    SettingsScreen --> WhatsAppFeedbackService : uses
+
+
+    class Dio {
+    }
+
+    class Future {
+    }
+
+    class network {
+    }
+
+    class Connectivity {
+    }
+
+    class StreamController {
+    }
+
+    class Stream {
+    }
+
+    class List {
+    }
+
+    class Map {
+    }
+
+    class DateTime {
+    }
+
+    class Widget {
+    }
+
+    class TextEditingController {
+    }
+
+    class UserRole {
+    }
+
+    class AsyncValue {
+    }
+
+    class Quiz {
+    }
+
+    class QuizAttempt {
+    }
+
+    class Badge {
+    }
+
+    class Timer {
+    }
+
+    class SwitchValue {
+    }
+
+    class admin_api_service {
+    }
+
+    class audio_api_service {
+    }
+
+    class video_api_service {
+    }
+
+    class qr_api_service {
+    }
+
+    class sharing_service {
+    }
+
+    class artifacts_provider {
+    }
+
+    class qr_worklist_provider {
+    }

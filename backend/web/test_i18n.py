@@ -387,3 +387,38 @@ class CatalogueTests(TestCase):
         # A guard on the guard: an empty or unmerged catalogue would make this
         # vacuous, so assert the compiled French really carries our strings.
         self.assertEqual(catalogue.gettext('Sign in'), 'Se connecter')
+
+class AdminDashboardTranslationTests(TestCase):
+    """New dashboard copy has to arrive in the catalogue already translated.
+
+    A `{% translate %}` tag with no entry renders the English source silently,
+    so the page still looks finished and only a French reader notices. These
+    pin the strings added alongside the corrected quiz-attempt metric.
+    """
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            'i18n_dash_admin', email='i18ndash@example.com',
+            password='testpass123', role='admin',
+        )
+        self.client.force_login(self.admin)
+
+    def test_the_finished_quiz_count_is_translated(self):
+        self.client.post(
+            reverse('web:set-language'), {'language': 'fr'},
+        )
+        body = self.client.get(reverse('web:admin-dashboard')).content.decode()
+
+        # The English source string would also satisfy a substring check, so
+        # assert the translation is present *and* the source is not.
+        self.assertIn('termin', body)
+        self.assertNotIn('%(counter)s finished', body)
+
+    def test_the_catalog_carries_the_new_string(self):
+        from django.utils import translation
+
+        with translation.override('fr'):
+            self.assertEqual(
+                translation.gettext('%(counter)s finished'),
+                '%(counter)s terminé',
+            )

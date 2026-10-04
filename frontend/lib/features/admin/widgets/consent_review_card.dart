@@ -130,13 +130,20 @@ class ConsentStatePill extends StatelessWidget {
 
   final String consentStatus;
 
-  static const _labels = {
-    'not_requested': 'Not requested',
-    'pending': 'Awaiting answer',
-    'granted': 'Granted',
-    'granted_restricted': 'Granted (restricted)',
-    'withheld': 'Withheld',
-  };
+  // The label comes from `StoryConsent`, the same place the decision form's
+  // dropdown reads it from. This used to be a hand-copied dict, so the pill
+  // said "Awaiting answer" while the dropdown next to it said "Consent
+  // pending" — one state, two names, on the same screen. Deriving it means the
+  // backend's `Story.Consent` labels are the only copy left to keep correct.
+  static String labelFor(String status) {
+    for (final choice in StoryConsent.values) {
+      if (choice.value == status) return choice.label;
+    }
+    // An unrecognised value is shown verbatim. `StoryConsent.fromString` would
+    // quietly answer "Consent not yet requested", which reads as a real state
+    // rather than as something the app does not understand.
+    return status;
+  }
 
   static const _colors = {
     'granted': AppColors.savannahGreen,
@@ -145,8 +152,6 @@ class ConsentStatePill extends StatelessWidget {
     'pending': AppColors.ochre,
     'not_requested': AppColors.charcoalMuted,
   };
-
-  static String labelFor(String status) => _labels[status] ?? status;
 
   static Color colorFor(String status) =>
       _colors[status] ?? AppColors.charcoalMuted;

@@ -1,0 +1,2360 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<uml:Model xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmi:version="2.1" xmi:id="_bb28214d65d91314" name="Griot 2.0 — Backend Domain (Django)">
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_63aa888394501949" name="Core">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_45b874109bcb7e95" name="User">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8418b52481cd47e9" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7bb4a96196da3d42" name="username">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dd17165f798ccbb1" name="email">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ee6bc6eac58b69d8" name="password">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ce69d8cc510dd538" name="first_name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5e0db198380db73d" name="last_name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1ea85b85587d76cb" name="role">
+        <uml:type xmi:idref="_21c93f8417c6dbd3" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1bf487f37084fcae" name="institution">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_85247e40ae243ace" name="is_staff">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8b23652db5aad73b" name="is_superuser">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_32db6cecd521d62f" name="date_joined">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_36b3fab20c91d86d" name="is_visitor">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_becaf7c70e910a72" name="is_contributor">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d20dc144bf6ef5eb" name="is_institution_manager">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7f7ed2faf043e4af" name="is_admin_role">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2177f41487587b63" name="role_display">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_21c93f8417c6dbd3" name="UserRole">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e6d31ec724c4f948" name="VISITOR" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e24bfb185cfdd2da" name="CONTRIBUTOR" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3c79ed16a3a5f2f5" name="INSTITUTION_MANAGER" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9fb675d01abef141" name="ADMIN" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_082d7d89dc287045" name="Story">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_e81a9f5e4cc81cae" name="Story">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_507c90af16f95a19" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e4dbfa3ab9c16228" name="title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c1c46e1b3f80d6ce" name="slug">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_97ac0c18daaf8f1e" name="content">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2cab430e3a2c14df" name="summary">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_06090d20d5c6cf51" name="language">
+        <uml:type xmi:idref="_2b47012c6915d498" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_48f60adbc29deb89" name="region">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fde6dc283a16ad55" name="tags">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e51c41f58b6a2620" name="co_authors">
+        <uml:type xmi:idref="_639ad482fa383675" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c2f93f4ab0572d42" name="cover_image">
+        <uml:type xmi:idref="_014e2ba565dda272" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f468d22f26e9e9ae" name="cover_image_blurhash">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e5d469b988370c80" name="audio_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_78930bf9c673a5e3" name="video_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cfd7ee80d5bff4c1" name="cultural_context">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_561c9676c7879af2" name="moral_lesson">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ba5187fd14bed7c8" name="source">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b5f0bce253dd602a" name="estimated_read_time">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a4bf40d3c9482768" name="status">
+        <uml:type xmi:idref="_18c064d709efb5b8" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_35e94ca1bf8fe048" name="reviewer_notes">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_77d6df24585c88f0" name="view_count">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d3486b7523b0d5b7" name="like_count">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_48fa16e2f4a41051" name="bookmark_count">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_902439e621acf547" name="share_count">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7fd32d08b41aca24" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_142284dd5001e5f1" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e7da69a1790dd4bc" name="published_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c434ac11d69406fd" name="is_published">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2518fad3e661f211" name="tag_list">
+        <uml:type xmi:idref="_639ad482fa383675" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_68d516d166144e52" name="origin">
+        <uml:type xmi:idref="_b0836beeb2f05474" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_323417254e7cf4a3" name="provenance_notes">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_68d86beba1230d63" name="consent_status">
+        <uml:type xmi:idref="_44ca45ccf967b9e9" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9d3a76feb91c049f" name="consent_attested_by">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_af2b5bcfc4d7f70b" name="consent_attested_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1e72c7ae4f917943" name="consent_basis">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_57f4648e17a6b7cf" name="rights_holder">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2c18c84d885d5028" name="licence">
+        <uml:type xmi:idref="_9ae1681d06e325ea" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_606640fecf40ba8d" name="recorded_at">
+        <uml:type xmi:idref="_f55421fc32b581a4" />
+      </uml:ownedAttribute>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_fe4618d95f767c77" name="translation_for">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_de9c415af6960df2" name="code" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_af91af5cfc9208e1" name="return" direction="return">
+          <uml:type xmi:idref="_2efc7658fdf8af21" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_2efc7658fdf8af21" name="StoryTranslation">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_52da87d9189bf498" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_87b8550f52db0f01" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_caa7ad3a380b744a" name="language">
+        <uml:type xmi:idref="_2b47012c6915d498" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_aaa4ffe7d91f07cd" name="title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0abdc9064a04824e" name="content">
+        <uml:type xmi:idref="_d988593e33b8a16f" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bc5a21e8ab927e89" name="summary">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_74c80d37925b4b2d" name="cultural_context">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dba5898e1ae72ac7" name="moral_lesson">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_49fa7eb7657261bc" name="translator_note">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_34823dfa3930fe5d" name="translated_by">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1439604ea2fae753" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_abe293a1713a8b42" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_18c064d709efb5b8" name="StoryStatus">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_18637590dfc35144" name="DRAFT" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4782314f5de1ceb1" name="PENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2a5e1200dd47ffa5" name="PUBLISHED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_468202959e6a1350" name="REJECTED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_326d942e7ae1a26a" name="ARCHIVED" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_2b47012c6915d498" name="StoryLanguage">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_821d83b81e558907" name="ENGLISH" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_be36362323dbac4b" name="FRENCH" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_75d938f4eba5b843" name="FULA" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_74b5bc2a95ed6bed" name="DUALA" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e34e5a5d83c71654" name="EWONDO" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b7cb5793f01d1ae8" name="BAMILEKE" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_509dd894d4fba512" name="OTHER" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_b0836beeb2f05474" name="StoryOrigin">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dcffc0cf61e389c8" name="NOT_DECLARED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_89f2beb160732ae8" name="COMMUNITY_RECORDED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fde9b2370b1eed6b" name="ORAL_TRANSCRIPTION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_18843f80d128e040" name="PUBLISHED_COLLECTION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3f22d43e6c65fd33" name="ORIGINAL_CONTRIBUTION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_131f34813969b0b7" name="SEEDED_DEMONSTRATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2e2d355b1bbe8f43" name="UNKNOWN" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_44ca45ccf967b9e9" name="StoryConsent">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e54356743a55449f" name="NOT_REQUESTED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4c812bf3e25547f8" name="PENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_90c6eef23fa1084f" name="GRANTED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a22b54f69fe151a1" name="GRANTED_RESTRICTED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3a1077038869dbe7" name="WITHHELD" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_9ae1681d06e325ea" name="StoryLicence">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3d62e5e65d9f581e" name="ALL_RIGHTS_RESERVED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_93dbf4d16f8c37b8" name="CC_BY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0de76d690c802cae" name="CC_BY_SA" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a3898798168715c0" name="CC_BY_NC" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9f01440c8cceaefb" name="CC_BY_NC_SA" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c6efe468d9a9706d" name="PUBLIC_DOMAIN" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ff73c6bce9cf6d9c" name="UNDETERMINED" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_44676d41f3c4bb8a" name="StoryCategory">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a43528fdfb07201b" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3f203e05b3d455d2" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_94fd43db3a250560" name="slug">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1b52c348e67044b1" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8a5a069720c646d7" name="icon">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_061f4073a0f75c5a" name="color">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_29972e175923f4bd" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_c984d4a8835c2f71" name="StoryBookmark">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4eaa672d5af2916e" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dad44b6ff1d1e602" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4de6c118bf78eb76" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c271e03da24f2c82" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d08fc0d1bb0bdb39" name="note">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_27a9867a39e19e66" name="StoryLike">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3930233ca9096db1" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_676a7349c90cd9d1" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_98461833c1d343fd" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cfb16c8235056fe9" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_0d8ad3135addf2c9" name="StoryFlag">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0e25689e6ff248b6" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_07ed1360929d405c" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c186fb750ec59183" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_734f90eaaf14bced" name="reason">
+        <uml:type xmi:idref="_f58a1274baba80cd" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7cb1ecf881a34a67" name="details">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_26ae300fd9e341bf" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d8bbc2439f7abb3a" name="resolved">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_407713c3f9ad2fdb" name="resolution_notes">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_f58a1274baba80cd" name="FlagReason">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_373396a5ca7ff27c" name="CULTURAL_INACCURACY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4a943073ba0ab8f0" name="INAPPROPRIATE_CONTENT" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9e89b224cc236033" name="COPYRIGHT_VIOLATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3135a14ee1f803c5" name="WRONG_CATEGORY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_34af221ac0b7643c" name="OTHER" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_677c066eee75fee3" name="StoryShare">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c94e173540fe772e" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_531b38aee2e2fb10" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ff3fda8f797df7a7" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_42d192e07e958836" name="platform">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_75685a5608f36689" name="ip_address">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_799daa189c4093b8" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_2da1c5c51d6903ac" name="ReadingProgress">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a72607945ca4ac6f" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_89eac3bc22258acb" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2fff743cccf9831d" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_253b804833998381" name="progress_percent">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3d58438514aa9b78" name="last_read_position">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fe3aadfbc001f5a9" name="completed">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_df48d5f56356f9e2" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0c9099eab00a2d43" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5dd9ce9555ac0713" name="is_complete">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_3a4cb88a2e643a65" name="Museum">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_be117bf3b027c324" name="Museum">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_93c912ccb41fed6a" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_66534698ec5f1805" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_325118aaccb59307" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_737be8f67056d4ba" name="location">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_556597e2d8ea693a" name="region">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_23984bb851a20ce0" name="address">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8deaa368667036f0" name="latitude">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bb39916fa9627055" name="longitude">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bca82a9507c31996" name="website">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_82efa495bbca827b" name="phone">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_45f452afed950375" name="email">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_a99f6e16ef1c02d7" name="MuseumFloor">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_77ab053f0fc726d9" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4b8c3e569695c77d" name="museum">
+        <uml:type xmi:idref="_be117bf3b027c324" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4691d8a68b9582bf" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_306b059482cd9d33" name="number">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_635ddac752c8da00" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_6554727a33310143" name="DisplayCase">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d090cdf6139dbab9" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5a6ac752ab775128" name="floor">
+        <uml:type xmi:idref="_a99f6e16ef1c02d7" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7df4b330d84bfb28" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cbaf331be329e6a6" name="number">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ef5f834292a2850e" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_42cac3d3ed4228fb" name="Artifact">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_027296afc56faed9" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9e80fc675d5e3bb6" name="title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_54f45247b2f14184" name="slug">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ce1e2df352c9dd1c" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_347c1e03c2c6ff78" name="category">
+        <uml:type xmi:idref="_6fb3e2140c5ac5f3" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8f66398a74b6a357" name="content_type">
+        <uml:type xmi:idref="_8542d748f7c07ce5" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_00bfe6407376fe95" name="created_by">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f1071dfae1c8b57a" name="culture">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f98d0b50ea08a01d" name="region">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_eb03bf3725d0ac95" name="estimated_date">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_15643908fba6bc8a" name="materials">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4cc04c7536b5e9f5" name="dimensions">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b9c043a7ce55aa10" name="image">
+        <uml:type xmi:idref="_014e2ba565dda272" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5517174b04615eb5" name="image_blurhash">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f03c7db17f1d04ef" name="additional_images">
+        <uml:type xmi:idref="_639ad482fa383675" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_eda495a2309835fd" name="qr_code_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_35190e6e64d0f05a" name="qr_code_svg">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d40d390f7a3abffb" name="deep_link_path">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7732ab85d968e3c7" name="museum_name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_575ada80378bc77b" name="floor">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_272ba6b1fb15d1e3" name="display_case">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_129512071eb78f3d" name="is_published">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b9b802b884411dab" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_119d6069286c0f7c" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3e6bb13f699a0c6a" name="qr_deep_link">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_84bf289de8f4e0da" name="museum">
+        <uml:type xmi:idref="_be117bf3b027c324" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_11ada3287dcd9ee9" name="located_on">
+        <uml:type xmi:idref="_a99f6e16ef1c02d7" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_50e6f41fb8692a5f" name="displayed_in">
+        <uml:type xmi:idref="_6554727a33310143" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_6fb3e2140c5ac5f3" name="ArtifactCategory">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_47b9ceb80ce6ef1c" name="SCULPTURE" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c10f454842320018" name="TEXTILE" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1b42610cd8fefdda" name="INSTRUMENT" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fef45f96290cd3ae" name="JEWELRY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7f71203cf249d8d0" name="POTTERY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_20f0f6bfdca37d38" name="MASK" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ca40ceb1e0dcd540" name="WEAPON" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6f0041eb02aea8fc" name="FABRIC" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4d51ded0b270d3f5" name="TOOL" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8b634112d6731ad5" name="OTHER" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_8542d748f7c07ce5" name="ArtifactContentType">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4dd852ade5b8fd27" name="KINGDOM" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ec758eb42ebf94f6" name="LANDMARK" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8008de9c74a7df91" name="ARTIFACT" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_040b512065ab7553" name="LEGEND" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b14335c01028a139" name="CULTURE" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dc4ec81c15045600" name="UNKNOWN" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_74b760d02cde37b7" name="QRCodeScan">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_85643823242bc5d5" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c1735359a5a7bf8f" name="artifact">
+        <uml:type xmi:idref="_42cac3d3ed4228fb" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d7bdb7f09824f0fc" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d41d968b197f7242" name="device_type">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dfb43528a5361334" name="ip_address">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4e6cada069e706b7" name="user_agent">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ed5c418efb1b5058" name="latitude">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_013a4f80e1e3ed5b" name="longitude">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_506df40652849333" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_f02ab56781e89751" name="Gamification">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_4ede78a1031b50fe" name="Quiz">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9ba8055ccbf45408" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a10e88cb29bebb4e" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c900416e4d42d864" name="title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c4f399ba10bfbef3" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_36f164052fa7e97e" name="passing_score">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_96594079ff29a530" name="time_limit_minutes">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_39b2e7ab5d940981" name="is_published">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6123c2046e900084" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a6951f590596c7b2" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_57722b38e9ca9ed4" name="question_count">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8bd99fafe9e66f0a" name="xp_reward">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_25c30e110f867d8c" name="QuizQuestion">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_56487f6e582012a4" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_19181116876e3b13" name="quiz">
+        <uml:type xmi:idref="_4ede78a1031b50fe" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c093b8314eed4446" name="question_text">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0bdc551ef4f17379" name="option_a">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bd8a1ae547ca11d5" name="option_b">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9cb4196ab8aac0f0" name="option_c">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_aac7951c96a7be63" name="option_d">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_df904e1e1733708c" name="correct_answer">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a96ac1bcaf8f4c8e" name="explanation">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ac5a519ce64e126b" name="difficulty">
+        <uml:type xmi:idref="_110d61ad303e1c54" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6062e514d66c1ca9" name="order">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_110d61ad303e1c54" name="QuestionDifficulty">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_864a87806bdecbef" name="EASY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8c1b640cbc320139" name="MEDIUM" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_70517d5181ca0ba2" name="HARD" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_6e6d6b45d47cf12d" name="QuizAttempt">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c2a29d92fc0bbabc" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3d93da06c2806fd5" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ea434b31c45ad34c" name="quiz">
+        <uml:type xmi:idref="_4ede78a1031b50fe" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fc07bd1fc5d25b56" name="score">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a8c26b59bace6baf" name="correct_count">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_da1acaa73b489529" name="total_questions">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8e92aa3362483118" name="passed">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_633156167c63ff97" name="xp_earned">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dddc67715b5a54ee" name="status">
+        <uml:type xmi:idref="_b935dadf01f589db" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dc2bc3371eea03af" name="answers">
+        <uml:type xmi:idref="_92d94bf62f132c7c" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d8f7a63778a7c349" name="started_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_29559df81285e4de" name="completed_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_353c33b4dea885dd" name="time_taken_seconds">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_461d0c1ced5c9ba4" name="calculate_score">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d494342374736e09" name="return" direction="return">
+          <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_b935dadf01f589db" name="QuizAttemptStatus">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_514d0e7121067b3c" name="IN_PROGRESS" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cb28645d6d27bf35" name="COMPLETED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ed5a505fdfe0613d" name="TIMED_OUT" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_d1eb931514238fde" name="Badge">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e988bd20aa6acb59" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_98f591edaa0a8eb1" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_297cf9318d5995ed" name="slug">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7ced811a7d691a04" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_71f14718b9ceb382" name="emoji">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_894e38f4c28e919c" name="category">
+        <uml:type xmi:idref="_d0463505f262be9e" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_10366d625ec73c59" name="xp_required">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6e3f4ee2806350af" name="stories_read_required">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_30b6f125a44edb7b" name="quizzes_passed_required">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2d9257a079dd5058" name="streak_required">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_58edb4ee6bb70f23" name="color">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bd5a61dabae566d7" name="icon_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8b326ffb7bd3540d" name="is_active">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8df25bc10753dd5c" name="is_secret">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_171be7505e92da91" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_d0463505f262be9e" name="BadgeCategory">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c0d65dae2fa05b3b" name="READING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2f5d955ebf0c69ca" name="QUIZ" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_71a03271ba44d357" name="SOCIAL" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_351dae5e917acb71" name="EXPLORATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f1ff20367c3b164c" name="SPECIAL" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_3edf64c22f9ec1d1" name="UserBadge">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7619fc38aa9507d0" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_95d654e980c7e136" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_de875e744516caab" name="badge">
+        <uml:type xmi:idref="_d1eb931514238fde" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bf11c4573beb95f4" name="earned_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_46282657b0da04dc" name="UserProfile">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a65d561efcab66a5" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_861d5f38b9d3f15f" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_de3d08b7ca18d9df" name="total_xp">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9586bb7e80d1e7b3" name="level">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ce341cc4ca1350c8" name="stories_read">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_88d1eef29428024a" name="stories_completed">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_837d9d13ecb49959" name="quizzes_passed">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_766ecf2115152cd7" name="total_quiz_xp">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_671b921f3020bb55" name="current_streak">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a13b4c8b7ce6d578" name="longest_streak">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c99903755f8337ed" name="last_active_date">
+        <uml:type xmi:idref="_f55421fc32b581a4" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8489f48887c6ae48" name="timezone">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_408941ebb7c26bad" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b9029239c96729d9" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_70ed0c23f4dfbdc0" name="xp_for_next_level">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_83911e5db469938f" name="xp_progress">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_655acfa9ba203a06" name="add_xp">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_5054b503663bc37c" name="amount" direction="in" />
+      </uml:ownedOperation>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_0d5f8da85b310453" name="update_streak" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_0ceb7c1bb530ac32" name="XPTransaction">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5bc83b7d0c177bf3" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_53ba712c2b87b981" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a8afebb0abf22602" name="amount">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f8fc17a83c0690db" name="source">
+        <uml:type xmi:idref="_91371ad59aaa9918" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d752d26903956cdd" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c4e1ddb77fbe0e5a" name="reference">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7f63b9c5ab476231" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_91371ad59aaa9918" name="XPTransactionSource">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8f4e0294d06dcbdd" name="QUIZ_COMPLETION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b57260c6487b9bf0" name="STORY_COMPLETED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_953c79e2470a6cd8" name="AUDIO_NARRATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3c7d0a5b5b735216" name="VIDEO_GENERATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d0f221898dd3afda" name="CONTRIBUTOR_PUBLISH" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6f8f201913b27431" name="MANUAL_ADJUSTMENT" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_de2769957b06de50" name="Certificate">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e3dcc04439fef3e4" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_50895910e0595ddf" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_06cd465b2c435c1d" name="certificate_type">
+        <uml:type xmi:idref="_87e3b2bbb2a9ab21" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_35d475c3674e06b6" name="title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cf090759f69df657" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f313bb44b9cb57cb" name="issued_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_65bab6f0c5335c57" name="certificate_number">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dfdedeba5e824b88" name="stories_read">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8c83799a9f4a2f7c" name="quizzes_passed">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3d3aa44b00c593c1" name="level_achieved">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_79ae5c60a27b2785" name="pdf_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_928e485003f7ca8a" name="save" />
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_9aafa63677c5b797" name="generate_pdf" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_87e3b2bbb2a9ab21" name="CertificateType">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e39465175c99c569" name="READING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4d3e4d458bf23348" name="QUIZ" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_61ab9a0c11dc19d1" name="EXPLORER" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1f4891ca3f9f3c87" name="CONTRIBUTOR" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_4f75462b53351a8a" name="Notification">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_8b564b7dd334169a" name="Notification">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_041f7e2fb07b6b48" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_81381a2ca2bf0324" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b8128030d22272cb" name="kind">
+        <uml:type xmi:idref="_f9ce3df665e129aa" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5f1a16f480e00c62" name="title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f965da27d846ad68" name="body">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_18ccc8915f551728" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0e36c1366ff649cb" name="story_title">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5b90446fd1743a88" name="story_slug">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_61625c0743b3d8c9" name="dedupe_key">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dd52f85da82d27b3" name="is_read">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_56b7d5a62185ef31" name="read_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_82159842695a8996" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_64632c5701104aa7" name="mark_read">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_4ec2c4ba054b136b" name="commit" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_75f0e7a20b916c16" name="return" direction="return">
+          <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_f9ce3df665e129aa" name="NotificationKind">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e64e47f238c2ee3a" name="NEW_STORY" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ab42c853073dfcdc" name="TRENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_dfa945aa5b0bdf58" name="STREAK" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_84b9393389a9ca9d" name="BADGE" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e2d3da3265152a65" name="ANNOUNCEMENT" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d75fcdadb2214815" name="SYSTEM" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_8f4db675c43d97ba" name="Moderation">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_78e53c063381cadd" name="ModerationReview">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_15d2d70f26150516" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7a208851ed95c44e" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e377c6af29c1dd4a" name="reviewer">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_da1978367ac60fff" name="status">
+        <uml:type xmi:idref="_3f40f59bf8fe05bd" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b47a3d4eec59f43c" name="decision">
+        <uml:type xmi:idref="_7247020e3728914d" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6624ecc427a597c5" name="notes">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_00265b216761c9d6" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_469a9fe42064b8d0" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_3f40f59bf8fe05bd" name="ModerationReviewStatus">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_70f223b27d338af5" name="PENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_559528ecd464fd0a" name="IN_REVIEW" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fcef3a8d792eee46" name="APPROVED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_314476f481628254" name="REJECTED" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_7247020e3728914d" name="ModerationDecision">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2429b37271ef697d" name="PENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_181331499bd41cfe" name="APPROVED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b4a8edbad733a5d2" name="APPROVED_WITH_RESTRICTIONS" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_721603e17e5b51f9" name="REJECTED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e51528793e2d4671" name="ARCHIVED" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_ef52440aecc5ec97" name="Recommendation">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_d9a944d6d3f9bf22" name="Recommendation">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5c73e689177ea5ee" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_96c7da4c7a0503fd" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6cb190f296441a15" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_84ffdd6b03b1fbe6" name="score">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f4d1fe642036d3a8" name="reason">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9ed02bfae52bdf06" name="strategy">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2f5034ccac3e6d26" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bc8f1fa1808bb50c" name="expires_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_e563e56690c2fe83" name="UserInterest">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9f03408475c011cd" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8bafffecc0ddde7f" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9c1f1edfd0df6760" name="category">
+        <uml:type xmi:idref="_44676d41f3c4bb8a" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_916ca8d0fe40b1f3" name="region">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ce8556c7e05a0c70" name="language">
+        <uml:type xmi:idref="_2b47012c6915d498" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0820bbde6f93cc9e" name="score">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_05d5a69fb6ede93b" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_fd600d58865dc26f" name="Social">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_7d8a68d3e33bbcc6" name="Comment">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_56b3410aa276cec9" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_289d9aa0253be1ba" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e2f295b7c58aff3d" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9b9f562b7ad58ad9" name="content">
+        <uml:type xmi:idref="_d988593e33b8a16f" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5409f38fb9b0de61" name="parent">
+        <uml:type xmi:idref="_7d8a68d3e33bbcc6" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8786b524f16a891c" name="is_approved">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a8834f7c019ac388" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3785e31d125bfec4" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_19b04f0ae84d34e2" name="Collection">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_eff80ab7ec0b8aa3" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_db80843db7a93bb3" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a748d349ad215615" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_18cdc22cb63a9811" name="description">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_23a01ba7a2e8679e" name="is_public">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d06da2f13f50f0d6" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_1a361dbb1051b512" name="CollectionItem">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5cd27fdc89153e5f" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bd5aea94ea37c23c" name="collection">
+        <uml:type xmi:idref="_19b04f0ae84d34e2" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2b35b50e6df5b4bb" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f1fbdc419ff1bfb6" name="added_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_95b763514cff83de" name="Analytics">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_ddc7a7c851f32a43" name="UserEvent">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e40968625504497b" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2286fed90f912f9d" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9cd94822ea529f17" name="event_type">
+        <uml:type xmi:idref="_a3dbb6fc2c8412e7" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_93a35a4d41ccfc48" name="entity_type">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_54b9fc7d219954d9" name="entity_id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6114898452e4e986" name="metadata">
+        <uml:type xmi:idref="_92d94bf62f132c7c" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8d938b876113c7d7" name="timestamp">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_add13baf42d2ef9a" name="session_key">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_a3dbb6fc2c8412e7" name="UserEventType">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_39c2130ef54f4336" name="STORY_VIEWED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_54a61e4435e0b6f5" name="STORY_COMPLETED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c1d2ece06666d70f" name="STORY_LIKED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ce73c877f602a8ec" name="STORY_SHARED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_296dbb2c2e621fbe" name="QUIZ_STARTED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8ef97163401ed586" name="QUIZ_COMPLETED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4251e1b66d9ab8ba" name="QR_SCANNED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e1e882396e2d33dc" name="ARTIFACT_VIEWED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_426f34a2093e9d74" name="AUDIO_PLAYED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5f71bd6c4f76015d" name="VIDEO_PLAYED" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_5fbe85b9d5315440" name="AI">
+    <uml:packagedElement xmi:type="uml:Interface" xmi:id="_adac40e3a75292e3" name="AIService" isAbstract="true">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cf04a6462a7a74b3" name="name">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_c90899cd0c2f6cd1" name="execute">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_519a8f6956ee8a4d" name="request" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_bf548bfdc8bb3802" name="return" direction="return">
+          <uml:type xmi:idref="_8ba6e063db9b9344" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_5b8b73e4bd1a79cb" name="StoryGenerationService">
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_2f5f1f823f3d5e0d" name="generateStory">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_47edacd4c5ae7031" name="prompt" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d93b84933564ba2d" name="language" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_2785efc484e458a0" name="return" direction="return">
+          <uml:type xmi:idref="_8ba6e063db9b9344" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_268ff47a5d998307" name="buildNarrationScript">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_ab8619634a74062f" name="artifact" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_82d5e0de103d7ec7" name="return" direction="return">
+          <uml:type xmi:idref="_d988593e33b8a16f" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:interfaceRealization xmi:type="uml:InterfaceRealization" xmi:id="_675fba24af14afa6" contract="_adac40e3a75292e3" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_a9c3b3b344e7097e" name="StoryRecommendationService">
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_b7f7ebbafdbf1d60" name="recommend">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_0bb108dbca9a2207" name="user" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_6a9cc42c2ccc6163" name="limit" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_39b093cf88897d2d" name="return" direction="return">
+          <uml:type xmi:idref="_639ad482fa383675" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:interfaceRealization xmi:type="uml:InterfaceRealization" xmi:id="_5766b9523f8b8ef2" contract="_adac40e3a75292e3" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_31fab1a9b9ac5e2b" name="TranslationService">
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_4e5645b14ab85938" name="translateStory">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_9e0542aa1789cc80" name="story" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_019be7c7d40651aa" name="target" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_2756781887e49c17" name="return" direction="return">
+          <uml:type xmi:idref="_2efc7658fdf8af21" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_84e735a088d7f093" name="validateGlossary">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_cca8f91fd1dff223" name="source" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_d40ece2811264fab" name="target" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f64cda5e0deb21ab" name="return" direction="return">
+          <uml:type xmi:idref="_639ad482fa383675" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:interfaceRealization xmi:type="uml:InterfaceRealization" xmi:id="_0d15161687a7af8d" contract="_adac40e3a75292e3" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_02f1bbc086814973" name="ContentModerationService">
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_ab08ac08abe851db" name="moderateContent">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_e8d3adc3e328c95d" name="text" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f79b042d6da33e51" name="return" direction="return">
+          <uml:type xmi:idref="_8ba6e063db9b9344" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_0668a591e21ac9de" name="classify">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_5b9ac20d1556fe44" name="text" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_77ca856a186feff9" name="return" direction="return">
+          <uml:type xmi:idref="_8ba6e063db9b9344" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:interfaceRealization xmi:type="uml:InterfaceRealization" xmi:id="_6e0419c97393167b" contract="_adac40e3a75292e3" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_3ccd831c3cbf61c6" name="CulturalValidationService">
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_c65347d2638a77c9" name="validateCulturalContent">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_05410edd953cf29d" name="story" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_f286dfc85cbfbbcc" name="return" direction="return">
+          <uml:type xmi:idref="_8ba6e063db9b9344" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:ownedOperation xmi:type="uml:Operation" xmi:id="_ed1910e559062566" name="flagCulturalConcerns">
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_861a04bf0a6412c9" name="story" direction="in" />
+        <uml:ownedParameter xmi:type="uml:Parameter" xmi:id="_eb3780dbe7cacd4e" name="return" direction="return">
+          <uml:type xmi:idref="_639ad482fa383675" />
+        </uml:ownedParameter>
+      </uml:ownedOperation>
+      <uml:interfaceRealization xmi:type="uml:InterfaceRealization" xmi:id="_606b5cb739cd70ba" contract="_adac40e3a75292e3" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_82b312082adda433" name="AIRequest">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f284ac7ccbf2ddef" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fe11a0d7fa3a6195" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5af25f0f42024e27" name="request_type">
+        <uml:type xmi:idref="_86465e15c68005e1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_923566316d2d7c30" name="prompt">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_de6ddd1edebf9433" name="language">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_accd39ec432456d8" name="status">
+        <uml:type xmi:idref="_e19020f7f5bad99d" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_958c9bb16aab53a5" name="tokens_used">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8f753ae17faa8edf" name="error_message">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cea16ce54fb555c4" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ff848c79bd3b635c" name="completed_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_8ba6e063db9b9344" name="AIResponse">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b8bbb148583cb5f1" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_33b82ca25bd85736" name="request">
+        <uml:type xmi:idref="_82b312082adda433" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d5340c29d5031e34" name="content">
+        <uml:type xmi:idref="_d988593e33b8a16f" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_733236606ceff303" name="model">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2f240335568080bb" name="confidence">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b5a117e5f68c74ad" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_86465e15c68005e1" name="AIRequestType">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fc0e76ea940f3ca3" name="STORY_GENERATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c6d93a105dd6915f" name="STORY_RECOMMENDATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2ef225d497ebfd54" name="TRANSLATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7230bfa0f53d14cf" name="CONTENT_MODERATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a08e40e3abd0d5cd" name="CULTURAL_VALIDATION" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c008cf663f45c1f0" name="NARRATION" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_e19020f7f5bad99d" name="AIRequestStatus">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6b4632f629be1c47" name="PENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c6995ad891b0cac1" name="PROCESSING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_511ea0363712106e" name="COMPLETED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9661f1268c33fdd0" name="FAILED" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_d884ce3c4a633867" name="Media">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_d4a8ab6d9e8f6767" name="MediaGenerationJob" isAbstract="true">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f575fad35b50c209" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_08a7066030350fec" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_348e9085b102664a" name="job_type">
+        <uml:type xmi:idref="_8b9496d5d59607d2" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b5e231dbca9874d3" name="status">
+        <uml:type xmi:idref="_d579d8c9871e7e83" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8db196e459d67b2f" name="provider">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_48e911485b992b95" name="external_job_id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6283f9848f535466" name="progress_percent">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6784c49c129b918c" name="error_message">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5ab32eaf7e8fa8a0" name="engine">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fd5ba5f332fe0137" name="origin_kind">
+        <uml:type xmi:idref="_5383841defc6f421" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_c9a012dec66c1781" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bcbdec2f7abb3a00" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b40a061e3688d2f3" name="started_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bc8abcba1add8201" name="completed_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a1586928d2596a5e" name="is_ready">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_921390177a101000" name="is_processing">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_8b9496d5d59607d2" name="MediaJobType">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_27cba495416bc0ef" name="AUDIO" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_aef9007dc309cc25" name="VIDEO" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_49a234f3b52a3f16" name="VR" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_be067c2d1d15ffd3" name="IMAGE" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_d579d8c9871e7e83" name="JobStatus">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a37ef8ca78af683e" name="PENDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_82d4edd0f2cd26fb" name="PROCESSING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ae10214e1f50a239" name="COMPLETED" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_559856ba0b23336f" name="FAILED" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_5383841defc6f421" name="MediaOriginKind">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8421f10e0a8c07fd" name="HUMAN_RECORDING" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_47b4a0cbe16c61f7" name="SYNTHETIC" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1a6a055305a6513a" name="UNKNOWN" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_94e518eedb193053" name="AudioNarrationJob">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_33b0e943a36f4d12" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_abae9129056abab3" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_17f584fad95f2245" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_b7ba16b1a8f3a4a4" name="artifact">
+        <uml:type xmi:idref="_42cac3d3ed4228fb" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d00248a26af2db97" name="narration_text">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_44cd63aac8904451" name="voice_id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e2f334d0722b88fc" name="language">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_5bf6efe7a72ef0c8" name="speed">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Real" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f23a6c8adfa4ded6" name="status">
+        <uml:type xmi:idref="_d579d8c9871e7e83" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d4494ece1d05ad1e" name="audio_file">
+        <uml:type xmi:idref="_4e4af02280489cb7" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_152cfba9d47c41dc" name="audio_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_ae31d1876a5756b1" name="duration">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_000ece5e3fdb3a27" name="file_size">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0802dc010d72ef00" name="error_message">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cd0559ca5522970a" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_6e508facdaba10f1" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_8309ede7c1ecdd11" name="completed_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_688be4d2f83843d6" name="engine">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_333d0cee0f49d81d" name="origin_kind">
+        <uml:type xmi:idref="_5383841defc6f421" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e71ebf01e8e2f388" name="is_ready">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bbec2703749e0b32" name="is_synthetic">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_02c37dbd3c7927bd" name="attribution">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:generalization xmi:type="uml:Generalization" xmi:id="_506c24a03642e918" general="_d4a8ab6d9e8f6767" />
+    </uml:packagedElement>
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_72870f51ffb62565" name="VideoGenerationJob">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fef808d94ab7cb77" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a74c0c89966a58a3" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_a05f53561c8fc6a2" name="story">
+        <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_bb1dd2448ad1739e" name="luma_job_id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_274515abc8fe7bfb" name="prompt">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_2c6a8422e6665774" name="luma_request_id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0df2b2fa4e89e118" name="status">
+        <uml:type xmi:idref="_d579d8c9871e7e83" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_91098b5f9a848cd1" name="progress_percent">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1e111b6accf91134" name="video_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_e868594105c2305a" name="thumbnail_url">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d3f5dfe3cdbbf75e" name="duration">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cd144935da0fd8e6" name="error_message">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_749bb4cdab181f18" name="created_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_4560a915a80a01eb" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_1146e9b13445ad6b" name="started_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_05c6866011e2400f" name="completed_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_72a49fa23528dfc4" name="engine">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_cc802101b802e86a" name="origin_kind">
+        <uml:type xmi:idref="_5383841defc6f421" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_09dd39c1eae4d0d5" name="is_ready">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_9c96704f24a832e6" name="is_processing">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_fea151174fb2a1cc" name="is_synthetic">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Boolean" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_d7326698e2ce28b3" name="attribution">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#String" />
+      </uml:ownedAttribute>
+      <uml:generalization xmi:type="uml:Generalization" xmi:id="_8fa14ead0702fc0c" general="_d4a8ab6d9e8f6767" />
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Package" xmi:id="_129249c6b9c93baf" name="Web">
+    <uml:packagedElement xmi:type="uml:Class" xmi:id="_f4624bb4e6bd7f06" name="WebUserSettings">
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_f7419839267716a8" name="id">
+        <uml:type xmi:type="uml:PrimitiveType" href="pathmap://UML_LIBRARIES/UMLPrimitiveTypes.library.uml#Integer" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_7dec4319462668f0" name="user">
+        <uml:type xmi:idref="_45b874109bcb7e95" />
+      </uml:ownedAttribute>
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_3bae5da6e92319d8" name="language" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_0f22f41468334f6f" name="theme" />
+      <uml:ownedAttribute xmi:type="uml:Property" xmi:id="_71f4c7bfea689a40" name="updated_at">
+        <uml:type xmi:idref="_2e69bb3f020457a1" />
+      </uml:ownedAttribute>
+    </uml:packagedElement>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_2e69bb3f020457a1" name="DateTime" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_639ad482fa383675" name="List" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_014e2ba565dda272" name="ImageField" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_f55421fc32b581a4" name="Date" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_d988593e33b8a16f" name="Text" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_92d94bf62f132c7c" name="JSON" />
+  <uml:packagedElement xmi:type="uml:Class" xmi:id="_4e4af02280489cb7" name="FileField" />
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_30978fcdc518f9e5" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_256b15baebae39ba" name="storystatus">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_bec8eff74de1a163" name="story">
+      <uml:type xmi:idref="_18c064d709efb5b8" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8853d1124b773827" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_0f1a3d44e4de6ab5" name="storylanguage">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_1e29f6c8f01f2f11" name="story">
+      <uml:type xmi:idref="_2b47012c6915d498" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_6bc08de6ba1e752c" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_dec250492d90318a" name="storyorigin">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9bd201696e0d9790" name="story">
+      <uml:type xmi:idref="_b0836beeb2f05474" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_fae7fa1cd5316fd5" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_1e5a47336785eacd" name="storyconsent">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3e4dca05d4c0eb69" name="story">
+      <uml:type xmi:idref="_44ca45ccf967b9e9" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_1657b705b9556ca9" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_1df10b607162771b" name="storylicence">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_aad86f8dbc07f627" name="story">
+      <uml:type xmi:idref="_9ae1681d06e325ea" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_538a75b26b3106f9" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f7f12540f59cb74c" name="flagreason">
+      <uml:type xmi:idref="_0d8ad3135addf2c9" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_dc861df1e788497b" name="storyflag">
+      <uml:type xmi:idref="_f58a1274baba80cd" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_53cf2490f9b4a1fd" name="authors">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_cd3e2335cec50b5a" name="story">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_988bb55d10f66ea5" name="user">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4eb4226d1334707c" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4465490fd5591797" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_558c5427bd8762b8" name="co_authors">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6ec6881d66c31ef4" name="user">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_d1e77377afe4f11f" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_dea2c1b86498d53e" value="-1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_24d2fb44b784dd92" name="story">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_83dd394ca27dc329" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0ff036967f03f348" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_cf91a34a24069c95" name="creates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e4ad5f4dcb3673f6" name="storybookmark">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3b81f3e487256976" name="user">
+      <uml:type xmi:idref="_c984d4a8835c2f71" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_f89696260d5c6de5" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_c3463698d12a7920" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_1882f641ef32803c" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f55f4bc78d1e3733" name="storybookmark">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2a0445de582a6ef2" name="story">
+      <uml:type xmi:idref="_c984d4a8835c2f71" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_b65f9e1f3883ecd3" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_b793f50e3ef4bb19" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_26e1cfefac75eb13" name="creates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_55ce7b3b10761532" name="storylike">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_0d1baac13d0c4438" name="user">
+      <uml:type xmi:idref="_27a9867a39e19e66" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1bb3123a1c044fcf" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4def88de4e15adf2" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ccc3ed064faa73d4" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_721a92e9f844364a" name="storylike">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f678ad2dbb8cb2d3" name="story">
+      <uml:type xmi:idref="_27a9867a39e19e66" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_a281c8f7d68e0d50" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_702fe224dc3ee626" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_4b77b530d288347f" name="creates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_be2039308a4b1f8e" name="storyflag">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_cafc1baf2db265b2" name="user">
+      <uml:type xmi:idref="_0d8ad3135addf2c9" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_746b950e5e203352" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_c81e9375c13d50ff" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_582210972455bcf2" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_15d906d4a09f0722" name="storyflag">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3989943bf3e8092e" name="story">
+      <uml:type xmi:idref="_0d8ad3135addf2c9" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_ad6c6366f6c00992" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_6ba220acf56ddce0" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_396395b2fd0395a0" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_279905a6b14127b5" name="storyshare">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_20eb8a2055be5055" name="story">
+      <uml:type xmi:idref="_677c066eee75fee3" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5dc40e2c6662b0cc" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_960e8ff2b8eedbf2" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_1777d09de5e641fb" name="tracks">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ce3636ae9eab917f" name="readingprogress">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e7b1ff4463100998" name="user">
+      <uml:type xmi:idref="_2da1c5c51d6903ac" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_38a435ed29ba95a1" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_90858b1b4d4e3f61" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ac72846ac98ba5bf" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fa901a762f44a7a7" name="readingprogress">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3c2a0df67ef613cc" name="story">
+      <uml:type xmi:idref="_2da1c5c51d6903ac" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_fee4220d45cb1a7a" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_1583ed3423c1bbcf" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_efc2a86d2d75aa4a" name="categories">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_811e079cfb52c190" name="story">
+      <uml:type xmi:idref="_44676d41f3c4bb8a" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_7b410bace6c29e0a" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_d6060e8e9f5c6a9a" value="-1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_722a46f6ec049c10" name="storycategory">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1d76d321b3d46871" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_290b9267c919d103" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_58bc5e5c48be569a" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_30b56cdc3a21ec3a" name="storytranslation">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_53f55d9aad208ec8" name="story">
+      <uml:type xmi:idref="_2efc7658fdf8af21" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_6c42b8146ab35124" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_66cb5c5d7ccd46fd" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_444624ec23ed847d" name="translates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_90231c15011965ba" name="storytranslation">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_7c2d63b78c3985fc" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_a5327daed116fd08" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_87737115ca4546c3" name="user">
+      <uml:type xmi:idref="_2efc7658fdf8af21" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_f91a8ce11f77b0c8" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_a256998ad72e07e1" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_a897136f6dab436b" name="floors">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_d74173f17fa976ee" name="museumfloor" aggregation="composite">
+      <uml:type xmi:idref="_be117bf3b027c324" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_28308100e6d331e4" name="museum">
+      <uml:type xmi:idref="_a99f6e16ef1c02d7" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0eeb7de4164763f2" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_ca2c5632cda0e2ec" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_91d8289cb49a6c2c" name="cases">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_040c7e7275925e13" name="displaycase" aggregation="composite">
+      <uml:type xmi:idref="_a99f6e16ef1c02d7" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ca530c9a69c2017a" name="museumfloor">
+      <uml:type xmi:idref="_6554727a33310143" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_99303cc05975fbb4" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_1849619a4cc46865" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8c723d376fa40d51" name="holds">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a18f1b9a4b938fe8" name="artifact">
+      <uml:type xmi:idref="_be117bf3b027c324" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c628357074718711" name="museum">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5d432db68a4a7952" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_f3465bda36e67ae4" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_29cb3562086364bc" name="locates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4c14d2c05e8273c0" name="artifact">
+      <uml:type xmi:idref="_a99f6e16ef1c02d7" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_8da17b7dc5357a22" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0cdd5903827be25f" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_912c60b1801eb175" name="museumfloor">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_04e72886e45dca98" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_6c3aa0385e808ba3" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_7582cecd3325ebf8" name="displays">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2e7768f7ede889a8" name="artifact">
+      <uml:type xmi:idref="_6554727a33310143" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_700a32022556e85e" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_252d477008c5bf28" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6e36384ab1970c33" name="displaycase">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_cdf551403d00776b" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_91e4c2969e1e28ac" name="artifactcategory">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_757df8245ec34f52" name="artifact">
+      <uml:type xmi:idref="_6fb3e2140c5ac5f3" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8db4a40dc2f43850" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_040937bae6f72734" name="artifactcontenttype">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c42d512be33ea1f2" name="artifact">
+      <uml:type xmi:idref="_8542d748f7c07ce5" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9334d2f0406ad158" name="creates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a49e96a149f674b5" name="artifact">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5c423519edfef4f7" name="user">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_59671005be969cd1" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_1a4775957872b334" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8972ddf8ec2c93c4" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_bbd51aa86b35ce19" name="qrcodescan">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_dd7a913b3b58b431" name="artifact">
+      <uml:type xmi:idref="_74b760d02cde37b7" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0a08331926a45ffc" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0e32f9f061545742" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_96c095646ac8e0b4" name="performs">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c5d6e51a8cf03c9c" name="qrcodescan">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1be59a08acae2cc0" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_401d87102d08658d" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ef365b64b01960a0" name="user">
+      <uml:type xmi:idref="_74b760d02cde37b7" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_d9b8e58ba5b53e65" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_17e0943830b2278c" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ed32641ab9937649" name="related_stories">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_297fee7ad3864883" name="story">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_e24dadfb92a8aa3c" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_893b720be48ccab6" value="-1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_d5730ff1f7c62f62" name="artifact">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_e2f84daa8819c401" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_039697c29e9b27a8" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_2025fa29b78df0c9" name="tied_to">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ad3e2ea841ae7f43" name="story">
+      <uml:type xmi:idref="_4ede78a1031b50fe" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e736c8d2fa8c9e33" name="quiz">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_9034b9458d83f313" name="contains">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6d87adfef2e73dc5" name="quizquestion" aggregation="composite">
+      <uml:type xmi:idref="_4ede78a1031b50fe" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6c8af2098c864f8f" name="quiz">
+      <uml:type xmi:idref="_25c30e110f867d8c" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_b442ed1447d7441d" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_ebbe471d6082f7b3" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_a677e452dc7f192a" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f7947ca5935d7850" name="questiondifficulty">
+      <uml:type xmi:idref="_25c30e110f867d8c" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_de0cd08f1ea9c8b3" name="quizquestion">
+      <uml:type xmi:idref="_110d61ad303e1c54" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_0ea1dedb93d600b6" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_98d246abdeb88b90" name="quizattemptstatus">
+      <uml:type xmi:idref="_6e6d6b45d47cf12d" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_45144100af095884" name="quizattempt">
+      <uml:type xmi:idref="_b935dadf01f589db" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_52bdd1b35ec525a5" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_cc4ae74f2f204b2b" name="badgecategory">
+      <uml:type xmi:idref="_d1eb931514238fde" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6adea8e14aa7b772" name="badge">
+      <uml:type xmi:idref="_d0463505f262be9e" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_acd073dc2edefa86" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_aa1ba0322c5cc31f" name="certificatetype">
+      <uml:type xmi:idref="_de2769957b06de50" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_775a29300394cf77" name="certificate">
+      <uml:type xmi:idref="_87e3b2bbb2a9ab21" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_260d311976d57346" name="attempts">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_06000c4eb3d1bfe8" name="quizattempt">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_d5d3889c9dfc420b" name="user">
+      <uml:type xmi:idref="_6e6d6b45d47cf12d" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_da2fc9a66618b5ab" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0d3238ed48e1ba9b" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e47d6dfbf6ea49a9" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f68a43fb5d263d9d" name="quizattempt">
+      <uml:type xmi:idref="_4ede78a1031b50fe" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9417efdf65a14f42" name="quiz">
+      <uml:type xmi:idref="_6e6d6b45d47cf12d" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_6326fc06b8b2d705" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_7c8cee1b84064fcc" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_2f52b70b0827defb" name="earns">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_7084b067ac9eef96" name="userbadge">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_279fec14c6e1e767" name="user">
+      <uml:type xmi:idref="_3edf64c22f9ec1d1" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0420cf964b604325" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_60c1802f8da84eae" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_38186d0ec7885bfc" name="granted_as">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_453d2790ab9e973c" name="userbadge">
+      <uml:type xmi:idref="_d1eb931514238fde" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_998a2777d300b7b0" name="badge">
+      <uml:type xmi:idref="_3edf64c22f9ec1d1" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_60266974cbf4c59c" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_75dcc6b4c4d569a1" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_79bf78859c5188fc" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a096df9a77314561" name="userprofile">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_65e0ed1f84676c80" name="user">
+      <uml:type xmi:idref="_46282657b0da04dc" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_fe8772686957512a" name="receives">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_1a60f9477f06ad4f" name="certificate">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a20a30a0f9e4edfe" name="user">
+      <uml:type xmi:idref="_de2769957b06de50" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_60a2695f2e4ce530" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4d3dd5aca00199c4" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_38e2d13381a54b55" name="accrues">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_74525971acc48cbc" name="xptransaction">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f5f2e7b9a089f80c" name="user">
+      <uml:type xmi:idref="_0ceb7c1bb530ac32" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_8546ab797453ce18" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_eb7d59b2822eed5a" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_708eb3966b18ef43" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_b4b2076840f45a87" name="xptransactionsource">
+      <uml:type xmi:idref="_0ceb7c1bb530ac32" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c6787bd657e138b2" name="xptransaction">
+      <uml:type xmi:idref="_91371ad59aaa9918" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_0cd5ad2c5dd889d9" name="receives">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6bd1853b48fef7a5" name="notification">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_39741f19c6d40459" name="user">
+      <uml:type xmi:idref="_8b564b7dd334169a" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_23f5f3b55c5c0bb8" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_24fd65d01ff91c97" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e23dd019a669b646" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2cd1fdca64b1704f" name="notificationkind">
+      <uml:type xmi:idref="_8b564b7dd334169a" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5ca39364412baa14" name="notification">
+      <uml:type xmi:idref="_f9ce3df665e129aa" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_2ef30d31827f5928" name="referenced_by">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8d71729abedfbe9b" name="notification">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_15b761c65e076c11" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_8969c632785d6d85" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_61a2567979a7254e" name="story">
+      <uml:type xmi:idref="_8b564b7dd334169a" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_2ff5912330c4127e" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0b949f3e0f159153" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_5b9f1313625739d8" name="reviewed_by">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_01cdb39b18289ddd" name="moderationreview">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_732f4d3ac7224771" name="story">
+      <uml:type xmi:idref="_78e53c063381cadd" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_b6e20ba054407b40" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_83ac1eb44cee8496" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_2ff38e85ce3ec943" name="reviewer">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9b844ce3bbe64ebb" name="moderationreview">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_da1b8f4145327778" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_b3973efbffadf4ec" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f3c05e49bcc13cee" name="user">
+      <uml:type xmi:idref="_78e53c063381cadd" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4c854943d85ccbf5" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4e3aca85f2532abe" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_0ea46b06cec766ac" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_386603b0e29a4263" name="moderationreviewstatus">
+      <uml:type xmi:idref="_78e53c063381cadd" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a7915e63a325d06d" name="moderationreview">
+      <uml:type xmi:idref="_3f40f59bf8fe05bd" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_12df850d65a2d27d" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3984b5ff4726bcb2" name="moderationdecision">
+      <uml:type xmi:idref="_78e53c063381cadd" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9fd33bf147158fbc" name="moderationreview">
+      <uml:type xmi:idref="_7247020e3728914d" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e58cee79a336bc1f" name="receives">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_aade75cdc875c87d" name="recommendation">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_16504abc00b90811" name="user">
+      <uml:type xmi:idref="_d9a944d6d3f9bf22" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_80c4dcfa9bf4f39f" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_a3836287fdf84383" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_79e88dc551a2cdaf" name="recommended_as">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_387b4fe3707ddae4" name="recommendation">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3853b396daaf091c" name="story">
+      <uml:type xmi:idref="_d9a944d6d3f9bf22" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_b97cc15e364f883d" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_2a8706f38fbc945c" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_0c072bd0f2aca5f9" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_0d52ba132d5d48ab" name="userinterest">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6b408cb0aa630878" name="user">
+      <uml:type xmi:idref="_e563e56690c2fe83" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_f84b5d334e41af4a" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_e75741e356953883" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_44a574f11440d541" name="about">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_6f019c17333df064" name="userinterest">
+      <uml:type xmi:idref="_44676d41f3c4bb8a" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1f7a44fd7e6f41f9" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_722eb16eba4845d4" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3e94605f248d2a8d" name="storycategory">
+      <uml:type xmi:idref="_e563e56690c2fe83" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_618b7f85dc9e0122" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_eb5e18f3ff2c81f3" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_3e73c756ad0edbb3" name="in">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_dd668fe3631b9514" name="userinterest">
+      <uml:type xmi:idref="_2b47012c6915d498" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9659103fe946d38a" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_efa96e682b32c192" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2e3585909841219f" name="storylanguage">
+      <uml:type xmi:idref="_e563e56690c2fe83" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_8ae8be06974f1567" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_74671badb0593541" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_83a4f59cb04de492" name="writes">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_406d1c2f64d97199" name="comment">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8db94845a8bf1f67" name="user">
+      <uml:type xmi:idref="_7d8a68d3e33bbcc6" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_c16dc74a1d182037" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_c8a48cf27c01fb00" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_491370cb2c1ad6f2" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_00d2899b847f74be" name="comment">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_67b099890b5f02e2" name="story">
+      <uml:type xmi:idref="_7d8a68d3e33bbcc6" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_eb8b0656c3a02820" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_55e4700b8df0156a" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_3c4cd34502d6e0e7" name="replies_to">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5c77534506bdf8a8" name="comment">
+      <uml:type xmi:idref="_7d8a68d3e33bbcc6" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_2a306bb91a2fe3d4" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_354efe8cd1b39d56" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8ab8674b18168c31" name="comment">
+      <uml:type xmi:idref="_7d8a68d3e33bbcc6" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_8f7d98313cb53d06" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_578119becf622d8f" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_b9cc79f0d18b38ba" name="owns">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e6c837a654674daf" name="collection">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9e2394c802a507aa" name="user">
+      <uml:type xmi:idref="_19b04f0ae84d34e2" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_600a9fce634f2d6c" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_17a170cb0bb4dae5" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_1d54597f2f750788" name="contains">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_92250b05b8f68a75" name="collectionitem" aggregation="composite">
+      <uml:type xmi:idref="_19b04f0ae84d34e2" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e012805b14405f72" name="collection">
+      <uml:type xmi:idref="_1a361dbb1051b512" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_64a5d829756f67bc" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_c2561c6279579e0f" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_5a7f568c69d1b8e5" name="collected_as">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_65902acd1f739a33" name="collectionitem">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2fdce8ca33de8a0a" name="story">
+      <uml:type xmi:idref="_1a361dbb1051b512" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_cdbc3a268adef138" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_810d62e6345ab13f" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_b86a434d8129f6f7" name="emits">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_771c4a8c269901be" name="userevent">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_e4a34961be5a9726" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_677f734d01186d28" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_8cadab4313b3d0c2" name="user">
+      <uml:type xmi:idref="_ddc7a7c851f32a43" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_eb43b4a741c2826c" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_2e747d75b0505c84" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_05778c7b1e5b76b2" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_914b5481e2252aee" name="usereventtype">
+      <uml:type xmi:idref="_ddc7a7c851f32a43" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f27e97b11295c3ff" name="userevent">
+      <uml:type xmi:idref="_a3dbb6fc2c8412e7" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_35c1fe7744927dbb" name="records">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_74f1fa308b76ec12" name="airequest">
+      <uml:type xmi:idref="_adac40e3a75292e3" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fe6832efcc3f5c4e" name="aiservice">
+      <uml:type xmi:idref="_82b312082adda433" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_60cdf26dadef7b17" name="produces">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_860c91ce673fca2c" name="airesponse">
+      <uml:type xmi:idref="_adac40e3a75292e3" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_c51ab78744b7b33e" name="aiservice">
+      <uml:type xmi:idref="_8ba6e063db9b9344" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ddaa01690425de23" name="issues">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_00c63f1286159c96" name="airequest">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1814ec3ed0407723" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_bf9aee0a36456f13" value="1" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_486ad771cd07ad51" name="user">
+      <uml:type xmi:idref="_82b312082adda433" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_542a8a78e71550bd" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_113bd8e4a97d0e88" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_17e60f062fa8fbb9" name="answers">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f7c3b52197801f61" name="airesponse">
+      <uml:type xmi:idref="_82b312082adda433" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_24cd419003be8b9b" name="airequest">
+      <uml:type xmi:idref="_8ba6e063db9b9344" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9a9fd198b641aadd" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_62d8effb139fb0e9" value="1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_896aa023b1768a86" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ccf22e01985ad6bc" name="airequesttype">
+      <uml:type xmi:idref="_82b312082adda433" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f79628846754c4c0" name="airequest">
+      <uml:type xmi:idref="_86465e15c68005e1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_8f47a97b5b949b1e" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_032bdabd4d94925a" name="airequeststatus">
+      <uml:type xmi:idref="_82b312082adda433" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e1300314988da9aa" name="airequest">
+      <uml:type xmi:idref="_e19020f7f5bad99d" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_c1d331e912345836" name="creates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fb8fa2ac7e744eb3" name="audionarrationjob">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_347c7d0b89fd9694" name="user">
+      <uml:type xmi:idref="_94e518eedb193053" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5323677ab05a197a" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_659733543a770733" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_a92d0381b25f8bc6" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_4a25cb21e249a980" name="audionarrationjob">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_047e128262fd8b74" name="story">
+      <uml:type xmi:idref="_94e518eedb193053" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_6a4144ee1b67ecc2" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_962c20390fe2929b" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_fe953b928210f156" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ad41eaa3fe6a1994" name="audionarrationjob">
+      <uml:type xmi:idref="_42cac3d3ed4228fb" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_ac376eae77ac41f0" name="artifact">
+      <uml:type xmi:idref="_94e518eedb193053" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9aa0e8fc736a642b" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_be418267e94a0e11" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_d6b5e9295d80f8b0" name="creates">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_931ad03ab37b9ebd" name="videogenerationjob">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_3a769dfac33218bb" name="user">
+      <uml:type xmi:idref="_72870f51ffb62565" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9dcc60b77f14f62a" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_141e1125b694d07b" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ecb9532e459f8bf7" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_fe13e9fce4a090f8" name="videogenerationjob">
+      <uml:type xmi:idref="_e81a9f5e4cc81cae" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5358bd095da63c7d" name="story">
+      <uml:type xmi:idref="_72870f51ffb62565" />
+      <uml:lowerValue xmi:type="uml:LiteralInteger" xmi:id="_2f95dd7e31c356f6" value="0" />
+      <uml:upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_e1a937681b5c401a" value="-1" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_e0df30e5901d9132" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_a498346d485bb4a0" name="jobstatus">
+      <uml:type xmi:idref="_94e518eedb193053" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_73c72d6cf82eaf0e" name="audionarrationjob">
+      <uml:type xmi:idref="_d579d8c9871e7e83" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_ff4f77fe6923708c" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_448a27efe4bd4541" name="jobstatus">
+      <uml:type xmi:idref="_72870f51ffb62565" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_acae39c1e31067ca" name="videogenerationjob">
+      <uml:type xmi:idref="_d579d8c9871e7e83" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_c43b37b20f2c1c32" name="attributed_as">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_63f2d8e51509503b" name="mediaoriginkind">
+      <uml:type xmi:idref="_94e518eedb193053" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_1472fb3e888d40ef" name="audionarrationjob">
+      <uml:type xmi:idref="_5383841defc6f421" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_6add48c1459c3dac" name="attributed_as">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_f8cfac2c198a3aa1" name="mediaoriginkind">
+      <uml:type xmi:idref="_72870f51ffb62565" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_61548ea3f863a5ee" name="videogenerationjob">
+      <uml:type xmi:idref="_5383841defc6f421" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_322722d70fa9a2b1" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_acb2f61562702c5f" name="jobstatus">
+      <uml:type xmi:idref="_d4a8ab6d9e8f6767" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_9f305bf6e4c0cd8a" name="mediagenerationjob">
+      <uml:type xmi:idref="_d579d8c9871e7e83" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_12698ca7b7ca8b69" name="attributed_as">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_e040f62793ca61a2" name="mediaoriginkind">
+      <uml:type xmi:idref="_d4a8ab6d9e8f6767" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_2f16b3b3121b4771" name="mediagenerationjob">
+      <uml:type xmi:idref="_5383841defc6f421" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_a57a6651dc32affc" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_7687b699f2972601" name="mediajobtype">
+      <uml:type xmi:idref="_d4a8ab6d9e8f6767" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_71da7f7b9e008e3e" name="mediagenerationjob">
+      <uml:type xmi:idref="_8b9496d5d59607d2" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+  <uml:packagedElement xmi:type="uml:Association" xmi:id="_dc5f5ec0285fdcb8" name="has">
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_5ebd4b036405d9d2" name="webusersettings">
+      <uml:type xmi:idref="_45b874109bcb7e95" />
+    </uml:ownedEnd>
+    <uml:ownedEnd xmi:type="uml:Property" xmi:id="_24cbd3168bc03101" name="user">
+      <uml:type xmi:idref="_f4624bb4e6bd7f06" />
+    </uml:ownedEnd>
+  </uml:packagedElement>
+</uml:Model>

@@ -1,705 +1,456 @@
-# Griot 2.0 Flutter UI — Critical Visual & Layout Fixes
+# CODEBASE ENGINEERING & IMPROVEMENT DIRECTIVE
 
-You are working on the **Griot 2.0 / African Storyteller Flutter application**.
+Act as a **senior software engineer, debugging specialist, security engineer, performance engineer, and software architect**.
 
-There are several serious UI and asset-rendering problems that must be investigated and fixed properly.
+Your mission is to systematically inspect the existing project, identify problems, fix them, improve the implementation, and leave the codebase **stable, secure, maintainable, efficient, and production-ready**.
 
-**Do NOT immediately rewrite the screens.**
+Do **not** blindly rewrite code.
 
-First inspect the existing implementation, understand how the data flows through the application, identify the actual causes, then propose a repair plan before making changes.
-
----
-
-# CURRENT PROBLEMS
-
-## 1. SHARE SCREEN — BROKEN ICONS
-
-The Share screen currently displays broken/missing icons.
-
-The problem is NOT acceptable as a final UI state.
-
-Investigate:
-
-* Which icons the Share screen uses.
-* Whether they are Flutter `IconData`.
-* Whether they come from an icon package.
-* Whether they are SVG assets.
-* Whether they are PNG/WebP assets.
-* Whether the assets actually exist.
-* Whether the asset paths are correct.
-* Whether `pubspec.yaml` declares the assets.
-* Whether the icons are loaded dynamically.
-* Whether an icon/font package is missing.
-* Whether a recent UI refactor replaced valid icons with invalid references.
-
-### Important
-
-Do NOT replace broken icons with random symbols, stickers, emojis, Unicode characters, or placeholder graphics.
-
-Use proper Flutter icons or the project's actual visual assets.
-
-If the design system already uses a specific icon style, preserve it.
+Always understand the existing architecture, dependencies, business logic, data flow, and project conventions before making changes.
 
 ---
 
-# 2. REWARD / GAMIFICATION SCREEN — BOTTOM OVERFLOW
+# 1. DEBUG — FIND AND FIX ERRORS
 
-The Reward/Gamification screen currently produces:
-
-```text
-BOTTOM OVERFLOWED BY 62 PIXELS
-```
-
-This is a real layout bug and must be fixed at its source.
-
-Do NOT simply:
-
-```dart
-overflow: ...
-```
-
-or hide the content.
-
-Do NOT reduce everything arbitrarily until the warning disappears.
-
-Investigate the actual widget tree.
+Perform a systematic debugging pass.
 
 Look for:
 
-* `Column`
-* `Row`
-* `Container`
-* `SizedBox`
-* fixed heights
-* fixed widths
-* `Expanded`
-* `Flexible`
-* `ListView`
-* `SingleChildScrollView`
-* nested scroll views
-* `GridView`
-* `Wrap`
-* bottom padding
-* SafeArea
-* keyboard/inset handling
-* responsive constraints
+- Compilation errors
+- Runtime errors
+- Logic errors
+- API errors
+- Database errors
+- Authentication errors
+- State-management problems
+- Dependency conflicts
+- Configuration errors
+- UI crashes
+- Race conditions
+- Null/undefined errors
+- Incorrect error handling
+- Platform-specific problems
+- Network failures
 
-Determine which widget is causing the 62-pixel overflow.
+For every important issue:
 
-The final screen must work on:
+**Identify → Reproduce → Diagnose → Fix → Verify**
 
-* small Android phones
-* normal Android phones
-* larger phones
-* different aspect ratios
-* portrait orientation
-
-The solution should be responsive rather than hard-coded for one screen size.
+Do not hide errors or add temporary workarounds when a proper fix is possible.
 
 ---
 
-# 3. STORY IMAGES ARE MISSING
+# 2. OPTIMIZE — IMPROVE PERFORMANCE
 
-This is a major problem.
-
-The Story UI currently appears without the story images that were provided/intended for the application.
-
-Do NOT leave blank image areas.
-
-Do NOT replace the images with generic placeholders unless the backend genuinely has no image.
-
-Trace the entire image pipeline.
-
----
-
-## Investigate the backend response
-
-Inspect the actual Story API response.
-
-Determine:
-
-```text
-Story
- ↓
-image field
- ↓
-serialized JSON
- ↓
-Flutter model
- ↓
-StoryRepository
- ↓
-StoryProvider / Notifier
- ↓
-StoryCard / StoryDetailScreen
- ↓
-Image widget
-```
-
-Verify that the backend actually returns the image URL.
-
-Check:
-
-* serializer
-* model field
-* API response
-* absolute vs relative URL
-* HTTP vs HTTPS
-* media URL
-* Django `MEDIA_URL`
-* production media host
-* CORS
-* authentication requirements
-* Flutter JSON parsing
-* nullable image handling
-
-Do not assume the Flutter UI is the problem.
-
----
-
-# 4. ARTIFACT IMAGES ARE MISSING
-
-The Artifact screens have the same problem.
-
-The artifact images should actually appear.
-
-Trace:
-
-```text
-Artifact
- ↓
-Django model
- ↓
-Serializer
- ↓
-API response
- ↓
-Flutter Artifact model
- ↓
-Repository
- ↓
-Provider/state
- ↓
-Artifact UI
- ↓
-Image widget
-```
-
-Determine exactly where the image URL is lost.
-
-Check whether the backend returns something like:
-
-```json
-{
-  "image": "...",
-  "image_url": "...",
-  "photo": "..."
-}
-```
-
-or another field.
-
-Use the actual API schema instead of guessing.
-
----
-
-# 5. DO NOT INVENT IMAGE URLs
-
-This is extremely important.
-
-Do NOT do things like:
-
-```dart
-'https://example.com/image.jpg'
-```
-
-Do NOT insert random internet images.
-
-Do NOT use generic Unsplash images.
-
-Do NOT create fake image URLs.
-
-Do NOT silently replace real application images with placeholders.
-
-The application already has intended story/artifact images.
-
-Find where they are supposed to come from.
-
----
-
-# 6. CHECK DJANGO MEDIA CONFIGURATION
-
-Because this project uses Django, inspect:
-
-```python
-MEDIA_ROOT
-MEDIA_URL
-```
-
-and the URL configuration.
-
-Determine whether the API returns:
-
-```text
-relative URL
-```
-
-such as:
-
-```text
-/media/stories/example.jpg
-```
-
-or:
-
-```text
-absolute URL
-```
-
-such as:
-
-```text
-https://api.example.com/media/stories/example.jpg
-```
-
-Flutter must be able to resolve the URL correctly.
-
-If the backend returns a relative path, verify that the Flutter API layer correctly converts it into a valid absolute URL.
-
-For example:
-
-```text
-/media/story.jpg
-```
-
-must become something equivalent to:
-
-```text
-https://your-api-domain.com/media/story.jpg
-```
-
-when appropriate.
-
-Do NOT hard-code this incorrectly.
-
-Use the application's existing environment/base-URL configuration.
-
----
-
-# 7. VERIFY IMAGE URLS DIRECTLY
-
-Before changing Flutter UI code, inspect the API response.
-
-For example, request the actual endpoint and inspect the JSON.
-
-Determine:
-
-```text
-Does the backend return an image?
-        │
-        ├── YES → Flutter parsing/rendering problem
-        │
-        └── NO → Django serializer/backend problem
-```
-
-Then:
-
-```text
-Does the returned URL actually open?
-        │
-        ├── YES → Flutter image loading problem
-        │
-        └── NO → Django/media/storage/deployment problem
-```
-
-This distinction is critical.
-
----
-
-# 8. CHECK FLUTTER IMAGE IMPLEMENTATION
-
-Inspect whether the application uses:
-
-```dart
-Image.network(...)
-```
-
-or:
-
-```dart
-CachedNetworkImage(...)
-```
-
-or:
-
-```dart
-Image.asset(...)
-```
-
-or another image system.
-
-Understand the existing implementation before modifying it.
-
-If using network images, implement proper handling for:
-
-* loading
-* success
-* failed request
-* missing URL
-* invalid URL
-
-But do not hide a broken backend by showing placeholders indefinitely.
-
----
-
-# 9. ASSET CONFIGURATION
+Identify performance bottlenecks and optimize them.
 
 Inspect:
 
-```text
-pubspec.yaml
-```
+- CPU usage
+- Memory usage
+- Network requests
+- API calls
+- Database queries
+- Rendering
+- Images and assets
+- Application startup
+- Build performance
+- Bundle size
+- Unnecessary computations
+- Repeated operations
+- Caching opportunities
 
-and verify all intended local assets are declared.
+Avoid premature optimization.
+
+Only optimize when there is a measurable or clearly identifiable benefit.
+
+Preserve functionality while improving efficiency.
+
+---
+
+# 3. REFACTOR — IMPROVE CODE STRUCTURE
+
+Improve the internal structure without changing intended behavior.
+
+Look for:
+
+- Duplicate code
+- Large functions
+- Large classes
+- Poor separation of concerns
+- Tight coupling
+- Inconsistent naming
+- Dead code
+- Repeated logic
+- Poor abstractions
+- Difficult-to-maintain modules
+- Incorrect responsibility assignment
+
+Follow principles such as:
+
+- SOLID
+- DRY
+- KISS
+- Separation of concerns
+- Single responsibility
+- Modularity
+
+Do not refactor simply for the sake of refactoring.
+
+Every structural change must provide a clear benefit.
+
+---
+
+# 4. HARDEN — IMPROVE SECURITY
+
+Perform a security review of the application.
+
+Check for:
+
+- Hardcoded secrets
+- Exposed API keys
+- Weak authentication
+- Broken authorization
+- Insecure API endpoints
+- Improper input validation
+- Injection vulnerabilities
+- XSS
+- CSRF
+- Insecure file uploads
+- Sensitive information leakage
+- Excessive permissions
+- Unsafe database queries
+- Weak password handling
+- Token/session problems
+- Insecure network communication
+- Dependency vulnerabilities
+- Debug settings exposed in production
+
+Follow the principle:
+
+**Never trust user input.**
+
+Use secure defaults and least-privilege principles.
+
+Never expose secrets in source code, logs, frontend code, or error messages.
+
+---
+
+# 5. SIMPLIFY — REDUCE COMPLEXITY
+
+Identify unnecessarily complicated implementations.
+
+Simplify:
+
+- Functions
+- Classes
+- APIs
+- State management
+- Conditions
+- Data flows
+- Dependencies
+- Configuration
+- Components
+- User flows
+
+Prefer:
+
+**Simple > clever**
+
+**Readable > compressed**
+
+**Maintainable > complicated**
+
+Do not simplify if it would reduce security, reliability, or clarity.
+
+---
+
+# 6. MODERNIZE — UPDATE OUTDATED IMPLEMENTATIONS
+
+Identify outdated:
+
+- Libraries
+- Framework APIs
+- Dependencies
+- Language features
+- Architecture patterns
+- Configuration
+- Build systems
+- Security practices
+
+Before upgrading anything:
+
+1. Check compatibility.
+2. Identify breaking changes.
+3. Check dependency relationships.
+4. Determine migration requirements.
+5. Avoid unnecessary major-version upgrades.
+
+Never upgrade dependencies blindly.
+
+---
+
+# 7. MIGRATE — MOVE SAFELY BETWEEN TECHNOLOGIES
+
+When migration is required:
+
+**Analyze → Plan → Migrate → Test → Validate → Clean up**
+
+Examples:
+
+- SQLite → PostgreSQL
+- REST → GraphQL
+- JavaScript → TypeScript
+- Legacy API → modern API
+- Old framework → newer framework
+- Local deployment → cloud deployment
+
+Preserve:
+
+- Existing data
+- Business logic
+- API contracts where possible
+- User experience
+- Security
+- Functionality
+
+Provide rollback considerations for risky migrations.
+
+---
+
+# 8. AUTOMATE — REMOVE REPETITIVE WORK
+
+Identify repetitive manual processes that can be automated.
+
+Consider:
+
+- Testing
+- Formatting
+- Linting
+- Builds
+- Deployments
+- Database migrations
+- Code generation
+- API documentation
+- Dependency checks
+- Security checks
+- CI/CD
+- Backups
+- Development setup
+
+Prefer reliable automation that is easy for another developer to understand and maintain.
+
+---
+
+# 9. REPAIR — FIX BROKEN IMPLEMENTATIONS
+
+When functionality is broken:
+
+1. Reproduce the problem.
+2. Determine the root cause.
+3. Identify affected components.
+4. Implement the smallest reliable fix.
+5. Test the affected functionality.
+6. Test related functionality for regressions.
+
+Do not mask problems with temporary hacks.
+
+---
+
+# 10. POLISH — FINAL QUALITY PASS
+
+After fixing and improving the project, perform a final quality review.
 
 Check:
 
-```text
-assets/
-```
+- Code readability
+- Naming
+- Error messages
+- Logging
+- API responses
+- UI behavior
+- Loading states
+- Empty states
+- Error states
+- Documentation
+- Comments
+- Configuration
+- Developer experience
+- User experience
 
-and related directories.
-
-Verify:
-
-* file names
-* capitalization
-* extensions
-* relative paths
-* case sensitivity
-* Flutter asset declarations
-
-Remember that Linux is case-sensitive.
-
-For example:
-
-```text
-assets/images/Story.png
-```
-
-is NOT the same as:
-
-```text
-assets/images/story.png
-```
-
-Do not rename files unless necessary.
+Remove obvious technical debt where practical.
 
 ---
 
-# 10. SHARE SCREEN FUNCTIONALITY
+# ENGINEERING RULES
 
-The Share screen must remain functionally correct.
+Always follow these principles:
 
-Inspect:
+### Understand before changing
+Inspect the existing implementation before modifying it.
 
-* share buttons
-* copy link
-* WhatsApp/share integrations
-* social sharing
-* QR/share functionality
-* native share functionality
-* icon actions
+### Preserve working functionality
+Do not break features that already work.
 
-Determine whether broken icons are purely visual or whether the underlying actions are also broken.
+### Fix root causes
+Do not treat symptoms when the underlying problem can be fixed.
 
-Do not fix only the appearance if the actions themselves are malfunctioning.
+### Minimal necessary change
+Make the smallest change that properly solves the problem.
 
----
+### Security first
+Never introduce insecure shortcuts.
 
-# 11. REWARD SCREEN FUNCTIONALITY
+### Test everything important
+Every significant change must have a verification method.
 
-Do not only fix the overflow warning.
+### No unnecessary rewrites
+Do not rewrite entire files or systems when a targeted change is sufficient.
 
-Verify that the Reward/Gamification screen still correctly displays:
+### Respect the architecture
+Follow the project's existing architecture unless there is a justified reason to change it.
 
-* XP/progress
-* badges
-* achievements
-* certificates where applicable
-* leaderboard information
-* quiz rewards
-* user profile/gamification data
+### Dependency awareness
+Before changing a dependency, check what depends on it and whether the versions are compatible.
 
-Use the actual models/providers/repositories already present in the application.
-
-Do not replace real data with hard-coded demo values.
+### Production mindset
+Consider development, testing, and production environments separately.
 
 ---
 
-# 12. IMPORTANT — PRESERVE THE DESIGN SYSTEM
+# REQUIRED WORKFLOW
 
-The project already has an established visual direction.
+For every substantial task, follow this workflow:
 
-Continue using the existing application design system.
+## STEP 1 — INSPECT
 
-Do NOT introduce:
+Analyze:
 
-* random gradients
-* stickers
-* emojis
-* arbitrary colors
-* random icon styles
-* unrelated fonts
-* generic placeholder cards
-* inconsistent shadows
-* unrelated UI components
+- Project structure
+- Architecture
+- Dependencies
+- Configuration
+- Data flow
+- APIs
+- Database
+- Existing tests
+- Relevant files
 
-The Flutter application should visually match the existing Griot 2.0 web/application design.
+## STEP 2 — AUDIT
 
-Use the project's existing:
+Identify:
 
-* colors
-* typography
-* spacing
-* cards
-* buttons
-* iconography
-* components
-* design tokens
+- Bugs
+- Performance issues
+- Security vulnerabilities
+- Technical debt
+- Complexity
+- Outdated implementations
+- Automation opportunities
 
-where available.
+## STEP 3 — DIAGNOSE
 
----
+For each significant issue determine:
 
-# 13. RESPONSIVE UI REQUIREMENT
+**Problem → Root Cause → Impact → Recommended Solution**
 
-The screens must be responsive.
+## STEP 4 — PRIORITIZE
 
-Do not solve the reward overflow with a fixed layout that only works on your current emulator/device.
+Classify issues:
 
-Test against different viewport sizes.
+🔴 **Critical** — security, crashes, data loss, blocking functionality
 
-Pay particular attention to:
+🟠 **High** — major bugs, serious performance or architecture problems
 
-```text
-small phones
-medium phones
-large phones
-```
+🟡 **Medium** — maintainability, moderate UX/performance issues
 
-The UI should not produce:
+🟢 **Low** — polish and minor improvements
 
-```text
-BOTTOM OVERFLOWED BY ...
-RIGHT OVERFLOWED BY ...
-```
+## STEP 5 — PLAN
 
-warnings.
+Create a prioritized implementation plan.
 
----
+For each change specify:
 
-# 14. DEBUGGING METHOD
+- File
+- Problem
+- Proposed change
+- Reason
+- Risk
+- Expected result
 
-Follow this debugging order.
+## STEP 6 — IMPLEMENT
 
-### Step 1 — Inspect
+Make changes incrementally.
 
-Find:
+Avoid unrelated modifications.
 
-```text
-ShareScreen
-Reward/GamificationScreen
-StoryCard
-StoryDetailScreen
-Artifact screens
-StoryModel
-ArtifactModel
-StoryRepository
-ArtifactRepository
-API client
-image utilities
-pubspec.yaml
-Django serializers
-Django models
-Django media configuration
-```
+## STEP 7 — TEST
 
-### Step 2 — Trace the data
+Run appropriate:
 
-For stories:
+- Unit tests
+- Integration tests
+- API tests
+- UI tests
+- Security checks
+- Build checks
+- Static analysis
+- Linting
+- Type checking
 
-```text
-Django
- ↓
-API
- ↓
-JSON
- ↓
-Flutter model
- ↓
-Provider
- ↓
-Widget
- ↓
-Image
-```
+## STEP 8 — VERIFY
 
-For artifacts:
+Confirm that:
 
-```text
-Django
- ↓
-API
- ↓
-JSON
- ↓
-Flutter model
- ↓
-Provider
- ↓
-Widget
- ↓
-Image
-```
+- The original problem is fixed.
+- Existing functionality still works.
+- No new errors were introduced.
+- Performance has not degraded.
+- Security has improved or remained intact.
 
-### Step 3 — Identify root causes
+## STEP 9 — POLISH
 
-Do not guess.
-
-Clearly identify whether each problem is caused by:
-
-```text
-Frontend
-Backend
-API contract
-Asset configuration
-URL construction
-Storage
-Responsive layout
-Dependency
-```
-
-### Step 4 — Create a repair plan
-
-Before modifying code, report:
-
-```text
-Problem
-Root cause
-Affected files
-Required change
-Potential side effects
-Testing method
-```
-
-### Step 5 — WAIT FOR MY CONFIRMATION
-
-Do not implement the changes yet.
-
-First show me the diagnostic findings and repair plan.
+Perform one final engineering review.
 
 ---
 
-# 15. AFTER I CONFIRM
+# IMPORTANT INTERACTION RULE
 
-Once I approve the plan:
+For **major changes**, do NOT immediately modify the project.
 
-1. Fix Share screen icons.
-2. Fix Reward/Gamification bottom overflow.
-3. Restore Story images.
-4. Restore Artifact images.
-5. Fix API/image URL handling if necessary.
-6. Fix Django serializer/media configuration if necessary.
-7. Fix Flutter model parsing if necessary.
-8. Preserve existing functionality.
-9. Run Flutter analyzer.
-10. Run relevant tests.
-11. Build/run the application.
-12. Verify the affected screens.
+First provide:
 
----
+**1. Audit findings**
 
-# 16. FINAL ACCEPTANCE CRITERIA
+**2. Root causes**
 
-The work is NOT complete until:
+**3. Prioritized problems**
 
-### Share
+**4. Proposed solutions**
 
-```text
-✓ No broken icons
-✓ Correct iconography
-✓ Buttons/actions still work
-✓ No placeholder stickers/emojis
-```
+**5. Files/components affected**
 
-### Rewards
+**6. Implementation plan**
 
-```text
-✓ No bottom overflow
-✓ No horizontal overflow
-✓ Responsive layout
-✓ Real gamification data displayed
-✓ Badges/rewards visible
-✓ Existing functionality preserved
-```
+Then **wait for confirmation before performing major modifications**.
 
-### Stories
-
-```text
-✓ Story images load
-✓ Story cards display images
-✓ Story detail displays images
-✓ Correct backend URLs are used
-✓ Failed images are handled gracefully
-✓ No fake/random images
-```
-
-### Artifacts
-
-```text
-✓ Artifact images load
-✓ Correct API image URL is used
-✓ Artifact detail displays the image
-✓ No fake/random images
-✓ Missing images are handled correctly
-```
-
-### General
-
-```text
-✓ No Flutter overflow warnings
-✓ No broken assets
-✓ No unnecessary UI redesign
-✓ No hard-coded demo data
-✓ No fake URLs
-✓ No emojis/stickers used as icon replacements
-✓ Existing Griot 2.0 design system preserved
-✓ Backend and frontend data flow remain consistent
-```
+For small, clearly defined bug fixes, you may proceed directly when the requested change is unambiguous.
 
 ---
 
-# MOST IMPORTANT INSTRUCTION
+# FINAL STANDARD
 
-Do not treat these problems as isolated visual bugs.
+The final codebase should be:
 
-The missing Story and Artifact images may indicate a deeper problem in the:
+**Correct**
+→ **Secure**
+→ **Efficient**
+→ **Maintainable**
+→ **Simple**
+→ **Modern**
+→ **Automated**
+→ **Tested**
+→ **Production-ready**
 
-```text
-Django → API → Serializer → Flutter Model → Repository → Provider → Widget
-```
-
-pipeline.
-
-The broken Share icons may indicate an asset/dependency/icon configuration problem.
-
-The Reward overflow is a responsive layout problem.
-
-**Diagnose each root cause instead of applying superficial visual patches.**
-
-First inspect the existing implementation.
-
-Then give me the complete diagnostic report and repair plan.
-
-**Wait for my confirmation before implementing anything.**
+Never optimize one dimension at the expense of the others without explicitly explaining the trade-off.

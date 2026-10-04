@@ -128,7 +128,7 @@ class _QueueIntro extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'These are someone else’s traditions. Record what the community '
+            'These are other people’s traditions. Record what the community '
             'actually said and who told you — a consent status with no basis '
             'behind it cannot be defended.',
             style: theme.textTheme.bodySmall?.copyWith(
@@ -171,9 +171,14 @@ class _NothingAwaiting extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
+            // The old copy claimed "Every story on record has an answer from
+            // its source community, or none has been asked yet" — which reads
+            // as an all-clear. An empty queue only means no story is sitting in
+            // `not_requested`/`pending`; stories whose consent was withheld, or
+            // never asked about, are not in this list and are not thereby fine.
             Text(
-              'Every story on record has an answer from its source community, '
-              'or none has been asked yet.',
+              'No story is waiting on a decision here. Stories with consent '
+              'withheld, or never asked about, are not listed in this queue.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

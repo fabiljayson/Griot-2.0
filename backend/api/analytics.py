@@ -65,14 +65,40 @@ def daily_growth(queryset, date_field: str, days: int = 30):
     return series
 
 
+def active_user_ids(since):
+    """The ids of users who did something on the platform since `since`.
+
+    `last_login` cannot answer this. Authentication is JWT-only
+    (`JWTAuthentication`), and simplejwt leaves `UPDATE_LAST_LOGIN` at its
+    default of `False`, so a mobile login never writes the field — only a
+    Django *session* login does, i.e. the web admin. The old metric therefore
+    counted admins who had used the website and reported them as platform
+    activity: 6 of 524 users on the dev database, while every app user was
+    invisible to it.
+
+    What a reader of the dashboard actually wants is "who came back recently",
+    so this unions the tables that only an actual user action writes:
+    reading progress, likes, bookmarks, shares, quiz attempts and QR scans.
+    """
+    return set(
+        User.objects.filter(
+            Q(last_login__gte=since)
+            | Q(reading_progress__updated_at__gte=since)
+            | Q(story_likes__created_at__gte=since)
+            | Q(story_bookmarks__created_at__gte=since)
+            | Q(story_shares__created_at__gte=since)
+            | Q(qr_scans__created_at__gte=since)
+            | Q(quiz_attempts__started_at__gte=since)
+        ).values_list('id', flat=True).distinct()
+    )
+
+
 def get_user_stats():
     """Aggregate user statistics."""
     thirty_days_ago = timezone.now() - timedelta(days=30)
 
     total_users = User.objects.count()
-    active_users_30d = User.objects.filter(
-        last_login__gte=thirty_days_ago
-    ).count()
+    active_users_30d = len(active_user_ids(thirty_days_ago))
 
     # Users by role
     users_by_role = dict(
@@ -154,7 +180,16 @@ def get_story_stats():
 
 def get_gamification_stats():
     """Aggregate gamification statistics."""
-    total_quizzes_taken = QuizAttempt.objects.filter(
+    # Every attempt, not just the finished ones. This fed a card labelled
+    # "Quiz Attempts" while filtering to `COMPLETED`, so abandoned attempts
+    # vanished and the card disagreed with the Engagement strip lower down the
+    # same screen, which counts all attempts in its 7-day window.
+    total_quizzes_taken = QuizAttempt.objects.count()
+
+    # Kept separately because it is the denominator that matters: a completion
+    # rate measured against all attempts is not the same number as a pass rate
+    # measured against the ones people finished.
+    quizzes_completed = QuizAttempt.objects.filter(
         status=QuizAttempt.Status.COMPLETED
     ).count()
 
@@ -211,8 +246,13 @@ def get_gamification_stats():
 
     return {
         'total_quizzes_taken': total_quizzes_taken,
+        'quizzes_completed': quizzes_completed,
         'quizzes_passed': quizzes_passed,
-        'pass_rate': round(quizzes_passed / total_quizzes_taken * 100, 1) if total_quizzes_taken > 0 else 0,
+        # Over completions, not over every attempt. An abandoned attempt is
+        # nobody's answer, so counting it in the denominator reports people
+        # failing quizzes they never sat — the widening of
+        # `total_quizzes_taken` above used to do exactly that.
+        'pass_rate': round(quizzes_passed / quizzes_completed * 100, 1) if quizzes_completed > 0 else 0,
         'avg_score': round(avg_score, 1),
         'total_xp_earned': total_xp_earned,
         # The subset of the above that came from quizzes, kept because it is a
@@ -233,8 +273,17 @@ def get_qr_stats():
 
     total_scans = QRCodeScan.objects.count()
 
-    # Unique scanners
-    unique_scanners = QRCodeScan.objects.values('user').distinct().count()
+    # Unique scanners — the identified ones.
+    #
+    # `values('user').distinct()` counts the `NULL` group as one more distinct
+    # value, so every anonymous scan inflated this by exactly 1 while counting
+    # as nobody. Scans come from museum floors where people are often not
+    # signed in, so the phantom was not an edge case. Anonymous scans are still
+    # in `total_scans`; they simply are not a scanner we can name.
+    unique_scanners = (
+        QRCodeScan.objects.filter(user__isnull=False)
+        .values('user').distinct().count()
+    )
 
     # Scans by day (last 30 days)
     scan_growth = daily_growth(QRCodeScan.objects.all(), 'created_at')
