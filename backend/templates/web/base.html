@@ -10,6 +10,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{% translate "Griot AI" %} — {% translate "Digital Heritage Platform" %}{% endblock %}</title>
 
+  {% comment %}
+    Search and social previews.
+
+    These carry their own default text rather than reaching for
+    `{{ self.title }}` / `{{ self.meta_description }}`. A block reference like
+    that silently renders as an empty string on this Django version — verified,
+    not assumed — which produces an empty `og:description`, and an empty
+    description tag is worse than no tag at all because it looks finished.
+
+    The cost is that a template which overrides `{% block title %}` should
+    override `{% block og_title %}` too. `web.test_accessibility` guards both
+    halves: that no block reference creeps back in, and that no page ships an
+    empty og:description.
+  {% endcomment %}
+  <meta name="description" content="{% block meta_description %}{% translate "Read, listen to and share oral histories and cultural artefacts from across Cameroon and the African diaspora." %}{% endblock %}">
+  <meta property="og:site_name" content="Griot AI">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{% translate "Griot AI" %} — {% translate "Digital Heritage Platform" %}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{% translate "Read, listen to and share oral histories and cultural artefacts from across Cameroon and the African diaspora." %}{% endblock %}">
+  <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+
   <!--
     Hybrid asset loading: everything is served locally (works fully offline).
     The inline JS below only reaches out to a CDN when a local stylesheet is
@@ -246,7 +268,11 @@
       font-style: italic;
       font-family: 'Fraunces', Georgia, serif;
     }
-    .story-content a { color: #C68B29; text-decoration: underline; }
+    /* Links inside story text were the one hardcoded bronze-as-text left in the
+       web app: #C68B29 on white is 2.95:1, and a body link is exactly the kind
+       of text 1.4.3 exists for. Routed through the same variable the utility
+       classes use, so it flips correctly in dark mode too. */
+    .story-content a { color: var(--griot-accent-text); text-decoration: underline; }
     .story-content strong { color: #1E2B58; font-weight: 700; }
     .story-content code { background: #F5ECD6; padding: .1em .4em; border-radius: .3rem; font-size: .9em; }
     .story-content img { border-radius: .8rem; margin: 1em 0; }
@@ -259,12 +285,61 @@
     /* Hide scrollbar on horizontal chip strips, like the mobile ListView */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ── Skip to content ──────────────────────────────────────────────
+       The desktop sidebar puts a 260px column of navigation ahead of the
+       first piece of content, and the header puts a row of links above it.
+       A keyboard user therefore had to tab through every one of them on
+       every page load, on every page. Off-screen rather than display:none,
+       so it stays in the tab order, and visibly moves in on focus. */
+    .skip-link {
+      position: fixed;
+      top: 0.5rem;
+      left: 0.5rem;
+      z-index: 100;
+      transform: translateY(-250%);
+      transition: transform .15s ease-out;
+      padding: .625rem 1rem;
+      border-radius: .6rem;
+      background: #1E2B58;
+      color: #FBF9F4;
+      font-weight: 700;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / .25);
+    }
+    .skip-link:focus,
+    .skip-link:focus-visible {
+      transform: translateY(0);
+      outline: 3px solid #C68B29;
+      outline-offset: 2px;
+    }
+    /* The target must not show a stray focus ring of its own once the
+       browser has scrolled to it; the skip link already indicated where
+       focus went. */
+    #main-content:focus { outline: none; }
+
+    /* ── Reduced motion ───────────────────────────────────────────────
+       Nothing in the web app honoured prefers-reduced-motion. Tailwind's
+       `transition` utility sets colour/background/border/opacity/shadow,
+       which is not what causes trouble — transforms and layout shifts are
+       — so the guard targets those, plus the one spin used in the app. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .group:hover .group-hover\:scale-\[1\.03\] { scale: 1; }
+    }
   </style>
 
   {% block extra_head %}{% endblock %}
 </head>
 
 <body class="font-body bg-cam-ivory text-cam-dark dark:bg-mud-charcoal dark:text-sand min-h-screen antialiased" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
+
+  {# First focusable element on the page — see the .skip-link rule above. #}
+  <a class="skip-link" href="#main-content">{% translate "Skip to content" %}</a>
 
   {% if messages %}
   <div class="fixed top-4 inset-x-0 z-[70] flex flex-col items-center gap-2 px-4" id="toast-stack">
@@ -349,14 +424,15 @@
             <a href="{% url 'web:admin-dashboard' %}" class="rounded-full p-2 text-white/90 hover:bg-white/10" aria-label="{% translate 'Dashboard' %}" title="{% translate 'Dashboard' %}"><span class="fa-solid fa-chart-simple" aria-hidden="true"></span></a>
             {% endif %}
             {% else %}
-            <a href="{% url 'web:login' %}" class="rounded-full bg-cam-bronze/80 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/30">{% translate "Sign in" %}</a>
+            {# Not text-white (3.95:1 against the old 80%-blend) and not cam-dark on that blend (4.30:1) either — both under the 4.5:1 a 12px label needs. The fill is now opaque: cam-dark on solid bronze is 5.77:1. Kept on one line because Django's lexer does not match a multi-line {# #}. #}
+            <a href="{% url 'web:login' %}" class="rounded-full bg-cam-bronze px-4 py-1.5 text-xs font-semibold text-cam-dark ring-1 ring-white/30">{% translate "Sign in" %}</a>
             {% endif %}
             {% include 'web/partials/language_switch.html' with variant='compact' %}
           </div>
         </div>
       </header>
 
-      <main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <main id="main-content" tabindex="-1" class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         {% block content %}{% endblock %}
       </main>
     </div>
