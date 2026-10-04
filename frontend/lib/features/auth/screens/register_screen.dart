@@ -453,7 +453,7 @@ class _RegisterFormPanel extends StatelessWidget {
                           TextSpan(
                             text: 'Sign In',
                             style: TextStyle(
-                              color: AppColors.terracotta,
+                              color: AppColors.accentTextStrong,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

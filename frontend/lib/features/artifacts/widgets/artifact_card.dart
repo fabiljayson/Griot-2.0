@@ -63,7 +63,7 @@ class ArtifactCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.bronze,
+                          color: AppColors.accentTextStrong,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
                         ),

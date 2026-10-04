@@ -46,7 +46,11 @@ abstract final class AppTheme {
       primaryContainer: Color(0x1A1E2B58),
       onPrimaryContainer: AppColors.charcoal,
       secondary: AppColors.bronze,
-      onSecondary: Colors.white,
+      // Not white: white on the bronze secondary is 2.95:1. Keeping the bronze
+      // fill and darkening only the label is the convention already used by
+      // the one filled bronze button that had been fixed (story_detail_screen's
+      // "Take Quiz"), so this makes the scheme agree with it.
+      onSecondary: AppColors.charcoal,
       secondaryContainer: AppColors.bronzeTint,
       onSecondaryContainer: AppColors.charcoal,
       tertiary: AppColors.equatorialGreen,

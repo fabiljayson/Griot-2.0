@@ -11,6 +11,7 @@ class RankedTile extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.color = AppColors.terracotta,
+    this.textColor = AppColors.accentTextStrong,
     this.divider = true,
   });
 
@@ -18,7 +19,19 @@ class RankedTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? trailing;
+
+  /// Accent used for the chip fill and border. Decorative, so the bright
+  /// brand bronze is correct here.
   final Color color;
+
+  /// Accent used for the two pieces of *text* this tile paints — the rank
+  /// numeral and the trailing metric.
+  ///
+  /// Deliberately not [color]. The brand accent measures 2.95:1 on white and
+  /// 2.80:1 on ivory, which is fine for a fill but well short of the 4.5:1 that
+  /// WCAG 1.4.3 requires of small bold text. Both call sites pass the same
+  /// bronze under different names, so one strong token covers them all.
+  final Color textColor;
   final bool divider;
 
   @override
@@ -48,7 +61,7 @@ class RankedTile extends StatelessWidget {
                   '$rank',
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: color,
+                    color: textColor,
                   ),
                 ),
               ),
@@ -82,7 +95,7 @@ class RankedTile extends StatelessWidget {
                   trailing!,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: color,
+                    color: textColor,
                   ),
                 ),
             ],

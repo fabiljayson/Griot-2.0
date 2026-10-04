@@ -67,7 +67,7 @@ class AuthTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.terracotta, width: 1.5),
+          borderSide: BorderSide(color: AppColors.bronzeDark, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -104,7 +104,9 @@ class AuthButton extends StatelessWidget {
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.terracotta,
-          foregroundColor: Colors.white,
+          // Charcoal, not white: white on bronze is 2.95:1 and this is the main
+          // auth action on the screen.
+          foregroundColor: AppColors.charcoal,
           disabledBackgroundColor: AppColors.terracotta.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -123,7 +125,7 @@ class AuthButton extends StatelessWidget {
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: Colors.white,
+                  color: AppColors.charcoal,
                 ),
               )
             : Text(label),

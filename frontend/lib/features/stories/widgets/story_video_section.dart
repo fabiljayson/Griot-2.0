@@ -129,7 +129,7 @@ class _StoryVideoSectionState extends ConsumerState<StoryVideoSection> {
             label: const Text('Generate Video'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.terracotta,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.charcoal,
             ),
           ),
         ],
@@ -253,7 +253,7 @@ class _StoryVideoSectionState extends ConsumerState<StoryVideoSection> {
               label: const Text('Try Again'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.terracotta,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.charcoal,
               ),
             ),
           ],

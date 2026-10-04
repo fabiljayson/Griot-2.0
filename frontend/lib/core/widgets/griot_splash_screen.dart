@@ -425,7 +425,9 @@ class _Wordmark extends StatelessWidget {
             text: 'AI',
             style: const TextStyle(
               fontFamily: 'Fraunces',
-              color: AppColors.bronze,
+              // The splash sits on a light radial gradient (white -> ivory ->
+              // #F3EAD4), so the raw accent would read at 2.80:1 here.
+              color: AppColors.accentTextStrong,
               fontWeight: FontWeight.w800,
             ),
           ),

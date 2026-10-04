@@ -70,7 +70,7 @@ class QrWorklistSection extends ConsumerWidget {
                 'Showing ${worklist.entries.length} of ${worklist.total} '
                 'artifacts — the catalog is larger than this worklist.',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.ochre,
+                  color: AppColors.accentTextStrong,
                   fontWeight: FontWeight.w600,
                 ),
               ),

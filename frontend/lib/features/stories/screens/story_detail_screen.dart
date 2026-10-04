@@ -408,7 +408,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
                     },
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.bronze.withValues(alpha: 0.12),
-                foregroundColor: AppColors.bronzeDark,
+                foregroundColor: AppColors.accentTextStrong,
               ),
               icon: isNarrating || isStartingCurrentNarration
                   ? const SizedBox(
@@ -477,7 +477,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
               FilledButton.icon(
                 onPressed: _isStartingQuiz ? null : () => _takeQuiz(story),
                 icon: _isStartingQuiz
-                    ? const GriotLoader.inline(color: Colors.white)
+                    ? const GriotLoader.inline(color: AppColors.charcoal)
                     : const Icon(AppIcons.quiz, size: 16),
                 label: const Text('Take Quiz'),
                 style: FilledButton.styleFrom(
@@ -495,7 +495,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
                 icon: const Icon(AppIcons.lock_outline, size: 16),
                 label: const Text('Quiz'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.bronzeDark,
+                  foregroundColor: AppColors.accentTextStrong,
                   side: const BorderSide(color: AppColors.bronze),
                 ),
               ),
@@ -1054,7 +1054,7 @@ class _ConsentActionBarState extends ConsumerState<_ConsentActionBar> {
                   : Icon(AppIcons.send, size: 16),
               label: const Text('I have asked the community'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.bronzeDark,
+                foregroundColor: AppColors.accentTextStrong,
                 side: const BorderSide(color: AppColors.bronze),
               ),
             ),

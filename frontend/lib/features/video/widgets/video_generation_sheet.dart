@@ -476,7 +476,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
         onPressed: isCreating ? null : _submit,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.terracotta,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.charcoal,
           disabledBackgroundColor: AppColors.terracotta.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -493,7 +493,7 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: AppColors.charcoal,
                     ),
                   ),
                   SizedBox(width: 12),

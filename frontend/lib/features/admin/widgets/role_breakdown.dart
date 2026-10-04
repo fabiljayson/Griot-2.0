@@ -58,7 +58,7 @@ class RoleBreakdown extends StatelessWidget {
                   '${entry.value}',
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: AppColors.terracotta,
+                    color: AppColors.accentTextStrong,
                   ),
                 ),
               ],

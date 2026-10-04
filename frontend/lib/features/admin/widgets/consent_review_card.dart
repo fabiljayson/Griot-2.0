@@ -107,7 +107,7 @@ class ConsentReviewCard extends StatelessWidget {
                 label: const Text('Record decision'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.ochre,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.charcoal,
                   minimumSize: const Size(0, 40),
                 ),
               ),
