@@ -45,12 +45,20 @@ from heritage_crawl.fetching import (
     SSRFBlockedError,
     TooLargeError,
     UnsupportedContentTypeError,
+    _globish,
     assert_safe_url,
+    discover_urls,
     fetch,
     normalise_url,
     url_hash,
 )
-from heritage_crawl.ingest import CRAWLER_ACCOUNT_USERNAME, crawl_source, crawler_account
+from heritage_crawl.ingest import (
+    _DEDUPABLE_STATUSES,
+    CRAWLER_ACCOUNT_USERNAME,
+    _find_duplicate,
+    crawl_source,
+    crawler_account,
+)
 from heritage_crawl.models import (
     CrawledItem,
     CrawlJob,
@@ -66,7 +74,11 @@ from heritage_crawl.relevance import (
     score_page,
 )
 from heritage_crawl.review import ReviewError, approve_item, reject, request_correction, unpublish
-from heritage_crawl.source_config import BUILTIN_SOURCES, seed_sources
+from heritage_crawl.source_config import (
+    _EXCLUDE_NOISE,
+    BUILTIN_SOURCES,
+    seed_sources,
+)
 from qr_codes.models import Artifact
 from stories.models import Story
 
@@ -208,6 +220,50 @@ def _fake_fetch(page_html: str, *, status_code: int = 200,
         )
 
     return _fetch
+
+
+def _fake_fetch_map(pages: dict[str, str], *, default: str | None = None,
+                    calls: list[str] | None = None):
+    """Like `_fake_fetch`, but the body depends on the URL.
+
+    `_fake_fetch` answers every URL with the same HTML, which cannot express
+    "this page links to that one, whose content differs" -- the shape discovery
+    and dedup tests need. First matching key wins; `default` covers the rest.
+    """
+    from heritage_crawl.fetching import FetchResult
+
+    fallback = default if default is not None else '<html><body>none</body></html>'
+
+    def _fetch(url, **kwargs):
+        if calls is not None:
+            calls.append(url)
+        body = fallback
+        for fragment, html in pages.items():
+            if fragment in url:
+                body = html
+                break
+        return FetchResult(
+            url=url,
+            final_url=url,
+            status_code=200,
+            content_type='text/html; charset=utf-8',
+            text=body,
+            headers={'Content-Type': 'text/html; charset=utf-8'},
+        )
+
+    return _fetch
+
+
+def _crawl_with_pages(source, pages, *, default=None, calls=None, **kwargs):
+    """Run `crawl_source` against a URL-addressed fake fetch, no network."""
+    import heritage_crawl.ingest as ingest
+
+    original = ingest.fetching.fetch
+    ingest.fetching.fetch = _fake_fetch_map(pages, default=default, calls=calls)
+    try:
+        return crawl_source(source, **kwargs)
+    finally:
+        ingest.fetching.fetch = original
 
 
 class FetchingSecurityTests(TestCase):
@@ -416,6 +472,137 @@ def _session_returning(response):
             return response
 
     return _Session()
+
+
+class LinkDiscoveryTests(TestCase):
+    """`discover_urls` must return pages, not site furniture.
+
+    Found by crawling the real UNESCO Cameroon page: 146 of the discovered
+    links were `.css`, `.png` and `.svg` files. The crawl spent its page budget
+    fetching them, each rejected by the content-type allow-list and recorded as
+    an error, so a depth-1 crawl reached *fewer* real pages than depth-0.
+    """
+
+    def _links(self, html, url='https://ich.unesco.org/en/state/cameroon-CM'):
+        return discover_urls(html, url, max_depth=1)
+
+    def test_stylesheets_and_images_are_not_crawl_targets(self):
+        html = """
+        <a href="/css/styles.css">a</a>
+        <a href="/favicon/favicon-32x32.png">b</a>
+        <a href="/img/photo.jpg">c</a>
+        <a href="/static/js/app.js">d</a>
+        """
+        self.assertEqual(self._links(html), [])
+
+    def test_real_pages_are_still_discovered(self):
+        html = '<a href="/en/RL/element-00001">a</a><a href="/en/state/x">b</a>'
+        links = self._links(html)
+        self.assertIn('https://ich.unesco.org/en/RL/element-00001', links)
+        self.assertIn('https://ich.unesco.org/en/state/x', links)
+
+    def test_a_section_named_after_a_format_is_not_an_asset(self):
+        """`/en/pdf` is a section. Only the last segment's extension counts, and
+        only when that extension is a known asset type."""
+        html = '<a href="/patrimoine/pdf">a</a><a href="/docs/rapport.pdf">b</a>'
+        links = self._links(html, url='https://minac.gov.cm/x')
+        self.assertIn('https://minac.gov.cm/patrimoine/pdf', links)
+        self.assertNotIn('https://minac.gov.cm/docs/rapport.pdf', links)
+
+    def test_content_pages_under_image_directories_are_not_assets(self):
+        """`/media/`, `/images/` and `/img/` are content directories on a great
+        many CMSs. Treating the *directory* as furniture dropped legitimate
+        article pages filed there; only a real file extension is an asset."""
+        html = (
+            '<a href="/media/article">a</a>'
+            '<a href="/images/masque-story">b</a>'
+            '<a href="/img/heritage">c</a>'
+        )
+        links = self._links(html, url='https://minac.gov.cm/x')
+        for path in ('/media/article', '/images/masque-story', '/img/heritage'):
+            self.assertIn(f'https://minac.gov.cm{path}', links)
+
+    def test_image_files_under_those_directories_are_still_assets(self):
+        """The extension check -- not the directory -- is what filters files."""
+        html = '<a href="/media/photo.jpg">a</a><a href="/img/mask.png">b</a>'
+        self.assertEqual(self._links(html, url='https://minac.gov.cm/x'), [])
+
+    def test_offsite_links_are_still_dropped(self):
+        html = '<a href="https://google.com/x">a</a>'
+        self.assertEqual(self._links(html), [])
+
+    def test_mailto_and_javascript_are_dropped(self):
+        html = '<a href="mailto:a@b.c">a</a><a href="javascript:x()">b</a>'
+        self.assertEqual(self._links(html), [])
+
+
+class UrlPatternTests(TestCase):
+    """`include_url_patterns` / `exclude_url_patterns` must match as globs.
+
+    Found while configuring the real sources: `*/en/RL/*` is an invalid regex
+    (`*` with nothing to repeat), and the resulting `re.error` was swallowed
+    with a `return False`. An include pattern that matches nothing means the
+    source discovers no links at all, so a crawl pointed at the UNESCO element
+    pages returned its single seed URL and reported success.
+    """
+
+    def test_wildcards_match_across_path_segments(self):
+        self.assertTrue(_globish('https://ich.unesco.org/en/RL/ngondo-02140',
+                                 '*/en/RL/*'))
+        self.assertTrue(_globish('https://www.musecam.org/collections/masque',
+                                 '*/collections*'))
+
+    def test_patterns_that_should_not_match(self):
+        self.assertFalse(_globish('https://ich.unesco.org/en/state/cm',
+                                  '*/en/RL/*'))
+        self.assertFalse(_globish('https://discover-cameroon.com/en/history/',
+                                  '*/culture*'))
+
+    def test_plain_substrings_still_work(self):
+        """Most patterns an administrator writes have no wildcards at all."""
+        self.assertTrue(_globish(
+            'https://minac.gov.cm/patrimoine/heritage/x', 'heritage'
+        ))
+        self.assertFalse(_globish('https://minac.gov.cm/patrimoine/x', 'heritage'))
+
+    def test_regex_metacharacters_are_matched_literally(self):
+        """A `+` in a path is a plus, not a quantifier."""
+        self.assertTrue(_globish('https://x.gov/a+b', 'a+b'))
+        self.assertFalse(_globish('https://x.gov/aab', 'a+b'))
+
+    def test_an_empty_pattern_never_matches(self):
+        self.assertFalse(_globish('https://x.gov/', ''))
+
+    def test_include_patterns_actually_reach_discover_urls(self):
+        """End to end: the seed page offers one element and one nav link, and
+        only the element should survive the include filter."""
+        html = (
+            '<a href="/en/RL/ngondo-worship-02140">element</a>'
+            '<a href="/en/change-password-request-00842">nav</a>'
+            '<a href="/css/styles.css">css</a>'
+        )
+        links = discover_urls(
+            html,
+            'https://ich.unesco.org/en/state/cameroon-CM',
+            include_patterns=['*/en/RL/*'],
+            max_depth=1,
+        )
+        self.assertEqual(links, ['https://ich.unesco.org/en/RL/ngondo-worship-02140'])
+
+    def test_exclude_patterns_remove_multilingual_duplicates(self):
+        """The fr/es pages of one UNESCO element are the same content."""
+        html = (
+            '<a href="/en/RL/ngondo-02140">en</a>'
+            '<a href="/fr/RL/ngondo-02140">fr</a>'
+        )
+        links = discover_urls(
+            html,
+            'https://ich.unesco.org/en/RL/ngondo-02140',
+            include_patterns=['*/RL/*'],
+            exclude_patterns=['*/fr/*'],
+            max_depth=1,
+        )
+        self.assertEqual(links, ['https://ich.unesco.org/en/RL/ngondo-02140'])
 
 
 class RobotsTests(TestCase):
@@ -1236,6 +1423,204 @@ class CrawlerAccountTests(TestCase):
         self.assertEqual(story.status, Story.Status.PENDING)
 
 
+class DedupQueryTests(TestCase):
+    """Duplicate detection must actually query.
+
+    `processing_status=(A, B)` is Django for `processing_status = (A, B)` --
+    equality against a tuple, not membership. It matches nothing, raises nothing,
+    and reports zero duplicates forever, which is indistinguishable from a site
+    that genuinely never repeats itself. Caught by asserting the query has to
+    return a row that plainly exists.
+    """
+
+    def setUp(self):
+        self.source = CrawlSource.objects.create(
+            slug='dd', name='DD', base_url='https://ich.unesco.org/en/state/cm',
+            enabled=True,
+        )
+        self.job = CrawlJob.objects.create(source=self.source)
+        self.item = CrawledItem.objects.create(
+            job=self.job, source=self.source,
+            original_url='https://ich.unesco.org/en/RL/ngondo-02140',
+            url_hash=url_hash('https://ich.unesco.org/en/RL/ngondo-02140'),
+            processing_status=CrawledItem.ProcessingStatus.IMPORTED,
+            extracted_metadata={'fingerprint': 'fp-abc'},
+        )
+
+    def test_the_fingerprint_query_finds_a_row_that_exists(self):
+        found = CrawledItem.objects.filter(
+            processing_status__in=_DEDUPABLE_STATUSES,
+            extracted_metadata__fingerprint='fp-abc',
+        )
+        self.assertEqual(found.count(), 1)
+
+    def test_both_dedupable_statuses_are_actually_covered(self):
+        """A dry run stages NORMALIZED; a real crawl produces IMPORTED. Missing
+        either one silently halves the coverage."""
+        for status in (
+            CrawledItem.ProcessingStatus.IMPORTED,
+            CrawledItem.ProcessingStatus.NORMALIZED,
+        ):
+            with self.subTest(status=status):
+                self.item.processing_status = status
+                self.item.save()
+                self.assertEqual(
+                    CrawledItem.objects.filter(
+                        processing_status__in=_DEDUPABLE_STATUSES
+                    ).count(),
+                    1,
+                    f'{status} is not treated as dedupable',
+                )
+
+    def test_the_tuple_is_not_used_as_an_equality_filter(self):
+        """Documenting the trap, so the shape is never reintroduced."""
+        self.assertEqual(
+            CrawledItem.objects.filter(processing_status=_DEDUPABLE_STATUSES).count(),
+            0,
+            'equality against a tuple matched something; the bug has returned',
+        )
+
+    def test_find_duplicate_recognises_the_existing_item(self):
+        found = _find_duplicate(
+            self.source,
+            'fp-abc',
+            'https://ich.unesco.org/en/RL/ngondo-02140',
+            exclude_pk=self.item.pk,
+        )
+        self.assertIsNone(found, 'the only candidate is the item itself')
+
+        other = CrawledItem.objects.create(
+            job=self.job, source=self.source,
+            original_url='https://ich.unesco.org/en/RL/other-99999',
+            url_hash=url_hash('https://ich.unesco.org/en/RL/other-99999'),
+            processing_status=CrawledItem.ProcessingStatus.IMPORTED,
+            extracted_metadata={'fingerprint': 'fp-abc'},
+        )
+        found = _find_duplicate(
+            self.source,
+            'fp-abc',
+            'https://ich.unesco.org/en/RL/ngondo-02140',
+            exclude_pk=self.item.pk,
+        )
+        self.assertEqual(found.pk, other.pk)
+
+
+class DiscoveryCoverageTests(PipelineTestsBase):
+    """§3: discovery runs on every page read, not only imported ones.
+
+    The relevance-skip, no-title and duplicate branches each `continue`d before
+    `_discover`, so a crawl expanded only from pages it had already accepted.
+    Observed live: six of seven enabled sources stopped at their single seed,
+    and re-crawls reached nothing new.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.source.max_pages = 4
+        self.source.max_depth = 1
+
+    def test_an_irrelevant_page_still_contributes_its_links(self):
+        skip = NON_CAMEROON_PAGE.replace(
+            '</body>', '<a href="/heritage"></a></body>'
+        )
+        self.source.seed_urls = ['https://cameroon-nationalmuseum.cm/mali']
+        self.source.save()
+        outcome = _crawl_with_pages(
+            self.source, {'/mali': skip, '/heritage': NARRATIVE_PAGE}
+        )
+        self.assertEqual(outcome.skipped, 1)
+        self.assertEqual(
+            outcome.imported, 1,
+            'the link on a skipped page was never followed',
+        )
+
+    def test_a_duplicate_page_still_contributes_its_links(self):
+        # The link is an *empty* anchor, so the extracted text -- and with it
+        # the fingerprint -- is unchanged and the page is a genuine duplicate.
+        dupe = NARRATIVE_PAGE.replace('</body>', '<a href="/new"></a></body>')
+        self.source.seed_urls = [
+            'https://cameroon-nationalmuseum.cm/orig',
+            'https://cameroon-nationalmuseum.cm/dupe',
+        ]
+        self.source.save()
+        outcome = _crawl_with_pages(
+            self.source,
+            {'/orig': NARRATIVE_PAGE, '/dupe': dupe, '/new': NARRATIVE_PAGE},
+        )
+        # Both `/dupe` and the `/new` it links to are duplicates of `/orig`;
+        # what matters is that `/new` was reached at all.
+        self.assertEqual(outcome.duplicates, 2)
+        self.assertEqual(
+            outcome.job.pages_processed, 3,
+            'the link on a duplicate page was never followed',
+        )
+
+
+class IncrementalCrawlTests(PipelineTestsBase):
+    """§17: a page processed by an earlier run is not downloaded again.
+
+    Seeds are the deliberate exception -- they are where new links appear, so
+    skipping them would make every re-crawl reach exactly what the last one
+    did. `skip_seen=False` (the CLI's `--fresh`) opts out entirely.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.source.max_pages = 3
+        self.source.max_depth = 1
+
+    def _prior_item(self, url):
+        prior = CrawlJob.objects.create(source=self.source)
+        return CrawledItem.objects.create(
+            job=prior, source=self.source, original_url=url,
+            url_hash=url_hash(url),
+            processing_status=CrawledItem.ProcessingStatus.IMPORTED,
+            extracted_metadata={'fingerprint': 'fp-prior'},
+        )
+
+    def test_a_previously_processed_page_is_not_fetched(self):
+        self._prior_item('https://cameroon-nationalmuseum.cm/old')
+        seed = NARRATIVE_PAGE.replace('</body>', '<a href="/old"></a></body>')
+        self.source.seed_urls = ['https://cameroon-nationalmuseum.cm/seed']
+        self.source.save()
+
+        calls: list[str] = []
+        outcome = _crawl_with_pages(
+            self.source, {'/seed': seed}, default=NARRATIVE_PAGE, calls=calls
+        )
+        self.assertEqual(outcome.already_processed, 1)
+        self.assertNotIn(
+            'https://cameroon-nationalmuseum.cm/old', calls,
+            'a page already imported by an earlier run was downloaded again',
+        )
+
+    def test_the_fresh_flag_refetches_everything(self):
+        self._prior_item('https://cameroon-nationalmuseum.cm/old')
+        seed = NARRATIVE_PAGE.replace('</body>', '<a href="/old"></a></body>')
+        self.source.seed_urls = ['https://cameroon-nationalmuseum.cm/seed']
+        self.source.save()
+
+        calls: list[str] = []
+        outcome = _crawl_with_pages(
+            self.source, {'/seed': seed}, default=NARRATIVE_PAGE,
+            calls=calls, skip_seen=False,
+        )
+        self.assertEqual(outcome.already_processed, 0)
+        self.assertIn('https://cameroon-nationalmuseum.cm/old', calls)
+
+    def test_a_seed_is_always_refetched(self):
+        """The entry point is exempt, or discovery could never find anything
+        new on a site whose seed page was imported by an earlier run."""
+        seed_url = 'https://cameroon-nationalmuseum.cm/seed'
+        self._prior_item(seed_url)
+        self.source.seed_urls = [seed_url]
+        self.source.save()
+
+        calls: list[str] = []
+        _crawl_with_pages(self.source, {'/seed': NARRATIVE_PAGE}, calls=calls)
+        self.assertIn(seed_url, calls, 'the seed entry point was skipped as seen')
+
+
 class MediaTests(PipelineTestsBase):
     """§6/§7: record media; do not redistribute it without permission."""
 
@@ -1252,6 +1637,54 @@ class MediaTests(PipelineTestsBase):
         self.crawl()
         urls = ' '.join(CrawlMedia.objects.values_list('original_url', flat=True))
         self.assertNotIn('logo', urls.lower())
+
+    def test_images_outside_the_content_container_are_not_recorded(self):
+        """§7: an image in a promo panel or sidebar is site furniture, even
+        when it is not inside a `<nav>`/`<header>`/`<footer>`."""
+        page = """
+        <html><body>
+          <div class="promo"><img src="/promo/banner.jpg" alt="Promotion"></div>
+          <main>
+            <h1>Masque de la Vallée du Mbem</h1>
+            <p>Ce masque en bois sculpté a été collecté parmi les Bamiléké de la
+               région de l'Ouest, au Cameroun, et utilisé lors des rituels et
+               festivals du village. Le patrimoine culturel de cette région est
+               transmis de génération en génération, et ce masque en est un
+               artefact central, exposé au musée national.</p>
+            <img src="/collections/masque.jpg" alt="Masque sculpté">
+          </main>
+        </body></html>
+        """
+        self.crawl(html=page)
+        urls = ' '.join(CrawlMedia.objects.values_list('original_url', flat=True))
+        self.assertIn('masque.jpg', urls)
+        self.assertNotIn(
+            'banner.jpg', urls,
+            'a promo image outside the article was recorded as heritage media',
+        )
+
+    def test_flag_images_are_not_recorded_as_heritage_media(self):
+        """A live crawl of the UNESCO states-parties page recorded ~190 country
+        flags as heritage media. A flag beside a table row is navigation
+        decoration, not content."""
+        page = """
+        <html><body>
+          <main>
+            <h1>Notre patrimoine culturel</h1>
+            <p>Le Cameroun possède un patrimoine culturel riche et varié, avec
+               des masques, des danses et des rituels transmis de génération en
+               génération dans les dix régions du pays, et chaque groupe
+               culturel possède ses propres traditions et artefacts, protégés
+               par le ministère de la culture.</p>
+            <img src="/flags/cm.png" alt="Cameroon flag">
+            <img src="/collections/masque.jpg" alt="Masque sculpté">
+          </main>
+        </body></html>
+        """
+        self.crawl(html=page)
+        urls = ' '.join(CrawlMedia.objects.values_list('original_url', flat=True))
+        self.assertNotIn('flag', urls.lower())
+        self.assertIn('masque.jpg', urls)
 
     def test_nothing_is_downloaded_when_reuse_permission_is_absent(self):
         """§6: if the licence cannot be established, do not redistribute. The
@@ -1391,6 +1824,83 @@ class ErrorHandlingTests(PipelineTestsBase):
             ingest.fetching.fetch = original
 
         self.assertIsNotNone(outcome.job.completed_at)
+
+
+class JobAccountingTests(PipelineTestsBase):
+    """§16: the counters on a job must survive the process that produced them.
+
+    `pages_processed` was incremented on the in-memory object and never saved,
+    so `manage.py crawl` printed the true count while the database -- and with
+    it the admin job list, the API and the monitoring summary -- read 0 for
+    every job ever run. Found by running a real crawl and re-reading the job in
+    a fresh process; the in-process view cannot show this class of bug.
+    """
+
+    def test_pages_processed_is_written_to_the_database(self):
+        outcome = self.crawl()
+        fresh = CrawlJob.objects.get(pk=outcome.job.pk)  # defeats the in-memory copy
+        self.assertGreater(
+            fresh.pages_processed, 0,
+            'pages were fetched, but the job was saved with pages_processed = 0',
+        )
+
+    def test_pages_processed_counts_every_staged_item(self):
+        """Every fetched page creates exactly one staging row, so the two must
+        agree -- and they must agree with what the CLI reported in-process."""
+        outcome = self.crawl()
+        fresh = CrawlJob.objects.get(pk=outcome.job.pk)
+        staged = CrawledItem.objects.filter(job=outcome.job).count()
+        self.assertEqual(fresh.pages_processed, staged)
+        self.assertEqual(fresh.pages_processed, outcome.job.pages_processed)
+
+
+class RelevancePersistenceTests(PipelineTestsBase):
+    """A page that passes the gate must keep the score that let it through.
+
+    The score used to be written only on the *skip* branch, so every item that
+    reached the admin review queue carried `relevance_score = 0.0` and empty
+    `relevance_reasons` -- the one thing a reviewer needs to judge it. Found by
+    running a real crawl, not by a test: the queue was full of zeros for pages
+    that had actually scored 0.9.
+    """
+
+    def test_a_scored_page_keeps_its_score(self):
+        self.crawl()
+        item = CrawledItem.objects.get(
+            processing_status=CrawledItem.ProcessingStatus.IMPORTED
+        )
+        self.assertGreater(
+            item.relevance_score, 0,
+            'a page that cleared the relevance gate was saved with score 0',
+        )
+        self.assertTrue(
+            item.relevance_reasons,
+            'no reasons were recorded, so a reviewer cannot judge the item',
+        )
+
+    def test_the_score_is_also_kept_on_skipped_pages(self):
+        self.crawl(html=NON_CAMEROON_PAGE)
+        item = CrawledItem.objects.get(
+            processing_status=CrawledItem.ProcessingStatus.SKIPPED
+        )
+        self.assertGreater(item.relevance_score, 0)
+        self.assertTrue(item.relevance_reasons)
+
+    def test_the_saved_score_matches_the_scorer(self):
+        """Guard against the persisted value drifting from the real one."""
+        from heritage_crawl.extract import extract_page
+        from heritage_crawl.relevance import score_page
+
+        self.crawl()
+        item = CrawledItem.objects.get(
+            processing_status=CrawledItem.ProcessingStatus.IMPORTED
+        )
+        page = extract_page(HERITAGE_PAGE, item.original_url)
+        expected = score_page(
+            title=page.title, description=page.description,
+            body=page.body_text, url=item.original_url,
+        )
+        self.assertAlmostEqual(item.relevance_score, expected.score, places=3)
 
 
 class DryRunTests(PipelineTestsBase):
@@ -1539,6 +2049,59 @@ class SourceConfigTests(TestCase):
         unesco = next(s for s in BUILTIN_SOURCES if s.source_type == 'unesco')
         museum = next(s for s in BUILTIN_SOURCES if s.source_type == 'museum')
         self.assertGreater(unesco.request_delay, museum.request_delay)
+
+    def test_builtin_exclude_patterns_actually_exclude_noise(self):
+        """The registry's excludes are globs, matching `fetching._globish`.
+
+        They were written as regexes (`\\.pdf$`, `/search\?`, `/feed$`) before
+        `_globish` was fixed to translate globs, and the two silently disagreed:
+        `\\.pdf$` searched for the four literal characters `\\.pdf$`, which sit
+        in no real URL, so the exclusion became a no-op that still read as if it
+        worked. A pattern that cannot match is worse than no pattern, because it
+        hides the noise it was meant to remove. Every pattern must match a URL
+        it was written for.
+        """
+        noise = {
+            '/login': 'https://minac.gov.cm/en/login',
+            '/register': 'https://minac.gov.cm/en/register',
+            '/cart': 'https://minac.gov.cm/en/cart',
+            '/checkout': 'https://minac.gov.cm/en/checkout',
+            '/search': 'https://minac.gov.cm/en/search?q=masque',
+            '*.pdf': 'https://minac.gov.cm/files/rapport.pdf',
+            '*/feed*': 'https://minac.gov.cm/en/feed',
+            '/rss': 'https://minac.gov.cm/en/rss',
+            '/wp-admin': 'https://minac.gov.cm/wp-admin/',
+            '/wp-json': 'https://minac.gov.cm/wp-json/wp/v2/pages',
+            '/tag/': 'https://minac.gov.cm/tag/masque/',
+            '/author/': 'https://minac.gov.cm/author/nkolo/',
+            '/comment': 'https://minac.gov.cm/story/1/comment',
+        }
+        for pattern in _EXCLUDE_NOISE:
+            with self.subTest(pattern=pattern):
+                self.assertIn(
+                    pattern, noise,
+                    'a new exclude has no URL proving it matches anything',
+                )
+                self.assertTrue(
+                    _globish(noise[pattern], pattern),
+                    f'{pattern!r} no longer matches the noise it was written for',
+                )
+
+    def test_builtin_excludes_leave_heritage_pages_crawlable(self):
+        """The inverse: an exclude that is too broad silently costs the project
+        the content it exists to collect."""
+        heritage = (
+            'https://minac.gov.cm/patrimoine-culturel/masque-mbem',
+            'https://ich.unesco.org/en/RL/ngondo-02140',
+            'https://cameroon-nationalmuseum.cm/collections/masque-kota',
+            'https://discover-cameroon.com/en/culture-languages-religions/',
+        )
+        for url in heritage:
+            with self.subTest(url=url):
+                self.assertFalse(
+                    any(_globish(url, p) for p in _EXCLUDE_NOISE),
+                    f'{url} would be excluded as site noise',
+                )
 
     def test_domain_allowlist_always_includes_the_base_host(self):
         source = CrawlSource.objects.create(

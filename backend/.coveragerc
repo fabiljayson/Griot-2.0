@@ -2,6 +2,10 @@
 #
 # The floor was measured before it was set, per docs/ROADMAP.md Phase 2:
 #   84% on 4969 statements, with migrations and test modules excluded.
+# `heritage_crawl` was added later (it was missing from this list, so the
+# crawler -- the largest and most delicate app -- was outside the gate entirely
+# while still reporting a green total). Re-measured with it included:
+#   84% on 6866 statements, so the 80% floor still holds with room to spare.
 #
 # `fail_under` sits 4 points below the measured number rather than at it. A
 # threshold the repo passes by a hair breaks on the first unrelated refactor,
@@ -21,6 +25,7 @@ source =
     media_app
     api
     web
+    heritage_crawl
 omit =
     */migrations/*
     */tests.py

@@ -40,8 +40,7 @@ class OpenAPISchemaTests(SimpleTestCase):
         cls.stderr.close()
 
     def test_schema_generates_with_no_warnings_or_errors(self):
-        # The specific phrasing comes from drf-spectacular's own summary
-        # line, which is the aggregate of everything else it complained about.
+        # The aggregate lines come from the `spectacular` management command.
         self.assertNotIn(
             'Warnings:', self.output,
             f'drf-spectacular reported warnings:\n{self.output}',
@@ -49,6 +48,21 @@ class OpenAPISchemaTests(SimpleTestCase):
         self.assertNotIn(
             'Errors:', self.output,
             f'drf-spectacular reported errors:\n{self.output}',
+        )
+        # ...but the generator also emits one line per problem ("Warning:
+        # encountered multiple names for the same choice set (LicenceEnum)").
+        # In-process those arrive *without* the aggregate summary, so checking
+        # only for `Warnings:` missed every individual one -- which is how the
+        # `LicenceEnum` collision survived a test that claimed to pin zero
+        # warnings. Assert on the lines themselves.
+        stray = [
+            line for line in self.output.splitlines()
+            if line.startswith(('Warning:', 'Error:'))
+        ]
+        self.assertEqual(
+            stray, [],
+            'drf-spectacular emitted individual warnings/errors:\n'
+            + '\n'.join(stray),
         )
 
     def test_integer_primary_keys_are_documented_as_integers(self):

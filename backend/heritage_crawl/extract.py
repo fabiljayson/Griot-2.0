@@ -246,7 +246,14 @@ def _extract_images(soup: BeautifulSoup, base_url: str) -> list[dict]:
             hint in identity
             for hint in ('logo', 'icon', 'sprite', 'avatar', 'banner-ad',
                          'pixel', 'spacer', 'blank', 'placeholder',
-                         'loading', 'badge', 'gravatar', 'favicon')
+                         'loading', 'badge', 'gravatar', 'favicon',
+                         # Navigation/decoration, added when a real crawl of the
+                         # UNESCO states-parties page recorded ~190 country
+                         # flags (plus share and arrow glyphs) as heritage
+                         # media. §7 names navigation images and icons; a flag
+                         # beside a table row is neither.
+                         'flag', 'arrow', 'chevron', 'caret', 'spinner',
+                         'social', 'share')
         ):
             continue
         if src.endswith('.svg'):
@@ -402,7 +409,13 @@ def extract_page(html: str, url: str) -> ExtractedPage:
         publication_date=_extract_date(meta.get('publication_date', '')),
         language=(meta.get('language') or '')[:8],
         headings=headings[:40],
-        images=_extract_images(soup, url),
+        # Scoped to the dense content container rather than the whole document.
+        # `_strip_boilerplate` removes the obvious `<nav>`/`<header>`/`<footer>`
+        # regions, but it cannot know about a sidebar or a promo panel built
+        # from plain `<div>`s, and those are site furniture by §7's definition.
+        # An image that legitimately sits in the article is inside `container`
+        # by construction of `_main_content`.
+        images=_extract_images(container, url),
         documents=_extract_documents(soup, url),
         links=_extract_links(soup, url),
         metadata=meta,

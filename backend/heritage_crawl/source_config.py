@@ -39,7 +39,6 @@ class SeedSource:
     reliability: str
     seed_urls: tuple[str, ...] = ()
     allowed_domains: tuple[str, ...] = ()
-    seed_urls: tuple[str, ...] = ()
     include_url_patterns: tuple[str, ...] = ()
     exclude_url_patterns: tuple[str, ...] = ()
     max_pages: int = 25
@@ -58,20 +57,28 @@ _POLITE = 3.0
 _POLITER = 5.0
 
 # Shared excludes. Every site in the registry has one of these somewhere.
+#
+# These are *globs*, matching the semantics of `fetching._globish`: `*` is any
+# run of characters, `?` is exactly one, and everything else is literal. They
+# were written as regexes (`\.pdf$`, `/search\?`) before `_globish` was fixed to
+# translate globs, and the two silently disagreed -- `\.pdf$` searched for the
+# literal string `\.pdf$`, which appears in no URL, so the exclusion became a
+# no-op while still reading as if it worked. A pattern that cannot match is
+# worse than no pattern, because it hides the noise it was meant to remove.
 _EXCLUDE_NOISE = (
-    r'/login',
-    r'/register',
-    r'/cart',
-    r'/checkout',
-    r'/search\?',
-    r'\.pdf$',
-    r'/feed$',
-    r'/rss',
-    r'/wp-admin',
-    r'/wp-json',
-    r'/tag/',
-    r'/author/',
-    r'/comment',
+    '/login',
+    '/register',
+    '/cart',
+    '/checkout',
+    '/search',
+    '*.pdf',
+    '*/feed*',
+    '/rss',
+    '/wp-admin',
+    '/wp-json',
+    '/tag/',
+    '/author/',
+    '/comment',
 )
 
 

@@ -453,6 +453,8 @@ def discover_urls(
             candidate = normalise_url(raw, base=base_url)
         except FetchError:
             continue
+        if _is_asset_url(candidate):
+            continue
         host = urlparse(candidate).hostname or ''
         if host.removeprefix('www.') != base_host.removeprefix('www.'):
             continue
@@ -467,12 +469,102 @@ def discover_urls(
     return seen[: max(0, max_depth) * 200 or 50]
 
 
+#: Path fragments and extensions that mark a URL as a static asset rather than a
+#: page. Without this, `discover_urls` returned every stylesheet, favicon and
+#: sprite on the site -- on the UNESCO Cameroon page, 146 of the links were
+#: `.css`, `.png` and `.svg` files. The crawl then spent its page budget
+#: fetching assets, each one rejected by the content-type allow-list and
+#: recorded as an error, so a depth-1 crawl reached *fewer* real pages than a
+#: depth-0 one. §7 asks us not to chase site furniture, and this is where that
+#: actually gets enforced.
+_ASSET_EXTENSIONS = frozenset({
+    '.css', '.js', '.mjs', '.json', '.xml', '.rss', '.atom',
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.bmp', '.tiff',
+    '.svg', '.ico', '.icns', '.woff', '.woff2', '.ttf', '.otf', '.eot',
+    '.mp3', '.mp4', '.m4a', '.m4v', '.mov', '.avi', '.webm', '.wav', '.flac',
+    '.pdf', '.zip', '.gz', '.tar', '.rar', '.7z', '.dmg', '.exe', '.apk',
+    '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.odt', '.ods',
+})
+
+#: Path segments that are site furniture even without an extension.
+#:
+#: Deliberately excludes `*/images/*`, `*/img/*` and `*/media/*`. Those are the
+#: conventional upload directories for *content* on a great many CMSs, so
+#: treating them as furniture skipped legitimate article pages that happen to
+#: be filed under `/media/`. Asset files there (`.jpg`, `.png`, ...) are still
+#: dropped by the extension check below, which is the part that does the real
+#: work; an extensionless URL under one of these directories is almost always a
+#: page, and if it is not, the content-type allow-list rejects it at fetch time.
+_ASSET_PATH_HINTS = (
+    '/static/', '/assets/', '/css/', '/js/',
+    '/fonts/', '/favicon', '/apple-touch-icon', '/node_modules/',
+    '/wp-content/', '/wp-includes/', '/templates/', '/themes/',
+    '/_next/', '/dist/', '/build/',
+)
+
+
+def _is_asset_url(url: str) -> bool:
+    """True for a URL that points at a file rather than a readable document.
+
+    Checks the last path segment only, so `/en/list/003.pdf` is an asset while
+    `/en/pdf` -- a section that happens to be named after a format -- is not.
+    """
+    path = urlparse(url).path.lower()
+    if any(hint in path for hint in _ASSET_PATH_HINTS):
+        return True
+    last_segment = path.rsplit('/', 1)[-1]
+    if '.' not in last_segment:
+        return False
+    return f'.{last_segment.rsplit(".", 1)[-1]}' in _ASSET_EXTENSIONS
+
+
 def _globish(url: str, pattern: str) -> bool:
+    """Match a URL against an admin-supplied glob, as the name promises.
+
+    `*` matches any run of characters including `/`, `?` matches exactly one.
+    Matching is a substring search against the whole URL, so `*/en/RL/*` catches
+    `https://ich.unesco.org/en/RL/ngondo-02140` and `*/culture*` catches
+    `https://example.org/en/cultures`.
+
+    This used to hand the pattern straight to `re.search`, which meant a glob
+    like `*/en/RL/*` was an invalid regex (`*` with nothing to repeat). The
+    `re.error` was caught, a warning was logged, and the function returned
+    False -- so an `include_url_patterns` entry silently matched nothing and the
+    source discovered zero links, with the only trace buried in the log. Set the
+    patterns to the obvious thing and the crawl quietly returned nothing.
+
+    Glob syntax is also forward-compatible with the plain substrings most people
+    actually type (`heritage`, `/en/RL/`), which contain no wildcards and behave
+    identically as regex and as glob.
+    """
     import re as _re
 
+    if not pattern:
+        return False
+
     try:
-        return bool(_re.search(pattern, url))
+        return bool(_re.search(_glob_to_regex(pattern), url))
     except _re.error:
         # A malformed admin-supplied pattern must not crash a crawl.
         log.warning('ignoring malformed URL pattern %r', pattern)
         return False
+
+
+def _glob_to_regex(pattern: str) -> str:
+    """Translate a URL glob into an equivalent regular expression.
+
+    Every character is passed through `re.escape`, so a pattern containing regex
+    metacharacters in a URL path (a `?` in a query string, a `+`) matches
+    literally instead of meaning something else.
+    """
+    import re as _re
+
+    out = []
+    for char in pattern:
+        if char == '*':
+            out.append('.*')
+        elif char == '?':
+            out.append('.')
+        else:
+            out.append(_re.escape(char))
+    return ''.join(out)

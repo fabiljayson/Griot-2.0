@@ -76,6 +76,16 @@ jobs:
       - name: No migration drift
         run: python manage.py makemigrations --check --dry-run
 
+      # The OpenAPI schema is a published contract, and drf-spectacular reports
+      # its problems as warnings on stderr while still writing a schema -- so a
+      # regression silently drops endpoints or publishes wrong types. Nothing
+      # gated this: the schema test only checked the management command's
+      # aggregate summary line, which the in-process generator never emits, and
+      # the `LicenceEnum` collision slipped through as a result.
+      # `--fail-on-warn` turns any warning or error into a non-zero exit.
+      - name: OpenAPI schema is clean
+        run: python manage.py spectacular --validate --fail-on-warn --file /dev/null
+
       # The deploy settings must fail fast on a missing/insecure secret key
       # rather than booting with a default, so prove that they still do.
       - name: Production settings fail fast without a secret key

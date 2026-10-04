@@ -59,6 +59,15 @@ class Command(BaseCommand):
             '--dry-run', action='store_true',
             help='Run the pipeline and record the outcome, but import nothing into the corpus.',
         )
+        parser.add_argument(
+            '--fresh', action='store_true',
+            help=(
+                'Ignore the record of pages this source already processed and '
+                're-download everything. Without it, a crawl is incremental '
+                '(§17): only new pages are fetched. Seed URLs are always '
+                're-fetched either way, since they are where new links appear.'
+            ),
+        )
 
     def handle(self, *args, **options):
         if options['list_sources']:
@@ -82,7 +91,7 @@ class Command(BaseCommand):
 
         totals = {
             'imported': 0, 'duplicates': 0, 'skipped': 0, 'errors': 0,
-            'media': 0, 'pages': 0,
+            'media': 0, 'pages': 0, 'already': 0,
         }
         failures = 0
 
@@ -95,6 +104,7 @@ class Command(BaseCommand):
                     respect_robots=not options['ignore_robots'],
                     store_full_text=options['full_text'] or None,
                     dry_run=options['dry_run'],
+                    skip_seen=not options['fresh'],
                 )
             except ValueError as exc:
                 self.stderr.write(self.style.ERROR(f'  skipped: {exc}'))
@@ -112,9 +122,11 @@ class Command(BaseCommand):
             totals['errors'] += outcome.errors
             totals['media'] += outcome.media_recorded
             totals['pages'] += outcome.job.pages_processed
+            totals['already'] += outcome.already_processed
 
         self.stdout.write(self.style.MIGRATE_HEADING('\n=== Total ==='))
         self.stdout.write(f'  Pages visited:  {totals["pages"]}')
+        self.stdout.write(f'  Already seen:   {totals["already"]}')
         self.stdout.write(f'  Imported:       {totals["imported"]}')
         self.stdout.write(f'  Duplicates:     {totals["duplicates"]}')
         self.stdout.write(f'  Skipped:        {totals["skipped"]}')
@@ -173,6 +185,10 @@ class Command(BaseCommand):
         self.stdout.write(f'  job #{job.pk} — {job.get_status_display()}')
         for label, value in job.summary().items():
             self.stdout.write(f'    {label}: {value}')
+        if outcome.already_processed:
+            self.stdout.write(
+                f'    already processed (not re-fetched): {outcome.already_processed}'
+            )
         if job.duration_seconds() is not None:
             self.stdout.write(f'    duration: {job.duration_seconds():.1f}s')
         for item_id in outcome.item_ids:

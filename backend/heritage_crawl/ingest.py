@@ -45,6 +45,7 @@ class CrawlOutcome:
     skipped: int = 0
     errors: int = 0
     media_recorded: int = 0
+    already_processed: int = 0
     item_ids: list[int] = field(default_factory=list)
     dry_run: bool = False
 
@@ -79,6 +80,7 @@ def crawl_source(
     respect_robots: bool = True,
     store_full_text: bool | None = None,
     dry_run: bool = False,
+    skip_seen: bool = True,
 ) -> CrawlOutcome:
     """Run one crawl of one source and return what happened.
 
@@ -103,6 +105,26 @@ def crawl_source(
     queue = list(_seed_urls(source))
     visited: set[str] = set()
 
+    # §17: incremental crawling. URLs this source already processed in an
+    # earlier run are not downloaded again. Seed URLs are deliberately left out
+    # of that set and always re-fetched: they are the entry points that link to
+    # anything new, so skipping them would make every re-crawl reach exactly
+    # what the last one reached -- which is the situation this fixes, not the
+    # one it creates. `skip_seen=False` (the CLI's `--fresh`) ignores the set
+    # entirely.
+    already_processed: set[str] = set()
+    if skip_seen:
+        already_processed = set(
+            CrawledItem.objects.filter(
+                source=source, processing_status__in=_DEDUPABLE_STATUSES
+            ).values_list('url_hash', flat=True)
+        )
+        for seed in queue:
+            try:
+                already_processed.discard(fetching.url_hash(seed))
+            except FetchError:
+                pass
+
     try:
         while queue and job.pages_processed < page_budget:
             url = queue.pop(0)
@@ -113,6 +135,12 @@ def crawl_source(
                 outcome.skipped += 1
                 continue
             if key in visited:
+                continue
+            if key in already_processed:
+                # Downloaded and staged by an earlier job; do not fetch it
+                # again. Counted so the operator can see how much a re-crawl
+                # skipped, rather than wondering why it did so little.
+                outcome.already_processed += 1
                 continue
             visited.add(key)
 
@@ -125,6 +153,13 @@ def crawl_source(
             )
             outcome.item_ids.append(item.id)
             job.pages_processed += 1
+            # Persist the counter, like every other one on the job. It used to
+            # be incremented only on the in-memory object: the CLI's own report
+            # printed the real number, while the administrator's job list, the
+            # API and §16's monitoring summary all read 0 from the database.
+            # Found by running a real crawl and re-reading the job in a fresh
+            # process -- the in-process view cannot show this class of bug.
+            job.save(update_fields=['pages_processed'])
 
             try:
                 result = fetching.fetch(
@@ -187,8 +222,18 @@ def crawl_source(
                 body=page.body_text,
                 url=result.final_url,
             )
+            # Persist the score *before* the relevance gate. It used to be
+            # written only on the skip branch, so every page that passed the
+            # gate reached the admin review queue with `relevance_score = 0.0`
+            # and no reasons -- which is precisely what a reviewer needs in
+            # order to judge the item, and what made `crawl --dry-run` print
+            # blank scores. Found by running a real crawl: the queue was full
+            # of 0.0 scores for pages that had actually scored well.
             item.relevance_score = relevance.score
             item.relevance_reasons = relevance.reasons
+            item.save(
+                update_fields=['relevance_score', 'relevance_reasons', 'updated_at']
+            )
             job.items_found += 1
             job.save(update_fields=['items_found'])
 
@@ -201,6 +246,11 @@ def crawl_source(
                 outcome.skipped += 1
                 job.pages_skipped += 1
                 job.save(update_fields=['pages_skipped'])
+                # A page we are not importing still links to pages we might:
+                # §3 lists discovery as a pipeline stage in its own right, and
+                # skipping it here meant a crawl only ever expanded from pages
+                # it had already accepted.
+                _discover(queue, visited, page_budget, source, result)
                 continue
 
             if not page.title:
@@ -209,6 +259,7 @@ def crawl_source(
                 outcome.skipped += 1
                 job.pages_skipped += 1
                 job.save(update_fields=['pages_skipped'])
+                _discover(queue, visited, page_budget, source, result)
                 continue
 
             normalized = normalize_page(
@@ -225,7 +276,9 @@ def crawl_source(
             )
 
             # --- Duplicate detection (§10) -----------------------------------
-            duplicate = _find_duplicate(source, normalized.fingerprint, result.final_url)
+            duplicate = _find_duplicate(
+                source, normalized.fingerprint, result.final_url, exclude_pk=item.pk
+            )
             if duplicate is not None:
                 item.processing_status = CrawledItem.ProcessingStatus.DUPLICATE
                 item.save(
@@ -235,6 +288,7 @@ def crawl_source(
                 outcome.duplicates += 1
                 job.duplicates_found += 1
                 job.save(update_fields=['duplicates_found'])
+                _discover(queue, visited, page_budget, source, result)
                 continue
 
             # --- Provenance, then import (§5, §3) ----------------------------
@@ -262,8 +316,15 @@ def crawl_source(
                 # Everything above this line is real; this is the only place
                 # the corpus is written, so this is the only place a dry run
                 # has to stop.
+                #
+                # The `continue` used to sit here, which also skipped the
+                # discovery block below -- so a dry run never followed a single
+                # link and reported only the seed URLs, which made `--dry-run`
+                # useless for the one thing it exists to answer: what a deeper
+                # crawl would actually reach. Discovery now runs on both paths.
                 item.save(update_fields=['updated_at'])
                 outcome.media_recorded += _record_media(item, source, page, reference)
+                _discover(queue, visited, page_budget, source, result)
                 continue
 
             _import_item(item, source, normalized, reference, page)
@@ -276,16 +337,7 @@ def crawl_source(
             outcome.media_recorded += recorded
 
             # --- Discovery --------------------------------------------------
-            if source.max_depth > 0 and len(queue) + len(visited) < page_budget:
-                queue.extend(
-                    fetching.discover_urls(
-                        result.text,
-                        result.final_url,
-                        include_patterns=source.include_url_patterns,
-                        exclude_patterns=source.exclude_url_patterns,
-                        max_depth=source.max_depth,
-                    )
-                )
+            _discover(queue, visited, page_budget, source, result)
 
         job.status = (
             CrawlJob.Status.COMPLETED_WITH_ERRORS
@@ -305,13 +357,62 @@ def crawl_source(
     return outcome
 
 
+def _discover(queue, visited, page_budget, source: CrawlSource, result) -> None:
+    """Queue the links found on `result`, respecting depth and the page budget.
+
+    Module-level rather than inlined so every path that reaches it discovers
+    identically: the import path, the dry-run path, and the skip/duplicate/
+    no-title paths. Each of those used to `continue` before discovery, so a
+    crawl only expanded from the pages it had already accepted -- a source
+    whose single seed was irrelevant or already imported discovered nothing at
+    all, and a re-crawl reached exactly what the last one did.
+    """
+    if source.max_depth <= 0:
+        return
+    if len(queue) + len(visited) >= page_budget:
+        return
+    queue.extend(
+        fetching.discover_urls(
+            result.text,
+            result.final_url,
+            include_patterns=source.include_url_patterns,
+            exclude_patterns=source.exclude_url_patterns,
+            max_depth=source.max_depth,
+        )
+    )
+
+
 def _preview(text: str, limit: int = 600) -> str:
     """Short excerpt kept on the staging row for reviewer eyeballing."""
     collapsed = ' '.join(text.split())
     return collapsed[:limit]
 
 
-def _find_duplicate(source: CrawlSource, fingerprint: str, url: str):
+#: Which statuses count as "already processed" for duplicate detection.
+#:
+#: `NORMALIZED` is included as well as `IMPORTED`. It used to be IMPORTED alone,
+#: which meant duplicate detection was inert during a dry run -- a dry run never
+#: reaches IMPORTED, so `--dry-run` reported "Duplicates: 0" no matter how many
+#: times it fetched the same page. On the UNESCO source the same element is
+#: linked both as `/en/RL/ngondo-...-02140` and `/en/RL/ngondo-...-02140?RL=02140`,
+#: so the query-string variant was fetched, staged and counted as new content.
+#: That is exactly the case §10 asks to catch, and the count was structurally
+#: incapable of being anything but zero.
+#:
+#: These are plain strings used with `__in`, never enum members passed as a
+#: tuple. Django reads `field=(a, b)` as `field = (a, b)` -- an equality
+#: test against a tuple, not a membership test -- which matches nothing and
+#: returns no error. That is a silent, total failure of duplicate detection
+#: that looks exactly like a site with no repeated content.
+_DEDUPABLE_STATUSES = (
+    CrawledItem.ProcessingStatus.IMPORTED.value,
+    CrawledItem.ProcessingStatus.NORMALIZED.value,
+)
+
+
+def _find_duplicate(
+    source: CrawlSource, fingerprint: str, url: str, *, exclude_pk=None
+):
     """Return an existing `CrawledItem` this one duplicates, or None.
 
     §10 asks for three comparisons -- URL, normalised title, and content
@@ -332,6 +433,13 @@ def _find_duplicate(source: CrawlSource, fingerprint: str, url: str):
     `SourceReference` instead of importing a second copy, so the item keeps both
     provenance rows and a reviewer can see the republication.
 
+    `exclude_pk` is the item currently being processed. It has already been
+    saved as NORMALIZED with its own fingerprint by the time this runs, so
+    without the exclusion every item matched itself and was recorded as a
+    duplicate of itself -- which reads as "this import works" in a test and
+    produces no second record in production, hiding the fact that nothing was
+    ever deduplicated at all.
+
     An earlier version only ever searched within one source, which meant the
     cross-source branch in the caller was unreachable -- the docstring described
     behaviour the code did not have, and identical text on two authoritative
@@ -348,9 +456,10 @@ def _find_duplicate(source: CrawlSource, fingerprint: str, url: str):
             CrawledItem.objects.filter(
                 source=source,
                 url_hash=key,
-                processing_status=CrawledItem.ProcessingStatus.IMPORTED,
+                processing_status__in=_DEDUPABLE_STATUSES,
             )
             .only('id', 'extracted_metadata')
+            .exclude(pk=exclude_pk)
             .first()
         )
         if same_url is not None:
@@ -362,10 +471,11 @@ def _find_duplicate(source: CrawlSource, fingerprint: str, url: str):
     # separator spacing, and it was not portable off SQLite.
     return (
         CrawledItem.objects.filter(
-            processing_status=CrawledItem.ProcessingStatus.IMPORTED,
+            processing_status__in=_DEDUPABLE_STATUSES,
             extracted_metadata__fingerprint=fingerprint,
         )
         .only('id', 'extracted_metadata')
+        .exclude(pk=exclude_pk)
         .first()
     )
 

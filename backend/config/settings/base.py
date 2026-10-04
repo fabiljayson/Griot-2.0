@@ -262,6 +262,12 @@ SPECTACULAR_SETTINGS = {
     # block at the bottom of stories/models.py.
     'ENUM_NAME_OVERRIDES': {
         'StoryStatusEnum': 'stories.models.StoryStatusChoices.choices',
+        # `Story.licence` and `CrawlSource.default_licence` carry the identical
+        # choice set, so spectacular derived a name for each and reported
+        # `W001: multiple names for the same choice set (LicenceEnum)`. It was
+        # introduced when the crawler added `default_licence`. Pinning one name
+        # for both fields is the same fix the other entries in this block use.
+        'LicenceEnum': 'stories.models.StoryLicenceChoices.choices',
         'QuizAttemptStatusEnum': 'gamification.models.QuizAttemptStatusChoices.choices',
         # VideoGenerationJob.Status and AudioNarrationJob.Status hold identical
         # values, so they deliberately share one name — two names for one set is

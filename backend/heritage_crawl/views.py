@@ -141,6 +141,7 @@ class CrawlStartView(APIView):
                 'skipped': outcome.skipped,
                 'errors': outcome.errors,
                 'media_recorded': outcome.media_recorded,
+                'already_processed': outcome.already_processed,
                 'item_ids': outcome.item_ids,
             },
             status=status.HTTP_201_CREATED,
