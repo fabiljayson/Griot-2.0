@@ -165,7 +165,7 @@ class _NotificationTile extends StatelessWidget {
             child: Text(
               _dayLabel(message.createdAt),
               style: theme.textTheme.labelSmall?.copyWith(
-                color: AppColors.muted,
+                color: theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.6,
               ),
@@ -189,7 +189,7 @@ class _NotificationTile extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -242,7 +242,7 @@ class _KindIcon extends StatelessWidget {
       NotificationKind.streak => (AppIcons.fire, AppColors.bronzeDark),
       NotificationKind.badge => (AppIcons.emoji_events_outlined, AppColors.bronze),
       NotificationKind.announcement => (AppIcons.campaign, AppColors.indigo),
-      _ => (AppIcons.info_outline, AppColors.muted),
+      _ => (AppIcons.info_outline, Theme.of(context).colorScheme.onSurfaceVariant),
     };
 
     return Container(
@@ -252,7 +252,11 @@ class _KindIcon extends StatelessWidget {
         color: tint.withValues(alpha: isRead ? 0.08 : 0.16),
         borderRadius: BorderRadius.circular(AppRadius.control),
       ),
-      child: Icon(icon, size: 20, color: isRead ? AppColors.muted : tint),
+      child: Icon(
+        icon,
+        size: 20,
+        color: isRead ? Theme.of(context).colorScheme.onSurfaceVariant : tint,
+      ),
     );
   }
 }
@@ -264,28 +268,30 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      children: const [
-        SizedBox(height: AppSpacing.sectionLarge),
+      children: [
+        const SizedBox(height: AppSpacing.sectionLarge),
         Icon(
           AppIcons.notifications_none,
           size: 48,
-          color: AppColors.muted,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        SizedBox(height: AppSpacing.lg),
-        Center(
+        const SizedBox(height: AppSpacing.lg),
+        const Center(
           child: Text(
             'Nothing new yet',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
-        SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
         Center(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.section),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.section),
             child: Text(
               'New stories and this week\'s most-read tales will show up here.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),
@@ -306,7 +312,11 @@ class _ErrorView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: AppSpacing.sectionLarge),
-        const Icon(AppIcons.wifi_off, size: 40, color: AppColors.muted),
+        Icon(
+          AppIcons.wifi_off,
+          size: 40,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(height: AppSpacing.lg),
         Center(
           child: Text(
@@ -319,7 +329,10 @@ class _ErrorView extends StatelessWidget {
           child: Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 12,
+          ),
           ),
         ),
         const SizedBox(height: AppSpacing.lg),

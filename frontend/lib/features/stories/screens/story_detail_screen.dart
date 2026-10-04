@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/navigation/app_router.dart';
@@ -455,7 +456,9 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
                   ? AppIcons.bookmark
                   : AppIcons.bookmark_border,
               label: story.formattedBookmarkCount,
-              color: story.isBookmarked ? AppColors.bronzeDark : null,
+              color: story.isBookmarked
+              ? AppTheme.accentText(theme.colorScheme)
+              : null,
               onTap: isAuthenticated
                   ? () =>
                         ref.read(storyDetailProvider.notifier).toggleBookmark()
@@ -639,7 +642,10 @@ class _AuthorSection extends StatelessWidget {
                 ? story.author.username[0].toUpperCase()
                 : '?',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.bronzeDark,
+              // Was `bronzeDark`, which is 4.09:1 on ivory — short of the 4.5:1
+              // for small bold text — and worse still on a dark ground. The
+              // accent text token resolves per theme instead.
+              color: AppTheme.accentText(theme.colorScheme),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -688,7 +694,7 @@ class _SectionTitle extends StatelessWidget {
           title,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: AppColors.bronzeDark,
+            color: AppTheme.accentText(theme.colorScheme),
           ),
         ),
       ],

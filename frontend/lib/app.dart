@@ -27,6 +27,11 @@ class GriotAiApp extends ConsumerWidget {
           navigatorKey: AppRouter.navigatorKey,
           navigatorObservers: [AppRouter.routeObserver],
           theme: AppTheme.light,
+          // The web app has had a dark theme all along (`darkMode: 'class'`);
+          // this brings the Flutter side to parity. `system` rather than `dark`
+          // so a device set to light is not overridden.
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.system,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,

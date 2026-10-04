@@ -111,6 +111,28 @@ abstract final class AppColors {
   /// Dark mode secondary text (web: dark `.story-content` gray).
   static const Color textDarkMuted = Color(0xFFD1D5DB);
 
+  /// Dark mode surface ramp, below [surfaceDark].
+  ///
+  /// Material wants a low-to-high container ramp so a card can sit above the
+  /// background without relying on elevation. In light mode that ramp is all
+  /// ivory; in dark it runs from near-black up to the Ndop indigo.
+  static const Color surfaceDarkLowest = Color(0xFF0A0C11);
+  static const Color surfaceDarkLow = Color(0xFF141821);
+  static const Color surfaceDarkHigh = Color(0xFF26345F);
+  static const Color surfaceDarkHighest = Color(0xFF2E3D6B);
+
+  /// Dark mode functional border — 3.52:1 on [mudCharcoal].
+  ///
+  /// [borderFunctional] is tuned for a light ground and is far too loud here;
+  /// this is the dark counterpart, and it clears WCAG 1.4.11's 3:1.
+  static const Color outlineDark = Color(0xFF6B6B6B);
+
+  /// Dark mode decorative divider — 1.65:1 on [mudCharcoal].
+  ///
+  /// Quiet on purpose, for the same reason [dividerSoft] is: a 3:1 hairline
+  /// around every card would turn the app into a wireframe.
+  static const Color dividerDark = Color(0xFF3A3A3A);
+
   /// Border color.
   static const Color border = webBorder;
 
