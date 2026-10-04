@@ -65,6 +65,7 @@ LOCAL_APPS = [
     'gamification',
     'notifications',
     'media_app',
+    'heritage_crawl',
     'api',
     'web',
     # 'artifacts' retired (feature 001): was consolidated into qr_codes.

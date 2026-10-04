@@ -44,6 +44,11 @@ urlpatterns = [
     path('gamification/', include('gamification.urls')),
     path('notifications/', include('notifications.urls')),
 
+    # Cultural-heritage crawler administration (§18). Admin-only: crawled
+    # content reaches Flutter only after it has passed review (§19), so this
+    # app deliberately exposes no public read surface.
+    path('crawler/', include('heritage_crawl.urls')),
+
     # Phase 9: Admin analytics dashboard.
     path('analytics/dashboard/', DashboardSummaryView.as_view(), name='analytics-dashboard'),
     path('analytics/users/list/', AdminUsersListView.as_view(), name='analytics-users-list'),
