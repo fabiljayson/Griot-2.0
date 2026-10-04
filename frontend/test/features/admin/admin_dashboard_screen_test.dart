@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:griot_ai/core/theme/app_icons.dart';
+import 'package:griot_ai/core/widgets/griot_skeleton.dart';
 import 'package:griot_ai/features/admin/models/analytics_models.dart';
 import 'package:griot_ai/features/admin/models/moderation_models.dart';
 import 'package:griot_ai/features/admin/providers/admin_provider.dart';
@@ -73,19 +74,24 @@ void main() {
     expect(find.text('312 unique scanners'), findsOneWidget);
   });
 
-  testWidgets('shows a loading spinner while the summary is in flight', (
+  testWidgets('shows skeleton placeholders while the summary is in flight', (
     tester,
   ) async {
     final completer = Completer<DashboardSummary>();
     await pumpDashboard(tester, summaryPending: completer);
     await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsWidgets);
+    // Was a bare CircularProgressIndicator. A skeleton now stands in for the
+    // shape of what is arriving, so the layout does not jump when it lands.
+    expect(find.byType(GriotSkeletonCards), findsOneWidget);
+    expect(find.byType(GriotSkeleton), findsWidgets);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('Total Users'), findsNothing);
 
     completer.complete(DashboardSummary.fromJson(adminDashboardJson()));
     await tester.pumpAndSettle();
     expect(find.text('Total Users'), findsOneWidget);
+    expect(find.byType(GriotSkeleton), findsNothing);
   });
 
   testWidgets('renders Audience, Content library and Gamification sections', (

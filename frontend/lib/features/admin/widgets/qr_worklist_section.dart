@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/griot_loader.dart';
+import '../../../core/widgets/griot_skeleton.dart';
 import '../../../core/theme/app_icons.dart';
 import '../models/qr_worklist_models.dart';
 import '../providers/admin_provider.dart';
@@ -26,7 +28,7 @@ class QrWorklistSection extends ConsumerWidget {
     return worklistAsync.when(
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
+        child: GriotSkeletonList(itemCount: 3),
       ),
       error: (error, _) => DashboardSection(
         title: 'QR code worklist',
@@ -82,11 +84,7 @@ class QrWorklistSection extends ConsumerWidget {
                   ? null
                   : () => _generateAllMissing(context, ref),
               icon: generation.generatingAll
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const GriotLoader.inline()
                   : const Icon(AppIcons.qr_code_scanner, size: 18),
               label: Text(
                 generation.generatingAll
@@ -278,11 +276,7 @@ class _WorklistRow extends StatelessWidget {
             onPressed: busy ? null : onGenerate,
             tooltip: entry.hasQrCode ? 'Regenerate' : 'Generate',
             icon: busy
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const GriotLoader.inline()
                 : Icon(
                     entry.hasQrCode
                         ? AppIcons.refresh

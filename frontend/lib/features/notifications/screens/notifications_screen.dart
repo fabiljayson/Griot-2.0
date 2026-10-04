@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/griot_skeleton.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../stories/screens/story_detail_screen.dart';
@@ -54,7 +55,10 @@ class NotificationsScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(notificationsProvider),
           ),
           AsyncValue(hasValue: false, :final isLoading) when isLoading =>
-            const Center(child: CircularProgressIndicator()),
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: GriotSkeletonList(itemCount: 5),
+            ),
           AsyncValue(value: final inbox?) when inbox.notifications.isEmpty =>
             const _EmptyView(),
           AsyncValue(value: final inbox?) => _InboxList(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/griot_skeleton.dart';
 import '../../../core/theme/app_icons.dart';
 import '../providers/admin_provider.dart';
 import 'consent_review_screen.dart';
@@ -64,7 +65,16 @@ class AdminDashboardScreen extends ConsumerWidget {
       ),
       body: summaryAsync.when(
         skipLoadingOnRefresh: true,
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            children: [
+              GriotSkeletonCards(itemCount: 4),
+              SizedBox(height: 24),
+              GriotSkeleton(height: 180, radius: 16),
+            ],
+          ),
+        ),
         error: (error, _) => DashboardError(
           message: friendlyError(error),
           onRetry: () {

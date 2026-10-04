@@ -17,6 +17,11 @@ class GriotPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Honour prefers-reduced-motion (`MediaQuery.disableAnimations`): present
+    // the destination immediately instead of fading and drifting it in. The
+    // route change itself is unaffected — only its decoration is dropped.
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+
     final curved = CurvedAnimation(
       parent: animation,
       curve: Curves.easeOutCubic,

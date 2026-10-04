@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/griot_skeleton.dart';
 import '../../../core/theme/app_icons.dart';
 import '../models/moderation_models.dart';
 import '../providers/admin_provider.dart';
@@ -51,7 +52,7 @@ class _ModerationSectionState extends ConsumerState<ModerationSection> {
       child: queueAsync.when(
         loading: () => const Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: CircularProgressIndicator()),
+          child: GriotSkeletonList(itemCount: 3),
         ),
         error: (error, _) => ModerationError(
           message: 'Could not load the moderation queue.',

@@ -108,7 +108,15 @@ class _MainShellState extends ConsumerState<MainShell>
     if (index == _currentIndex) return;
     HapticFeedback.lightImpact();
     setState(() => _currentIndex = index);
-    _tabFade.forward(from: 0);
+    // Honour prefers-reduced-motion (`MediaQuery.disableAnimations`). The tab
+    // still switches — only the cross-fade is skipped, by jumping the fade to
+    // its end state. Running the animation anyway is exactly what makes
+    // "reduce motion" settings feel broken to people who set them.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _tabFade.value = 1;
+    } else {
+      _tabFade.forward(from: 0);
+    }
   }
 
   @override
