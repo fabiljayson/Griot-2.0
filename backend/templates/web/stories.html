@@ -93,7 +93,7 @@ masonry-style responsive grid, empty & error states.
 {% else %}
 {# Empty state — mirrors mobile _EmptyWidget #}
 <div class="py-24 text-center">
-  <span class="fa-solid fa-book-open text-6xl text-ochre" aria-hidden="true"></span>
+  <span class="fa-solid fa-book-open text-6xl text-ochre-strong" aria-hidden="true"></span>
   <p class="mx-auto mt-5 max-w-sm text-lg text-secondary-text">
     {% if search %}{% blocktranslate with term=search %}No stories found for "{{ term }}"{% endblocktranslate %}{% else %}{% translate "No stories yet. Be the first to share!" %}{% endif %}
   </p>

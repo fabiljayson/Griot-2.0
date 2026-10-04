@@ -12,13 +12,13 @@ Bottom actions mirror Save Draft / Submit for Review. Contributors+ only.
 
 {% block content %}
 <div class="mx-auto max-w-3xl">
-  <a href="{% url 'web:library' %}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary-text hover:text-terracotta">
+  <a href="{% url 'web:library' %}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary-text hover:text-terracotta-strong">
     {% icon 'arrow-left' 'text-xs' %} {% translate "Back to library" %}
   </a>
 
   <header class="mb-8">
     <h1 class="flex items-center gap-3 font-display text-2xl font-bold sm:text-3xl">
-      {% icon 'feather' 'text-2xl text-terracotta' %}
+      {% icon 'feather' 'text-2xl text-terracotta-strong' %}
       {% if editing %}{% translate "Edit Story" %}{% else %}{% translate "Tell a New Story" %}{% endif %}
     </h1>
     <p class="mt-1 text-sm text-secondary-text">
@@ -47,7 +47,7 @@ Bottom actions mirror Save Draft / Submit for Review. Contributors+ only.
     <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm dark:border-warm-brown dark:bg-deep-earth sm:p-6">
       <div class="mb-1.5 flex items-center justify-between">
         <label for="id_content" class="text-xs font-bold uppercase tracking-wide text-secondary-text">{% translate "Story Content (Markdown)" %} *</label>
-        <button type="button" id="preview-toggle" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-terracotta hover:bg-terracotta-tint/40">
+        <button type="button" id="preview-toggle" class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-terracotta-strong hover:bg-terracotta-tint/40">
           {% icon 'eye' 'text-xs' %} {% translate "Preview" %}
         </button>
       </div>
@@ -92,7 +92,7 @@ Bottom actions mirror Save Draft / Submit for Review. Contributors+ only.
                       {% if story and category in story.categories.all %}border-terracotta bg-terracotta-tint/40{% else %}border-brand-border dark:border-warm-brown{% endif %}">
           <input type="checkbox" name="categories" value="{{ category.id }}" class="sr-only"
                  {% if story and category in story.categories.all %}checked{% endif %}>
-          {% emoji_icon category.icon 'text-sm text-terracotta' %} {{ category.name }}
+          {% emoji_icon category.icon 'text-sm text-terracotta-strong' %} {{ category.name }}
         </label>
         {% endfor %}
       </div>
@@ -174,11 +174,11 @@ Bottom actions mirror Save Draft / Submit for Review. Contributors+ only.
     {# ── Actions — mirrors mobile Save Draft / Submit for Review bar ── #}
     <div class="sticky bottom-20 flex flex-col gap-3 rounded-2xl border border-brand-border bg-white/95 p-4 shadow-lg backdrop-blur dark:border-warm-brown dark:bg-deep-earth/95 lg:bottom-4 sm:flex-row">
       <button type="submit" name="status" value="draft"
-              class="flex-1 rounded-xl border-2 border-terracotta px-6 py-3 text-sm font-bold text-terracotta transition hover:bg-terracotta-tint/30">
+              class="flex-1 rounded-xl border-2 border-terracotta px-6 py-3 text-sm font-bold text-terracotta-strong transition hover:bg-terracotta-tint/30">
         {% icon 'bookmark' 'text-xs' %} {% translate "Save Draft" %}
       </button>
       <button type="submit" name="status" value="pending"
-              class="flex-1 rounded-xl bg-terracotta px-6 py-3 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark">
+              class="flex-1 rounded-xl bg-terracotta px-6 py-3 text-sm font-bold text-cam-dark shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark">
         {% icon 'paper-plane' 'text-xs' %} {% translate "Submit for Review" %}
       </button>
     </div>

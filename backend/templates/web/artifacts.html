@@ -48,7 +48,7 @@ category chips, artifact cards with image, culture/region metadata.
       {% endif %}
     </div>
     <div class="flex flex-1 flex-col p-4">
-      <h3 class="font-display text-base font-bold leading-snug group-hover:text-terracotta">{{ artifact.title }}</h3>
+      <h3 class="font-display text-base font-bold leading-snug group-hover:text-terracotta-strong">{{ artifact.title }}</h3>
       {% if artifact.description %}
       <p class="mt-1.5 line-clamp-2 text-sm text-secondary-text dark:text-sand/70">{{ artifact.description|striptags|truncatewords:16 }}</p>
       {% endif %}
@@ -69,7 +69,7 @@ category chips, artifact cards with image, culture/region metadata.
 </div>
 {% else %}
 <div class="py-24 text-center">
-  <span class="fa-solid fa-landmark text-6xl text-ochre" aria-hidden="true"></span>
+  <span class="fa-solid fa-landmark text-6xl text-ochre-strong" aria-hidden="true"></span>
   <p class="mx-auto mt-5 max-w-sm text-lg text-secondary-text">{% translate "No artifacts published yet." %}</p>
 </div>
 {% endif %}

@@ -29,6 +29,28 @@
         data-cdn-fallback="https://cdn.tailwindcss.com"
         data-theme-src="{% static 'web/js/tailwind-theme.js' %}">
 
+  <style>
+    /*
+      --griot-accent-text backs the `strong` shade of the bronze scale
+      (text-terracotta-strong / text-ochre-strong / text-cam-bronze-strong).
+      It has to live here rather than in tailwind.input.css because the
+      Play-CDN fallback generates its utilities from the config alone and
+      would have nothing to read.
+
+      The two values are the WCAG AA text variant of the brand accent, one per
+      ground. The web app has a dark theme, and the light value is not usable
+      there: #8A5D13 falls to 3.26:1 on bg-mud-charcoal.
+
+        light  #8A5D13 — 5.74:1 on white, 5.46:1 on ivory, 4.88:1 on ochre-tint
+        dark   #D9A84D — 8.62:1 on mud-charcoal, 7.83:1 on deep-earth,
+                           6.73:1 on slate-800
+
+      Mirrors AppColors.accentTextStrong on the Flutter side.
+    */
+    :root { --griot-accent-text: 138 93 19; }
+    .dark { --griot-accent-text: 217 168 77; }
+  </style>
+
   <script>
     /*
      * Hybrid stylesheet fallback.

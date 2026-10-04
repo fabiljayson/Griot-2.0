@@ -21,7 +21,7 @@ latest attempt result.
   <div class="flex flex-col rounded-2xl border border-brand-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-warm-brown dark:bg-deep-earth">
     <div class="flex items-start gap-3">
       <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-terracotta/10">
-        {% if quiz.story.categories.first %}{% emoji_icon quiz.story.categories.first.icon 'text-xl text-terracotta' %}{% else %}{% icon 'graduation' 'text-xl text-terracotta' %}{% endif %}
+        {% if quiz.story.categories.first %}{% emoji_icon quiz.story.categories.first.icon 'text-xl text-terracotta-strong' %}{% else %}{% icon 'graduation' 'text-xl text-terracotta-strong' %}{% endif %}
       </span>
       <div class="min-w-0 flex-1">
         <h2 class="font-display text-base font-bold leading-snug">{{ quiz.title|default:quiz.story.title }}</h2>
@@ -34,7 +34,7 @@ latest attempt result.
     {% if latest_results|dict_item:quiz.id %}
     {# Latest attempt pill #}
     {% with attempt=latest_results|dict_item:quiz.id %}
-    <p class="mt-3 flex items-center gap-2 text-xs font-semibold {% if attempt.passed %}text-savannah{% else %}text-ochre{% endif %}">
+    <p class="mt-3 flex items-center gap-2 text-xs font-semibold {% if attempt.passed %}text-savannah{% else %}text-ochre-strong{% endif %}">
       {% if attempt.passed %}{% icon 'check-circle' 'text-xs' %}{% blocktranslate with score=attempt.score %}Passed with {{ score }}%{% endblocktranslate %}{% else %}{% icon 'refresh' 'text-xs' %}{% blocktranslate with score=attempt.score %}Last try: {{ score }}%{% endblocktranslate %}{% endif %}
     </p>
     {% endwith %}
@@ -42,7 +42,7 @@ latest attempt result.
 
     <div class="mt-4 flex flex-1 items-end gap-3">
       <a href="{% url 'web:quiz-play' quiz.id %}"
-         class="flex-1 rounded-xl bg-terracotta px-4 py-2.5 text-center text-sm font-bold text-white transition hover:bg-terracotta-dark">
+         class="flex-1 rounded-xl bg-terracotta px-4 py-2.5 text-center text-sm font-bold text-cam-dark transition hover:bg-terracotta-dark">
         {% if latest_results|dict_item:quiz.id %}{% translate "Retake quiz" %}{% else %}{% translate "Take quiz" %}{% endif %}
       </a>
       <a href="{% url 'web:story-detail' quiz.story.slug %}"
@@ -57,7 +57,7 @@ latest attempt result.
 <div class="rounded-2xl border border-dashed border-brand-border p-10 text-center dark:border-warm-brown">
   {% icon 'graduation' 'text-4xl text-terracotta/50' %}
   <p class="mt-3 text-sm text-secondary-text">{% translate "No quizzes published yet — read a story and check back soon." %}</p>
-  <a href="{% url 'web:stories' %}" class="mt-4 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-dark">{% translate "Browse stories" %}</a>
+  <a href="{% url 'web:stories' %}" class="mt-4 inline-block rounded-xl bg-terracotta px-5 py-2.5 text-sm font-semibold text-cam-dark hover:bg-terracotta-dark">{% translate "Browse stories" %}</a>
 </div>
 {% endif %}
 {% endblock %}

@@ -26,7 +26,7 @@ QR deep link info and related stories.
     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
     <div class="absolute inset-x-0 bottom-0 p-5 sm:p-8">
       <div class="mx-auto max-w-3xl">
-        <span class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-terracotta dark:bg-mud-charcoal/90 dark:text-ochre-dark">
+        <span class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-terracotta-strong dark:bg-mud-charcoal/90">
           {% artifact_category_icon artifact.category 'text-[10px]' %} {{ artifact.get_category_display }}
         </span>
         <h1 class="font-display text-2xl font-bold text-white drop-shadow sm:text-4xl">{{ artifact.title }}</h1>
@@ -98,12 +98,12 @@ QR deep link info and related stories.
     <section class="mt-8 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
       <div class="flex flex-wrap items-center gap-4">
         <button type="button" id="audio-toggle" data-audio-src="{{ narration.url }}"
-                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark"
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta text-cam-dark shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark"
                 aria-label="{% translate 'Play audio guide' %}">
           <span id="audio-icon" class="fa-solid fa-play" aria-hidden="true"></span>
         </button>
         <div class="min-w-0 flex-1">
-          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-ochre' %} {% translate "Audio guide" %}</h2>
+          <h2 class="flex items-center gap-2 font-display text-base font-bold">{% icon 'headphones' 'text-ochre-strong' %} {% translate "Audio guide" %}</h2>
           <p class="text-xs text-secondary-text">{% translate "Listen to the story of this artifact" %}{% if narration.duration %} • {% blocktranslate with seconds=narration.duration %}{{ seconds }}s{% endblocktranslate %}{% endif %}</p>
         </div>
       </div>
@@ -114,7 +114,7 @@ QR deep link info and related stories.
     {% elif can_generate_audio %}
     <section class="mt-8 rounded-2xl border border-dashed border-ochre/40 bg-ochre-tint/20 p-5 dark:bg-ochre/5">
       <div class="flex flex-wrap items-center gap-4">
-        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ochre/15 text-ochre">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ochre/15 text-ochre-strong">
           {% icon 'microphone' 'text-lg' %}
         </span>
         <div class="min-w-0 flex-1">
@@ -133,7 +133,7 @@ QR deep link info and related stories.
 
     {# ── QR deep link — mirrors mobile "scan to view" hint ── #}
     <div class="mt-8 flex items-center gap-4 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
-      <span class="fa-solid fa-qrcode text-4xl text-terracotta" aria-hidden="true"></span>
+      <span class="fa-solid fa-qrcode text-4xl text-terracotta-strong" aria-hidden="true"></span>
       <div>
         <h2 class="font-display text-base font-bold">{% translate "Found this in a museum?" %}</h2>
         <p class="text-sm text-secondary-text">{% translate "Scan the QR code beside the artifact to open this page instantly." %}</p>
@@ -144,7 +144,7 @@ QR deep link info and related stories.
     {% if related_stories %}
     <section class="mt-10 mb-4">
       <h2 class="mb-4 flex items-center gap-2.5 font-display text-xl font-bold">
-        {% icon 'book-open' 'text-lg text-terracotta' %} {% translate "Related Stories" %}
+        {% icon 'book-open' 'text-lg text-terracotta-strong' %} {% translate "Related Stories" %}
       </h2>
       <div class="grid gap-5 sm:grid-cols-3">
         {% for story in related_stories %}

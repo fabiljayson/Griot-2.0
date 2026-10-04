@@ -81,13 +81,13 @@
   </fieldset>
 
   <button type="submit"
-          class="w-full rounded-xl bg-terracotta px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark active:scale-[.99]">
+          class="w-full rounded-xl bg-terracotta px-4 py-3.5 text-sm font-bold text-cam-dark shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark active:scale-[.99]">
     {% translate "Create account" %}
   </button>
 </form>
 
 <p class="mt-6 text-center text-sm text-secondary-text">
   {% translate "Already have an account?" %}
-  <a href="{% url 'web:login' %}" class="font-semibold text-terracotta hover:underline">{% translate "Sign in" %}</a>
+  <a href="{% url 'web:login' %}" class="font-semibold text-terracotta-strong hover:underline">{% translate "Sign in" %}</a>
 </p>
 {% endblock %}

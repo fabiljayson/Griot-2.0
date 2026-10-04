@@ -32,13 +32,13 @@
   </div>
 
   <button type="submit"
-          class="w-full rounded-xl bg-terracotta px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark active:scale-[.99]">
+          class="w-full rounded-xl bg-terracotta px-4 py-3.5 text-sm font-bold text-cam-dark shadow-md shadow-terracotta/30 transition hover:bg-terracotta-dark active:scale-[.99]">
     {% translate "Sign in" %}
   </button>
 </form>
 
 <p class="mt-6 text-center text-sm text-secondary-text">
   {% translate "New to Griot AI?" %}
-  <a href="{% url 'web:register' %}{% if next %}?next={{ next }}{% endif %}" class="font-semibold text-terracotta hover:underline">{% translate "Create an account" %}</a>
+  <a href="{% url 'web:register' %}{% if next %}?next={{ next }}{% endif %}" class="font-semibold text-terracotta-strong hover:underline">{% translate "Create an account" %}</a>
 </p>
 {% endblock %}

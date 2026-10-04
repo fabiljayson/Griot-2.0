@@ -46,7 +46,7 @@ with DELETE /api/users/me/). Institution field appears for managers.
   {# ── Edit form — mirrors mobile edit mode (name fields) ── #}
   <section class="mb-8 rounded-2xl border border-brand-border bg-white p-5 shadow-sm dark:border-warm-brown dark:bg-deep-earth sm:p-6">
     <h3 class="mb-4 flex items-center gap-2.5 font-display text-lg font-bold">
-      {% icon 'user-pen' 'text-ochre' %} {% translate "Account details" %}
+      {% icon 'user-pen' 'text-ochre-strong' %} {% translate "Account details" %}
     </h3>
     <form method="post" action="{% url 'web:profile-update' %}" class="space-y-4">
       {% csrf_token %}
@@ -75,7 +75,7 @@ with DELETE /api/users/me/). Institution field appears for managers.
                class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal">
       </div>
       {% endif %}
-      <button class="w-full rounded-xl bg-terracotta px-6 py-3 text-sm font-bold text-white transition hover:bg-terracotta-dark sm:w-auto">
+      <button class="w-full rounded-xl bg-terracotta px-6 py-3 text-sm font-bold text-cam-dark transition hover:bg-terracotta-dark sm:w-auto">
         {% icon 'check-circle' 'text-xs' %} {% translate "Save changes" %}
       </button>
     </form>
@@ -87,28 +87,28 @@ with DELETE /api/users/me/). Institution field appears for managers.
     <ul class="divide-y divide-brand-border dark:divide-warm-brown">
       <li>
         <a href="{% url 'web:library' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
-          {% icon 'bookmark' 'text-terracotta' %} {% translate "My library" %}
+          {% icon 'bookmark' 'text-terracotta-strong' %} {% translate "My library" %}
           {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
         </a>
       </li>
       {% if is_contributor_plus %}
       <li>
         <a href="{% url 'web:story-new' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
-          {% icon 'feather' 'text-terracotta' %} {% translate "Write a story" %}
+          {% icon 'feather' 'text-terracotta-strong' %} {% translate "Write a story" %}
           {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
         </a>
       </li>
       {% endif %}
       <li>
         <a href="{% url 'web:gamification' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
-          {% icon 'trophy' 'text-terracotta' %} {% translate "Rewards & badges" %}
+          {% icon 'trophy' 'text-terracotta-strong' %} {% translate "Rewards & badges" %}
           {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
         </a>
       </li>
       {% if is_moderator %}
       <li>
         <a href="{% url 'web:admin-dashboard' %}" class="flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition hover:bg-terracotta-tint/20">
-          {% icon 'chart' 'text-terracotta' %} {% translate "Admin dashboard" %}
+          {% icon 'chart' 'text-terracotta-strong' %} {% translate "Admin dashboard" %}
           {% icon 'chevron-right' 'ml-auto text-xs text-secondary-text' %}
         </a>
       </li>

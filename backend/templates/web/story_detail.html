@@ -18,7 +18,7 @@ Reading progress posts back to the same model the mobile app syncs.
      A rejected contributor used to see `rejected` and nothing else: the
      reason a moderator wrote was rendered on no surface at all. ── {% endcomment %}
   <div class="mb-5 rounded-xl border border-brand-border bg-ochre-tint/40 p-4 dark:bg-ochre/10" data-testid="review-state">
-    <p class="text-xs font-bold uppercase tracking-wide text-ochre">
+    <p class="text-xs font-bold uppercase tracking-wide text-ochre-strong">
       {{ story.get_status_display }}
     </p>
     {% if reviewer_notes %}
@@ -85,7 +85,7 @@ Reading progress posts back to the same model the mobile app syncs.
           </select>
         </div>
       </div>
-      <button class="w-full rounded-xl bg-cam-bronze px-5 py-3 text-sm font-bold text-white transition hover:opacity-90">
+      <button class="w-full rounded-xl bg-cam-bronze px-5 py-3 text-sm font-bold text-cam-dark transition hover:opacity-90">
         {% translate "Record consent decision" %}
       </button>
       <p class="text-xs leading-relaxed text-secondary-text">
@@ -143,7 +143,7 @@ Reading progress posts back to the same model the mobile app syncs.
     {# ── Author & meta row — mirrors mobile author header ── #}
     <div class="mt-6 flex flex-wrap items-center justify-between gap-4 border-b border-brand-border pb-5 dark:border-warm-brown">
       <div class="flex items-center gap-3">
-        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-terracotta/10 font-bold text-terracotta">{{ story.author.username|first|upper }}</span>
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-terracotta/10 font-bold text-terracotta-strong">{{ story.author.username|first|upper }}</span>
         <div>
           <p class="text-sm font-bold">{{ story.author.get_full_name|default:story.author.username }}</p>
           <p class="flex items-center gap-2 text-xs text-secondary-text">
@@ -164,7 +164,7 @@ Reading progress posts back to the same model the mobile app syncs.
     {# ── Resume banner — mirrors mobile reading-progress resume ── #}
     {% if progress_percent > 0 and progress_percent < 100 and user.is_authenticated %}
     <div class="mt-5 flex items-center gap-3 rounded-xl border border-ochre/40 bg-ochre-tint/60 px-4 py-3 dark:bg-ochre/10">
-      {% icon 'book-open' 'text-ochre' %}
+      {% icon 'book-open' 'text-ochre-strong' %}
       <p class="flex-1 text-sm">{% blocktranslate with percent=progress_percent %}You're {{ percent }}% through this story.{% endblocktranslate %}</p>
       <div class="h-1.5 w-24 overflow-hidden rounded-full bg-ochre/20">
         <div class="h-full rounded-full bg-ochre" style="width: {{ progress_percent }}%"></div>
@@ -189,7 +189,7 @@ Reading progress posts back to the same model the mobile app syncs.
     <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
       <div class="flex flex-wrap items-center gap-4">
         <button type="button" id="audio-toggle" data-audio-src="{{ narration.url }}"
-                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cam-bronze text-white shadow-md shadow-cam-bronze/30 transition hover:bg-cam-bronze-dark"
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cam-bronze text-cam-dark shadow-md shadow-cam-bronze/30 transition hover:bg-cam-bronze-dark"
                 aria-label="{% translate 'Play narration' %}">
           <span id="audio-icon" class="fa-solid fa-play" aria-hidden="true"></span>
         </button>
@@ -216,7 +216,7 @@ Reading progress posts back to the same model the mobile app syncs.
         </div>
         <form method="post" action="{% url 'web:story-generate-audio' story.slug %}">
           {% csrf_token %}
-          <button class="rounded-xl bg-cam-bronze px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90">
+          <button class="rounded-xl bg-cam-bronze px-5 py-2.5 text-sm font-bold text-cam-dark transition hover:opacity-90">
             {% icon 'microphone' 'text-xs' %} {% translate "Generate narration" %}
           </button>
         </form>
@@ -232,14 +232,14 @@ Reading progress posts back to the same model the mobile app syncs.
         {% translate "Your browser does not support video playback." %}
       </video>
       <div class="flex items-center justify-between p-4">
-        <p class="flex items-center gap-2 text-sm font-semibold">{% icon 'video' 'text-terracotta' %} {{ video_job.attribution }}</p>
+        <p class="flex items-center gap-2 text-sm font-semibold">{% icon 'video' 'text-terracotta-strong' %} {{ video_job.attribution }}</p>
         {% if video_job.duration %}<span class="text-xs text-secondary-text">{% blocktranslate with seconds=video_job.duration %}{{ seconds }}s{% endblocktranslate %}</span>{% endif %}
       </div>
     </section>
     {% elif video_job and video_job.is_processing %}
     <section class="mt-10 rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth" data-video-poll="{{ story.slug }}">
       <div class="flex items-center gap-4">
-        {% icon 'spinner' 'text-xl text-terracotta' %}
+        {% icon 'spinner' 'text-xl text-terracotta-strong' %}
         <div>
           <h2 class="font-display text-base font-bold">{% translate "Generating video…" %}</h2>
           <p class="text-xs text-secondary-text">{% translate "Luma AI is bringing this tale to life — this page updates automatically." %}</p>
@@ -334,7 +334,7 @@ Reading progress posts back to the same model the mobile app syncs.
     <form method="post" action="{% url 'web:story-bookmark' story.slug %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
-      <button class="flex flex-col items-center gap-0.5 text-xs font-medium transition {% if is_bookmarked %}text-ochre{% else %}text-secondary-text hover:text-ochre{% endif %}">
+      <button class="flex flex-col items-center gap-0.5 text-xs font-medium transition {% if is_bookmarked %}text-ochre-strong{% else %}text-secondary-text hover:text-ochre-strong{% endif %}">
         {% if is_bookmarked %}{% icon 'bookmark-solid' 'text-lg' %}{% else %}{% icon 'bookmark-regular' 'text-lg' %}{% endif %}
         <span>{% translate "Saved" %}</span>
       </button>
@@ -343,13 +343,13 @@ Reading progress posts back to the same model the mobile app syncs.
     <a href="{% url 'web:login' %}?next={{ request.get_full_path|urlencode }}" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text hover:text-brand-error">
       {% icon 'heart-regular' 'text-lg' %}<span>{{ story.like_count }}</span>
     </a>
-    <a href="{% url 'web:login' %}?next={{ request.get_full_path|urlencode }}" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text hover:text-ochre">
+    <a href="{% url 'web:login' %}?next={{ request.get_full_path|urlencode }}" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text hover:text-ochre-strong">
       {% icon 'bookmark-regular' 'text-lg' %}<span>{% translate "Save" %}</span>
     </a>
     {% endif %}
 
     {# Share sheet — mirrors the mobile share bottom sheet #}
-    <button type="button" data-sheet-open="share-sheet" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta">
+    <button type="button" data-sheet-open="share-sheet" class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta-strong">
       {% icon 'share' 'text-lg' %}<span>{% translate "Share" %}</span>
     </button>
 
@@ -365,7 +365,7 @@ Reading progress posts back to the same model the mobile app syncs.
 
     {% if is_contributor_plus and user.is_authenticated and story.author_id == user.id or user.role == 'admin' or user.role == 'institution_manager' %}
     <a href="{% url 'web:story-edit' story.slug %}" title="{% translate 'Edit story' %}" aria-label="{% translate 'Edit story' %}"
-       class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta">
+       class="flex flex-col items-center gap-0.5 text-xs font-medium text-secondary-text transition hover:text-terracotta-strong">
       {% icon 'edit' 'text-lg' %}<span>{% translate "Edit" %}</span>
     </a>
     {% endif %}
@@ -387,7 +387,7 @@ Reading progress posts back to the same model the mobile app syncs.
         <input type="hidden" name="platform" value="{{ platform }}">
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <button class="flex w-full flex-col items-center gap-2 rounded-2xl border border-brand-border p-3.5 text-xs font-semibold transition hover:border-terracotta hover:bg-terracotta-tint/30 dark:border-warm-brown">
-          <span class="fa-brands {{ fa }} text-2xl text-terracotta" aria-hidden="true"></span>
+          <span class="fa-brands {{ fa }} text-2xl text-terracotta-strong" aria-hidden="true"></span>
           {{ label }}
         </button>
       </form>
@@ -446,7 +446,7 @@ Reading progress posts back to the same model the mobile app syncs.
                   class="w-full rounded-xl border border-brand-border bg-white px-4 py-3 text-sm outline-none focus:border-terracotta dark:bg-mud-charcoal"></textarea>
         <p class="mt-1.5 text-xs text-secondary-text">{% translate "Leave empty to auto-generate a prompt from the story." %}</p>
       </div>
-      <button type="submit" class="w-full rounded-xl bg-terracotta px-4 py-3 text-sm font-bold text-white transition hover:bg-terracotta-dark">
+      <button type="submit" class="w-full rounded-xl bg-terracotta px-4 py-3 text-sm font-bold text-cam-dark transition hover:bg-terracotta-dark">
         {% icon 'sparkles' 'text-xs' %} {% translate "Start generation" %}
       </button>
     </form>

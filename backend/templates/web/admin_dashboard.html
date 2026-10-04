@@ -35,7 +35,7 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
       {% icon 'book-open' 'text-xs' %} {% translate "Stories" %}
     </p>
     <p class="mt-2 font-display text-3xl font-bold">{{ summary.stories.total_stories }}</p>
-    <p class="mt-1 flex items-center gap-1 text-xs text-ochre">{% icon 'clock' 'text-[10px]' %} {% blocktranslate count counter=summary.stories.pending_review %}{{ counter }} pending review{% plural %}{{ counter }} pending review{% endblocktranslate %}</p>
+    <p class="mt-1 flex items-center gap-1 text-xs text-ochre-strong">{% icon 'clock' 'text-[10px]' %} {% blocktranslate count counter=summary.stories.pending_review %}{{ counter }} pending review{% plural %}{{ counter }} pending review{% endblocktranslate %}</p>
   </div>
   <div class="rounded-2xl border border-brand-border bg-white p-5 shadow-sm dark:border-warm-brown dark:bg-deep-earth">
     <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-secondary-text">
@@ -58,11 +58,11 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   {% with ea=summary.engagement.recent_activity_7d %}
   <div class="rounded-xl bg-terracotta-tint/50 p-3.5 text-center dark:bg-terracotta/10">
     <p class="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-secondary-text">{% icon 'user' 'text-[10px]' %} {% translate "New users" %}</p>
-    <p class="mt-1 font-display text-xl font-bold text-terracotta">{{ ea.new_users }}</p>
+    <p class="mt-1 font-display text-xl font-bold text-terracotta-strong">{{ ea.new_users }}</p>
   </div>
   <div class="rounded-xl bg-ochre-tint/50 p-3.5 text-center dark:bg-ochre/10">
     <p class="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-secondary-text">{% icon 'book-open' 'text-[10px]' %} {% translate "New stories" %}</p>
-    <p class="mt-1 font-display text-xl font-bold text-ochre">{{ ea.new_stories }}</p>
+    <p class="mt-1 font-display text-xl font-bold text-ochre-strong">{{ ea.new_stories }}</p>
   </div>
   <div class="rounded-xl bg-savannah-tint/50 p-3.5 text-center dark:bg-savannah/10">
     <p class="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-secondary-text">{% icon 'graduation' 'text-[10px]' %} {% translate "Quiz attempts" %}</p>
@@ -70,11 +70,11 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   </div>
   <div class="rounded-xl bg-terracotta-tint/50 p-3.5 text-center dark:bg-terracotta/10">
     <p class="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-secondary-text">{% icon 'qrcode' 'text-[10px]' %} {% translate "QR scans" %}</p>
-    <p class="mt-1 font-display text-xl font-bold text-terracotta">{{ ea.qr_scans }}</p>
+    <p class="mt-1 font-display text-xl font-bold text-terracotta-strong">{{ ea.qr_scans }}</p>
   </div>
   <div class="rounded-xl bg-ochre-tint/50 p-3.5 text-center dark:bg-ochre/10">
     <p class="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-secondary-text">{% icon 'share' 'text-[10px]' %} {% translate "Shares" %}</p>
-    <p class="mt-1 font-display text-xl font-bold text-ochre">{{ ea.shares }}</p>
+    <p class="mt-1 font-display text-xl font-bold text-ochre-strong">{{ ea.shares }}</p>
   </div>
   <div class="rounded-xl bg-brand-error/5 p-3.5 text-center">
     <p class="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-secondary-text">{% icon 'flag' 'text-[10px]' %} {% translate "Open flags" %}</p>
@@ -87,7 +87,7 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   {# ── User growth chart — pure CSS bars over the 30-day series ── #}
   <section class="rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
     <h2 class="mb-4 flex items-center gap-2.5 font-display text-lg font-bold">
-      {% icon 'chart' 'text-terracotta' %} {% translate "User Growth (30 days)" %}
+      {% icon 'chart' 'text-terracotta-strong' %} {% translate "User Growth (30 days)" %}
     </h2>
     {% growth_bars summary.users.user_growth as growth_html %}
     {{ growth_html|safe }}
@@ -96,7 +96,7 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   {# ── Story status breakdown ── #}
   <section class="rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
     <h2 class="mb-4 flex items-center gap-2.5 font-display text-lg font-bold">
-      {% icon 'layer-group' 'text-terracotta' %} {% translate "Stories by Status" %}
+      {% icon 'layer-group' 'text-terracotta-strong' %} {% translate "Stories by Status" %}
     </h2>
     <div class="space-y-3">
       {% for status, count in summary.stories.stories_by_status.items %}
@@ -115,15 +115,15 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   {# ── Top users — mirrors mobile ranked tiles ── #}
   <section class="rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
     <h2 class="mb-4 flex items-center gap-2.5 font-display text-lg font-bold">
-      {% icon 'trophy' 'text-ochre' %} {% translate "Top Storytellers" %}
+      {% icon 'trophy' 'text-ochre-strong' %} {% translate "Top Storytellers" %}
     </h2>
     <ul class="divide-y divide-brand-border dark:divide-warm-brown">
       {% for entry in top_users %}
       <li class="flex items-center gap-3 py-2.5">
-        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-ochre/15 text-xs font-bold text-ochre">{{ forloop.counter }}</span>
+        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-ochre/15 text-xs font-bold text-ochre-strong">{{ forloop.counter }}</span>
         <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{ entry.user__username }}</span>
         <span class="text-xs text-secondary-text">{% blocktranslate with level=entry.level %}Lvl {{ level }}{% endblocktranslate %}</span>
-        <span class="flex items-center gap-1 text-sm font-bold text-terracotta">{% icon 'bolt' 'text-[10px]' %} {{ entry.total_xp }}</span>
+        <span class="flex items-center gap-1 text-sm font-bold text-terracotta-strong">{% icon 'bolt' 'text-[10px]' %} {{ entry.total_xp }}</span>
       </li>
       {% empty %}
       <li class="py-4 text-sm text-secondary-text">{% translate "No gamification activity yet." %}</li>
@@ -134,13 +134,13 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
   {# ── Top stories by views ── #}
   <section class="rounded-2xl border border-brand-border bg-white p-5 dark:border-warm-brown dark:bg-deep-earth">
     <h2 class="mb-4 flex items-center gap-2.5 font-display text-lg font-bold">
-      {% icon 'fire' 'text-terracotta' %} {% translate "Top Stories" %}
+      {% icon 'fire' 'text-terracotta-strong' %} {% translate "Top Stories" %}
     </h2>
     <ul class="divide-y divide-brand-border dark:divide-warm-brown">
       {% for story in summary.stories.top_stories %}
       <li class="flex items-center gap-3 py-2.5">
-        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta/10 text-xs font-bold text-terracotta">{{ forloop.counter }}</span>
-        <a href="/story/{{ story.slug }}/" class="min-w-0 flex-1 truncate text-sm font-semibold hover:text-terracotta">{{ story.title }}</a>
+        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta/10 text-xs font-bold text-terracotta-strong">{{ forloop.counter }}</span>
+        <a href="/story/{{ story.slug }}/" class="min-w-0 flex-1 truncate text-sm font-semibold hover:text-terracotta-strong">{{ story.title }}</a>
         <span class="flex items-center gap-1 text-xs text-secondary-text">{% icon 'eye' 'text-[10px]' %} {{ story.view_count }}</span>
       </li>
       {% empty %}
@@ -165,7 +165,7 @@ Admin dashboard — mirrors mobile AdminDashboardScreen (Phase 9):
     <div class="rounded-2xl border border-brand-error/30 bg-brand-error/5 p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <a href="{% url 'web:story-detail' entry.story.slug %}" class="font-display font-bold hover:text-terracotta">{{ entry.story.title }}</a>
+          <a href="{% url 'web:story-detail' entry.story.slug %}" class="font-display font-bold hover:text-terracotta-strong">{{ entry.story.title }}</a>
           <p class="text-xs text-secondary-text">{% blocktranslate with name=entry.story.author.username status=entry.story.get_status_display %}by {{ name }} • status: {{ status }}{% endblocktranslate %}</p>
         </div>
         <span class="rounded-full bg-brand-error px-2.5 py-1 text-[11px] font-bold text-white">{% with flag_count=entry.flags|length %}{% blocktranslate count counter=flag_count %}{{ counter }} flag{% plural %}{{ counter }} flags{% endblocktranslate %}{% endwith %}</span>
@@ -228,7 +228,7 @@ latter across newlines, so a multi-line one is emitted as literal text.)
   <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
     <div>
       <h2 class="flex items-center gap-2.5 font-display text-xl font-bold">
-        {% icon 'qrcode' 'text-terracotta' %} {% translate "QR Code Worklist" %}
+        {% icon 'qrcode' 'text-terracotta-strong' %} {% translate "QR Code Worklist" %}
       </h2>
       <p class="mt-1 text-sm text-secondary-text">{% translate "Printable codes for the artifacts on the museum floor." %}</p>
       <p class="mt-1 text-xs font-semibold text-secondary-text">
@@ -241,7 +241,7 @@ latter across newlines, so a multi-line one is emitted as literal text.)
         {% csrf_token %}
         <input type="hidden" name="next" value="{% url 'web:admin-dashboard' %}#qr-worklist">
         <input type="hidden" name="scope" value="selected">
-        <button type="submit" class="rounded-xl border border-terracotta px-4 py-2.5 text-xs font-bold text-terracotta transition hover:bg-terracotta hover:text-white">
+        <button type="submit" class="rounded-xl border border-terracotta px-4 py-2.5 text-xs font-bold text-terracotta-strong transition hover:bg-terracotta hover:text-cam-dark">
           {% icon 'check-circle' 'text-xs' %} {% translate "Generate for selected" %}
         </button>
       </form>
@@ -249,7 +249,7 @@ latter across newlines, so a multi-line one is emitted as literal text.)
         {% csrf_token %}
         <input type="hidden" name="next" value="{% url 'web:admin-dashboard' %}#qr-worklist">
         <input type="hidden" name="scope" value="missing">
-        <button type="submit" class="rounded-xl bg-terracotta px-4 py-2.5 text-xs font-bold text-white transition hover:opacity-90">
+        <button type="submit" class="rounded-xl bg-terracotta px-4 py-2.5 text-xs font-bold text-cam-dark transition hover:opacity-90">
           {% icon 'sparkles' 'text-xs' %} {% translate "Generate all missing" %}
         </button>
       </form>
@@ -273,8 +273,8 @@ latter across newlines, so a multi-line one is emitted as literal text.)
 
       <label for="qr-slug-{{ forloop.counter }}" class="min-w-0 flex-1 cursor-pointer">
         <span class="flex items-center gap-2 text-sm font-semibold">
-          {% artifact_category_icon artifact.category 'text-xs text-terracotta' %}
-          <a href="{% url 'web:artifact-detail' artifact.slug %}" class="truncate hover:text-terracotta">{{ artifact.title }}</a>
+          {% artifact_category_icon artifact.category 'text-xs text-terracotta-strong' %}
+          <a href="{% url 'web:artifact-detail' artifact.slug %}" class="truncate hover:text-terracotta-strong">{{ artifact.title }}</a>
         </span>
         <span class="mt-1 block truncate text-xs text-secondary-text">
           {{ artifact.get_category_display }}{% if artifact.museum_name %} · {{ artifact.museum_name }}{% endif %}
@@ -296,13 +296,13 @@ latter across newlines, so a multi-line one is emitted as literal text.)
         {{ artifact.qr_code_svg|safe }}
       </span>
       {% else %}
-      <span class="shrink-0 rounded-full bg-ochre-tint px-2.5 py-1 text-[11px] font-bold text-ochre">{% translate "No code yet" %}</span>
+      <span class="shrink-0 rounded-full bg-ochre-tint px-2.5 py-1 text-[11px] font-bold text-ochre-strong">{% translate "No code yet" %}</span>
       {% endif %}
 
       <form method="post" action="{% url 'web:artifact-generate-qr' artifact.slug %}" class="shrink-0">
         {% csrf_token %}
         <input type="hidden" name="next" value="{% url 'web:admin-dashboard' %}#qr-worklist">
-        <button type="submit" class="rounded-xl border border-terracotta px-3 py-2 text-xs font-bold text-terracotta transition hover:bg-terracotta hover:text-white">
+        <button type="submit" class="rounded-xl border border-terracotta px-3 py-2 text-xs font-bold text-terracotta-strong transition hover:bg-terracotta hover:text-cam-dark">
           {% if artifact.qr_code_svg %}{% icon 'refresh' 'text-xs' %} {% translate "Regenerate" %}{% else %}{% icon 'qrcode' 'text-xs' %} {% translate "Generate" %}{% endif %}
         </button>
       </form>

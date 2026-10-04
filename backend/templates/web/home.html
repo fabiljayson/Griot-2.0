@@ -52,7 +52,7 @@ discover-regions strip. All glyphs are Font Awesome icons.
     {% if not user.is_authenticated %}
     <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
       <a href="{% url 'web:stories' %}"
-         class="rounded-xl bg-cam-bronze px-7 py-3 text-sm font-bold text-white shadow-lg shadow-cam-bronze/30 transition hover:-translate-y-0.5 hover:bg-cam-bronze-dark hover:shadow-xl">
+         class="rounded-xl bg-cam-bronze px-7 py-3 text-sm font-bold text-cam-dark shadow-lg shadow-cam-bronze/30 transition hover:-translate-y-0.5 hover:bg-cam-bronze-dark hover:shadow-xl">
         {% icon 'book-open' 'text-xs' %} {% translate "Start Reading" %}
       </a>
       <a href="{% url 'web:login' %}"
@@ -203,7 +203,7 @@ discover-regions strip. All glyphs are Font Awesome icons.
     <h2 class="font-display text-2xl font-bold sm:text-3xl">{% translate "Ready to explore?" %}</h2>
     <p class="mx-auto mt-3 max-w-md text-white/70">{% translate "Join thousands discovering Cameroon's rich oral traditions." %}</p>
     <a href="{% url 'web:login' %}"
-       class="mt-6 inline-block rounded-xl bg-cam-bronze px-8 py-3 text-sm font-bold text-white shadow-lg shadow-cam-bronze/30 transition hover:-translate-y-0.5 hover:bg-cam-bronze-dark">
+       class="mt-6 inline-block rounded-xl bg-cam-bronze px-8 py-3 text-sm font-bold text-cam-dark shadow-lg shadow-cam-bronze/30 transition hover:-translate-y-0.5 hover:bg-cam-bronze-dark">
       {% translate "Get started — it's free" %}
     </a>
   </section>
