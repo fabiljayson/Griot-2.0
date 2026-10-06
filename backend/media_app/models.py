@@ -138,11 +138,21 @@ class VideoGenerationJob(models.Model):
         default=MediaOriginKind.SYNTHETIC,
         help_text='Whether the video was AI-generated or human-recorded.',
     )
+    # Which provider issued `luma_job_id`. A job id is only meaningful to the
+    # vendor that minted it, so polling and cancelling route by this rather
+    # than guessing — and a render served by the fallback vendor is recorded
+    # as such instead of being credited to whoever is primary this week.
+    provider = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text='Video provider that issued this job (luma, fal, mock).',
+    )
     engine = models.CharField(
         max_length=40,
         blank=True,
         default='',
-        help_text='Name/version of the generating model (e.g. luma-dream-machine).',
+        help_text='Name/version of the generating model (e.g. luma-ray-3.2).',
     )
 
     # --- Timestamps ---

@@ -1,331 +1,75 @@
+"""Backwards-compatible facade over the video provider chain.
+
+This module used to *be* the Luma client. It now exists so that the existing
+call sites — ``from .services.luma_ai import get_luma_service`` and their
+``mock.patch('...views.get_luma_service')`` seams — keep working unchanged
+while the implementation moved into :mod:`.video_providers`.
+
+What moved where:
+
+===========================  ==========================================
+This module                  :mod:`.video_providers`
+===========================  ==========================================
+``get_luma_service()``       :func:`.video_providers.get_video_service`
+``LiveLumaAIService``        :class:`.video_providers.luma.LumaProvider`
+``MockLumaAIService``        :class:`.video_providers.mock.MockVideoProvider`
+``LumaAIError``              :class:`.video_providers.base.VideoProviderError`
+``_normalise_progress``      :func:`.video_providers.base.normalise_progress`
+``LUMA_API_BASE``            retired Dream Machine host (historical)
+===========================  ==========================================
+
+``get_luma_service`` returns the *chain*, not a Luma client — that is the
+point of the migration. The name is kept because a dozen tests patch it by
+path; renaming a seam is churn with no behaviour attached.
 """
-Luma AI Dream Machine service for video generation.
 
-Provides two modes:
-  - **Live mode** (LUMA_API_KEY set): Makes real API calls to Luma AI.
-  - **Mock mode** (no API key): Simulates video generation for local dev.
+from .video_providers import (
+    LUMA_API_BASE,
+    LumaAIError,
+    LumaAIService,
+    get_video_service,
+    normalise_progress,
+)
+from .video_providers.luma import LumaProvider
+from .video_providers.mock import MockVideoProvider
 
-All job state is persisted to the ``VideoGenerationJob`` model so it survives
-server restarts — no in-memory dictionaries.
-"""
+#: Everything this facade still answers to. Declared so the re-exports read as
+#: intentional rather than as imports nobody got around to deleting.
+__all__ = [
+    'LUMA_API_BASE',
+    'LumaAIError',
+    'LumaAIService',
+    'LiveLumaAIService',
+    'MockLumaAIService',
+    '_normalise_progress',
+    'get_luma_service',
+    'get_video_service',
+]
 
-import logging
-import random
-import time
-import uuid
-from typing import Optional
+#: The live client. The class is the same object under both names, so an
+#: ``isinstance(service, LiveLumaAIService)`` written against the old module
+#: still answers correctly for a chain holding one.
+LiveLumaAIService = LumaProvider
+MockLumaAIService = MockVideoProvider
 
-import requests as http_requests
-from django.conf import settings
+#: The name views and tests import.
+get_luma_service = get_video_service
 
-logger = logging.getLogger(__name__)
+#: The name the views import to compute a progress bar.
+_normalise_progress = normalise_progress
 
-LUMA_API_BASE = 'https://api.lumalabs.ai/dream-machine/v1'
 
+def __getattr__(name):
+    """Explain the move instead of raising an opaque ImportError.
 
-def _normalise_progress(value, state: str) -> int:
-    """Coerce a provider progress value to an integer 0-100.
-
-    Luma has reported ``progress`` as both a 0..1 fraction and a 0..100
-    percentage across API versions, so scale by magnitude instead of assuming
-    one. Anything missing, non-numeric or out of range falls back to a value
-    derived from the state, because a stuck 0% is worse than an estimate: the
-    client renders it as a progress bar and the user watches a dead meter.
+    Somebody's local script or forgotten test may still ask for something this
+    module no longer owns; pointing at the new home costs one line and saves
+    the hunt.
     """
-    if state == 'completed':
-        return 100
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return {'queued': 0, 'in_progress': 50}.get(state, 0)
-    # Note the explicit `and`: `0 < value <= 1` would chain as
-    # `(0 < value) and (0 <= 1)`, which is true for every input.
-    if 0 < value <= 1:
-        value = value * 100
-    return max(0, min(100, round(value)))
-
-
-class LumaAIError(Exception):
-    """Raised when the Luma AI API returns an error."""
-
-
-class LumaAIService:
-    """Interface for submitting and polling video generation jobs.
-
-    Subclass or replace this when a real Luma AI API key is available.
-    """
-
-    # Recorded on every VideoGenerationJob so the player can state that the
-    # video is AI-generated and name the engine, rather than leaving the
-    # provenance implicit in a provider URL.
-    engine = 'luma-dream-machine'
-
-    def submit_video_generation(
-        self,
-        prompt: str,
-        image_url: Optional[str] = None,
-        duration: int = 5,
-        aspect_ratio: str = '16:9',
-    ) -> dict:
-        raise NotImplementedError
-
-    def get_job_status(self, job_id: str) -> dict:
-        raise NotImplementedError
-
-    def cancel_job(self, job_id: str) -> dict:
-        raise NotImplementedError
-
-
-# ---------------------------------------------------------------------------
-# Real Luma AI API client
-# ---------------------------------------------------------------------------
-class LiveLumaAIService(LumaAIService):
-    """Production client calling the Luma AI Dream Machine REST API."""
-
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self._session = http_requests.Session()
-        self._session.headers.update({
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json',
-        })
-        # A hung socket on the Luma API must not pin a worker forever. The cap
-        # is conservative for the short "generate 5s video" calls and generous
-        # for the polling GETs; it keeps the system from going out to lunch if
-        # the network stalls. In tests the mock service is used.
-        self._session.timeout = (10, 30)  # (connect, read)
-
-    def submit_video_generation(
-        self,
-        prompt: str,
-        image_url: Optional[str] = None,
-        duration: int = 5,
-        aspect_ratio: str = '16:9',
-    ) -> dict:
-        payload = {
-            'prompt': prompt,
-            'aspect_ratio': aspect_ratio,
-        }
-        if image_url:
-            payload['image_url'] = image_url
-
-        try:
-            resp = self._session.post(f'{LUMA_API_BASE}/generations', json=payload)
-        except http_requests.RequestException as exc:
-            # A timeout, DNS failure or reset is an upstream failure, not a bug
-            # in this project. Left unhandled it surfaces as a 500 from the
-            # view, which tells the caller nothing and hides the real cause;
-            # translated here the view can record the job as failed and answer
-            # 502 the way it already does for an HTTP error from Luma.
-            logger.warning('Luma AI submit transport error: %s', exc)
-            raise LumaAIError(f'Could not reach Luma AI: {exc}') from exc
-
-        if resp.status_code >= 400:
-            logger.error('Luma AI submit failed: %s %s', resp.status_code, resp.text)
-            raise LumaAIError(f'Luma AI returned {resp.status_code}: {resp.text}')
-
-        data = resp.json()
-        return {
-            'id': data.get('id', ''),
-            'status': data.get('state', 'pending'),
-            'created_at': data.get('created_at', ''),
-        }
-
-    def get_job_status(self, job_id: str) -> dict:
-        # The polling view calls this on every status refresh. A transport
-        # error here must degrade to a still-pending job rather than a 500:
-        # the render is still running on Luma's side, and failing the request
-        # would both break the client's poll loop and lose the progress already
-        # recorded. `status` is deliberately left as 'in_progress' so the view
-        # takes its existing non-terminal branch.
-        try:
-            resp = self._session.get(f'{LUMA_API_BASE}/generations/{job_id}')
-        except http_requests.RequestException as exc:
-            logger.warning('Luma AI status transport error: %s', exc)
-            return {
-                'error': f'Could not reach Luma AI: {exc}',
-                'status': 'in_progress',
-            }
-
-        if resp.status_code == 404:
-            return {'error': 'Job not found', 'status': 'unknown'}
-        if resp.status_code >= 400:
-            logger.error('Luma AI status failed: %s %s', resp.status_code, resp.text)
-            return {'error': f'API error {resp.status_code}', 'status': 'unknown'}
-
-        data = resp.json()
-        state = data.get('state', 'pending')
-
-        result = {
-            'id': job_id,
-            'status': state,
-            'video_url': '',
-            'thumbnail_url': '',
-            'duration': 0,
-            # Normalised to 0-100. Luma has reported this as both a 0..1
-            # fraction and a 0..100 percentage across API versions, so scale
-            # by magnitude rather than assuming one.
-            'progress': _normalise_progress(data.get('progress'), state),
-            'created_at': data.get('created_at', ''),
-            'completed_at': data.get('completed_at'),
-        }
-
-        if state == 'completed':
-            assets = data.get('assets', {})
-            result['video_url'] = assets.get('video', '')
-            result['thumbnail_url'] = assets.get('thumbnail', '')
-            # Luma doesn't always return duration; default to 5s
-            result['duration'] = data.get('duration', 5)
-
-        return result
-
-    def cancel_job(self, job_id: str) -> dict:
-        try:
-            resp = self._session.delete(f'{LUMA_API_BASE}/generations/{job_id}')
-        except http_requests.RequestException as exc:
-            logger.warning('Luma AI cancel transport error: %s', exc)
-            return {'error': f'Could not reach Luma AI: {exc}'}
-
-        if resp.status_code >= 400:
-            return {'error': f'Cancel failed: {resp.status_code}'}
-        return {'id': job_id, 'status': 'cancelled', 'message': 'Job cancelled'}
-
-
-# ---------------------------------------------------------------------------
-# Mock client for development (state stored in DB via VideoGenerationJob)
-# ---------------------------------------------------------------------------
-class MockLumaAIService(LumaAIService):
-    """Mock service that simulates video generation for local development.
-
-    Job state is persisted to the ``VideoGenerationJob`` model, so it
-    survives server restarts.  Each poll randomly advances the job from
-    pending -> processing -> completed so the frontend can test the full
-    lifecycle.
-    """
-
-    # Named apart from the live engine so a job generated against the mock is
-    # never credited to Dream Machine, which did not make it.
-    engine = 'luma-mock'
-
-    def submit_video_generation(
-        self,
-        prompt: str,
-        image_url: Optional[str] = None,
-        duration: int = 5,
-        aspect_ratio: str = '16:9',
-    ) -> dict:
-        job_id = f'luma_{uuid.uuid4().hex[:12]}'
-        return {
-            'id': job_id,
-            'status': 'pending',
-            'created_at': time.time(),
-        }
-
-    def get_job_status(self, job_id: str) -> dict:
-        from media_app.models import VideoGenerationJob
-
-        try:
-            job = VideoGenerationJob.objects.get(luma_job_id=job_id)
-        except VideoGenerationJob.DoesNotExist:
-            return {'error': 'Job not found', 'status': 'unknown'}
-
-        # Simulate random progress for demo purposes
-        if job.status == VideoGenerationJob.Status.PENDING and random.random() > 0.6:
-            job.status = VideoGenerationJob.Status.PROCESSING
-            job.progress_percent = 50
-            job.save(update_fields=['status', 'progress_percent', 'updated_at'])
-        elif job.status == VideoGenerationJob.Status.PROCESSING and random.random() > 0.7:
-            job.status = VideoGenerationJob.Status.COMPLETED
-            job.video_url = f'https://storage.example.com/videos/{job_id}.mp4'
-            job.thumbnail_url = f'https://storage.example.com/thumbnails/{job_id}.jpg'
-            job.duration = random.randint(5, 15)
-            job.progress_percent = 100
-            job.completed_at = timezone_now()
-            job.save(update_fields=[
-                'status', 'video_url', 'thumbnail_url', 'duration',
-                'progress_percent', 'completed_at', 'updated_at',
-            ])
-        elif job.status == VideoGenerationJob.Status.PROCESSING:
-            # Crawl toward 95 so the client's progress bar visibly moves. Left
-            # at 0 it reads as a hung request rather than a rendering video.
-            elapsed = (timezone_now() - job.created_at).total_seconds()
-            creep = min(95, 50 + int(elapsed // 10) * 5)
-            if creep > job.progress_percent:
-                job.progress_percent = creep
-                job.save(update_fields=['progress_percent', 'updated_at'])
-
-        return {
-            'id': job_id,
-            'status': job.status,
-            'progress': job.progress_percent,
-            'video_url': job.video_url,
-            'thumbnail_url': job.thumbnail_url,
-            'duration': job.duration,
-            'created_at': job.created_at.isoformat() if job.created_at else '',
-            'completed_at': job.completed_at.isoformat() if job.completed_at else None,
-        }
-
-    def cancel_job(self, job_id: str) -> dict:
-        from media_app.models import VideoGenerationJob
-
-        try:
-            job = VideoGenerationJob.objects.get(luma_job_id=job_id)
-            job.status = VideoGenerationJob.Status.FAILED
-            job.error_message = 'Cancelled by user'
-            job.save(update_fields=['status', 'error_message', 'updated_at'])
-        except VideoGenerationJob.DoesNotExist:
-            pass
-        return {'id': job_id, 'status': 'cancelled', 'message': 'Job cancelled'}
-
-
-def timezone_now():
-    """Lazy import to avoid circular imports at module level."""
-    from django.utils import timezone
-    return timezone.now()
-
-
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
-_service_instance = None
-
-
-def get_luma_service() -> LumaAIService:
-    """Return the appropriate Luma AI service based on configuration.
-
-    - If ``LUMA_API_KEY`` is set in the environment, returns a real API client.
-    - Otherwise returns the mock service, but only where that is allowed:
-      local dev, or any environment that opts in with ``LUMA_ALLOW_MOCK=1``.
-    - With no key and no opt-in, raises :class:`LumaAIError`.
-
-    The raise is the important part. ``MockLumaAIService`` reports jobs
-    ``completed`` and points ``video_url`` at a ``storage.example.com``
-    placeholder, so letting it load in production means a paid feature that
-    reports success, spends the caller's daily quota, and produces nothing
-    playable. Failing here routes through the same ``LumaAIError`` handling
-    the views already have for transport errors, which marks the job FAILED
-    with a reason and returns an honest status code.
-    """
-    global _service_instance
-    if _service_instance is not None:
-        return _service_instance
-
-    api_key = getattr(settings, 'LUMA_API_KEY', '') or ''
-    if api_key:
-        logger.info('Using live Luma AI service')
-        _service_instance = LiveLumaAIService(api_key)
-        return _service_instance
-
-    if not getattr(settings, 'LUMA_ALLOW_MOCK', False):
-        logger.error(
-            'LUMA_API_KEY is not set and LUMA_ALLOW_MOCK is off. Refusing to '
-            'serve mock video jobs: they would report completed with an '
-            'unplayable placeholder URL. Set LUMA_API_KEY, or '
-            'LUMA_ALLOW_MOCK=1 for a staging deploy that wants fake data.'
+    if name == '_service_instance':
+        raise AttributeError(
+            'the memoised service moved: call '
+            'video_providers.reset_video_service() instead of clearing '
+            'luma_ai._service_instance'
         )
-        raise LumaAIError(
-            'Video generation is not configured on this server '
-            '(LUMA_API_KEY is unset).'
-        )
-
-    logger.info('Using mock Luma AI service (no LUMA_API_KEY configured)')
-    _service_instance = MockLumaAIService()
-    return _service_instance
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

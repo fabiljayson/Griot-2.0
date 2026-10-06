@@ -76,6 +76,27 @@ def _guess_extension(url: str, content_type: str) -> str:
     return '.mp4'
 
 
+def _is_mock_render(job) -> bool:
+    """True when the job was served by the mock rather than a vendor.
+
+    Read from both the provider key and the engine credit: rows written
+    before ``provider`` existed only carry the engine, and the mock's engine
+    has always ended in ``-mock`` precisely so it stays identifiable.
+    """
+    provider = getattr(job, 'provider', '') or ''
+    if provider == 'mock':
+        return True
+    return (getattr(job, 'engine', '') or '').endswith('-mock')
+
+
+def _any_live_key() -> bool:
+    """True when at least one vendor could have produced a real render."""
+    return bool(
+        getattr(settings, 'LUMA_API_KEY', '')
+        or getattr(settings, 'FAL_API_KEY', '')
+    )
+
+
 def _looks_like_video(head: bytes, content_type: str) -> bool:
     """Accept real container bytes, not whatever a host happens to serve.
 
@@ -94,16 +115,21 @@ def store_video_asset(job) -> bool:
     """Download ``job.video_url`` into ``job.video_file``. True when stored.
 
     Idempotent and side-effect free when there is nothing to do: already
-    stored, no URL, no live provider configured (mock jobs report placeholder
-    URLs that never resolve to a video — attempting them would be a network
-    call per poll for nothing).
+    stored, no URL, or a job no live provider produced (mock jobs report
+    placeholder URLs that never resolve to a video — attempting them would be
+    a network call per poll for nothing).
     """
     if job.video_file:
         return True
     url = job.video_url or ''
     if not url:
         return False
-    if not getattr(settings, 'LUMA_API_KEY', ''):
+    if _is_mock_render(job):
+        # The mock never produced bytes worth keeping. Checked before the URL
+        # validation below so it does not log a warning per poll about a
+        # placeholder host we deliberately handed out.
+        return False
+    if not _any_live_key():
         # No live provider was configured, so no real render exists to keep.
         return False
 

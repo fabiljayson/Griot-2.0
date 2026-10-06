@@ -61,13 +61,22 @@ services:
       #     property: connectionString
       - key: SENTRY_DSN
         sync: false
-      # Luma Dream Machine bills per generated video. Leaving this unset does
-      # NOT disable the feature — `get_luma_service()` falls back to
-      # MockLumaAIService, which reports jobs 'completed' while pointing
-      # `video_url` at an unplayable storage.example.com placeholder. Set a
-      # real key, or video generation silently produces nothing playable.
+      # Video is served by an ordered provider chain (Luma, then fal.ai), so an
+      # unset key no longer disables the feature outright — it just removes
+      # that vendor from the chain. Leaving BOTH unset means every render falls
+      # through to the mock, which reports jobs 'completed' while pointing
+      # `video_url` at an unplayable storage.example.com placeholder. Set at
+      # least one key, or set VIDEO_ALLOW_MOCK_FALLBACK=0 to fail loudly.
       - key: LUMA_API_KEY
         sync: false
+      - key: FAL_API_KEY
+        sync: false
+      # Order the chain tries providers in (default "luma,fal").
+      # - key: VIDEO_PROVIDER_ORDER
+      #   value: luma,fal
+      # 0 = raise when every provider is unavailable instead of serving the mock.
+      # - key: VIDEO_ALLOW_MOCK_FALLBACK
+      #   value: '1'
       # Rolling 24h cap on video generations started per user, to bound spend.
       - key: VIDEO_GENERATIONS_PER_USER_PER_DAY
         value: '5'

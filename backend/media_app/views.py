@@ -33,6 +33,7 @@ from .services.tts import (
     resolve_language,
     strip_markdown,
 )
+from .services.video_providers import result_field
 from .services.video_storage import store_video_asset
 
 logger = logging.getLogger(__name__)
@@ -101,13 +102,14 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        # Submit to Luma AI (mock service when no key is configured and
-        # LUMA_ALLOW_MOCK permits it). Resolving the service inside the try
-        # matters: with no key on a production config, get_luma_service()
+        # Submit through the provider chain (the mock stands in only where the
+        # fallback policy permits it). Resolving the service inside the try
+        # matters: with no provider and no mock allowed, get_luma_service()
         # raises rather than handing back a mock that would report this job
         # completed with an unplayable URL. The job row is created after the
-        # call so `engine` can be stamped from whichever service answered — a
-        # mock run must never be credited to Dream Machine.
+        # call so `provider` and `engine` can be stamped from whichever vendor
+        # actually answered — a render served by a fallback provider, or by the
+        # mock, must never be credited to the primary one.
         try:
             luma_service = get_luma_service()
             result = luma_service.submit_video_generation(
@@ -129,13 +131,23 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
-        # Update job with Luma AI details
+        # Update job with the provider's details. `result_field` rather than
+        # `result.get`: a test double that hands back a Mock would otherwise
+        # land a non-string in a CharField and fail at save time with an error
+        # pointing nowhere near the cause. The requested duration is recorded
+        # up front so completion has something to show when the API does not
+        # report one back (Luma's Agents response does not).
         job = VideoGenerationJob.objects.create(
             user=request.user,
             story=story,
             prompt=data['prompt'],
             luma_job_id=result['id'],
-            engine=normalise_engine(luma_service, 'video'),
+            provider=result_field(result, 'provider'),
+            engine=(
+                result_field(result, 'engine')
+                or normalise_engine(luma_service, 'video')
+            ),
+            duration=data.get('duration', 10),
         )
         if result.get('status') == VideoGenerationJob.Status.FAILED:
             job.status = VideoGenerationJob.Status.FAILED
@@ -163,15 +175,15 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Cancel via Luma AI service. If the server has no Luma configured
-        # there is nothing remote to cancel, but the user's intent still has
-        # to be honoured locally, so fall through to the same state update
-        # rather than erroring out.
+        # Cancel on the provider that issued the job. If nothing is
+        # configured there is nothing remote to cancel, but the user's intent
+        # still has to be honoured locally, so fall through to the same state
+        # update rather than erroring out.
         try:
             luma_service = get_luma_service()
-            luma_service.cancel_job(job.luma_job_id)
+            luma_service.cancel_job(job.luma_job_id, provider=job.provider)
         except LumaAIError as exc:
-            logger.warning('Luma cancel skipped for job %s: %s', job.pk, exc)
+            logger.warning('Video cancel skipped for job %s: %s', job.pk, exc)
 
         job.status = VideoGenerationJob.Status.FAILED
         job.error_message = 'Cancelled by user'
@@ -184,25 +196,33 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
         """Check video generation status."""
         job = self.get_object()
 
-        # Poll Luma AI for status update
+        # Poll the issuing provider for a status update. Routing by
+        # `job.provider` matters now that more than one vendor can hold a job
+        # id: a fal request id means nothing to Luma and vice versa.
         if job.luma_job_id:
             luma_status = None
             try:
                 luma_service = get_luma_service()
-                luma_status = luma_service.get_job_status(job.luma_job_id)
+                luma_status = luma_service.get_job_status(
+                    job.luma_job_id, provider=job.provider
+                )
             except LumaAIError as exc:
-                # A server that has lost its Luma configuration must not 500
-                # a poll: the client loops on this endpoint and would read the
-                # error as a dead job. Report the stored state unchanged.
-                logger.warning('Luma poll skipped for job %s: %s', job.pk, exc)
+                # A server that has lost its provider configuration must not
+                # 500 a poll: the client loops on this endpoint and would read
+                # the error as a dead job. Report the stored state unchanged.
+                logger.warning('Video poll skipped for job %s: %s', job.pk, exc)
 
             if luma_status is not None:
-                # Update job based on Luma AI response
+                # Update job based on the provider's response
                 if luma_status.get('status') == 'completed':
                     job.status = VideoGenerationJob.Status.COMPLETED
                     job.video_url = luma_status.get('video_url', '')
                     job.thumbnail_url = luma_status.get('thumbnail_url', '')
-                    job.duration = luma_status.get('duration', 0)
+                    # Keep the duration recorded at submit when the API does
+                    # not report one back — Luma's Agents response does not,
+                    # and falling to 0 would show the player as 00:00 for a
+                    # clip we asked to be 10 seconds long.
+                    job.duration = luma_status.get('duration') or job.duration
                     job.progress_percent = 100
                     if not job.completed_at:
                         job.completed_at = timezone.now()

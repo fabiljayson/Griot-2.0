@@ -18,9 +18,11 @@ of anything. These tests require real MPEG audio bytes.
 
 import os
 import unittest
+from unittest import mock
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status as http_status
 from rest_framework.test import APITestCase
@@ -292,19 +294,67 @@ class VideoContractTests(APITestCase):
 
 
 class LiveLumaServiceTests(APITestCase):
-    """Confirms which Luma implementation the deployment would actually use."""
+    """Confirms which providers the deployment would actually use.
 
+    The factory returns a chain (Luma, then fal.ai, with the mock on standby),
+    so the question is no longer "which class" but "will a request reach a real
+    vendor before it reaches the placeholder". Test settings declare no vendor
+    key, so the chain reads settings — never the raw environment — and these
+    cases set the key the way a deployment would.
+    """
+
+    def setUp(self):
+        from media_app.services.video_providers import reset_video_service
+
+        reset_video_service()
+        self.addCleanup(reset_video_service)
+
+    @override_settings(LUMA_API_KEY='a-real-key', FAL_API_KEY='')
     def test_live_client_is_used_only_when_a_key_is_configured(self):
         from .services.luma_ai import get_luma_service
 
-        has_key = bool(
-            os.environ.get('LUMA_API_KEY')
-            or getattr(settings, 'LUMA_API_KEY', '')
-        )
         service = get_luma_service()
+        live_keys = [provider.key for provider in service.providers]
+
         self.assertEqual(
-            type(service).__name__,
-            'LiveLumaAIService' if has_key else 'MockLumaAIService',
-            msg='Luma key present but the mock backend is active; video jobs '
-            'will report completed with an unplayable placeholder URL.',
+            live_keys, ['luma'],
+            msg='A provider key is configured but no live client is wired; '
+            'video jobs will report completed with an unplayable placeholder '
+            'URL instead of reaching the vendor.',
         )
+        self.assertEqual(service.providers[0].api_key, 'a-real-key')
+        self.assertTrue(service.providers[0].live)
+        # The mock stays on standby — it is what runs when the key dries up —
+        # but it must never lead the chain.
+        self.assertIsNotNone(service.mock)
+
+    @override_settings(LUMA_API_KEY='', FAL_API_KEY='')
+    def test_without_a_key_the_mock_answers_and_no_vendor_is_called(self):
+        from .services.luma_ai import get_luma_service
+
+        service = get_luma_service()
+
+        self.assertEqual([p.key for p in service.providers], [])
+        self.assertIsNotNone(
+            service.mock,
+            msg='With no key and no mock there is no way to answer, which is '
+            'the honest outcome — but it must be a real ProviderUnavailable, '
+            'not a half-built chain.',
+        )
+        self.assertEqual(service.mock.engine, 'luma-mock')
+
+    @override_settings(LUMA_API_KEY='', FAL_API_KEY='')
+    def test_a_key_left_only_in_the_environment_is_not_used(self):
+        """The original bug, inverted: a key that never reached settings.
+
+        `LUMA_API_KEY` sits in `.env`. Before it was declared in
+        `config.settings/base.py` the value existed in the environment while
+        `settings.LUMA_API_KEY` did not, so the deployment silently ran the
+        mock. The chain must read settings alone.
+        """
+        from .services.luma_ai import get_luma_service
+
+        with mock.patch.dict(os.environ, {'LUMA_API_KEY': 'only-in-the-env'}):
+            service = get_luma_service()
+
+        self.assertEqual([p.key for p in service.providers], [])

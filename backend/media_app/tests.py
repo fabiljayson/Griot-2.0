@@ -19,7 +19,7 @@ from .models import (
     MediaOriginKind,
     VideoGenerationJob,
 )
-from .services.luma_ai import LumaAIError
+from .services.luma_ai import LumaAIError, get_luma_service
 from .services.video_storage import store_video_asset
 
 User = get_user_model()
@@ -641,22 +641,35 @@ class AudioNarrationTests(APITestCase):
 
 class ServiceTests(APITestCase):
     def test_luma_ai_service(self):
+        # Deliberately offline: the old version of this test submitted to
+        # whatever backend `LUMA_API_KEY` happened to point at, which spent a
+        # real generation (or timed out against a dead endpoint) on every run.
+        # The mock exercises the same interface without either.
+        from media_app.services.video_providers import reset_video_service
+
         from .services.luma_ai import get_luma_service
-        
-        service = get_luma_service()
-        
-        # Submit job
-        result = service.submit_video_generation(
-            prompt='Test prompt',
-            duration=10,
-        )
-        self.assertIn('id', result)
-        self.assertEqual(result['status'], 'pending')
-        
-        # Check status
-        job_id = result['id']
-        status_result = service.get_job_status(job_id)
-        self.assertIn('status', status_result)
+
+        reset_video_service()
+        self.addCleanup(reset_video_service)
+        with override_settings(
+            LUMA_API_KEY='',
+            FAL_API_KEY='',
+            LUMA_ALLOW_MOCK=True,
+            VIDEO_ALLOW_MOCK_FALLBACK=False,
+        ):
+            service = get_luma_service()
+
+            # Submit job
+            result = service.submit_video_generation(
+                prompt='Test prompt',
+                duration=10,
+            )
+            self.assertIn('id', result)
+            self.assertEqual(result['status'], 'pending')
+
+            # Check status
+            status_result = service.get_job_status(result['id'])
+            self.assertIn('status', status_result)
     
     def test_tts_service(self):
         from .services.tts import get_tts_service
@@ -769,29 +782,48 @@ class TTSSocketTimeoutTests(SimpleTestCase):
 
 class LumaServiceConfigurationTests(SimpleTestCase):
     """
-    `get_luma_service()` reads `settings.LUMA_API_KEY`. The key was never
-    declared in any settings module, so the attribute never existed and the
-    live client could never be selected — every deployment silently ran the
-    mock, whose 'completed' jobs point at an unplayable placeholder URL.
+    `get_luma_service()` builds the provider chain from settings. It used to
+    pick a single client, and the live client could never be selected because
+    `LUMA_API_KEY` was not declared in any settings module — every deployment
+    silently ran the mock, whose 'completed' jobs point at an unplayable
+    placeholder URL. The chain keeps that lesson: a configured key must
+    actually reach the wire, and nothing configured must not quietly lie.
     """
 
     def setUp(self):
-        import media_app.services.luma_ai as luma_module
-        self.module = luma_module
-        luma_module._service_instance = None
-        self.addCleanup(setattr, luma_module, '_service_instance', None)
+        # The factory memoises into `video_providers`, not into `luma_ai`
+        # any more — clearing the old attribute would be a silent no-op that
+        # leaks whichever provider an earlier test built.
+        from media_app.services.video_providers import reset_video_service
 
-    @override_settings(LUMA_API_KEY='secret-live-key')
+        reset_video_service()
+        self.addCleanup(reset_video_service)
+
+    @override_settings(
+        LUMA_API_KEY='secret-live-key', FAL_API_KEY='',
+        VIDEO_ALLOW_MOCK_FALLBACK=False, LUMA_ALLOW_MOCK=False,
+    )
     def test_live_service_selected_when_key_is_configured(self):
-        service = self.module.get_luma_service()
-        self.assertIsInstance(service, self.module.LiveLumaAIService)
-        self.assertEqual(service.api_key, 'secret-live-key')
+        service = get_luma_service()
+        self.assertEqual([p.key for p in service.providers], ['luma'])
+        self.assertEqual(service.providers[0].api_key, 'secret-live-key')
+        self.assertTrue(service.providers[0].live)
+        self.assertIsNone(service.mock)
 
-    @override_settings(LUMA_API_KEY='')
-    def test_mock_service_selected_without_a_key(self):
-        self.assertIsInstance(
-            self.module.get_luma_service(), self.module.MockLumaAIService
-        )
+    @override_settings(
+        LUMA_API_KEY='', FAL_API_KEY='',
+        VIDEO_ALLOW_MOCK_FALLBACK=False, LUMA_ALLOW_MOCK=False,
+    )
+    def test_no_provider_configured_raises_rather_than_faking_a_render(self):
+        with self.assertRaises(LumaAIError) as ctx:
+            get_luma_service()
+        self.assertIn('LUMA_API_KEY', str(ctx.exception))
+
+    @override_settings(LUMA_API_KEY='', FAL_API_KEY='')
+    def test_mock_serves_when_no_key_and_the_fallback_is_allowed(self):
+        service = get_luma_service()
+        self.assertEqual([p.key for p in service.providers], [])
+        self.assertEqual(service.mock.key, 'mock')
 
     def test_settings_module_declares_the_key(self):
         from django.conf import settings as django_settings

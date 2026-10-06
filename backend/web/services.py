@@ -45,6 +45,7 @@ from media_app.services.tts import (
     get_tts_service,
     strip_markdown,
 )
+from media_app.services.video_providers import result_field
 from media_app.services.video_storage import store_video_asset
 from qr_codes.models import Artifact
 from qr_codes.services.qr_worklist import qr_worklist_data
@@ -1079,15 +1080,22 @@ def generate_story_video(user, story, prompt):
             'error',
         )
 
+    # Recorded on the job at submit so completion has a duration to show even
+    # when the provider does not report one back.
+    requested_duration = 5
+
     job = VideoGenerationJob.objects.create(
         user=user,
         story=story,
         prompt=prompt,
         status=VideoGenerationJob.Status.PENDING,
+        duration=requested_duration,
     )
     try:
         luma_service = get_luma_service()
-        result = luma_service.submit_video_generation(prompt=prompt)
+        result = luma_service.submit_video_generation(
+            prompt=prompt, duration=requested_duration
+        )
     except LumaAIError as exc:
         # The job row already exists, so record why it died rather than
         # leaving a permanently-pending job, and tell the user plainly.
@@ -1097,9 +1105,14 @@ def generate_story_video(user, story, prompt):
         return f'🎬 Video generation unavailable: {exc}', 'error'
 
     job.luma_job_id = result['id']
-    # Stamp the engine from whichever service actually answered, so a job run
-    # against the mock is never credited to Dream Machine.
-    job.engine = normalise_engine(luma_service, 'video')
+    # Stamp which vendor actually answered, so a job served by a fallback
+    # provider — or by the mock — is never credited to the primary one.
+    # `result_field` rather than `result.get`: a test double returning a Mock
+    # would land a non-string in a CharField and fail at save time.
+    job.provider = result_field(result, 'provider')
+    job.engine = result_field(result, 'engine') or normalise_engine(
+        luma_service, 'video'
+    )
     job.save()
     return '🎬 Video generation started — check back shortly.', 'success'
 
@@ -1116,11 +1129,13 @@ def refresh_video_job(user, story):
     ):
         return job
 
-    # A server that has lost its Luma configuration must not break the page
-    # render: report the stored state and let the user retry later.
+    # A server that has lost its provider configuration must not break the
+    # page render: report the stored state and let the user retry later.
     try:
         luma_service = get_luma_service()
-        luma_status = luma_service.get_job_status(job.luma_job_id)
+        luma_status = luma_service.get_job_status(
+            job.luma_job_id, provider=job.provider
+        )
     except LumaAIError:
         return job
 
@@ -1129,7 +1144,9 @@ def refresh_video_job(user, story):
         job.status = VideoGenerationJob.Status.COMPLETED
         job.video_url = luma_status.get('video_url', '')
         job.thumbnail_url = luma_status.get('thumbnail_url', '')
-        job.duration = luma_status.get('duration', 0)
+        # Keep the requested duration when the API reports none, so the
+        # player does not show 00:00 for a clip we asked to be N seconds.
+        job.duration = luma_status.get('duration') or job.duration
         # Mirror the API status path: store the finished render locally so
         # playback outlives the provider's CDN URL. Best effort — on failure
         # the job completes on the remote URL, exactly as before.

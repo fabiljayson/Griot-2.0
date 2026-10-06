@@ -429,23 +429,56 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # ---------------------------------------------------------------------------
-# AI media generation (gTTS narration, Luma Dream Machine video)
+# AI media generation (gTTS narration, video providers)
 # ---------------------------------------------------------------------------
-# Luma bills per generation, so the key is read from the environment rather
-# than hardcoded. When it is absent `get_luma_service()` returns the mock
-# service, which keeps local dev and tests working without external calls.
+# Video generation runs through an ordered chain of providers, each of which
+# bills per render, so keys are read from the environment rather than
+# hardcoded. The chain tries them in VIDEO_PROVIDER_ORDER and falls through to
+# the next one when a provider is out of credits or unreachable — which is how
+# a spent Luma balance stops being a 502 on every video request.
 LUMA_API_KEY = os.environ.get('LUMA_API_KEY', '')
 
-# Whether the mock is allowed to stand in for the real service.
+# Luma Agents API (the successor to the retired Dream Machine endpoint).
+# `model` must be ray-3.2 for type: "video"; anything else is a hard 400.
+LUMA_AGENTS_MODEL = os.environ.get('LUMA_AGENTS_MODEL', 'ray-3.2')
+LUMA_VIDEO_RESOLUTION = os.environ.get('LUMA_VIDEO_RESOLUTION', '720p')
+
+# Backup provider. Unset by default: with no FAL_API_KEY the chain simply
+# skips fal, so this is opt-in rather than a second thing to misconfigure.
+FAL_API_KEY = os.environ.get('FAL_API_KEY', '')
+FAL_VIDEO_MODEL = os.environ.get(
+    'FAL_VIDEO_MODEL', 'fal-ai/kling-video/v2.1/standard/text-to-video'
+)
+
+# Which providers the chain tries, in order. Providers without a key are
+# skipped rather than treated as failures, so a partial config still works.
+VIDEO_PROVIDER_ORDER = os.environ.get('VIDEO_PROVIDER_ORDER', 'luma,fal')
+
+# May the mock stand in when *every* live provider is unavailable?
 #
 # The mock marks jobs 'completed' and hands back a
 # https://storage.example.com/... URL that plays nothing. On a laptop that is
 # a useful placeholder. In production it is worse than a hard failure: the
 # dashboard says the video is done, the row is marked complete, the daily
 # quota was spent, and the user gets an unplayable player with no indication
-# anything went wrong. So outside DEBUG the mock refuses to load and the
-# request fails loudly instead. Set LUMA_ALLOW_MOCK=1 to override (a staging
-# deploy that deliberately wants fake data).
+# anything went wrong.
+#
+# This defaults to ON because keeping the feature answering was chosen over
+# failing loudly — a demo should not die because a third-party balance ran
+# out. The trade-off is exactly the paragraph above, so set
+# VIDEO_ALLOW_MOCK_FALLBACK=0 to restore the strict behaviour: no provider,
+# no job, and an honest 502 with a reason attached.
+_VIDEO_ALLOW_MOCK_FALLBACK_RAW = os.environ.get('VIDEO_ALLOW_MOCK_FALLBACK')
+VIDEO_ALLOW_MOCK_FALLBACK = (
+    True
+    if _VIDEO_ALLOW_MOCK_FALLBACK_RAW is None
+    else _VIDEO_ALLOW_MOCK_FALLBACK_RAW.strip().lower() in ('1', 'true', 'yes', 'on')
+)
+
+# The pre-existing opt-in for serving the mock at all when no key is
+# configured. Kept as a separate switch: VIDEO_ALLOW_MOCK_FALLBACK is about
+# the *last resort* path, this one is about local dev and the test suite.
+# Either being true lets the mock into the chain.
 _LUMA_ALLOW_MOCK_RAW = os.environ.get('LUMA_ALLOW_MOCK')
 LUMA_ALLOW_MOCK = (
     DEBUG

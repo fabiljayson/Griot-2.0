@@ -66,6 +66,15 @@ ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
 # test would hit the "no LUMA_API_KEY in production" guard instead.
 LUMA_ALLOW_MOCK = True
 
+# No vendor keys. base.py reads these out of .env, which would otherwise wire a
+# live provider into every video test: each submit would cost a network
+# round-trip and pass only because the mock fallback absorbed a real error —
+# so a green run would say nothing about the code under test and would fail
+# offline. With both empty the chain goes straight to the mock, and a test that
+# needs a real key sets it through override_settings.
+LUMA_API_KEY = ''
+FAL_API_KEY = ''
+
 # Same reasoning for Griot AI: without this every `/api/ai/ask/` test would hit
 # the "GEMINI_API_KEY is unset in a non-DEBUG settings module" guard instead of
 # exercising the endpoint. Tests that specifically cover that guard override it
