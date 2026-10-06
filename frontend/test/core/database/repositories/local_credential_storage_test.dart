@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -98,9 +99,13 @@ void main() {
       database: appDb,
       secureStorage: storage,
     );
+    // The suite only needs valid records, not realistically slow ones: a
+    // full-cost hash would blow the runner's per-test timeout.
+    LocalCredentialHasher.debugOverrideIterations = 10000;
   });
 
   tearDown(() async {
+    LocalCredentialHasher.debugOverrideIterations = null;
     await appDb.close();
     final file = File(dbPath);
     if (file.existsSync()) file.deleteSync();
@@ -122,6 +127,25 @@ void main() {
   }
 
   String base64Of(String value) => base64.encode(utf8.encode(value));
+
+  /// A genuine PBKDF2 record at a deliberately low round count, standing in
+  /// for one written before the work factor was raised. Built here rather
+  /// than hardcoded so it stays a valid hash of [password] no matter how the
+  /// scheme evolves.
+  String legacyRecord(String password) {
+    const rounds = 1000;
+    final salt = List<int>.generate(16, (i) => i + 1);
+    final key = utf8.encode(password);
+    var u = Hmac(sha256, key).convert([...salt, 0, 0, 0, 1]).bytes;
+    final out = List<int>.from(u);
+    for (var i = 1; i < rounds; i++) {
+      u = Hmac(sha256, key).convert(u).bytes;
+      for (var j = 0; j < out.length; j++) {
+        out[j] ^= u[j];
+      }
+    }
+    return 'pbkdf2_sha256\$$rounds\$${base64.encode(salt)}\$${base64.encode(out)}';
+  }
 
   group('LocalAuthRepository', () {
     test('register then login with the correct password succeeds', () async {
@@ -184,6 +208,70 @@ void main() {
 
       expect(hash, startsWith(r'pbkdf2_sha256$'));
       expect(LocalCredentialHasher.verify('correct-horse', hash), isTrue);
+    });
+
+    test(
+      'login upgrades a legacy low-round record to the current work factor',
+      () async {
+        // This test proves the REAL work factor lands on disk, so it clears
+        // the suite's speed override and seeds the legacy row directly — one
+        // full-cost hash (the rewrite) instead of two.
+        LocalCredentialHasher.debugOverrideIterations = null;
+        final db = await appDb.database;
+        final legacy = legacyRecord('correct-horse');
+        await db.insert('local_users', {
+          'username': 'amara',
+          'email': 'amara@example.com',
+          'password_hash': legacy,
+          'first_name': '',
+          'last_name': '',
+          'role': 'visitor',
+        });
+
+        await localAuth.login(username: 'amara', password: 'correct-horse');
+
+        final raw = await db.rawQuery(
+          "SELECT password_hash FROM local_users WHERE username = 'amara'",
+        );
+        final upgraded = raw.single['password_hash'] as String;
+        expect(
+          upgraded,
+          startsWith('pbkdf2_sha256\$${LocalCredentialHasher.iterations}\$'),
+        );
+        expect(upgraded, isNot(equals(legacy)));
+        expect(LocalCredentialHasher.verify('correct-horse', upgraded), isTrue);
+      },
+      // Two real 600k-iteration PBKDF2 runs in the debug VM — comfortably
+      // under the default 30s alone, over it when the whole suite runs in
+      // parallel isolates on a loaded machine.
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+
+    test('a failed login leaves the stored record untouched', () async {
+      await localAuth.register(
+        username: 'amara',
+        email: 'amara@example.com',
+        password: 'correct-horse',
+      );
+
+      final db = await appDb.database;
+      final legacy = legacyRecord('correct-horse');
+      await db.update(
+        'local_users',
+        {'password_hash': legacy},
+        where: 'username = ?',
+        whereArgs: ['amara'],
+      );
+
+      await expectLater(
+        localAuth.login(username: 'amara', password: 'wrong'),
+        throwsA(isA<Exception>()),
+      );
+
+      final raw = await db.rawQuery(
+        "SELECT password_hash FROM local_users WHERE username = 'amara'",
+      );
+      expect(raw.single['password_hash'], equals(legacy));
     });
 
     test('a server-backed session stores no local password', () async {

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:griot_ai/features/admin/models/moderation_models.dart';
 import 'package:griot_ai/features/admin/providers/admin_provider.dart';
 import 'package:griot_ai/features/admin/screens/consent_review_screen.dart';
+import 'package:griot_ai/features/admin/services/admin_api_service.dart';
 import 'package:griot_ai/features/admin/widgets/consent_review_card.dart';
 import 'package:griot_ai/features/stories/models/story_model.dart';
 
@@ -13,7 +15,13 @@ import '../../support/admin_fixtures.dart';
 /// Captures what the screen asked to record, so the tests assert on the
 /// decision the moderator actually expressed rather than on a network call.
 class RecordingConsentNotifier extends ConsentActionNotifier {
-  RecordingConsentNotifier({this.shouldFail = false});
+  RecordingConsentNotifier({this.shouldFail = false})
+      : super(
+          // `record` is overridden below, so the client is never exercised;
+          // the constructor still requires one to keep production wiring
+          // explicit (the bare singleton carries no auth interceptor).
+          AdminApiService(dio: Dio()),
+        );
 
   final bool shouldFail;
   final recorded = <Map<String, Object?>>[];

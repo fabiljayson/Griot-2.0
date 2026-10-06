@@ -57,6 +57,8 @@ abstract final class AppIcons {
   static const IconData history = Icons.history_outlined;
   static const IconData image_outlined = Icons.image_outlined;
   static const IconData info_outline = Icons.info_outline;
+  // Virtual reality / 3D content (the Unity handoff on an artifact page).
+  static const IconData view_in_ar = Icons.view_in_ar_outlined;
   static const IconData insights_outlined = Icons.insights_outlined;
   static const IconData keyboard = Icons.keyboard_outlined;
   static const IconData language = Icons.language_outlined;

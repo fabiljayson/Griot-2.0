@@ -7,6 +7,12 @@
 # while still reporting a green total). Re-measured with it included:
 #   84% on 6866 statements, so the 80% floor still holds with room to spare.
 #
+# `vr` and `griot_ai` are listed for that same reason, not by reflex: a new app
+# that is absent here contributes nothing to the total, so its tests are
+# optional and its coverage is zero while the gate still reports green. The
+# launch-token path is the security boundary of the VR feature; leaving it
+# unmeasured would be the same mistake twice.
+#
 # `fail_under` sits 4 points below the measured number rather than at it. A
 # threshold the repo passes by a hair breaks on the first unrelated refactor,
 # and a gate that is often red is a gate people learn to ignore. Ratchet it
@@ -26,6 +32,8 @@ source =
     api
     web
     heritage_crawl
+    vr
+    griot_ai
 omit =
     */migrations/*
     */tests.py

@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, F, Q
+from django.db.models.functions import Greatest
 from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -87,14 +88,14 @@ class StoryViewSet(viewsets.ModelViewSet):
         POST   /api/stories/{slug}/bookmark/  — toggle bookmark
         POST   /api/stories/{slug}/like/      — toggle like
         POST   /api/stories/{slug}/flag/      — flag for inaccuracy
-        POST   /api/stories/{slug}/request-consent/ — "I have asked" (author)
-        POST   /api/stories/{slug}/consent/   — record the answer (moderator)
+        POST   /api/stories/{slug}/request_consent/ — "I have asked" (author)
+        POST   /api/stories/{slug}/record_consent/ — record the answer (moderator)
         POST   /api/stories/{slug}/progress/  — update reading progress
         GET    /api/stories/my/           — current user's stories
         GET    /api/stories/bookmarks/    — current user's bookmarks
-        GET    /api/stories/moderation-queue/ — flagged stories (admin only)
+        GET    /api/stories/moderation_queue/ — flagged stories (admin only)
         POST   /api/stories/{slug}/moderate/  — resolve flags (admin only)
-        GET    /api/stories/consent-queue/ — awaiting a consent decision (admin only)
+        GET    /api/stories/consent_queue/ — awaiting a consent decision (admin only)
     """
 
     lookup_field = 'slug'
@@ -275,9 +276,11 @@ class StoryViewSet(viewsets.ModelViewSet):
         )
         if not created:
             bookmark.delete()
-            Story.objects.filter(pk=story.pk).update(bookmark_count=max(0, story.bookmark_count - 1))
+            Story.objects.filter(pk=story.pk).update(
+                bookmark_count=Greatest(F('bookmark_count') - 1, 0),
+            )
             return Response({'bookmarked': False}, status=status.HTTP_200_OK)
-        Story.objects.filter(pk=story.pk).update(bookmark_count=story.bookmark_count + 1)
+        Story.objects.filter(pk=story.pk).update(bookmark_count=F('bookmark_count') + 1)
         return Response({'bookmarked': True}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -290,9 +293,11 @@ class StoryViewSet(viewsets.ModelViewSet):
         )
         if not created:
             like.delete()
-            Story.objects.filter(pk=story.pk).update(like_count=max(0, story.like_count - 1))
+            Story.objects.filter(pk=story.pk).update(
+                like_count=Greatest(F('like_count') - 1, 0),
+            )
             return Response({'liked': False}, status=status.HTTP_200_OK)
-        Story.objects.filter(pk=story.pk).update(like_count=story.like_count + 1)
+        Story.objects.filter(pk=story.pk).update(like_count=F('like_count') + 1)
         return Response({'liked': True}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -306,7 +311,7 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def moderation_queue(self, request):
-        """GET /api/stories/moderation-queue/ — unresolved flagged stories.
+        """GET /api/stories/moderation_queue/ — unresolved flagged stories.
 
         Groups unresolved flags by story so moderators can review and act on
         them from the admin dashboard.
@@ -378,7 +383,7 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def consent_queue(self, request):
-        """GET /api/stories/consent-queue/ — stories awaiting a consent decision.
+        """GET /api/stories/consent_queue/ — stories awaiting a consent decision.
 
         The moderator worklist, and the surface the Flutter and web consent
         forms hang off. Everything needed to *make* the decision travels with
@@ -418,11 +423,11 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsContributorOrAbove])
     def request_consent(self, request, slug=None):
-        """POST /api/stories/{slug}/request-consent/ — consent has been *asked for*.
+        """POST /api/stories/{slug}/request_consent/ — consent has been *asked for*.
 
         Moves `not_requested` -> `pending`. The contributor records that they
         asked; only a moderator records what the community answered, at
-        `.../consent/`. Idempotent: asking twice changes nothing.
+        `.../record_consent/`. Idempotent: asking twice changes nothing.
         """
         story = story_services.request_consent(request.user, self.get_object())
         return Response({
@@ -432,7 +437,7 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def record_consent(self, request, slug=None):
-        """POST /api/stories/{slug}/consent/ — record the community's answer.
+        """POST /api/stories/{slug}/record_consent/ — record the community's answer.
 
         Body:
             status:         one of Story.Consent

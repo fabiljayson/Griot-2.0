@@ -75,6 +75,15 @@ class ServerAuthRepository {
     return TokenPair.fromJson(response.data as Map<String, dynamic>);
   }
 
+  /// POST /api/auth/logout/ — ask the server to blacklist the refresh token.
+  ///
+  /// Callers treat this as best-effort: local state is cleared whether or not
+  /// the request lands, so a logout that fails offline still signs the reader
+  /// out on this device. The token simply expires server-side in that case.
+  Future<void> logout(String refreshToken) async {
+    await _dio.post('/api/auth/logout/', data: {'refresh': refreshToken});
+  }
+
   /// Fetch the authenticated user's profile (needs the access token).
   Future<Map<String, dynamic>> me(String accessToken) async {
     final response = await _dio.get(

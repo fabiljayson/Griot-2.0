@@ -26,7 +26,10 @@ final notificationsProvider =
 
 /// Badge count for the bell, readable without loading the whole inbox.
 final unreadCountProvider = Provider<int>((ref) {
-  return ref.watch(notificationsProvider).value?.unreadCount ?? 0;
+  // valueOrNull, not value: on Riverpod 3, `.value` rethrows the fetch error,
+  // so an offline inbox would crash the home header. A failed fetch shows an
+  // empty badge until the next successful load.
+  return ref.watch(notificationsProvider).valueOrNull?.unreadCount ?? 0;
 });
 
 class NotificationsNotifier extends AsyncNotifier<NotificationInbox> {

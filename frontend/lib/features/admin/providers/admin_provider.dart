@@ -1,9 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_provider.dart';
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';
 import '../models/qr_worklist_models.dart';
 import '../services/admin_api_service.dart';
+
+/// Admin API service wired to the authenticated client.
+///
+/// Every admin endpoint (analytics, moderation queue, consent queue, QR
+/// worklist) requires a Bearer token — `IsAdminOrManager` on the backend.
+/// `AdminApiService.instance` falls back to the bare `ApiClient.instance`,
+/// which carries no `AuthInterceptor`, so all admin calls used to leave the
+/// device anonymous and came back 401 (or, worse, would be served if the
+/// server ever loosened).
+final adminApiServiceProvider = Provider<AdminApiService>((ref) {
+  return AdminApiService(
+    dio: ref.watch(authenticatedApiClientProvider).dio,
+  );
+});
 
 /// Complete dashboard summary provider.
 ///
@@ -13,7 +28,7 @@ import '../services/admin_api_service.dart';
 final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
   ref,
 ) async {
-  return AdminApiService.instance.getDashboardSummary();
+  return ref.watch(adminApiServiceProvider).getDashboardSummary();
 });
 
 /// State of an in-flight moderation action.
@@ -32,9 +47,11 @@ class ModerationState {
 /// Notifier performing moderation actions (remove / dismiss) on flagged
 /// stories and reporting which story is currently being processed.
 class ModerationNotifier extends StateNotifier<ModerationState> {
-  ModerationNotifier() : super(const ModerationState());
+  ModerationNotifier(AdminApiService api)
+      : _api = api,
+        super(const ModerationState());
 
-  final AdminApiService _api = AdminApiService.instance;
+  final AdminApiService _api;
 
   /// Run a moderation action. Returns true on success.
   Future<bool> moderate({
@@ -57,14 +74,14 @@ class ModerationNotifier extends StateNotifier<ModerationState> {
 /// Moderation action state provider.
 final moderationProvider =
     StateNotifierProvider<ModerationNotifier, ModerationState>(
-      (ref) => ModerationNotifier(),
+      (ref) => ModerationNotifier(ref.watch(adminApiServiceProvider)),
     );
 
 /// Unresolved flagged stories awaiting review (admin only).
 final moderationQueueProvider = FutureProvider.autoDispose<List<FlaggedStory>>((
   ref,
 ) async {
-  return AdminApiService.instance.getModerationQueue();
+  return ref.watch(adminApiServiceProvider).getModerationQueue();
 });
 
 /// Every platform user, newest first.
@@ -74,7 +91,7 @@ final moderationQueueProvider = FutureProvider.autoDispose<List<FlaggedStory>>((
 final adminUsersProvider = FutureProvider.autoDispose<List<AdminUser>>((
   ref,
 ) async {
-  return AdminApiService.instance.getUsers();
+  return ref.watch(adminApiServiceProvider).getUsers();
 });
 
 /// State of an in-flight consent decision.
@@ -96,9 +113,11 @@ class ConsentActionState {
 /// Merging them into one "moderation" state would let a reviewer lose track of
 /// which record they were in the middle of writing.
 class ConsentActionNotifier extends StateNotifier<ConsentActionState> {
-  ConsentActionNotifier() : super(const ConsentActionState());
+  ConsentActionNotifier(AdminApiService api)
+      : _api = api,
+        super(const ConsentActionState());
 
-  final AdminApiService _api = AdminApiService.instance;
+  final AdminApiService _api;
 
   /// Record a decision. Returns true on success.
   ///
@@ -133,19 +152,19 @@ class ConsentActionNotifier extends StateNotifier<ConsentActionState> {
 /// The stories a moderator still owes a consent decision on.
 final consentQueueProvider = FutureProvider.autoDispose<List<ConsentReviewStory>>(
   (ref) async {
-    return AdminApiService.instance.getConsentQueue();
+    return ref.watch(adminApiServiceProvider).getConsentQueue();
   },
 );
 
 /// Consent decision state provider.
 final consentActionProvider =
     StateNotifierProvider<ConsentActionNotifier, ConsentActionState>(
-      (ref) => ConsentActionNotifier(),
+      (ref) => ConsentActionNotifier(ref.watch(adminApiServiceProvider)),
     );
 
 /// The artifacts still missing a printable QR code (manager/admin only).
 final qrWorklistProvider = FutureProvider.autoDispose<QrWorklist>((ref) async {
-  return AdminApiService.instance.getQrWorklist();
+  return ref.watch(adminApiServiceProvider).getQrWorklist();
 });
 
 /// State of an in-flight QR generation.
@@ -171,9 +190,11 @@ class QrGenerationState {
 /// the server's ordering is how the screen would claim an object is still
 /// unlabelled moments after labelling it.
 class QrGenerationNotifier extends StateNotifier<QrGenerationState> {
-  QrGenerationNotifier() : super(const QrGenerationState());
+  QrGenerationNotifier(AdminApiService api)
+      : _api = api,
+        super(const QrGenerationState());
 
-  final AdminApiService _api = AdminApiService.instance;
+  final AdminApiService _api;
 
   /// Regenerate one artifact's code. Returns the outcome, or null on failure.
   Future<QrWorklistGeneration?> generateOne(String slug) async {
@@ -206,5 +227,5 @@ class QrGenerationNotifier extends StateNotifier<QrGenerationState> {
 /// QR generation state provider.
 final qrGenerationProvider =
     StateNotifierProvider<QrGenerationNotifier, QrGenerationState>(
-      (ref) => QrGenerationNotifier(),
+      (ref) => QrGenerationNotifier(ref.watch(adminApiServiceProvider)),
     );

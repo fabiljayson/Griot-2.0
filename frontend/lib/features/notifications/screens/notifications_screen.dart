@@ -19,6 +19,9 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inbox = ref.watch(notificationsProvider);
+    // valueOrNull, not `.value`: on Riverpod 3 `.value` rethrows the fetch
+    // error, and a failed refresh must not crash the app bar.
+    final unread = inbox.valueOrNull?.unreadCount ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -26,8 +29,7 @@ class NotificationsScreen extends ConsumerWidget {
         actions: [
           // Only offered when there is something to clear, so the bar does not
           // carry a dead control.
-          if (inbox.value?.unreadCount != null &&
-              inbox.value!.unreadCount > 0)
+          if (unread > 0)
             TextButton(
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);

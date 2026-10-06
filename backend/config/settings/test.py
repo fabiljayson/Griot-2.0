@@ -27,6 +27,9 @@ REST_FRAMEWORK = {  # noqa: F405
         # view declares, and an unlisted scope is an ImproperlyConfigured at
         # request time rather than a skipped throttle.
         'metrics': '10000/min',
+        'vr_launch': '10000/min',
+        'vr_token': '10000/min',
+        'ai_ask': '10000/min',
     },
 }
 
@@ -62,6 +65,12 @@ ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
 # inherits DEBUG=False from base.py. Opt back in explicitly, or every video
 # test would hit the "no LUMA_API_KEY in production" guard instead.
 LUMA_ALLOW_MOCK = True
+
+# Same reasoning for Griot AI: without this every `/api/ai/ask/` test would hit
+# the "GEMINI_API_KEY is unset in a non-DEBUG settings module" guard instead of
+# exercising the endpoint. Tests that specifically cover that guard override it
+# back to False.
+GRIOT_AI_ALLOW_MOCK = True
 
 # Pinned to a local in-process cache regardless of the developer's
 # environment. base.py switches to Redis when REDIS_URL is set, and a suite

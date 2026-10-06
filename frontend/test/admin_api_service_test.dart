@@ -141,16 +141,16 @@ void main() {
       expect(summary.recentActivity.qrScans, 58);
     });
     test(
-      'getModerationQueue hits /stories/moderation-queue/ and parses',
+      'getModerationQueue hits /stories/moderation_queue/ and parses',
       () async {
         final setup = _serviceWith({
-          '/api/stories/moderation-queue/': adminModerationQueueJson(),
+          '/api/stories/moderation_queue/': adminModerationQueueJson(),
         });
 
         final queue = await setup.service.getModerationQueue();
 
         expect(setup.adapter.requestedPaths, [
-          '/api/stories/moderation-queue/',
+          '/api/stories/moderation_queue/',
         ]);
         expect(queue, hasLength(1));
         expect(queue.first.title, 'The Wrong Spider');
@@ -159,6 +159,45 @@ void main() {
         expect(queue.first.flags.first.reasonDisplay, 'Cultural Inaccuracy');
       },
     );
+
+    test(
+      'getConsentQueue hits /stories/consent_queue/ and parses',
+      () async {
+        final setup = _serviceWith({
+          '/api/stories/consent_queue/': adminConsentQueueJson(),
+        });
+
+        final queue = await setup.service.getConsentQueue();
+
+        expect(setup.adapter.requestedPaths, [
+          '/api/stories/consent_queue/',
+        ]);
+        expect(queue, isNotEmpty);
+      },
+    );
+
+    test('recordStoryConsent posts to /stories/{slug}/record_consent/', () async {
+      final setup = _serviceWith({
+        '/api/stories/the-wrong-spider/record_consent/': {
+          'slug': 'the-wrong-spider',
+          'consent_status': 'granted',
+          'archived': false,
+        },
+      });
+
+      final result = await setup.service.recordStoryConsent(
+        slug: 'the-wrong-spider',
+        status: 'granted',
+        basis: 'Elder council approval',
+      );
+
+      expect(setup.adapter.requestedPaths, [
+        '/api/stories/the-wrong-spider/record_consent/',
+      ]);
+      final request = setup.adapter.requests.single;
+      expect(request.method, 'POST');
+      expect(result['consent_status'], 'granted');
+    });
 
     test('moderateStory posts the action and notes', () async {
       final setup = _serviceWith({

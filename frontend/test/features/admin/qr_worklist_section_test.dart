@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:griot_ai/core/theme/app_icons.dart';
 import 'package:griot_ai/features/admin/models/qr_worklist_models.dart';
 import 'package:griot_ai/features/admin/providers/admin_provider.dart';
+import 'package:griot_ai/features/admin/services/admin_api_service.dart';
 import 'package:griot_ai/features/admin/widgets/qr_worklist_section.dart';
 
 /// An empty-but-not-yet-populated worklist: the catalog has rows, this page
@@ -30,7 +32,13 @@ QrWorklistEntry _entry({
 
 /// Records what the section asked for instead of calling the API.
 class _RecordingQrNotifier extends QrGenerationNotifier {
-  _RecordingQrNotifier(this.result);
+  _RecordingQrNotifier(this.result)
+      : super(
+          // Both API methods are overridden below, so the client is never
+          // exercised; the constructor still requires one to keep production
+          // wiring explicit.
+          AdminApiService(dio: Dio()),
+        );
 
   final QrWorklistGeneration result;
 

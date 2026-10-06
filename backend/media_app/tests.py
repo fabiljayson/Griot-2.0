@@ -3,6 +3,7 @@ from io import StringIO
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import SimpleTestCase, override_settings
@@ -19,6 +20,7 @@ from .models import (
     VideoGenerationJob,
 )
 from .services.luma_ai import LumaAIError
+from .services.video_storage import store_video_asset
 
 User = get_user_model()
 
@@ -262,6 +264,182 @@ class VideoGenerationTests(APITestCase):
         self.assertEqual(resp.data['duration'], 5)
         self.assertNotIn('story_id', resp.data)
         self.assertNotIn('url', resp.data)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class VideoStorageTests(APITestCase):
+    """A finished render is pulled into ``video_file`` (store_video_asset).
+
+    The provider's CDN URL is rented, not owned: once the bytes live in
+    MEDIA_ROOT, playback outlives the provider and a completed job is never
+    re-rendered just to fetch it back.
+    """
+
+    MP4_BYTES = b'\x00\x00\x00\x18ftypmp42' + b'\x00' * 64
+
+    def setUp(self):
+        self.contributor = User.objects.create_user(
+            'videostore1',
+            email='videostore1@example.com',
+            password='hunter2secure',
+            role='contributor',
+        )
+        self.story = Story.objects.create(
+            title='Stored Story',
+            content='A story whose video must outlive the provider.',
+            author=self.contributor,
+            status=Story.Status.PUBLISHED,
+        )
+        self.client.force_authenticate(self.contributor)
+
+    def _job(self, **kwargs):
+        defaults = dict(
+            user=self.contributor,
+            story=self.story,
+            prompt='prompt',
+            luma_job_id='luma_job_1',
+            status=VideoGenerationJob.Status.PROCESSING,
+            video_url='https://example.com/clip.mp4',
+            engine='luma-dream-machine',
+        )
+        defaults.update(kwargs)
+        return VideoGenerationJob.objects.create(**defaults)
+
+    @staticmethod
+    def _fake_response(body, content_type='video/mp4', status_code=200, location=None):
+        resp = mock.Mock()
+        resp.status_code = status_code
+        resp.headers = (
+            {'location': location} if location else {'content-type': content_type}
+        )
+        resp.iter_content.return_value = [body]
+        return resp
+
+    def _store(self, job, response):
+        """Run store_video_asset with a live key and a stubbed download."""
+        with override_settings(LUMA_API_KEY='test-key'):
+            with mock.patch(
+                'media_app.services.video_storage.http_requests.get',
+                return_value=response,
+            ) as get:
+                return store_video_asset(job), get
+
+    def test_stores_the_render_locally(self):
+        job = self._job()
+        stored, get = self._store(job, self._fake_response(self.MP4_BYTES))
+        self.assertTrue(stored)
+        get.assert_called_once()
+        # Named after the job. Suffix tolerance is not cosmetic: the test DB
+        # rolls back between tests while MEDIA_ROOT does not, so pk values
+        # repeat and Django may de-duplicate the filename with `_{random}`.
+        basename = job.video_file.name.rsplit('/', 1)[-1]
+        self.assertTrue(
+            basename.startswith(f'{job.pk}.') or basename.startswith(f'{job.pk}_'),
+            basename,
+        )
+        job.video_file.open('rb')
+        try:
+            self.assertEqual(job.video_file.read(), self.MP4_BYTES)
+        finally:
+            job.video_file.close()
+        job.save()
+        job.refresh_from_db()
+        self.assertTrue(job.video_file)
+
+    def test_no_live_key_means_no_fetch(self):
+        # Mock jobs report placeholder URLs; without a live key there is no
+        # real render to keep, so nothing is fetched whatever the URL says.
+        job = self._job(
+            engine='luma-mock',
+            video_url='https://storage.example.com/clip.mp4',
+        )
+        with override_settings(LUMA_API_KEY=''):
+            with mock.patch(
+                'media_app.services.video_storage.http_requests.get'
+            ) as get:
+                self.assertFalse(store_video_asset(job))
+        get.assert_not_called()
+
+    def test_already_stored_file_is_not_refetched(self):
+        job = self._job()
+        job.video_file.save('already-there.mp4', ContentFile(self.MP4_BYTES))
+        stored, get = self._store(job, self._fake_response(self.MP4_BYTES))
+        self.assertTrue(stored)
+        get.assert_not_called()
+
+    def test_rejects_urls_the_server_must_not_fetch(self):
+        for url in (
+            'http://example.com/clip.mp4',  # not https
+            'https://127.0.0.1/clip.mp4',  # loopback
+            'https://10.1.2.3/clip.mp4',  # private LAN
+            'https://169.254.169.254/latest/meta-data',  # cloud metadata
+            'ftp://example.com/clip.mp4',  # wrong scheme
+        ):
+            job = self._job(video_url=url)
+            stored, get = self._store(job, self._fake_response(self.MP4_BYTES))
+            self.assertFalse(stored, url)
+            get.assert_not_called()
+
+    def test_refuses_to_follow_a_redirect_into_private_space(self):
+        job = self._job()
+        hop = self._fake_response(b'', status_code=302, location='https://127.0.0.1/x')
+        stored, get = self._store(job, hop)
+        self.assertFalse(stored)
+        get.assert_called_once()
+
+    def test_rejects_a_response_that_is_not_actually_video(self):
+        job = self._job()
+        html = self._fake_response(b'<html>not a video</html>', content_type='text/html')
+        stored, get = self._store(job, html)
+        self.assertFalse(stored)
+        get.assert_called_once()
+        self.assertFalse(job.video_file)
+
+    def test_status_poll_stores_the_video_and_serves_the_local_copy(self):
+        job = self._job()
+        completed = mock.Mock()
+        completed.get_job_status.return_value = {
+            'id': 'luma_job_1',
+            'status': 'completed',
+            'video_url': 'https://example.com/clip.mp4',
+            'thumbnail_url': '',
+            'duration': 5,
+        }
+        with override_settings(LUMA_API_KEY='test-key'):
+            with mock.patch(
+                'media_app.views.get_luma_service', return_value=completed
+            ):
+                with mock.patch(
+                    'media_app.services.video_storage.http_requests.get',
+                    return_value=self._fake_response(self.MP4_BYTES),
+                ):
+                    url = reverse(
+                        'media:video-generation-status', kwargs={'pk': job.pk}
+                    )
+                    resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'completed')
+        # Absolute URL for the stored copy — the client plays this, not a
+        # bare '/media/...' path it cannot resolve.
+        self.assertTrue(resp.data['video_url'].startswith('http'))
+        self.assertIn('/media/video/generations/', resp.data['video_url'])
+        job.refresh_from_db()
+        self.assertTrue(job.video_file)
+
+    def test_serializer_prefers_the_stored_file_over_the_remote_url(self):
+        job = self._job(
+            status=VideoGenerationJob.Status.COMPLETED,
+            video_url='https://example.com/clip.mp4',
+        )
+        job.video_file.save('kept.mp4', ContentFile(self.MP4_BYTES), save=True)
+        job.refresh_from_db()
+        self.assertTrue(store_video_asset(job))  # already stored: no fetch
+        from .serializers import VideoGenerationJobSerializer
+
+        data = VideoGenerationJobSerializer(job).data
+        self.assertIn('kept.mp4', data['video_url'])
+        self.assertNotIn('example.com', data['video_url'])
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())

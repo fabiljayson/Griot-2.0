@@ -102,6 +102,16 @@ class VideoGenerationJob(models.Model):
         default='',
         help_text='URL to the generated video.',
     )
+    # The provider's URL points at its own CDN and is not ours to rely on
+    # forever. On completion the bytes are pulled down into this field — the
+    # same contract AudioNarrationJob.audio_file already keeps for narration —
+    # so playback keeps working after the provider link expires, and the
+    # render is never paid for twice just to retrieve it.
+    video_file = models.FileField(
+        upload_to='video/generations/',
+        blank=True,
+        help_text='Stored copy of the generated video (downloaded on completion).',
+    )
     thumbnail_url = models.URLField(
         blank=True,
         default='',

@@ -60,7 +60,7 @@ class AdminApiService {
 
   /// Fetch the unresolved moderation queue (admin only).
   Future<List<FlaggedStory>> getModerationQueue() async {
-    final response = await _dio.get('$_storiesBasePath/moderation-queue/');
+    final response = await _dio.get('$_storiesBasePath/moderation_queue/');
     return (response.data as List<dynamic>)
         .map((e) => FlaggedStory.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -86,11 +86,11 @@ class AdminApiService {
   /// Fetch the stories still awaiting a moderator's consent decision
   /// (admin only).
   ///
-  /// Mirrors `POST /api/stories/{slug}/consent/`: what the contributor
+  /// Mirrors `POST /api/stories/{slug}/record_consent/`: what the contributor
   /// declared about the text travels with the row, because the decision is
   /// about the tradition, not about the enum.
   Future<List<ConsentReviewStory>> getConsentQueue() async {
-    final response = await _dio.get('$_storiesBasePath/consent-queue/');
+    final response = await _dio.get('$_storiesBasePath/consent_queue/');
     return (response.data as List<dynamic>)
         .map((e) => ConsentReviewStory.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -115,7 +115,7 @@ class AdminApiService {
     if (licence != null && licence.isNotEmpty) data['licence'] = licence;
 
     final response = await _dio.post(
-      '$_storiesBasePath/$slug/consent/',
+      '$_storiesBasePath/$slug/record_consent/',
       data: data,
     );
     return response.data as Map<String, dynamic>;

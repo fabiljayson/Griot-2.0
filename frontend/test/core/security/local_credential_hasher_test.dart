@@ -21,6 +21,10 @@ typedef _Vector = ({
   List<int> expected,
 });
 
+/// The embedded round count of a record produced right now, so mutation tests
+/// below don't hardcode today's work factor and break on the next raise.
+final _currentWorkFactor = '\$${LocalCredentialHasher.iterations}\$';
+
 final _referenceVectors = <_Vector>[
   // Single iteration — exercises the U1 = PRF(P, S || INT_32_BE(1)) fast path.
   (
@@ -226,19 +230,19 @@ void main() {
 
     test('non-numeric iteration count', () {
       final record =
-          LocalCredentialHasher.hash('pw').replaceFirst(r'$100000$', r'$lots$');
+          LocalCredentialHasher.hash('pw').replaceFirst(_currentWorkFactor, r'$lots$');
       expect(LocalCredentialHasher.verify('pw', record), isFalse);
     });
 
     test('zero iteration count', () {
       final record =
-          LocalCredentialHasher.hash('pw').replaceFirst(r'$100000$', r'$0$');
+          LocalCredentialHasher.hash('pw').replaceFirst(_currentWorkFactor, r'$0$');
       expect(LocalCredentialHasher.verify('pw', record), isFalse);
     });
 
     test('non-base64 salt', () {
       final record =
-          LocalCredentialHasher.hash('pw').replaceFirst(r'$100000$', r'$!!!$');
+          LocalCredentialHasher.hash('pw').replaceFirst(_currentWorkFactor, r'$!!!$');
       expect(LocalCredentialHasher.verify('pw', record), isFalse);
     });
 
@@ -277,13 +281,21 @@ void main() {
 
     test('true for a weaker record', () {
       final record =
-          LocalCredentialHasher.hash('pw').replaceFirst(r'$100000$', r'$1000$');
+          LocalCredentialHasher.hash('pw').replaceFirst(_currentWorkFactor, r'$1000$');
       expect(LocalCredentialHasher.needsRehash(record), isTrue);
     });
 
     test('false for null and for a damaged record', () {
       expect(LocalCredentialHasher.needsRehash(null), isFalse);
       expect(LocalCredentialHasher.needsRehash('garbage'), isFalse);
+    });
+  });
+
+  group('work factor', () {
+    test('stays at or above the OWASP floor for PBKDF2-HMAC-SHA256', () {
+      // 600,000 is the OWASP-recommended count. Lowering it reopens the
+      // offline-database finding this replaced; raising it is always fine.
+      expect(LocalCredentialHasher.iterations, greaterThanOrEqualTo(600000));
     });
   });
 }

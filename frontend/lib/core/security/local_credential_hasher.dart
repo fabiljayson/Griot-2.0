@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 /// Salted, iterated password hashing for **local-only** accounts.
 ///
@@ -39,10 +40,28 @@ class LocalCredentialHasher {
 
   static const String _scheme = 'pbkdf2_sha256';
 
-  /// Work factor. High enough to make an offline dictionary attack against a
-  /// stolen database expensive, low enough that a sign-in on a budget phone
-  /// stays imperceptible.
-  static const int iterations = 100000;
+  /// Work factor: 600,000 rounds, the OWASP-recommended minimum for
+  /// PBKDF2-HMAC-SHA256 (Password Storage Cheat Sheet). High enough to make an
+  /// offline dictionary attack against a stolen database expensive, low enough
+  /// that a sign-in on a budget phone stays imperceptible.
+  ///
+  /// [verify] honours whatever round count a record embeds, so hashes written
+  /// at the old 100,000 rounds keep working; [needsRehash] then reports them
+  /// as stale and the repository re-hashes them at this cost after the next
+  /// successful sign-in.
+  static const int iterations = 600000;
+
+  /// Test-only override for the work factor used by [hash] and [needsRehash].
+  ///
+  /// A full-cost hash takes seconds in a debug VM — longer than the test
+  /// runner's per-test timeout once a test hashes more than once — so suites
+  /// that only need a *valid* record (not a realistically slow one) pin this
+  /// low. Production never sets it: [iterations] is what lands on disk, and
+  /// tests that must prove that clear the override explicitly.
+  @visibleForTesting
+  static int? debugOverrideIterations;
+
+  static int get _rounds => debugOverrideIterations ?? iterations;
 
   /// 16 bytes of salt — 128 bits, above the 8-byte floor OWASP recommends.
   static const int _saltBytes = 16;
@@ -55,10 +74,10 @@ class LocalCredentialHasher {
   /// password still produce unrelated records.
   static String hash(String password, {Random? random}) {
     final salt = _randomBytes(_saltBytes, random);
-    final derived = _pbkdf2(utf8.encode(password), salt, iterations, _hashBytes);
+    final derived = _pbkdf2(utf8.encode(password), salt, _rounds, _hashBytes);
     return [
       _scheme,
-      '$iterations',
+      '$_rounds',
       base64.encode(salt),
       base64.encode(derived),
     ].join(r'$');
@@ -98,14 +117,14 @@ class LocalCredentialHasher {
     return _constantTimeEquals(actual, expected);
   }
 
-  /// Whether [record] was produced with fewer rounds than the current
-  /// [iterations], and so should be replaced after a successful sign-in.
+  /// Whether [record] was produced with fewer rounds than the current work
+  /// factor, and so should be replaced after a successful sign-in.
   static bool needsRehash(String? record) {
     if (record == null) return false;
     final parts = record.split(r'$');
     if (parts.length != 4 || parts[0] != _scheme) return false;
     final parsed = int.tryParse(parts[1]);
-    return parsed == null || parsed < iterations;
+    return parsed == null || parsed < _rounds;
   }
 
   /// PBKDF2-HMAC-SHA256 (RFC 8018 §5.2) over `crypto`'s `Hmac` primitive.

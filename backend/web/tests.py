@@ -22,7 +22,7 @@ from qr_codes.services.qr_worklist import qr_worklist_data
 from stories.models import Story, StoryCategory, StoryFlag
 from users.models import User
 
-from .services import admin_dashboard_data
+from .services import admin_dashboard_data, toggle_story_bookmark, toggle_story_like
 
 
 @override_settings(MEDIA_URL='/media/')
@@ -1023,3 +1023,46 @@ class QRWorklistTests(WebSmokeTestCase):
 
         self.assertContains(response, '<svg><rect width="10" height="10"/></svg>', html=False)
         self.assertContains(response, 'Regenerate')
+
+
+class StoryToggleCounterTests(TestCase):
+    """Service toggles keep denormalized counters correct under drift."""
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'counter-author',
+            password='hunter2secure',
+            role='contributor',
+        )
+        self.reader = User.objects.create_user('counter-reader', password='hunter2secure')
+        self.story = Story.objects.create(
+            title='Counter Story',
+            content='Story body.',
+            author=self.author,
+            status=Story.Status.PUBLISHED,
+        )
+
+    def test_like_unlike_reads_the_database_not_a_stale_instance(self):
+        # The caller passes a Story fetched earlier; concurrent likes may
+        # have bumped the row in between. The decrement must follow the row.
+        toggle_story_like(self.reader, self.story)
+        Story.objects.filter(pk=self.story.pk).update(like_count=10)
+        toggle_story_like(self.reader, self.story)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 9)
+
+    def test_like_decrement_floors_at_zero(self):
+        toggle_story_like(self.reader, self.story)
+        Story.objects.filter(pk=self.story.pk).update(like_count=0)
+        toggle_story_like(self.reader, self.story)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 0)
+
+    def test_bookmark_toggle_round_trips_the_counter(self):
+        toggle_story_bookmark(self.reader, self.story)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.bookmark_count, 1)
+
+        toggle_story_bookmark(self.reader, self.story)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.bookmark_count, 0)

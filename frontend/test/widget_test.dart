@@ -29,6 +29,13 @@ class _FakeAuthRepository extends AuthRepository {
   @override
   Future<bool> get isAuthenticated async => true;
 
+  // The shared authenticated client injects this token on every request via
+  // AuthInterceptor. The inherited getter reads secure storage, whose platform
+  // channel does not exist in widget tests — and never completes there, which
+  // wedges the category strip in its loading state forever.
+  @override
+  Future<String?> get accessToken async => 'test-access';
+
   @override
   Future<UserModel> getMe() async =>
       const UserModel(id: 1, username: 'tester', role: UserRole.visitor);

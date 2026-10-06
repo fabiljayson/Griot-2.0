@@ -1,0 +1,43 @@
+# Unity generated directories — large, machine-specific, and rebuilt on open.
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Never commit the local API config: it is per-developer and may hold a host
+# that is not public. The ScriptableObject itself is created from the README.
+/Assets/Settings/GriotApiConfig.local.asset
+/Assets/Settings/GriotApiConfig.local.asset.meta
+
+# Auto-generated solution and project files.
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Crash reports and build artefacts.
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# OS / editor noise.
+.DS_Store
+.vs/
+.vscode/
+.idea/

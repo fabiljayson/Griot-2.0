@@ -72,5 +72,18 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- The Unity VR application is a separate install we launch by
+             scheme. Android 11+ package visibility hides it from us unless it
+             is declared here, which would make canLaunchUrl return false for a
+             correct `griotvr://launch` link and show "VR experience isn't
+             installed on this device" on a device that has it. Both forms are
+             declared: the intent query is what canLaunchUrl matches against,
+             and the package entry is what the AndroidManifest merge tools use
+             to reason about the dependency. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="griotvr"/>
+        </intent>
+        <package android:name="org.africanteller.griotvr"/>
     </queries>
 </manifest>

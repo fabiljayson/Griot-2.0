@@ -185,10 +185,21 @@ class AuthRepository {
     }
 
     final tokens = await _server.refresh(refreshToken);
-    await _local.saveAccessToken(tokens.accessToken);
+    // The server rotates refresh tokens (ROTATE_REFRESH_TOKENS + blacklist),
+    // so the pair must be persisted together — keeping the presented token
+    // would sign the reader out on the following refresh. Servers that do not
+    // rotate return no `refresh` field; keep the current one in that case
+    // rather than overwriting it with an empty string.
+    final nextRefreshToken = tokens.refreshToken.isNotEmpty
+        ? tokens.refreshToken
+        : refreshToken;
+    await _local.saveTokenPair(
+      accessToken: tokens.accessToken,
+      refreshToken: nextRefreshToken,
+    );
     return TokenPair(
       accessToken: tokens.accessToken,
-      refreshToken: refreshToken,
+      refreshToken: nextRefreshToken,
     );
   }
 
@@ -219,6 +230,24 @@ class AuthRepository {
   /// expiry, and wiping a reader's offline state over a transient network
   /// error would be far worse than leaving it.
   Future<void> logout() async {
+    // Server-side revocation first, while we still hold the token to revoke:
+    // clearing local state first would throw away the only credential that
+    // can blacklist it, leaving a stolen token minting access tokens for the
+    // rest of its lifetime. Synthetic offline tokens are local markers with
+    // no server session, so they are skipped. Failure here (offline, server
+    // down) must not strand the reader in a signed-in UI — the local clear
+    // below runs either way.
+    try {
+      final refresh = await _local.refreshToken;
+      final isSynthetic =
+          refresh == null || refresh.isEmpty || refresh.startsWith('local_');
+      if (!isSynthetic) {
+        await _server.logout(refresh);
+      }
+    } catch (_) {
+      // Best effort: the token still expires server-side on its own.
+    }
+
     // Tokens first: whatever the cleanup below does, the session must not
     // survive a sign-out, and each step is independent so one failure cannot
     // leave the rest undone.

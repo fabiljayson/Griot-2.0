@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../services/sharing_service.dart';
 
 /// Share sheet with platform options.
 ///
 /// The sheet surface and its labels come from the active [ColorScheme]; it used
 /// to hardcode the ivory `parchment` surface, which is a light-mode-only panel.
-class ShareSheet extends StatelessWidget {
+class ShareSheet extends ConsumerWidget {
   const ShareSheet({
     super.key,
     required this.title,
@@ -21,7 +23,7 @@ class ShareSheet extends StatelessWidget {
   final String summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -72,32 +74,32 @@ class ShareSheet extends StatelessWidget {
                 icon: AppIcons.language,
                 label: 'Copy Link',
                 color: scheme.onSurfaceVariant,
-                onTap: () => _share(context, 'link'),
+                onTap: () => _share(context, ref, 'link'),
               ),
               _PlatformButton(
                 icon: AppIcons.chat_bubble,
                 label: 'WhatsApp',
                 color: const Color(0xFF25D366),
-                onTap: () => _share(context, 'whatsapp'),
+                onTap: () => _share(context, ref, 'whatsapp'),
               ),
               _PlatformButton(
                 icon: AppIcons.send,
                 label: 'Telegram',
                 color: const Color(0xFF0088CC),
-                onTap: () => _share(context, 'telegram'),
+                onTap: () => _share(context, ref, 'telegram'),
               ),
               _PlatformButton(
                 icon: AppIcons.facebook,
                 label: 'Facebook',
                 color: const Color(0xFF1877F2),
-                onTap: () => _share(context, 'facebook'),
+                onTap: () => _share(context, ref, 'facebook'),
               ),
               _PlatformButton(
                 icon: AppIcons.share_outlined,
                 label: 'Share',
                 semanticLabel: 'Share via other apps',
                 color: scheme.onSurfaceVariant,
-                onTap: () => _share(context, 'other'),
+                onTap: () => _share(context, ref, 'other'),
               ),
             ],
           ),
@@ -107,7 +109,7 @@ class ShareSheet extends StatelessWidget {
     );
   }
 
-  void _share(BuildContext context, String platform) {
+  void _share(BuildContext context, WidgetRef ref, String platform) {
     final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
 
@@ -120,11 +122,14 @@ class ShareSheet extends StatelessWidget {
       return;
     }
 
+    // Authenticated client so a signed-in reader's share is attributed to
+    // them on the server rather than recorded as anonymous.
     SharingService.instance.shareToPlatform(
       title: title,
       slug: slug,
       summary: summary,
       platform: platform,
+      apiClient: ref.read(authenticatedApiClientProvider),
     );
   }
 }

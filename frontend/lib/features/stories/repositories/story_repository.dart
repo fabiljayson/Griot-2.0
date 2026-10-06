@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/database/repositories/local_story_repository.dart';
+import '../../../core/database/repositories/reading_progress_repository.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/connectivity_service.dart';
 import '../../../core/security/secure_storage_factory.dart';
@@ -25,13 +26,16 @@ class StoryRepository {
     ApiClient? apiClient,
     LocalStoryRepository? localStory,
     ConnectivityService? connectivityService,
-  })  : _api = apiClient ?? ApiClient.instance,
-        _local = localStory ?? LocalStoryRepository(),
-        _connectivity = connectivityService;
+    ReadingProgressRepository? readingProgress,
+  }) : _api = apiClient ?? ApiClient.instance,
+       _local = localStory ?? LocalStoryRepository(),
+       _connectivity = connectivityService,
+       _readingProgress = readingProgress ?? ReadingProgressRepository();
 
   final ApiClient _api;
   final LocalStoryRepository _local;
   final ConnectivityService? _connectivity;
+  final ReadingProgressRepository _readingProgress;
 
   /// Connectivity guard: when the device is known offline, skip the network
   /// entirely instead of waiting out Dio's retry/backoff cycle. Unknown
@@ -61,10 +65,7 @@ class StoryRepository {
     }
 
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'sort': sort,
-      };
+      final queryParams = <String, dynamic>{'page': page, 'sort': sort};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       if (language != null && language.isNotEmpty) {
         queryParams['language'] = language;
@@ -103,18 +104,40 @@ class StoryRepository {
 
   /// Get story by slug.
   Future<StoryModel> getStory(String slug) async {
-    if (_offline) return _local.getStory(slug);
+    if (_offline) return _withLocalProgress(await _local.getStory(slug));
 
     try {
       final response = await _api.dio.get('/api/stories/$slug/');
       final story = StoryModel.fromJson(response.data as Map<String, dynamic>);
       await _local.mirrorStories([story]);
-      return story;
+      return await _withLocalProgress(story);
     } on DioException {
       // Offline: the mirrored copy, or a real "not found" when the story was
       // never synced — surfaced as an error state, never faked.
-      return _local.getStory(slug);
+      return _withLocalProgress(await _local.getStory(slug));
     }
+  }
+
+  /// Fill in locally stored progress when the payload carries none.
+  ///
+  /// The API only knows a reader's position once they are authenticated and
+  /// the push has landed — a guest, a local-only account, or a write still
+  /// queued offline all come back with `reading_progress: null`. The local
+  /// `reading_progress` row is still authoritative for those readers, so the
+  /// detail screen can resume them like anyone else. A server value always
+  /// wins: it is what other devices have seen.
+  Future<StoryModel> _withLocalProgress(StoryModel story) async {
+    if (story.readingProgress != null) return story;
+    final local = await _readingProgress.progressForSlug(story.slug);
+    if (local == null) return story;
+    final percent = (local.scrollFraction * 100).round();
+    return story.copyWith(
+      readingProgress: ReadingProgressData(
+        percent: percent,
+        lastPosition: local.lastPosition,
+        completed: percent >= 95,
+      ),
+    );
   }
 
   /// Create a new story.
@@ -300,8 +323,9 @@ class StoryRepository {
   /// Get current user's stories.
   Future<List<StoryModel>> getMyStories() async {
     if (_offline) {
-      final userIdStr =
-          await SecureStorageFactory.instance.read(key: 'current_user_id');
+      final userIdStr = await SecureStorageFactory.instance.read(
+        key: 'current_user_id',
+      );
       final userId = int.tryParse(userIdStr ?? '') ?? 0;
       return _local.getMyStories(userId);
     }
@@ -316,8 +340,9 @@ class StoryRepository {
       return stories;
     } on DioException {
       // Offline: locally-created stories only.
-      final userIdStr =
-          await SecureStorageFactory.instance.read(key: 'current_user_id');
+      final userIdStr = await SecureStorageFactory.instance.read(
+        key: 'current_user_id',
+      );
       final userId = int.tryParse(userIdStr ?? '') ?? 0;
       return _local.getMyStories(userId);
     }
@@ -376,9 +401,7 @@ class StoryRepository {
     required String reason,
     String? details,
   }) async {
-    final data = <String, dynamic>{
-      'reason': reason,
-    };
+    final data = <String, dynamic>{'reason': reason};
     if (details != null) data['details'] = details;
     await _api.dio.post('/api/stories/$slug/flag/', data: data);
   }
@@ -402,9 +425,7 @@ class StoryRepository {
 
     if (_offline) return;
 
-    final data = <String, dynamic>{
-      'progress_percent': percent,
-    };
+    final data = <String, dynamic>{'progress_percent': percent};
     if (lastPosition != null) data['last_read_position'] = lastPosition;
     if (completed != null) data['completed'] = completed;
     try {
@@ -422,9 +443,7 @@ class StoryRepository {
   /// agreement is precisely the claim the field exists to keep trustworthy.
   /// Returns the consent status the server settled on.
   Future<String> requestConsent(String slug) async {
-    final response = await _api.dio.post(
-      '/api/stories/$slug/request-consent/',
-    );
+    final response = await _api.dio.post('/api/stories/$slug/request_consent/');
     return response.data['consent_status'] as String? ?? 'pending';
   }
 

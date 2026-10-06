@@ -42,7 +42,8 @@ Future<void> pumpDashboard(
         moderationQueueProvider.overrideWith(
           (ref) async => queue ?? const <FlaggedStory>[],
         ),
-        moderationProvider.overrideWith((ref) => ModerationNotifier()),
+        moderationProvider
+            .overrideWith((ref) => ModerationNotifier(ref.watch(adminApiServiceProvider))),
         adminUsersProvider.overrideWith((ref) async => users ?? const []),
         // The QR section is its own provider; without this stub the dashboard
         // would reach for the network on every dashboard test.

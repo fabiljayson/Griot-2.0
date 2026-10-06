@@ -12,6 +12,7 @@ import '../../audio/providers/audio_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/widgets/sign_in_prompt.dart';
 import '../../stories/models/story_model.dart';
+import '../../vr/widgets/explore_in_vr_button.dart';
 import '../services/qr_api_service.dart';
 
 /// Full-screen detail view for a museum artifact.
@@ -85,6 +86,13 @@ class ArtifactDetailScreen extends ConsumerWidget {
 
                   const SizedBox(height: AppSpacing.xl),
                   _buildAudioGuide(context, ref),
+
+                  // VR handoff. The section owns its own availability check:
+                  // requesting a launch token is what tells us whether this
+                  // artifact exists in a scene, so there is no second request
+                  // and no button that appears promising and then refuses.
+                  const SizedBox(height: AppSpacing.xl),
+                  ExploreInVrButton(artifactSlug: artifact.slug),
 
                   if (_physicalDetails.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xl),

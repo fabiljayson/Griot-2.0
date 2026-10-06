@@ -147,12 +147,18 @@ class OfflineQueueInterceptor extends Interceptor {
     // Check if we're online
     final isOnline = _connectivityService?.isOnline ?? true;
 
-    // Auth endpoints (login, register, token refresh) are time-sensitive and
-    // their callers expect a real token response. Never queue them with a
-    // synthetic body (callers would crash or fake success), and never let the
-    // retry interceptor stall them for seconds. When offline, fail fast with a
-    // real connection error the UI can surface.
-    if (options.path.contains('/api/auth/')) {
+    // Endpoints that mint or consume credentials are time-sensitive and their
+    // callers expect a real answer. Never queue them with a synthetic 202
+    // (callers would fake success), and never let the retry interceptor stall
+    // them for seconds. When offline, fail fast with a real connection error
+    // the UI can surface.
+    //
+    // `/api/vr/launch/` is here for a second reason beyond the fake success: a
+    // queued launch would be replayed later, carrying a launch token that
+    // expires in seconds and works once — so the reader would be told "VR is
+    // starting" and the headset would then be handed a dead credential.
+    const neverQueuedPaths = ['/api/auth/', '/api/vr/launch/'];
+    if (neverQueuedPaths.any(options.path.contains)) {
       options.disableRetry = true;
       if (!isOnline) {
         return handler.reject(

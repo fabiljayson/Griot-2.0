@@ -235,6 +235,9 @@ bool _belongsToStory(QuizModel quiz, StoryQuizKey story) {
 /// Quizzes belonging to one story, used by the story reader's "Take Quiz" CTA.
 final quizzesByStoryProvider =
     Provider.autoDispose.family<List<QuizModel>, StoryQuizKey>((ref, story) {
-      final quizzes = ref.watch(quizzesProvider).value ?? const <QuizModel>[];
+      // valueOrNull: `.value` rethrows the fetch error on Riverpod 3, and an
+      // offline quiz list must hide the CTA rather than crash the reader.
+      final quizzes =
+          ref.watch(quizzesProvider).valueOrNull ?? const <QuizModel>[];
       return quizzes.where((quiz) => _belongsToStory(quiz, story)).toList();
     });

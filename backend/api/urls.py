@@ -42,12 +42,21 @@ urlpatterns = [
 
     # Phase 6: gamification, quizzes & certification.
     path('gamification/', include('gamification.urls')),
+
+    # VR: launch handoff to the Unity application, experience payloads and
+    # session tracking. Not mounted under `/api/v1/` — this project has a
+    # single unversioned `/api/` surface and one feature does not get to fork it.
+    path('vr/', include('vr.urls')),
     path('notifications/', include('notifications.urls')),
 
     # Cultural-heritage crawler administration (§18). Admin-only: crawled
     # content reaches Flutter only after it has passed review (§19), so this
     # app deliberately exposes no public read surface.
     path('crawler/', include('heritage_crawl.urls')),
+
+    # Griot AI: grounded question answering. The provider key stays on this
+    # server — clients never talk to the model directly.
+    path('ai/', include('griot_ai.urls')),
 
     # Phase 9: Admin analytics dashboard.
     path('analytics/dashboard/', DashboardSummaryView.as_view(), name='analytics-dashboard'),

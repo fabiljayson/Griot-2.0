@@ -11,6 +11,7 @@ import 'package:griot_ai/core/database/app_database.dart';
 import 'package:griot_ai/core/database/repositories/local_auth_repository.dart';
 import 'package:griot_ai/core/database/repositories/offline_request_repository.dart';
 import 'package:griot_ai/core/database/repositories/offline_user_repository.dart';
+import 'package:griot_ai/core/security/local_credential_hasher.dart';
 import 'package:griot_ai/features/auth/repositories/auth_repository.dart';
 
 /// Signing out has to take the person with it, not just their token.
@@ -98,9 +99,13 @@ void main() {
       database: appDb,
       offlineUsers: offlineUsers,
     );
+    // Valid-but-fast records: a full-cost hash would risk the per-test
+    // timeout once a test registers and signs in.
+    LocalCredentialHasher.debugOverrideIterations = 10000;
   });
 
   tearDown(() async {
+    LocalCredentialHasher.debugOverrideIterations = null;
     await appDb.close();
     final file = File(dbPath);
     if (file.existsSync()) file.deleteSync();

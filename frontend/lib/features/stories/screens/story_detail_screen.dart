@@ -59,6 +59,22 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
 
   int _lastPersistedPercent = 0;
 
+  /// Saved-position restore: latched once the story first arrives, so a
+  /// later progress update (from this very reader's first scroll) cannot
+  /// retrigger a jump mid-read.
+  bool _restoreInitialized = false;
+
+  /// Frames spent waiting for the content to become tall enough to hold the
+  /// saved offset (images and async blocks grow the extent after first
+  /// layout). Bails out rather than jumping forever on a reflowed story.
+  int _restoreAttempts = 0;
+
+  /// True while a restored jump is in flight. The jump fires scroll events;
+  /// without this guard the listener would write the position it just
+  /// restored straight back — and a clamped jump would persist a lower
+  /// percent than the reader had earned.
+  bool _restoringScroll = false;
+
   @override
   void initState() {
     super.initState();
@@ -108,6 +124,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
   }
 
   void _onScroll() {
+    if (_restoringScroll) return;
     if (!_scrollController.position.hasContentDimensions) return;
 
     final maxExtent = _scrollController.position.maxScrollExtent;
@@ -134,6 +151,65 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
         );
   }
 
+  /// Resume the reader where they left off, once saved progress arrives.
+  ///
+  /// Runs from build the first time the story is ready: the progress bar is
+  /// seeded synchronously (so the first frame is already honest), and the
+  /// scroll jump waits for layout.
+  void _initProgressRestore(StoryDetailState state) {
+    if (state is! StoryDetailReady || _restoreInitialized) return;
+    _restoreInitialized = true;
+    final saved = state.story.readingProgress;
+    if (saved == null) return;
+    _scrollProgress = (saved.percent / 100).clamp(0.0, 1.0);
+    _lastPersistedPercent = saved.percent;
+    if (saved.lastPosition > 0) {
+      _scheduleScrollRestore(saved.lastPosition);
+    }
+  }
+
+  /// Jump back to the saved offset once the content is tall enough to hold
+  /// it. The first frame often under-measures the extent (images, async
+  /// blocks), so the jump retries across frames instead of clamping to a
+  /// too-small extent and silently losing the spot.
+  void _scheduleScrollRestore(int target) {
+    _restoringScroll = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        _restoringScroll = false;
+        return;
+      }
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      if (maxExtent >= target) {
+        _scrollController.jumpTo(target.toDouble());
+        _finishScrollRestore();
+        return;
+      }
+      if (_restoreAttempts >= 30) {
+        // The content settled shorter than the saved offset — the story
+        // reflowed or images failed. Staying at the top is honest; a wrong
+        // mid-story landing is not.
+        _finishScrollRestore();
+        return;
+      }
+      _restoreAttempts++;
+      _scheduleScrollRestore(target);
+    });
+  }
+
+  void _finishScrollRestore() {
+    _restoringScroll = false;
+    if (_scrollController.hasClients) {
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      final fraction = maxExtent <= 0
+          ? 0.0
+          : (_scrollController.offset / maxExtent).clamp(0.0, 1.0);
+      _scrollProgress = fraction;
+      _lastPersistedPercent = (fraction * 100).round();
+    }
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -141,6 +217,7 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
     final storyState = ref.watch(storyDetailProvider);
     final authState = ref.watch(authProvider);
     final isAuthenticated = authState.value?.isAuthenticated ?? false;
+    _initProgressRestore(storyState);
 
     return Scaffold(
       body: switch (storyState) {
@@ -457,8 +534,8 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
                   : AppIcons.bookmark_border,
               label: story.formattedBookmarkCount,
               color: story.isBookmarked
-              ? AppTheme.accentText(theme.colorScheme)
-              : null,
+                  ? AppTheme.accentText(theme.colorScheme)
+                  : null,
               onTap: isAuthenticated
                   ? () =>
                         ref.read(storyDetailProvider.notifier).toggleBookmark()
@@ -907,12 +984,12 @@ class _ReviewStateBanner extends StatelessWidget {
   final StoryModel story;
 
   String get _label => switch (story.status) {
-        'draft' => 'Draft — not submitted for review',
-        'pending' => 'Awaiting review',
-        'rejected' => 'Changes requested',
-        'archived' => 'Archived',
-        _ => 'Not published',
-      };
+    'draft' => 'Draft — not submitted for review',
+    'pending' => 'Awaiting review',
+    'rejected' => 'Changes requested',
+    'archived' => 'Archived',
+    _ => 'Not published',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -1069,5 +1146,4 @@ class _ConsentActionBarState extends ConsumerState<_ConsentActionBar> {
       ),
     );
   }
-
 }

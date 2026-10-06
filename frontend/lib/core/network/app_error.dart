@@ -123,6 +123,16 @@ abstract final class AppErrorMapper {
     String? detail;
     if (data is Map<String, dynamic>) {
       detail = data['detail'] as String?;
+      // Some endpoints answer with `{'error': ..., 'code': ...}` rather than
+      // DRF's `detail` — the artifact deep-link lookup and the whole VR API do.
+      // Without this the reader is shown "An unexpected error occurred" for a
+      // sentence the server wrote specifically for them.
+      final errorValue = data['error'];
+      if (detail == null &&
+          errorValue is String &&
+          errorValue.trim().isNotEmpty) {
+        detail = errorValue;
+      }
       // Also check for validation error arrays.
       if (detail == null && data.containsKey('non_field_errors')) {
         final errors = data['non_field_errors'];

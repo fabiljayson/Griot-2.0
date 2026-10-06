@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../../features/auth/models/user_model.dart';
 import '../../../features/stories/models/story_model.dart';
+import '../../security/pii_cipher.dart';
 import '../app_database.dart';
 
 /// Repository for local story CRUD against the SQLite database.
@@ -604,11 +605,12 @@ class LocalStoryRepository {
       );
       if (userRows.isNotEmpty) {
         final u = userRows.first;
+        final pii = PiiCipher.instance;
         author = UserModel(
           id: u['id'] as int,
           username: u['username'] as String,
-          firstName: (u['first_name'] as String?) ?? '',
-          lastName: (u['last_name'] as String?) ?? '',
+          firstName: await pii.decrypt((u['first_name'] as String?) ?? ''),
+          lastName: await pii.decrypt((u['last_name'] as String?) ?? ''),
           role: UserRole.fromString((u['role'] as String?) ?? 'visitor'),
         );
       }

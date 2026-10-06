@@ -6,6 +6,7 @@ live in config.settings.dev and config.settings.prod.
 """
 
 import os
+import secrets
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -22,7 +23,16 @@ load_dotenv(BASE_DIR / '.env')
 # Security
 # ---------------------------------------------------------------------------
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-only-change-me')
+#
+# No committed fallback. This repository is public, so a literal here is a
+# working forgery key (sessions, password-reset tokens, signed cookies) for
+# every deployment that runs without DJANGO_SECRET_KEY. Without the env var,
+# each process gets a random key instead: dev/test keep working (dev.py pins
+# its own stable local key), while a misconfigured deployment fails loudly —
+# sessions reset on restart — rather than silently accepting forged signatures
+# made with a key from git history. config.settings.prod refuses to start
+# without an explicit DJANGO_SECRET_KEY on top of this.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or secrets.token_urlsafe(50)
 
 DEBUG = False
 
@@ -65,6 +75,11 @@ LOCAL_APPS = [
     'gamification',
     'notifications',
     'media_app',
+    # VR experiences: the launch-token handoff to the Unity application, and
+    # the session rows progress is recorded against (feature 003).
+    'vr',
+    # Griot AI: grounded question answering for the app, the web UI and VR.
+    'griot_ai',
     'heritage_crawl',
     'api',
     'web',
@@ -237,6 +252,16 @@ REST_FRAMEWORK = {
         # Unauthenticated metrics: six COUNT() queries per hit, so it gets its
         # own budget rather than sharing the general anonymous one.
         'metrics': '10/min',
+        # VR launch runs on the phone and mints a credential every time, so it
+        # gets an auth-sized budget rather than the general one: a reader taps
+        # this button a handful of times, a script does not.
+        'vr_launch': '10/min',
+        # The exchange endpoint is unauthenticated — the launch token is the
+        # credential — so its budget is per IP and has to assume a hostile
+        # caller guessing tokens into it.
+        'vr_token': '20/min',
+        # Ask Griot spends real LLM tokens per request.
+        'ai_ask': '10/min',
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # Turns a unique-constraint collision into a 400 instead of an opaque 500.
@@ -275,6 +300,8 @@ SPECTACULAR_SETTINGS = {
         'MediaJobStatusEnum': 'media_app.models.MediaJobStatusChoices.choices',
         'BadgeCategoryEnum': 'gamification.models.BadgeCategoryChoices.choices',
         'ArtifactCategoryEnum': 'qr_codes.models.ArtifactCategoryChoices.choices',
+        'VRCompletionStatusEnum': 'vr.models.VRCompletionStatusChoices.choices',
+        'GriotMessageRoleEnum': 'griot_ai.models.GriotMessageRoleChoices.choices',
         # Pinned in Phase 5 Track A. `role` is the one remaining choice set
         # that had no entry, and wrapping its labels in `gettext_lazy` was
         # enough to change the hash spectacular appends to the auto-generated
@@ -461,6 +488,72 @@ WEB_AUTH_ATTEMPTS_PER_MIN = int(
 SCAN_DEDUPE_WINDOW_SECONDS = int(
     os.environ.get('SCAN_DEDUPE_WINDOW_SECONDS', '3600')
 )
+
+# ---------------------------------------------------------------------------
+# Griot AI (grounded question answering)
+# ---------------------------------------------------------------------------
+# Provider key. Read from the environment and never sent to a client: Flutter,
+# the web UI and Unity all reach the model through `/api/ai/ask/` on this server.
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
+# Provider model id. Configurable because model ids are added and retired on the
+# provider's schedule; pinning one in source turns a deprecation into a release.
+GRIOT_AI_MODEL = os.environ.get('GRIOT_AI_MODEL', 'gemini-2.5-flash')
+GRIOT_AI_BASE_URL = os.environ.get(
+    'GRIOT_AI_BASE_URL', 'https://generativelanguage.googleapis.com'
+)
+GRIOT_AI_TIMEOUT_SECONDS = float(os.environ.get('GRIOT_AI_TIMEOUT_SECONDS', '30'))
+GRIOT_AI_MAX_OUTPUT_TOKENS = int(os.environ.get('GRIOT_AI_MAX_OUTPUT_TOKENS', '800'))
+
+# Character budget for the retrieved context handed to the model. Bounds both
+# the per-question cost and how much of a long story can crowd out the artifact
+# the reader is actually looking at.
+GRIOT_AI_MAX_CONTEXT_CHARS = int(
+    os.environ.get('GRIOT_AI_MAX_CONTEXT_CHARS', '6000')
+)
+
+# Whether the mock may stand in for the real model. Same reasoning as
+# LUMA_ALLOW_MOCK: the mock answers in "development mode" prose, which is worse
+# than an outage in production because it looks like a working feature.
+_GRIOT_ALLOW_MOCK_RAW = os.environ.get('GRIOT_AI_ALLOW_MOCK')
+GRIOT_AI_ALLOW_MOCK = (
+    DEBUG
+    if _GRIOT_ALLOW_MOCK_RAW is None
+    else _GRIOT_ALLOW_MOCK_RAW.strip().lower() in ('1', 'true', 'yes', 'on')
+)
+
+# Rolling 24-hour ceiling on questions that reach the provider, per account.
+# Each answer costs real tokens, so this is the bound that stops one account
+# from spending the deployment's budget.
+AI_ASKS_PER_USER_PER_DAY = int(
+    os.environ.get('AI_ASKS_PER_USER_PER_DAY', '40')
+)
+
+# ---------------------------------------------------------------------------
+# VR (Unity) handoff
+# ---------------------------------------------------------------------------
+# Scheme and host of the deep link Flutter hands to Android. It lives in
+# settings rather than in the Flutter app alone so the link the API returns and
+# the intent filter the Unity build declares are compared against one value in
+# code review, instead of two hardcoded strings in two repositories.
+VR_DEEP_LINK_SCHEME = os.environ.get('VR_DEEP_LINK_SCHEME', 'griotvr')
+VR_DEEP_LINK_HOST = os.environ.get('VR_DEEP_LINK_HOST', 'launch')
+
+# How long a launch token stays usable. The reader's phone creates it and the
+# headset consumes it seconds later, so anything generous here is pure attack
+# surface: the token travels through an Android intent any app can observe.
+VR_LAUNCH_TOKEN_TTL_SECONDS = int(
+    os.environ.get('VR_LAUNCH_TOKEN_TTL_SECONDS', '120')
+)
+
+# Lifetime of the VR-scoped JWT the exchange returns. Short because it is a
+# bearer token on a device we cannot attest, and because there is no refresh
+# token: when it lapses, the reader taps "Explore in VR" again.
+VR_SESSION_TOKEN_MINUTES = int(os.environ.get('VR_SESSION_TOKEN_MINUTES', '45'))
+
+# XP paid for a completed experience, handed to the existing gamification
+# profile. Zero disables the award without touching the session bookkeeping.
+VR_SESSION_XP_COMPLETE = int(os.environ.get('VR_SESSION_XP_COMPLETE', '25'))
 
 # gTTS talks to Google Translate's public endpoint over `requests`, which
 # exposes no timeout knob of its own. These bound the call so a hung socket

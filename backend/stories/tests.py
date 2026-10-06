@@ -5,7 +5,14 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import ReadingProgress, Story, StoryBookmark, StoryCategory, StoryFlag
+from .models import (
+    ReadingProgress,
+    Story,
+    StoryBookmark,
+    StoryCategory,
+    StoryFlag,
+    StoryLike,
+)
 
 User = get_user_model()
 
@@ -184,12 +191,16 @@ class StoryInteractionsTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertTrue(resp.data['bookmarked'])
         self.assertTrue(StoryBookmark.objects.filter(user=self.user, story=self.story).exists())
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.bookmark_count, 1)
 
         # Toggle off
         resp = self.client.post(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertFalse(resp.data['bookmarked'])
         self.assertFalse(StoryBookmark.objects.filter(user=self.user, story=self.story).exists())
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.bookmark_count, 0)
 
     def test_toggle_like(self):
         url = reverse('stories:story-like', kwargs={'slug': 'test-story'})
@@ -197,11 +208,40 @@ class StoryInteractionsTests(APITestCase):
         resp = self.client.post(url)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertTrue(resp.data['liked'])
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 1)
 
         # Toggle off
         resp = self.client.post(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertFalse(resp.data['liked'])
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 0)
+
+    def test_like_count_across_multiple_users(self):
+        other = User.objects.create_user('reader2', password='hunter2secure')
+        url = reverse('stories:story-like', kwargs={'slug': 'test-story'})
+        self.client.post(url)
+        self.client.force_authenticate(other)
+        self.client.post(url)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 2)
+
+        self.client.force_authenticate(self.user)
+        self.client.post(url)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 1)
+
+    def test_like_decrement_floors_at_zero(self):
+        # Drifted counter: a like row exists while like_count reads 0. The
+        # decrement must clamp at zero in SQL, never write a negative value.
+        StoryLike.objects.create(user=self.user, story=self.story)
+        Story.objects.filter(pk=self.story.pk).update(like_count=0)
+        url = reverse('stories:story-like', kwargs={'slug': 'test-story'})
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.like_count, 0)
 
     def test_flag_story(self):
         url = reverse('stories:story-flag', kwargs={'slug': 'test-story'})

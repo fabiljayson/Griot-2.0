@@ -1,456 +1,744 @@
-# CODEBASE ENGINEERING & IMPROVEMENT DIRECTIVE
+You are working on my **Griot AI** project, a cultural heritage platform for preserving and promoting African/Cameroonian cultural heritage through interactive storytelling.
 
-Act as a **senior software engineer, debugging specialist, security engineer, performance engineer, and software architect**.
+## Project context
 
-Your mission is to systematically inspect the existing project, identify problems, fix them, improve the implementation, and leave the codebase **stable, secure, maintainable, efficient, and production-ready**.
+The current architecture is:
 
-Do **not** blindly rewrite code.
+- **Flutter** — mobile frontend
+- **Django + Django REST Framework** — backend/API
+- **PostgreSQL** — production database
+- **Unity + OpenXR** — VR application
+- **Griot AI** — AI storytelling/Q&A layer
+- QR codes — physical artifact → digital experience
+- 3D cultural artifacts and virtual museum environments
 
-Always understand the existing architecture, dependencies, business logic, data flow, and project conventions before making changes.
+Important: **There is NO React frontend in the current Griot implementation. Do not introduce React or modify the architecture to use React.**
 
----
+The goal is to add a separate **Unity VR application** that can be launched from the existing Flutter application and communicate with Django.
 
-# 1. DEBUG — FIND AND FIX ERRORS
+The desired architecture is:
 
-Perform a systematic debugging pass.
+```text
+                    GRIOT AI
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+     Flutter                      Unity VR
+     Mobile                       Application
+        │                             │
+        │ Android Deep Link            │ HTTPS
+        │                             │
+        └──────────────┐       ┌──────┘
+                       ▼       ▼
+                    Django REST API
+                          │
+             ┌────────────┼────────────┐
+             ▼            ▼            ▼
+         PostgreSQL     Griot AI    3D/Object
+                                    Storage
+```
 
-Look for:
+The preferred launch flow is:
 
-- Compilation errors
-- Runtime errors
-- Logic errors
-- API errors
-- Database errors
-- Authentication errors
-- State-management problems
-- Dependency conflicts
-- Configuration errors
-- UI crashes
-- Race conditions
-- Null/undefined errors
-- Incorrect error handling
-- Platform-specific problems
-- Network failures
+```text
+Flutter
+   │
+   │ User taps "Explore in VR"
+   ▼
+Django
+   │
+   │ Request short-lived VR launch token
+   ▼
+Flutter
+   │
+   │ griotvr://launch?token=XXX&experience=42&artifact=108
+   ▼
+Android
+   │
+   ▼
+Unity VR
+   │
+   │ Validate launch token
+   ▼
+Django REST API
+   │
+   │ Retrieve VR experience
+   ▼
+Unity
+   │
+   ▼
+Virtual Museum / Artifact Experience
+```
 
-For every important issue:
+## CRITICAL WORKFLOW RULE
 
-**Identify → Reproduce → Diagnose → Fix → Verify**
+Before modifying anything:
 
-Do not hide errors or add temporary workarounds when a proper fix is possible.
+1. Inspect the existing repository.
+2. Identify the current Flutter architecture.
+3. Identify the existing authentication implementation.
+4. Identify the current Django project structure.
+5. Identify existing API clients/services.
+6. Identify the existing artifact/story models.
+7. Identify whether a VR-related structure already exists.
+8. Identify Android package/application ID and manifest configuration.
+9. Identify the existing environment/configuration strategy.
+10. Identify the current development/build setup.
 
----
+Do NOT immediately start changing files.
 
-# 2. OPTIMIZE — IMPROVE PERFORMANCE
+First provide me with:
 
-Identify performance bottlenecks and optimize them.
+### A. Current architecture assessment
 
-Inspect:
+Explain:
 
-- CPU usage
-- Memory usage
-- Network requests
-- API calls
-- Database queries
-- Rendering
-- Images and assets
-- Application startup
-- Build performance
-- Bundle size
-- Unnecessary computations
-- Repeated operations
-- Caching opportunities
+- Flutter architecture currently used
+- Django architecture currently used
+- authentication flow
+- API communication flow
+- relevant existing models
+- relevant existing providers/notifiers/services
+- Android configuration
+- where the Unity integration should be inserted
 
-Avoid premature optimization.
+### B. Proposed changes
 
-Only optimize when there is a measurable or clearly identifiable benefit.
+Give me a precise file-by-file implementation plan.
 
-Preserve functionality while improving efficiency.
+For example:
 
----
+```text
+Flutter
+├── lib/...
+│   ├── services/vr_service.dart
+│   ├── models/vr_experience.dart
+│   └── ...
+│
+└── android/app/src/main/AndroidManifest.xml
 
-# 3. REFACTOR — IMPROVE CODE STRUCTURE
+Django
+├── apps/vr/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   └── ...
+```
 
-Improve the internal structure without changing intended behavior.
+Do not assume these exact paths exist. Adapt them to the actual repository.
 
-Look for:
-
-- Duplicate code
-- Large functions
-- Large classes
-- Poor separation of concerns
-- Tight coupling
-- Inconsistent naming
-- Dead code
-- Repeated logic
-- Poor abstractions
-- Difficult-to-maintain modules
-- Incorrect responsibility assignment
-
-Follow principles such as:
-
-- SOLID
-- DRY
-- KISS
-- Separation of concerns
-- Single responsibility
-- Modularity
-
-Do not refactor simply for the sake of refactoring.
-
-Every structural change must provide a clear benefit.
-
----
-
-# 4. HARDEN — IMPROVE SECURITY
-
-Perform a security review of the application.
-
-Check for:
-
-- Hardcoded secrets
-- Exposed API keys
-- Weak authentication
-- Broken authorization
-- Insecure API endpoints
-- Improper input validation
-- Injection vulnerabilities
-- XSS
-- CSRF
-- Insecure file uploads
-- Sensitive information leakage
-- Excessive permissions
-- Unsafe database queries
-- Weak password handling
-- Token/session problems
-- Insecure network communication
-- Dependency vulnerabilities
-- Debug settings exposed in production
-
-Follow the principle:
-
-**Never trust user input.**
-
-Use secure defaults and least-privilege principles.
-
-Never expose secrets in source code, logs, frontend code, or error messages.
+Unity should be treated as a **separate application/project**, not embedded into Flutter unless inspection shows a compelling existing reason.
 
 ---
 
-# 5. SIMPLIFY — REDUCE COMPLEXITY
+# Required implementation
 
-Identify unnecessarily complicated implementations.
+After I approve the plan, implement the following.
 
-Simplify:
+## 1. Django VR domain
 
-- Functions
-- Classes
-- APIs
-- State management
-- Conditions
-- Data flows
-- Dependencies
-- Configuration
-- Components
-- User flows
+Create/adapt a VR application/module containing concepts such as:
 
-Prefer:
+### VRExperience
 
-**Simple > clever**
+Potential fields:
 
-**Readable > compressed**
+```text
+id
+title
+description
+slug
+thumbnail
+scene_identifier
+is_active
+created_at
+updated_at
+```
 
-**Maintainable > complicated**
+### VRArtifact
 
-Do not simplify if it would reduce security, reliability, or clarity.
+Potential relationship:
 
----
+```text
+VRExperience
+    │
+    └── VRArtifact
+             │
+             └── Cultural Artifact
+```
 
-# 6. MODERNIZE — UPDATE OUTDATED IMPLEMENTATIONS
+Do not duplicate existing artifact data if the project already has an Artifact model.
 
-Identify outdated:
+Reuse existing models where appropriate.
 
-- Libraries
-- Framework APIs
-- Dependencies
-- Language features
-- Architecture patterns
-- Configuration
-- Build systems
-- Security practices
+A VR experience should be able to reference:
 
-Before upgrading anything:
-
-1. Check compatibility.
-2. Identify breaking changes.
-3. Check dependency relationships.
-4. Determine migration requirements.
-5. Avoid unnecessary major-version upgrades.
-
-Never upgrade dependencies blindly.
-
----
-
-# 7. MIGRATE — MOVE SAFELY BETWEEN TECHNOLOGIES
-
-When migration is required:
-
-**Analyze → Plan → Migrate → Test → Validate → Clean up**
-
-Examples:
-
-- SQLite → PostgreSQL
-- REST → GraphQL
-- JavaScript → TypeScript
-- Legacy API → modern API
-- Old framework → newer framework
-- Local deployment → cloud deployment
-
-Preserve:
-
-- Existing data
-- Business logic
-- API contracts where possible
-- User experience
-- Security
-- Functionality
-
-Provide rollback considerations for risky migrations.
+- cultural artifact
+- museum
+- region
+- story
+- 3D asset
+- environment
+- narration
+- language
+- metadata
 
 ---
 
-# 8. AUTOMATE — REMOVE REPETITIVE WORK
+# 2. Django API
 
-Identify repetitive manual processes that can be automated.
+Implement REST endpoints appropriate to the existing API conventions.
 
-Consider:
+At minimum:
 
-- Testing
-- Formatting
-- Linting
-- Builds
-- Deployments
-- Database migrations
-- Code generation
-- API documentation
-- Dependency checks
-- Security checks
-- CI/CD
-- Backups
-- Development setup
+```text
+POST /api/v1/vr/launch/
 
-Prefer reliable automation that is easy for another developer to understand and maintain.
+GET /api/v1/vr/experiences/<id>/
 
----
+GET /api/v1/vr/artifacts/<id>/
 
-# 9. REPAIR — FIX BROKEN IMPLEMENTATIONS
+POST /api/v1/vr/sessions/
 
-When functionality is broken:
+POST /api/v1/vr/sessions/<id>/complete/
+```
 
-1. Reproduce the problem.
-2. Determine the root cause.
-3. Identify affected components.
-4. Implement the smallest reliable fix.
-5. Test the affected functionality.
-6. Test related functionality for regressions.
+Adapt URLs to the existing project's routing conventions.
 
-Do not mask problems with temporary hacks.
+The API response for a VR experience should provide enough information for Unity to load the correct experience.
 
----
+Example conceptual response:
 
-# 10. POLISH — FINAL QUALITY PASS
+```json
+{
+  "id": 42,
+  "title": "Bamoun Heritage Gallery",
+  "description": "...",
+  "scene_identifier": "bamoun_gallery",
+  "artifacts": [
+    {
+      "id": 108,
+      "name": "Traditional Mask",
+      "model_url": "...",
+      "story_id": 12
+    }
+  ]
+}
+```
 
-After fixing and improving the project, perform a final quality review.
-
-Check:
-
-- Code readability
-- Naming
-- Error messages
-- Logging
-- API responses
-- UI behavior
-- Loading states
-- Empty states
-- Error states
-- Documentation
-- Comments
-- Configuration
-- Developer experience
-- User experience
-
-Remove obvious technical debt where practical.
+Do not expose private storage credentials or sensitive information.
 
 ---
 
-# ENGINEERING RULES
+# 3. Secure VR launch authentication
 
-Always follow these principles:
+Do NOT put:
 
-### Understand before changing
-Inspect the existing implementation before modifying it.
+- Django passwords
+- refresh tokens
+- permanent API keys
+- secret keys
 
-### Preserve working functionality
-Do not break features that already work.
+inside the deep link.
 
-### Fix root causes
-Do not treat symptoms when the underlying problem can be fixed.
+Implement a **short-lived, single-purpose VR launch token**.
 
-### Minimal necessary change
-Make the smallest change that properly solves the problem.
+Preferred conceptual flow:
 
-### Security first
-Never introduce insecure shortcuts.
+```text
+Flutter
+   │
+   │ POST /vr/launch/
+   ▼
+Django
+   │
+   ├── authenticate user
+   ├── validate experience
+   ├── create short-lived launch token
+   └── return launch information
+   ▼
+Flutter
+   │
+   ▼
+griotvr://launch?token=...&experience=42
+   │
+   ▼
+Unity
+   │
+   ▼
+Django validates token
+```
 
-### Test everything important
-Every significant change must have a verification method.
+The token should:
 
-### No unnecessary rewrites
-Do not rewrite entire files or systems when a targeted change is sufficient.
+- expire quickly
+- be scoped to VR
+- preferably be single-use
+- be associated with the authenticated user
+- be invalid after expiration
+- never contain unnecessary sensitive information
 
-### Respect the architecture
-Follow the project's existing architecture unless there is a justified reason to change it.
-
-### Dependency awareness
-Before changing a dependency, check what depends on it and whether the versions are compatible.
-
-### Production mindset
-Consider development, testing, and production environments separately.
-
----
-
-# REQUIRED WORKFLOW
-
-For every substantial task, follow this workflow:
-
-## STEP 1 — INSPECT
-
-Analyze:
-
-- Project structure
-- Architecture
-- Dependencies
-- Configuration
-- Data flow
-- APIs
-- Database
-- Existing tests
-- Relevant files
-
-## STEP 2 — AUDIT
-
-Identify:
-
-- Bugs
-- Performance issues
-- Security vulnerabilities
-- Technical debt
-- Complexity
-- Outdated implementations
-- Automation opportunities
-
-## STEP 3 — DIAGNOSE
-
-For each significant issue determine:
-
-**Problem → Root Cause → Impact → Recommended Solution**
-
-## STEP 4 — PRIORITIZE
-
-Classify issues:
-
-🔴 **Critical** — security, crashes, data loss, blocking functionality
-
-🟠 **High** — major bugs, serious performance or architecture problems
-
-🟡 **Medium** — maintainability, moderate UX/performance issues
-
-🟢 **Low** — polish and minor improvements
-
-## STEP 5 — PLAN
-
-Create a prioritized implementation plan.
-
-For each change specify:
-
-- File
-- Problem
-- Proposed change
-- Reason
-- Risk
-- Expected result
-
-## STEP 6 — IMPLEMENT
-
-Make changes incrementally.
-
-Avoid unrelated modifications.
-
-## STEP 7 — TEST
-
-Run appropriate:
-
-- Unit tests
-- Integration tests
-- API tests
-- UI tests
-- Security checks
-- Build checks
-- Static analysis
-- Linting
-- Type checking
-
-## STEP 8 — VERIFY
-
-Confirm that:
-
-- The original problem is fixed.
-- Existing functionality still works.
-- No new errors were introduced.
-- Performance has not degraded.
-- Security has improved or remained intact.
-
-## STEP 9 — POLISH
-
-Perform one final engineering review.
+Use the project's existing authentication mechanism where possible.
 
 ---
 
-# IMPORTANT INTERACTION RULE
+# 4. Flutter integration
 
-For **major changes**, do NOT immediately modify the project.
+Add a clean VR service following the project's existing architecture.
 
-First provide:
+The service should:
 
-**1. Audit findings**
+1. Request a VR launch token from Django.
+2. Build the deep-link URI.
+3. Launch the Unity VR application.
+4. Handle the case where Unity is not installed.
+5. Handle launch errors gracefully.
 
-**2. Root causes**
+Conceptual usage:
 
-**3. Prioritized problems**
+```dart
+await vrService.launchExperience(
+  experienceId: experience.id,
+  artifactId: artifact.id,
+);
+```
 
-**4. Proposed solutions**
+Do NOT hard-code authentication credentials.
 
-**5. Files/components affected**
+Do NOT duplicate existing API clients if the project already has one.
 
-**6. Implementation plan**
-
-Then **wait for confirmation before performing major modifications**.
-
-For small, clearly defined bug fixes, you may proceed directly when the requested change is unambiguous.
+Use the existing dependency injection/provider architecture.
 
 ---
 
-# FINAL STANDARD
+# 5. Android deep link
 
-The final codebase should be:
+Configure the Unity application's Android manifest to recognize:
 
-**Correct**
-→ **Secure**
-→ **Efficient**
-→ **Maintainable**
-→ **Simple**
-→ **Modern**
-→ **Automated**
-→ **Tested**
-→ **Production-ready**
+```text
+griotvr://launch
+```
 
-Never optimize one dimension at the expense of the others without explicitly explaining the trade-off.
+The Unity application should receive:
+
+```text
+token
+experience
+artifact
+```
+
+Example conceptual URI:
+
+```text
+griotvr://launch?token=ABC123&experience=42&artifact=108
+```
+
+Also consider Android App Links/HTTPS for a production implementation if appropriate.
+
+Document why the chosen approach is being used.
+
+---
+
+# 6. Unity VR application
+
+Create the Unity side as a **separate VR application**.
+
+Use:
+
+- Unity
+- OpenXR
+- C#
+- Unity XR Interaction Toolkit where appropriate
+
+The Unity project should contain logical modules such as:
+
+```text
+UnityProject/
+│
+├── Assets/
+│   ├── Scenes/
+│   ├── Scripts/
+│   │   ├── Authentication/
+│   │   ├── API/
+│   │   ├── VR/
+│   │   ├── Artifacts/
+│   │   ├── Stories/
+│   │   ├── Audio/
+│   │   └── UI/
+│   │
+│   ├── Models/
+│   ├── Materials/
+│   ├── Audio/
+│   └── Prefabs/
+```
+
+Adapt this structure if an existing Unity project already exists.
+
+---
+
+# 7. Unity deep-link receiver
+
+Implement a C# component that:
+
+1. receives the Android deep link
+2. parses the URI
+3. extracts the launch token
+4. extracts experience ID
+5. optionally extracts artifact ID
+6. validates the data
+7. contacts Django
+8. retrieves the VR experience
+9. loads the appropriate Unity scene
+
+Conceptually:
+
+```text
+Deep Link
+    ↓
+DeepLinkManager
+    ↓
+LaunchData
+    ↓
+VRAuthService
+    ↓
+GriotApiClient
+    ↓
+VRExperienceService
+    ↓
+SceneLoader
+```
+
+Do not put API logic directly inside scene/UI scripts.
+
+---
+
+# 8. Unity API client
+
+Create a reusable C# API layer.
+
+For example:
+
+```text
+GriotApiClient
+├── AuthenticateVR()
+├── GetExperience()
+├── GetArtifact()
+├── AskGriot()
+├── StartSession()
+└── CompleteSession()
+```
+
+Use asynchronous requests.
+
+Handle:
+
+- HTTP errors
+- timeout
+- expired token
+- no internet
+- malformed responses
+- unavailable experience
+
+with appropriate user-facing VR error messages.
+
+---
+
+# 9. VR experience loading
+
+Unity should NOT receive the entire 3D experience through the deep link.
+
+The deep link only identifies the experience.
+
+Unity should ask Django:
+
+```text
+GET /api/v1/vr/experiences/42/
+```
+
+Django returns metadata and asset references.
+
+Then Unity loads:
+
+```text
+Experience
+    │
+    ├── Environment
+    ├── Artifacts
+    ├── Stories
+    ├── Narration
+    └── Interactions
+```
+
+---
+
+# 10. Griot AI inside VR
+
+The VR application should be able to interact with the existing Griot AI backend.
+
+Example:
+
+```text
+User sees artifact
+       │
+       ▼
+"Ask Griot"
+       │
+       ▼
+Unity
+       │
+       ▼
+POST /api/v1/ai/ask/
+       │
+       ▼
+Django
+       │
+       ├── Artifact context
+       ├── Story context
+       ├── Cultural context
+       └── RAG context
+       │
+       ▼
+Griot AI
+       │
+       ▼
+Django
+       │
+       ▼
+Unity
+```
+
+The VR client should not directly call the LLM provider.
+
+Keep AI credentials exclusively on the backend.
+
+---
+
+# 11. Voice
+
+Design the VR architecture so Griot can eventually support:
+
+```text
+User voice
+    ↓
+Speech-to-text
+    ↓
+Django / Griot AI
+    ↓
+AI response
+    ↓
+Text-to-speech
+    ↓
+Unity audio
+```
+
+For the initial implementation, text interaction is acceptable if voice is not already implemented.
+
+Do not introduce unnecessary complexity if the current project does not yet have STT/TTS.
+
+---
+
+# 12. VR session tracking
+
+When Unity starts:
+
+```text
+POST /api/v1/vr/sessions/
+```
+
+Store:
+
+```text
+user
+experience
+start_time
+```
+
+When the user exits:
+
+```text
+POST /api/v1/vr/sessions/<id>/complete/
+```
+
+Store:
+
+```text
+end_time
+duration
+completion_status
+progress
+```
+
+Integrate with the existing Griot progress/achievement system if one already exists.
+
+---
+
+# 13. Flutter UX
+
+On the artifact details page, add:
+
+```text
+[ Explore in VR ]
+```
+
+The button should:
+
+```text
+tap
+ ↓
+check VR availability / configuration
+ ↓
+request launch token
+ ↓
+launch Unity
+```
+
+If Unity isn't installed:
+
+```text
+"VR experience isn't installed on this device."
+```
+
+Do not crash the Flutter application.
+
+---
+
+# 14. Architecture quality requirements
+
+Follow these rules:
+
+- Do not duplicate existing code.
+- Do not create parallel authentication systems unnecessarily.
+- Reuse existing API clients/services.
+- Reuse existing Artifact/Story/User models.
+- Follow the current project's naming conventions.
+- Follow the current state-management architecture.
+- Do not hard-code URLs or credentials.
+- Use environment configuration.
+- Keep secrets out of Git.
+- Use HTTPS for production.
+- Validate all IDs and tokens server-side.
+- Never trust deep-link parameters.
+- Keep Unity independent from Flutter internally.
+- Keep Django as the authoritative backend.
+- Do not connect Unity directly to PostgreSQL.
+- Do not connect Flutter directly to PostgreSQL.
+- Do not expose AI API keys to Flutter or Unity.
+
+---
+
+# 15. Required sequence diagram
+
+Produce a sequence diagram for:
+
+```text
+User
+Flutter
+Django
+Unity
+Database
+Griot AI
+```
+
+covering:
+
+```text
+1. User opens artifact
+2. User taps Explore in VR
+3. Flutter requests launch token
+4. Django validates authentication
+5. Django creates short-lived token
+6. Flutter launches Unity deep link
+7. Unity receives deep link
+8. Unity validates token
+9. Django returns VR experience
+10. Unity loads scene
+11. User interacts with artifact
+12. Unity asks Griot AI
+13. Django retrieves cultural context
+14. Griot AI generates response
+15. Django returns response
+16. Unity displays/narrates response
+17. Unity records session completion
+18. Django updates progress
+```
+
+---
+
+# 16. Required final architecture
+
+The implementation must result in this architecture:
+
+```text
+                         USER
+                           │
+                           ▼
+                     FLUTTER MOBILE
+                           │
+                  "Explore in VR"
+                           │
+                           ▼
+                  Django Launch API
+                           │
+                  Short-lived Token
+                           │
+                           ▼
+                   Android Deep Link
+                           │
+                           ▼
+                      UNITY VR
+                           │
+                     HTTPS / REST
+                           │
+                           ▼
+                  DJANGO REST API
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
+      PostgreSQL       Griot AI        Object Storage
+                           │
+                    ┌──────┴──────┐
+                    ▼             ▼
+                   RAG           LLM
+                           │
+                           ▼
+                         TTS
+                           │
+                           ▼
+                      UNITY VR
+```
+
+---
+
+# 17. What I expect from you before implementation
+
+**Do not modify files immediately.**
+
+First inspect the repository and give me:
+
+### 1. Existing architecture
+
+### 2. Relevant existing files
+
+### 3. What can be reused
+
+### 4. What needs to be created
+
+### 5. Exact implementation plan
+
+### 6. Risks/conflicts with the existing project
+
+### 7. Proposed API contract
+
+### 8. Proposed Flutter → Unity → Django flow
+
+### 9. Proposed Unity project structure
+
+### 10. Files that will be modified/created
+
+Then **STOP and wait for my confirmation**.
+
+Only after I explicitly approve the plan should you implement the changes.
+
+Do not silently make architectural changes beyond this specification.

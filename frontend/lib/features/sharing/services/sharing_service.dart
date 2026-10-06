@@ -16,6 +16,7 @@ class SharingService {
     required String slug,
     required String summary,
     String? imageUrl,
+    ApiClient? apiClient,
   }) async {
     final shareUrl = '${AppConstants.appShareBaseUrl}/story/$slug';
     final shareText = _buildShareText(title, summary, shareUrl);
@@ -25,7 +26,7 @@ class SharingService {
     );
 
     // Track the share (fire and forget)
-    _trackShare(slug: slug, platform: 'share_sheet');
+    _trackShare(slug: slug, platform: 'share_sheet', apiClient: apiClient);
   }
 
   /// Share to a specific platform.
@@ -34,6 +35,7 @@ class SharingService {
     required String slug,
     required String summary,
     required String platform,
+    ApiClient? apiClient,
   }) async {
     final shareUrl = '${AppConstants.appShareBaseUrl}/story/$slug';
     final shareText = _buildShareText(title, summary, shareUrl);
@@ -43,7 +45,7 @@ class SharingService {
     );
 
     // Track the share
-    _trackShare(slug: slug, platform: platform);
+    _trackShare(slug: slug, platform: platform, apiClient: apiClient);
   }
 
   /// Copy story link to clipboard.
@@ -72,9 +74,18 @@ class SharingService {
   }
 
   /// Track a share event (fire and forget).
-  void _trackShare({required String slug, required String platform}) {
+  ///
+  /// Pass the authenticated [ApiClient] so a signed-in reader's share is
+  /// attributed to them server-side; the endpoint accepts anonymous callers
+  /// too, so a missing client degrades to an unattributed share rather than
+  /// a failure.
+  void _trackShare({
+    required String slug,
+    required String platform,
+    ApiClient? apiClient,
+  }) {
     try {
-      final api = ApiClient.instance;
+      final api = apiClient ?? ApiClient.instance;
       api.dio.post('/api/stories/$slug/share/', data: {'platform': platform});
     } catch (e) {
       // Non-critical analytics — log but don't surface.

@@ -33,6 +33,7 @@ from .services.tts import (
     resolve_language,
     strip_markdown,
 )
+from .services.video_storage import store_video_asset
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +206,10 @@ class VideoGenerationViewSet(viewsets.ModelViewSet):
                     job.progress_percent = 100
                     if not job.completed_at:
                         job.completed_at = timezone.now()
+                    # Keep the render on our side of the fence before the
+                    # provider URL goes stale. Best effort: an unstored job
+                    # still completes and keeps serving the remote URL.
+                    store_video_asset(job)
                 elif luma_status.get('status') == 'failed':
                     job.status = VideoGenerationJob.Status.FAILED
                     job.error_message = luma_status.get('error', 'Unknown error')
@@ -459,14 +464,21 @@ class MediaStatusView(generics.GenericAPIView):
                 id=job_id,
                 user=request.user,
             )
-            serializer = VideoGenerationJobSerializer(job)
+            # Context so a stored video_file serialises to an absolute URL —
+            # without it the client receives a bare '/media/...' path it
+            # cannot play. Audio passes the same context for the same reason.
+            serializer = VideoGenerationJobSerializer(
+                job, context=self.get_serializer_context()
+            )
         elif job_type == 'audio':
             job = get_object_or_404(
                 AudioNarrationJob,
                 id=job_id,
                 user=request.user,
             )
-            serializer = AudioNarrationJobSerializer(job)
+            serializer = AudioNarrationJobSerializer(
+                job, context=self.get_serializer_context()
+            )
         else:
             return Response(
                 {'error': 'Invalid job type'},

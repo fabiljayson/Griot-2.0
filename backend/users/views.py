@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .serializers import (
@@ -46,6 +48,42 @@ class AuthTokenRefreshView(TokenRefreshView):
     """POST /api/auth/token/refresh/ — rotate a refresh token for a new pair."""
 
     throttle_classes = [AuthRateThrottle]
+
+
+class LogoutView(APIView):
+    """POST /api/auth/logout/ — blacklist the reader's refresh token.
+
+    Signing out must revoke the session server-side: a refresh token saved
+    in an offline queue, copied off a lost device, or left in a backup of
+    this repository keeps minting access tokens for the full
+    REFRESH_TOKEN_LIFETIME if it is only cleared client-side.
+
+    Idempotent by design. The body carries the token to revoke (`refresh`);
+    a missing, malformed, expired or already-blacklisted token all resolve
+    to the same 204 — the client clears local state either way, and a logout
+    that 401s would strand the reader in a signed-in UI with dead tokens.
+
+    The refresh token is the credential, so this endpoint carries no
+    authentication requirement: requiring a valid access token would make
+    logout impossible exactly when it is needed most (expired access token).
+    """
+
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthRateThrottle]
+
+    def post(self, request):
+        refresh = request.data.get('refresh')
+        if isinstance(refresh, str) and refresh:
+            try:
+                # Constructing the token runs its blacklist check as well, so
+                # an already-revoked token raises here — exactly the idempotent
+                # no-op this endpoint wants.
+                RefreshToken(refresh).blacklist()
+            except TokenError:
+                # Invalid, expired, or already revoked — nothing left to do.
+                pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ---------------------------------------------------------------------------

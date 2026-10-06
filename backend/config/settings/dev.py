@@ -13,7 +13,10 @@ from .base import BASE_DIR
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-SECRET_KEY = 'django-insecure-dev-only-change-me'
+# Stable local key so dev sessions and JWTs survive a server restart. The
+# value is refused by config.settings.prod, and the environment variable wins
+# when a developer sets one deliberately.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or 'django-insecure-dev-only-change-me'
 
 ALLOWED_HOSTS = [
     'localhost',

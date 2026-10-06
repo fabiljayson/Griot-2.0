@@ -58,14 +58,18 @@ class _DailyActivityPingerState extends ConsumerState<DailyActivityPinger>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Covers sign-in and cold start: the first frame after the reader becomes
-    // authenticated is the moment to count the day.
-    final authenticated = ref.read(authProvider).value?.isAuthenticated ?? false;
+    // authenticated is the moment to count the day. valueOrNull because `.value`
+    // rethrows an auth error (Riverpod 3) — an auth blip must not crash the widget.
+    final authenticated =
+        ref.read(authProvider).valueOrNull?.isAuthenticated ?? false;
     if (authenticated) unawaited(_ping());
   }
 
   Future<void> _ping() async {
     if (_inFlight) return;
-    if (!(ref.read(authProvider).value?.isAuthenticated ?? false)) return;
+    if (!(ref.read(authProvider).valueOrNull?.isAuthenticated ?? false)) {
+      return;
+    }
 
     final now = DateTime.now();
     final last = _lastPing;

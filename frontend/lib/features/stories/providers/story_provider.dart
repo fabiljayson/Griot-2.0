@@ -5,6 +5,7 @@ import '../../../core/database/repositories/story_cache_repository.dart';
 import '../../../core/network/app_error.dart';
 import '../../../core/network/connectivity_service.dart';
 import '../../auth/models/user_model.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../models/story_model.dart';
 import '../repositories/story_repository.dart';
 import '../../../core/debug/debug_log.dart';
@@ -428,6 +429,11 @@ class StoryDetailNotifier extends StateNotifier<StoryDetailState> {
 /// Repository provider.
 final storyRepositoryProvider = Provider<StoryRepository>((ref) {
   return StoryRepository(
+    // Authenticated client: create/update/delete, bookmarks, likes, flags,
+    // progress and consent all require a Bearer token. The bare
+    // `ApiClient.instance` carries no `AuthInterceptor`, so building the
+    // repository without a client sent every mutation anonymously.
+    apiClient: ref.watch(authenticatedApiClientProvider),
     // The repository skips the network entirely while the device is known
     // offline and serves the SQLite mirror instead.
     connectivityService: ref.watch(connectivityServiceProvider),

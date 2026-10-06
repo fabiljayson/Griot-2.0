@@ -8,10 +8,24 @@ class VideoGenerationJobSerializer(serializers.ModelSerializer):
     
     story_title = serializers.CharField(source='story.title', read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)
+    # Once the render has been stored locally the stored file is served,
+    # exactly as AudioNarrationJobSerializer does for audio: the provider's
+    # CDN URL expires, ours does not. Falls back to the remote URL for jobs
+    # completed before storage existed or whose download failed.
+    video_url = serializers.SerializerMethodField()
     # Provenance travels with the job so a player can state that the video is a
     # modern AI illustration of the story, not archival footage of the place.
     attribution = serializers.CharField(read_only=True)
     is_synthetic = serializers.BooleanField(read_only=True)
+
+    def get_video_url(self, obj) -> str:
+        if obj.video_file:
+            request = self.context.get('request')
+            url = obj.video_file.url
+            if request is not None:
+                return request.build_absolute_uri(url)
+            return url
+        return obj.video_url
 
     class Meta:
         model = VideoGenerationJob

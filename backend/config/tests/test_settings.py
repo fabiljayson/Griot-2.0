@@ -94,3 +94,35 @@ class ProdHostSourcingTests(TestCase):
     def test_dev_module_source_has_no_wildcard_literal(self):
         dev_source = (REPO_ROOT / 'config' / 'settings' / 'dev.py').read_text()
         self.assertNotIn("'*'", dev_source)
+
+
+class SecretKeyHygieneTests(TestCase):
+    """The repository is public: no usable signing key may live in source.
+
+    A committed SECRET_KEY is a working forgery key for sessions,
+    password-reset tokens and signed cookies. Source-level assertions, in the
+    style of ProdHostSourcingTests: the settings modules cannot all be
+    imported for value-level checks (prod fail-fasts without its env vars).
+    """
+
+    def test_base_has_no_committed_secret_key_fallback(self):
+        base_source = (REPO_ROOT / 'config' / 'settings' / 'base.py').read_text()
+        # No key literal of any kind, insecure or otherwise: the fallback for
+        # a missing env var is a per-process random key, not a string in git.
+        self.assertNotIn("'django-insecure", base_source)
+        self.assertIn("os.environ.get('DJANGO_SECRET_KEY')", base_source)
+        self.assertIn('secrets.token_urlsafe', base_source)
+
+    def test_prod_refuses_to_start_without_an_explicit_key(self):
+        prod_source = (REPO_ROOT / 'config' / 'settings' / 'prod.py').read_text()
+        self.assertIn('Missing required environment variables: DJANGO_SECRET_KEY', prod_source)
+        # Also rejects the historical dev literal if it is ever exported as
+        # the production value.
+        self.assertIn('Refusing to run in production', prod_source)
+
+    def test_dev_key_is_env_first_and_matches_no_base_literal(self):
+        # dev may pin a stable local key (sessions across restarts), but the
+        # environment variable must win when a developer sets one, and base
+        # must not carry a second copy of the literal for prod to compare.
+        dev_source = (REPO_ROOT / 'config' / 'settings' / 'dev.py').read_text()
+        self.assertIn("os.environ.get('DJANGO_SECRET_KEY')", dev_source)

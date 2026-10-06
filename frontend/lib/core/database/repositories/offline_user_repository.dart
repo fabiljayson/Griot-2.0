@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../security/pii_cipher.dart';
 import '../../security/secure_storage_factory.dart';
 import '../app_database.dart';
 import '../models/offline_user.dart';
@@ -21,10 +22,14 @@ class OfflineUserRepository {
     AppDatabase? database,
     FlutterSecureStorage? secureStorage,
   })  : _database = database ?? AppDatabase.instance,
-        _storage = secureStorage ?? SecureStorageFactory.instance;
+        _storage = secureStorage ?? SecureStorageFactory.instance,
+        _pii = PiiCipher.forStorage(
+          secureStorage ?? SecureStorageFactory.instance,
+        );
 
   final AppDatabase _database;
   final FlutterSecureStorage _storage;
+  final PiiCipher _pii;
 
   static const _passwordKeyPrefix = 'pending_registration_password_';
 
@@ -56,9 +61,14 @@ class OfflineUserRepository {
       createdAt: DateTime.now(),
     );
 
+    final map = user.toMap()..remove('id');
+    map['email'] = await _pii.encrypt(email);
+    map['first_name'] = await _pii.encrypt(firstName);
+    map['last_name'] = await _pii.encrypt(lastName);
+
     final id = await db.insert(
       'offline_users',
-      user.toMap()..remove('id'),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
@@ -99,7 +109,17 @@ class OfflineUserRepository {
       whereArgs: [OfflineUserStatus.pending.value],
       orderBy: 'created_at ASC',
     );
-    return rows.map(OfflineUser.fromMap).toList();
+    return Future.wait(rows.map((r) => _withPlainPii(OfflineUser.fromMap(r))));
+  }
+
+  /// Decrypt the identity columns of a row (see [PiiCipher]); pre-encryption
+  /// rows pass through untouched.
+  Future<OfflineUser> _withPlainPii(OfflineUser user) async {
+    return user.copyWith(
+      email: await _pii.decrypt(user.email),
+      firstName: await _pii.decrypt(user.firstName),
+      lastName: await _pii.decrypt(user.lastName),
+    );
   }
 
   /// Get a user by ID.
@@ -112,7 +132,7 @@ class OfflineUserRepository {
       limit: 1,
     );
     if (rows.isEmpty) return null;
-    return OfflineUser.fromMap(rows.first);
+    return _withPlainPii(OfflineUser.fromMap(rows.first));
   }
 
   /// Get a user by username.
@@ -125,7 +145,7 @@ class OfflineUserRepository {
       limit: 1,
     );
     if (rows.isEmpty) return null;
-    return OfflineUser.fromMap(rows.first);
+    return _withPlainPii(OfflineUser.fromMap(rows.first));
   }
 
   /// Mark a user as syncing.
@@ -193,13 +213,15 @@ class OfflineUserRepository {
   /// Check if an email is already registered offline.
   Future<bool> isEmailRegistered(String email) async {
     final db = await _db;
-    final rows = await db.query(
-      'offline_users',
-      where: 'email = ?',
-      whereArgs: [email],
-      limit: 1,
-    );
-    return rows.isNotEmpty;
+    // Email is encrypted at rest, so the lookup cannot use a WHERE clause —
+    // the queue is tiny, scan and decrypt instead.
+    final rows = await db.query('offline_users', columns: ['email']);
+    for (final row in rows) {
+      if (await _pii.decrypt((row['email'] as String?) ?? '') == email) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Clear all offline users (for logout or manual sync reset).

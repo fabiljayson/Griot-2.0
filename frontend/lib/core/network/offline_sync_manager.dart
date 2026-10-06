@@ -9,6 +9,7 @@ import '../database/models/offline_user.dart';
 import '../database/repositories/offline_request_repository.dart';
 import '../database/repositories/offline_user_repository.dart';
 import '../providers/database_providers.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import 'api_client.dart';
 import 'connectivity_service.dart';
 import '../debug/debug_log.dart';
@@ -160,6 +161,10 @@ class OfflineSyncManager {
       }
 
       final options = RequestOptions(
+        // Replay must keep the client's baseUrl: a RequestOptions built with
+        // only a path resolves to a relative URI, which never leaves the
+        // device — every queued mutation would "succeed" locally and vanish.
+        baseUrl: _apiClient.dio.options.baseUrl,
         method: request.method,
         path: request.path,
         data: request.body != null ? jsonDecode(request.body!) : null,
@@ -214,7 +219,12 @@ final offlineSyncManagerProvider = Provider<OfflineSyncManager>((ref) {
   final manager = OfflineSyncManager._(
     offlineRepository: ref.watch(offlineRequestRepositoryProvider),
     offlineUserRepository: ref.watch(offlineUserRepositoryProvider),
-    apiClient: ref.watch(apiClientProvider),
+    // Replay must go through the authenticated client: queued requests are
+    // stored without their `Authorization` header (credentials are never
+    // persisted), and the replay relies on `AuthInterceptor.onRequest` to
+    // re-attach a live token. The bare `ApiClient.instance` has no
+    // interceptor, so every replay used to ship anonymous and fail forever.
+    apiClient: ref.watch(authenticatedApiClientProvider),
     connectivityService: ref.watch(connectivityServiceProvider),
   );
   ref.onDispose(() => manager.dispose());

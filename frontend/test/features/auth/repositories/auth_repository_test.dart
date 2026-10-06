@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:griot_ai/core/database/app_database.dart';
 import 'package:griot_ai/core/database/repositories/local_auth_repository.dart';
+import 'package:griot_ai/core/database/repositories/offline_user_repository.dart';
 import 'package:griot_ai/features/auth/models/user_model.dart';
 import 'package:griot_ai/features/auth/repositories/auth_repository.dart';
 import 'package:griot_ai/features/auth/repositories/server_auth_repository.dart';
@@ -10,6 +12,10 @@ import 'package:griot_ai/features/auth/repositories/server_auth_repository.dart'
 class _MockServer extends Mock implements ServerAuthRepository {}
 
 class _MockLocal extends Mock implements LocalAuthRepository {}
+
+class _MockAppDatabase extends Mock implements AppDatabase {}
+
+class _MockOfflineUsers extends Mock implements OfflineUserRepository {}
 
 RequestOptions _options() => RequestOptions(path: '/api/auth/token/');
 
@@ -283,23 +289,150 @@ void main() {
     });
 
     test(
-      'should refresh a real session and persist the new access token',
+      'persists the rotated refresh token the server issues',
       () async {
         when(() => local.refreshToken).thenAnswer((_) async => 'eyJ.refresh.1');
         when(() => server.refresh('eyJ.refresh.1')).thenAnswer(
           (_) async => const TokenPair(
             accessToken: 'eyJ.access.2',
-            refreshToken: 'eyJ.refresh.1',
+            refreshToken: 'eyJ.refresh.2',
           ),
         );
         when(
-          () => local.saveAccessToken('eyJ.access.2'),
+          () => local.saveTokenPair(
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+          ),
         ).thenAnswer((_) async {});
 
         final tokens = await repo.refreshTokens();
 
         expect(tokens.accessToken, 'eyJ.access.2');
-        verify(() => local.saveAccessToken('eyJ.access.2')).called(1);
+        expect(
+          tokens.refreshToken,
+          'eyJ.refresh.2',
+          reason: 'the server blacklists the presented refresh token '
+              '(ROTATE_REFRESH_TOKENS); returning the old one would '
+              'guarantee a 401 on the next refresh',
+        );
+        verify(
+          () => local.saveTokenPair(
+            accessToken: 'eyJ.access.2',
+            refreshToken: 'eyJ.refresh.2',
+          ),
+        ).called(1);
+        verifyNever(() => local.saveAccessToken(any()));
+      },
+    );
+
+    test(
+      'keeps the current refresh token when the server does not rotate',
+      () async {
+        when(() => local.refreshToken).thenAnswer((_) async => 'eyJ.refresh.1');
+        when(() => server.refresh('eyJ.refresh.1')).thenAnswer(
+          (_) async => const TokenPair(
+            accessToken: 'eyJ.access.2',
+            refreshToken: '',
+          ),
+        );
+        when(
+          () => local.saveTokenPair(
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+          ),
+        ).thenAnswer((_) async {});
+
+        final tokens = await repo.refreshTokens();
+
+        expect(tokens.refreshToken, 'eyJ.refresh.1');
+        verify(
+          () => local.saveTokenPair(
+            accessToken: 'eyJ.access.2',
+            refreshToken: 'eyJ.refresh.1',
+          ),
+        ).called(1);
+      },
+    );
+  });
+
+  group('logout', () {
+    late _MockAppDatabase database;
+    late _MockOfflineUsers offlineUsers;
+    late AuthRepository repo;
+
+    setUp(() {
+      database = _MockAppDatabase();
+      offlineUsers = _MockOfflineUsers();
+      repo = AuthRepository(
+        localAuth: local,
+        server: server,
+        database: database,
+        offlineUsers: offlineUsers,
+      );
+
+      when(() => local.logout()).thenAnswer((_) async {});
+      when(() => offlineUsers.clearAll()).thenAnswer((_) async {});
+      when(() => database.wipeUserScopedData()).thenAnswer((_) async {});
+    });
+
+    test(
+      'revokes the refresh token server-side before clearing local state',
+      () async {
+        when(() => local.refreshToken)
+            .thenAnswer((_) async => 'eyJ.refresh.1');
+        when(() => server.logout('eyJ.refresh.1')).thenAnswer((_) async {});
+
+        await repo.logout();
+
+        // Revocation has to happen while the token still exists locally —
+        // clearing first throws away the only credential that can blacklist
+        // it. Verify the order, not just the calls.
+        verifyInOrder([
+          () => server.logout('eyJ.refresh.1'),
+          () => local.logout(),
+        ]);
+        verify(() => offlineUsers.clearAll()).called(1);
+        verify(() => database.wipeUserScopedData()).called(1);
+      },
+    );
+
+    test('skips the server call for synthetic offline sessions', () async {
+      when(() => local.refreshToken).thenAnswer((_) async => 'local_refresh_7');
+
+      await repo.logout();
+
+      verifyNever(() => server.logout(any()));
+      verify(() => local.logout()).called(1);
+    });
+
+    test('skips the server call when there is no token to revoke', () async {
+      when(() => local.refreshToken).thenAnswer((_) async => null);
+
+      await repo.logout();
+
+      verifyNever(() => server.logout(any()));
+      verify(() => local.logout()).called(1);
+    });
+
+    test(
+      'still signs the reader out when the revocation request fails',
+      () async {
+        when(() => local.refreshToken)
+            .thenAnswer((_) async => 'eyJ.refresh.1');
+        when(() => server.logout(any())).thenAnswer(
+          (_) async => throw DioException(
+            requestOptions: RequestOptions(path: '/api/auth/logout/'),
+            type: DioExceptionType.connectionError,
+          ),
+        );
+
+        await repo.logout();
+
+        // Offline logout must not strand the reader in a signed-in UI with
+        // dead tokens; the token simply expires server-side instead.
+        verify(() => local.logout()).called(1);
+        verify(() => offlineUsers.clearAll()).called(1);
+        verify(() => database.wipeUserScopedData()).called(1);
       },
     );
   });

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The main Android manifest for the VR build.
+
+  Unity's default manifest declares an activity but no deep-link filter, so a
+  `griotvr://launch` link has nowhere to land and Android shows "no app can
+  perform this action" — the exact failure this file exists to prevent. Unity
+  merges this file into the generated manifest, so the filter only needs to be
+  correct here.
+
+  Two things about the filter are deliberate:
+
+  * `android:scheme="griotvr"` alone, with no `android:host`, matches any host.
+    That is intentional: narrowing it to `launch` buys nothing, because the
+    scheme is not a security boundary — any app can register it. What protects
+    the flow is that the token expires in seconds, works once, and is bound to
+    the reader who requested it, and that **Django validates it server-side on
+    every use**. Unity must never treat the link's contents as trusted by virtue
+    of having arrived.
+  * `launchMode="singleTask"` keeps one VR instance alive. A second link then
+    arrives as `OnNewIntent`/`Application.deepLinkActivated` rather than
+    starting a second copy of the scene on top of the first.
+
+  App Links (`https://…` with `android:autoVerify="true"`) are the production
+  upgrade for this: they are verified against a domain the app does not
+  control, so an app-link URL cannot be hijacked by another app registering a
+  scheme. It is not used today because the backend serves media from the API
+  host and has no `/.well-known/assetlinks.json` yet — shipping `autoVerify`
+  without that file makes Android silently fall back to a browser.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice input for "Ask Griot" (phase 2). Declared now so the input path
+         does not require a manifest change and a re-review later. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <uses-feature android:name="android.hardware.vr.headtracking" android:required="true" />
+
+    <application>
+        <activity
+            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+
+            <!-- Standard launcher entry, kept so QA can open the app directly. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- The launch handoff from the Flutter app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="griotvr" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

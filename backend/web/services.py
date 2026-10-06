@@ -17,6 +17,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.db.models import Count, F, Q, Sum
+from django.db.models.functions import Greatest
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -44,6 +45,7 @@ from media_app.services.tts import (
     get_tts_service,
     strip_markdown,
 )
+from media_app.services.video_storage import store_video_asset
 from qr_codes.models import Artifact
 from qr_codes.services.qr_worklist import qr_worklist_data
 from stories.models import (
@@ -651,7 +653,7 @@ def toggle_story_like(user, story):
     if not created:
         like.delete()
         Story.objects.filter(pk=story.pk).update(
-            like_count=max(0, story.like_count - 1)
+            like_count=Greatest(F('like_count') - 1, 0)
         )
     else:
         Story.objects.filter(pk=story.pk).update(like_count=F('like_count') + 1)
@@ -663,7 +665,7 @@ def toggle_story_bookmark(user, story):
     if not created:
         bookmark.delete()
         Story.objects.filter(pk=story.pk).update(
-            bookmark_count=max(0, story.bookmark_count - 1)
+            bookmark_count=Greatest(F('bookmark_count') - 1, 0)
         )
     else:
         Story.objects.filter(pk=story.pk).update(bookmark_count=F('bookmark_count') + 1)
@@ -1128,6 +1130,10 @@ def refresh_video_job(user, story):
         job.video_url = luma_status.get('video_url', '')
         job.thumbnail_url = luma_status.get('thumbnail_url', '')
         job.duration = luma_status.get('duration', 0)
+        # Mirror the API status path: store the finished render locally so
+        # playback outlives the provider's CDN URL. Best effort — on failure
+        # the job completes on the remote URL, exactly as before.
+        store_video_asset(job)
     elif luma_status.get('status') == 'failed':
         job.status = VideoGenerationJob.Status.FAILED
         job.error_message = luma_status.get('error', 'Unknown error')

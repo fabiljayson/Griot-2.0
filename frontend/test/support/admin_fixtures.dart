@@ -127,7 +127,7 @@ Map<String, dynamic> adminEngagementJson() => {
   },
 };
 
-/// `/api/stories/moderation-queue/` payload (a list of flagged stories).
+/// `/api/stories/moderation_queue/` payload (a list of flagged stories).
 List<Map<String, dynamic>> adminModerationQueueJson() => [
   {
     'story_id': 11,
@@ -165,7 +165,7 @@ Map<String, dynamic> adminDashboardJson() => {
   'engagement': adminEngagementJson(),
 };
 
-/// `/api/stories/consent-queue/` payload: two stories still awaiting a
+/// `/api/stories/consent_queue/` payload: two stories still awaiting a
 /// moderator's decision, one of them live and published.
 List<Map<String, dynamic>> adminConsentQueueJson() => [
   {

@@ -33,6 +33,7 @@ class CacheIsolatedTestCase(APITestCase):
 REGISTER_URL = reverse('users:register')
 TOKEN_URL = reverse('users:token_obtain_pair')
 REFRESH_URL = reverse('users:token_refresh')
+LOGOUT_URL = reverse('users:logout')
 ME_URL = reverse('me')
 
 
@@ -492,6 +493,102 @@ class TokenTests(CacheIsolatedTestCase):
         self.assertIn('access', resp.data)
         self.assertIn('refresh', resp.data)
         self.assertNotEqual(resp.data['refresh'], refresh)
+
+
+class LogoutTests(CacheIsolatedTestCase):
+    """POST /api/auth/logout/ must revoke the refresh token server-side.
+
+    Clearing the token only on the device leaves it minting access tokens
+    until it expires — the case that matters is a token copied out of this
+    repository's offline queue or left on a lost device.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.user = User.objects.create_user(
+            'griot', email='griot@example.com', password='hunter2secure'
+        )
+
+    def _obtain_refresh(self):
+        resp = self.client.post(TOKEN_URL, {
+            'username': 'griot',
+            'password': 'hunter2secure',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        return resp.data['refresh']
+
+    def test_logout_blacklists_the_refresh_token(self):
+        refresh = self._obtain_refresh()
+
+        resp = self.client.post(LOGOUT_URL, {'refresh': refresh})
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+        # The whole point: the revoked token can no longer mint access tokens.
+        replay = self.client.post(REFRESH_URL, {'refresh': refresh})
+        self.assertEqual(replay.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_stays_valid_after_the_refresh_token_expired(self):
+        # Missing / expired / garbage input must never surface as a 500 or
+        # a 401: the client clears local state regardless, and a logout that
+        # errors would strand the reader in a signed-in UI with dead tokens.
+        for payload in ({}, {'refresh': 'not-a-jwt'}, {'refresh': 123}):
+            with self.subTest(payload=payload):
+                resp = self.client.post(LOGOUT_URL, payload)
+                self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_logout_is_idempotent(self):
+        refresh = self._obtain_refresh()
+
+        first = self.client.post(LOGOUT_URL, {'refresh': refresh})
+        second = self.client.post(LOGOUT_URL, {'refresh': refresh})
+
+        self.assertEqual(first.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(second.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_the_posted_token_is_the_only_one_revoked(self):
+        # There is no session auth on this endpoint, so the token in the body
+        # is the credential being spent. Revoking it cannot touch anyone
+        # else's session — and someone holding the token could already mint
+        # access tokens with it, so allowing the revoke costs nothing.
+        victim_refresh = self._obtain_refresh()
+
+        resp = self.client.post(LOGOUT_URL, {'refresh': victim_refresh})
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+        replay = self.client.post(REFRESH_URL, {'refresh': victim_refresh})
+        self.assertEqual(replay.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_shares_the_strict_auth_throttle(self):
+        # Logout sits on the same 5/min auth budget as token obtain/refresh;
+        # an unauthenticated flood must not bypass it. CI's test settings
+        # raise the auth scope to 10000/min so unrelated tests never see a
+        # 429, so the production rate is pinned here explicitly.
+        #
+        # The pin patches SimpleRateThrottle.THROTTLE_RATES itself, not
+        # settings.REST_FRAMEWORK: THROTTLE_RATES is a class-level snapshot
+        # captured when rest_framework.throttling is first imported, so
+        # override_settings would swap a dict the throttle never reads.
+        from rest_framework.throttling import SimpleRateThrottle
+
+        original_rates = SimpleRateThrottle.THROTTLE_RATES
+        SimpleRateThrottle.THROTTLE_RATES = {
+            **original_rates,
+            'auth': '5/min',
+        }
+        try:
+            # The obtain call spends one slot, so logouts 1-4 fit and 5+
+            # (the sixth auth request in the window) is throttled.
+            refresh = self._obtain_refresh()
+            codes = [
+                self.client.post(LOGOUT_URL, {'refresh': refresh}).status_code
+                for _ in range(5)
+            ]
+        finally:
+            SimpleRateThrottle.THROTTLE_RATES = original_rates
+
+        self.assertEqual(codes[:4], [status.HTTP_204_NO_CONTENT] * 4)
+        self.assertEqual(codes[4], status.HTTP_429_TOO_MANY_REQUESTS)
+
 
 class MeTests(CacheIsolatedTestCase):
     def setUp(self):

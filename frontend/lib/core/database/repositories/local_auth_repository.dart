@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../../features/auth/models/user_model.dart';
 import '../../security/local_credential_hasher.dart';
+import '../../security/pii_cipher.dart';
 import '../../security/secure_storage_factory.dart';
 import '../app_database.dart';
 
@@ -15,10 +16,14 @@ class LocalAuthRepository {
     AppDatabase? database,
     FlutterSecureStorage? secureStorage,
   }) : _database = database ?? AppDatabase.instance,
-       _storage = secureStorage ?? SecureStorageFactory.instance;
+       _storage = secureStorage ?? SecureStorageFactory.instance,
+       _pii = PiiCipher.forStorage(
+         secureStorage ?? SecureStorageFactory.instance,
+       );
 
   final AppDatabase _database;
   final FlutterSecureStorage _storage;
+  final PiiCipher _pii;
 
   static const _keyAccessToken = 'access_token';
   static const _keyRefreshToken = 'refresh_token';
@@ -84,9 +89,9 @@ class LocalAuthRepository {
     );
 
     final fields = {
-      'email': email,
-      'first_name': firstName,
-      'last_name': lastName,
+      'email': await _pii.encrypt(email),
+      'first_name': await _pii.encrypt(firstName),
+      'last_name': await _pii.encrypt(lastName),
       'role': role.value,
       'institution': institution,
     };
@@ -121,6 +126,21 @@ class LocalAuthRepository {
     await _storage.write(key: _keyAccessToken, value: accessToken);
   }
 
+  /// Replace both tokens (after a refresh that rotates the pair).
+  ///
+  /// The backend runs with `ROTATE_REFRESH_TOKENS` and
+  /// `BLACKLIST_AFTER_ROTATION`: the refresh token presented is blacklisted
+  /// and a new one issued. Persisting only the access token leaves the client
+  /// holding a dead refresh token, and the next refresh (≈30 minutes later)
+  /// comes back 401 and silently signs the reader out.
+  Future<void> saveTokenPair({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await _storage.write(key: _keyAccessToken, value: accessToken);
+    await _storage.write(key: _keyRefreshToken, value: refreshToken);
+  }
+
   // ── Authentication ──
 
   /// Login with username and password against the local `local_users` table.
@@ -146,13 +166,24 @@ class LocalAuthRepository {
     }
 
     final row = rows.first;
-    if (!LocalCredentialHasher.verify(
-      password,
-      row['password_hash'] as String?,
-    )) {
+    final storedHash = row['password_hash'] as String?;
+    if (!LocalCredentialHasher.verify(password, storedHash)) {
       // Covers a wrong password, an account that exists only on the server
       // (no local hash), and a row whose hash failed to parse.
       throw Exception('Invalid username or password');
+    }
+
+    // Verification passed. If the record was written with fewer PBKDF2 rounds
+    // than the current work factor, re-hash the password at the new cost and
+    // persist it — the record embeds its round count, so older hashes keep
+    // verifying until this one-shot upgrade runs.
+    if (LocalCredentialHasher.needsRehash(storedHash)) {
+      await db.update(
+        'local_users',
+        {'password_hash': LocalCredentialHasher.hash(password)},
+        where: 'id = ?',
+        whereArgs: [row['id']],
+      );
     }
 
     final userId = row['id'] as int;
@@ -172,22 +203,35 @@ class LocalAuthRepository {
   }) async {
     final db = await _db;
 
-    // Check for duplicates.
+    // Check for duplicates. Email is encrypted at rest, so it cannot sit in
+    // the WHERE clause — the table holds a handful of rows, so scan instead.
     final existing = await db.query(
       'local_users',
-      where: 'username = ? OR email = ?',
-      whereArgs: [username, email],
+      columns: ['email'],
     );
-    if (existing.isNotEmpty) {
+    var emailTaken = false;
+    for (final row in existing) {
+      if (await _pii.decrypt((row['email'] as String?) ?? '') == email) {
+        emailTaken = true;
+        break;
+      }
+    }
+    final usernameTaken = await db.query(
+      'local_users',
+      where: 'username = ?',
+      whereArgs: [username],
+      limit: 1,
+    );
+    if (usernameTaken.isNotEmpty || emailTaken) {
       throw Exception('Username or email already registered');
     }
 
     final id = await db.insert('local_users', {
       'username': username,
-      'email': email,
+      'email': await _pii.encrypt(email),
       'password_hash': LocalCredentialHasher.hash(password),
-      'first_name': firstName ?? '',
-      'last_name': lastName ?? '',
+      'first_name': await _pii.encrypt(firstName ?? ''),
+      'last_name': await _pii.encrypt(lastName ?? ''),
       'role': role.value,
     });
 
@@ -227,8 +271,12 @@ class LocalAuthRepository {
     final userId = int.parse(userIdStr);
 
     final updates = <String, dynamic>{};
-    if (firstName != null) updates['first_name'] = firstName;
-    if (lastName != null) updates['last_name'] = lastName;
+    if (firstName != null) {
+      updates['first_name'] = await _pii.encrypt(firstName);
+    }
+    if (lastName != null) {
+      updates['last_name'] = await _pii.encrypt(lastName);
+    }
 
     if (updates.isNotEmpty) {
       final db = await _db;
@@ -267,13 +315,13 @@ class LocalAuthRepository {
 
   // ── Helpers ──
 
-  UserModel _rowToUser(Map<String, dynamic> row) {
+  Future<UserModel> _rowToUser(Map<String, dynamic> row) async {
     return UserModel(
       id: row['id'] as int,
       username: row['username'] as String,
-      email: (row['email'] as String?) ?? '',
-      firstName: (row['first_name'] as String?) ?? '',
-      lastName: (row['last_name'] as String?) ?? '',
+      email: await _pii.decrypt((row['email'] as String?) ?? ''),
+      firstName: await _pii.decrypt((row['first_name'] as String?) ?? ''),
+      lastName: await _pii.decrypt((row['last_name'] as String?) ?? ''),
       role: UserRole.fromString((row['role'] as String?) ?? 'visitor'),
       institution: (row['institution'] as String?) ?? '',
     );

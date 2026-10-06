@@ -385,7 +385,10 @@ def story_video_status(request, slug):
         return JsonResponse({'status': 'none'}, status=404)
     return JsonResponse({
         'status': job.status,
-        'video_url': job.video_url,
+        # Stored copy wins over the provider URL — same rule as the API
+        # serializer, kept here so the web page and the app agree on which
+        # bytes they are playing.
+        'video_url': job.video_file.url if job.video_file else job.video_url,
         'thumbnail_url': job.thumbnail_url,
     })
 
