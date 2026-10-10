@@ -83,7 +83,7 @@ class StoryActionsMenu extends ConsumerWidget {
 
         const PopupMenuDivider(),
 
-        // Flag
+        // Report
         PopupMenuItem(
           value: 'flag',
           child: Row(
@@ -91,7 +91,7 @@ class StoryActionsMenu extends ConsumerWidget {
               const Icon(AppIcons.flag_outlined, color: AppColors.error),
               const SizedBox(width: 12),
               Text(
-                'Flag Cultural Inaccuracy',
+                'Report Story',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: AppColors.error),
@@ -215,6 +215,22 @@ class StoryActionsMenu extends ConsumerWidget {
     );
   }
 
+  /// Report categories, mirroring `StoryFlag.Reason` on the backend. The
+  /// values are the contract; the labels are presentation. One list mapped
+  /// into menu items — a new category is one row, not a new widget.
+  static const List<(String, String)> _reportReasons = [
+    ('cultural_inaccuracy', 'Cultural inaccuracy'),
+    ('incorrect_information', 'Incorrect information'),
+    ('cultural_misrepresentation', 'Cultural misrepresentation'),
+    ('wrong_attribution', 'Wrong attribution'),
+    ('offensive_content', 'Offensive content'),
+    ('inappropriate_content', 'Inappropriate content'),
+    ('copyright_violation', 'Copyright violation'),
+    ('duplicate_content', 'Duplicate content'),
+    ('wrong_category', 'Wrong category'),
+    ('other', 'Other'),
+  ];
+
   void _showFlagDialog(BuildContext context, WidgetRef ref) {
     String? selectedReason;
     final detailsController = TextEditingController();
@@ -228,13 +244,14 @@ class StoryActionsMenu extends ConsumerWidget {
             color: AppColors.error,
             size: 48,
           ),
-          title: const Text('Flag Cultural Inaccuracy'),
+          title: const Text('Report this story'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Help us maintain cultural accuracy. Select the reason for flagging:',
+                'Tell us what a moderator should look at. Select the '
+                'reason for reporting:',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -244,24 +261,9 @@ class StoryActionsMenu extends ConsumerWidget {
                   labelText: 'Reason',
                   border: OutlineInputBorder(),
                 ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'cultural_inaccuracy',
-                    child: Text('Cultural Inaccuracy'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'inappropriate_content',
-                    child: Text('Inappropriate Content'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'copyright_violation',
-                    child: Text('Copyright Violation'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'wrong_category',
-                    child: Text('Wrong Category'),
-                  ),
-                  DropdownMenuItem(value: 'other', child: Text('Other')),
+                items: [
+                  for (final (value, label) in _reportReasons)
+                    DropdownMenuItem(value: value, child: Text(label)),
                 ],
                 onChanged: (value) {
                   setState(() => selectedReason = value);

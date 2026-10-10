@@ -28,6 +28,7 @@ from rest_framework import status as http_status
 from rest_framework.test import APITestCase
 
 from stories.models import Story
+from subscriptions.factories import grant_premium
 
 from .models import AudioNarrationJob, VideoGenerationJob
 
@@ -203,6 +204,10 @@ class VideoContractTests(APITestCase):
             author=self.author,
             status=Story.Status.DRAFT,
         )
+        # The contract tests below post as the visitor, and the paywall sits
+        # in front of every creation path — the visitor is entitled so the
+        # tests exercise ownership/contract, not billing.
+        grant_premium(self.visitor)
 
     def test_completed_job_serializes_the_keys_the_client_parses(self):
         from django.utils import timezone

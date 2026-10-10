@@ -83,6 +83,8 @@ class VRArtifactSerializer(serializers.Serializer):
     museum_name = serializers.CharField()
     floor = serializers.CharField()
     display_case = serializers.CharField()
+    historical_significance = serializers.CharField(allow_blank=True)
+    source_url = serializers.CharField(allow_blank=True)
     stories = VRStoryRefSerializer(many=True)
 
 
@@ -207,3 +209,63 @@ class VRSessionCompleteResponseSerializer(serializers.Serializer):
         help_text='XP paid by *this* call. Zero when a retry finds it already paid.',
     )
     profile = VRProfileSerializer(allow_null=True)
+
+
+# ---------------------------------------------------------------------------
+# Progress
+# ---------------------------------------------------------------------------
+class VRProgressEntrySerializer(serializers.Serializer):
+    """One experience's progress, rolled up across all of the reader's visits."""
+
+    experience = VRExperienceSummarySerializer()
+    session_count = serializers.IntegerField()
+    completion_percentage = serializers.IntegerField(
+        min_value=0,
+        max_value=100,
+        help_text='0–100. Always 100 once any session for it completed.',
+    )
+    completed = serializers.BooleanField()
+    last_seen_at = serializers.DateTimeField()
+
+
+class VRProgressRequestSerializer(serializers.Serializer):
+    """`POST`/`PATCH /api/vr/progress/` body.
+
+    The session is taken from the token's `sid` claim, not from the body: a
+    headset cannot progress someone else's visit by naming its id.
+    """
+
+    progress = serializers.FloatField(
+        min_value=0.0,
+        max_value=1.0,
+        required=False,
+        help_text='Fraction of the experience completed, 0.0–1.0.',
+    )
+    artifacts_viewed = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        help_text=(
+            'The reader\'s complete viewed-artifact list so far (replaces, not '
+            'appends); validated against the experience.'
+        ),
+    )
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                'Send `progress` and/or `artifacts_viewed`.'
+            )
+        return attrs
+
+
+# ---------------------------------------------------------------------------
+# Locations
+# ---------------------------------------------------------------------------
+class VRLocationSerializer(serializers.Serializer):
+    """A place experiences can be visited in, with what it holds."""
+
+    museum_name = serializers.CharField()
+    region = serializers.CharField()
+    culture = serializers.CharField()
+    experience_count = serializers.IntegerField()
+    experiences = VRExperienceSummarySerializer(many=True)

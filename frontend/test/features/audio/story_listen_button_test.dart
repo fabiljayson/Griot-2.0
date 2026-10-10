@@ -66,6 +66,7 @@ void main() {
         artifactId: any(named: 'artifactId'),
         language: 'en',
         speed: any(named: 'speed'),
+        voiceId: any(named: 'voiceId'),
       ),
     ).thenAnswer(
       (_) async => const NarrationJobModel(

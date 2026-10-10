@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
@@ -391,12 +392,18 @@ class _StoryDetailScreenState extends ConsumerState<StoryDetailScreen>
 
                 const SizedBox(height: AppSpacing.section),
 
-                // --- Cultural context ---
-                // Provenance qualifies everything below it: this is a
+                // --- Provenance qualifies everything below it: this is a
                 // rendering of someone's tradition, and the reader is
-                // entitled to know how we obtained it.
+                // entitled to know how we obtained it. ---
                 _StoryProvenanceSection(story: story),
                 const SizedBox(height: AppSpacing.section),
+
+                // --- Who documented the account, and which of them a
+                // reviewer actually checked. ---
+                if (story.sources.isNotEmpty) ...[
+                  _DocumentedSourcesSection(story: story),
+                  const SizedBox(height: AppSpacing.section),
+                ],
 
                 if (story.culturalContext.isNotEmpty) ...[
                   const _SectionTitle(
@@ -834,6 +841,8 @@ class _StoryProvenanceSection extends StatelessWidget {
           icon: AppIcons.museum_outlined,
         ),
         const SizedBox(height: AppSpacing.sm),
+        _TrustScoreCard(story: story),
+        const SizedBox(height: AppSpacing.sm),
         if (story.isSyntheticOrigin) ...[
           _ProvenanceNotice(
             text:
@@ -980,8 +989,14 @@ class _ReviewStateBanner extends StatelessWidget {
   String get _label => switch (story.status) {
     'draft' => 'Draft — not submitted for review',
     'pending' => 'Awaiting review',
-    'rejected' => 'Changes requested',
+    'under_review' => 'A reviewer is reading this story',
+    'needs_revision' => 'Changes requested — update and resubmit',
+    'rejected' => 'Rejected — this story was not approved for publication',
     'archived' => 'Archived',
+    // The banner also renders for a published story that carries reviewer
+    // notes, so this arm has to exist — otherwise a published story reads
+    // "Not published".
+    'published' => 'Published',
     _ => 'Not published',
   };
 
@@ -1139,5 +1154,281 @@ class _ConsentActionBarState extends ConsumerState<_ConsentActionBar> {
         ),
       ),
     );
+  }
+}
+
+/// The Cultural Trust Score, and the evidence behind it.
+///
+/// Wording discipline: the score is "how well documented", never "how
+/// likely true". The server's disclaimer is rendered verbatim because two
+/// surfaces rewording it differently is how the number starts lying.
+class _TrustScoreCard extends StatelessWidget {
+  const _TrustScoreCard({required this.story});
+
+  final StoryModel story;
+
+  Color _levelColor(TrustLevel level, ColorScheme scheme) => switch (level) {
+    TrustLevel.verified => AppColors.savannahGreen,
+    TrustLevel.partial => AppColors.ochre,
+    TrustLevel.unverified => scheme.onSurfaceVariant,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final level = TrustLevel.fromString(story.trustLevel);
+    final color = _levelColor(level, scheme);
+    final verification = story.verification;
+
+    return AppCard(
+      color: color.withValues(alpha: 0.07),
+      borderColor: color.withValues(alpha: 0.30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(AppIcons.shield_outlined, size: 18, color: color),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Cultural Trust Score',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${story.trustScore}% · ${level.label}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            verification?.disclaimer.isNotEmpty == true
+                ? verification!.disclaimer
+                : 'This measures how well the story is documented — not '
+                    'whether it is true.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          if (verification != null && verification.breakdown.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            const Divider(height: 1),
+            const SizedBox(height: AppSpacing.xs),
+            for (final row in verification.breakdown)
+              _EvidenceRow(row: row),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One criterion from the reviewer's checklist: what counted, how much.
+class _EvidenceRow extends StatelessWidget {
+  const _EvidenceRow({required this.row});
+
+  final Map<String, dynamic> row;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final confirmed = row['confirmed'] as bool? ?? false;
+    final color = confirmed
+        ? AppColors.savannahGreen
+        : theme.colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            confirmed ? AppIcons.check_circle : Icons.radio_button_unchecked,
+            size: 15,
+            color: color,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              row['label'] as String? ?? '',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: confirmed
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Text(
+            '+${row['weight'] ?? 0}',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Who documented this account — the structured sources, with whatever a
+/// reviewer was able to confirm about each.
+class _DocumentedSourcesSection extends StatelessWidget {
+  const _DocumentedSourcesSection({required this.story});
+
+  final StoryModel story;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionTitle(
+          title: 'Documented sources',
+          icon: AppIcons.menu_book_outlined,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        for (final source in story.sources) ...[
+          _SourceCard(source: source),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+}
+
+class _SourceCard extends StatelessWidget {
+  const _SourceCard({required this.source});
+
+  final StorySourceModel source;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  source.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (source.isVerified)
+                Tooltip(
+                  message: source.verifiedBy == null
+                      ? 'Verified by a moderator'
+                      : 'Verified by ${source.verifiedBy}',
+                  child: const Icon(
+                    AppIcons.check_circle,
+                    size: 17,
+                    color: AppColors.savannahGreen,
+                  ),
+                ),
+            ],
+          ),
+          if (source.citation.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              source.citation,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              MetadataPill(
+                label: source.typeLabel,
+                icon: AppIcons.menu_book_outlined,
+                color: scheme.onSurfaceVariant,
+              ),
+              if (source.reference.isNotEmpty) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    source.reference,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (source.url.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            InkWell(
+              onTap: () => _openUrl(context, source.url),
+              child: Row(
+                children: [
+                  const Icon(
+                    AppIcons.link,
+                    size: 14,
+                    color: AppColors.accentTextStrong,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      source.url,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.accentTextStrong,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.accentTextStrong,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openUrl(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open that link.')),
+      );
+    }
   }
 }

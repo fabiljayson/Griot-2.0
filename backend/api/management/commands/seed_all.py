@@ -3,7 +3,7 @@ One-command database seeding for local development and staging.
 
 Runs the full pipeline in dependency order:
 
-    users → stories → gamification → qr codes
+    users → stories → gamification → qr codes → subscriptions (premium)
 
 Usage:
     python manage.py seed_all
@@ -44,6 +44,8 @@ class Command(BaseCommand):
         call_command('seed_stories', clear=clear)
         call_command('seed_gamification', clear=clear)
         call_command('seed_qr_codes', clear=clear)
+        call_command('seed_premium_features')
+        call_command('seed_subscription_plans')
 
         self.stdout.write(
             self.style.SUCCESS('Database seeded successfully!')

@@ -141,6 +141,23 @@ class ExperiencePayloadTests(TestCase):
 
         self.assertEqual([story['id'] for story in payload['stories']], [published.pk])
 
+    def test_payload_carries_the_learn_more_fields(self):
+        """Unity's Learn More panel reads these — not a hard-coded copy."""
+        self.artifact.historical_significance = 'Carried at royal enthronements.'
+        self.artifact.source_url = 'https://example.org/throne'
+        self.artifact.save(update_fields=['historical_significance', 'source_url'])
+
+        payload = artifact_payload(self.artifact)
+
+        self.assertEqual(payload['historical_significance'], 'Carried at royal enthronements.')
+        self.assertEqual(payload['source_url'], 'https://example.org/throne')
+
+    def test_unfilled_learn_more_fields_are_empty_strings(self):
+        payload = artifact_payload(make_artifact('Bare Mask'))
+
+        self.assertEqual(payload['historical_significance'], '')
+        self.assertEqual(payload['source_url'], '')
+
     def test_payload_carries_no_credentials(self):
         """The headset is the least auditable client; nothing secret goes there."""
         payload = experience_payload(self.experience)

@@ -36,6 +36,7 @@ from media_app.models import VideoGenerationJob
 from media_app.services.luma_ai import LumaAIError, get_luma_service
 from media_app.services.video_providers import reset_video_service
 from stories.models import Story
+from subscriptions.factories import grant_premium
 from users.models import User
 from web.services import generate_story_video, refresh_video_job
 
@@ -156,6 +157,9 @@ class LumaAPIViewTests(_ResetMemoisedService, TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(self.contributor)
+        # The view enforces the paywall first; these tests are about what the
+        # provider chain does once a request is admitted.
+        grant_premium(self.contributor)
 
     @override_settings(**_NO_PROVIDERS)
     def test_create_returns_an_error_status_not_a_completed_job(self):
@@ -236,6 +240,7 @@ class LumaWebServiceTests(_ResetMemoisedService, TestCase):
             author=self.contributor,
             status=Story.Status.PUBLISHED,
         )
+        grant_premium(self.contributor)
 
     @override_settings(**_NO_PROVIDERS)
     def test_generate_returns_an_error_message_not_a_success_one(self):
@@ -287,6 +292,7 @@ class MockFallbackTests(_ResetMemoisedService, TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(self.contributor)
+        grant_premium(self.contributor)
 
     @override_settings(LUMA_API_KEY='', FAL_API_KEY='', LUMA_ALLOW_MOCK=False)
     def test_a_server_with_no_provider_still_answers(self):

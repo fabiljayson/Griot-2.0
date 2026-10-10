@@ -32,6 +32,7 @@ dependencies:
   share_plus: ^13.3.0
   path_provider: ^2.1.6
   path: ^1.9.1
+  shared_preferences: ^2.5.0
   flutter_localizations:
     sdk: flutter
   flutter_secure_storage: ^11.2.0
@@ -42,6 +43,7 @@ dependencies:
   url_launcher: ^6.3.2
   flutter_timezone: ^5.1.0
   just_audio_background: ^0.0.1-beta.17
+  purchases_flutter: ^10.14.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -296,6 +296,21 @@ class VRContentReadApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_experience_detail_carries_the_learn_more_fields(self):
+        """The serializer must ship what Unity's Learn More panel reads."""
+        self.artifact.historical_significance = 'Used at royal enthronements.'
+        self.artifact.source_url = 'https://example.org/throne'
+        self.artifact.save(update_fields=['historical_significance', 'source_url'])
+        self.client.force_authenticate(self.user)
+
+        body = self.client.get(
+            reverse('vr:experience-detail', args=[self.experience.slug]),
+        ).json()
+
+        artifact = body['artifacts'][0]
+        self.assertEqual(artifact['historical_significance'], 'Used at royal enthronements.')
+        self.assertEqual(artifact['source_url'], 'https://example.org/throne')
+
     def test_artifact_detail_lists_its_stories_and_experiences(self):
         self.client.force_authenticate(self.user)
 

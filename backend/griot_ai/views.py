@@ -25,6 +25,7 @@ from rest_framework.views import APIView
 from media_app.quota import within_daily_cap
 from qr_codes.models import Artifact
 from stories.models import Story
+from subscriptions.services import has_feature_access
 from vr.services.experiences import active_experiences
 
 from .models import GriotConversation, GriotMessage
@@ -51,8 +52,20 @@ def _error(code: str, message: str, http_status: int) -> Response:
     return Response({'error': message, 'code': code}, status=http_status)
 
 
-def ai_asks_per_day() -> int:
-    return int(getattr(settings, 'AI_ASKS_PER_USER_PER_DAY', 40))
+def ai_asks_per_day(user=None) -> int:
+    """Rolling-24h ceiling for questions that reached the provider.
+
+    The free cap is `AI_ASKS_PER_USER_PER_DAY`. An entitled account (or
+    platform staff) draws from the extended `AI_ASKS_PER_PREMIUM_USER_PER_DAY`
+    — the premium half of the freemium split for `advanced_ai`. The check is
+    server-side; a client claiming entitlement changes nothing here.
+    """
+    free_cap = int(getattr(settings, 'AI_ASKS_PER_USER_PER_DAY', 40))
+    if user is not None and has_feature_access(user, 'advanced_ai'):
+        return int(
+            getattr(settings, 'AI_ASKS_PER_PREMIUM_USER_PER_DAY', free_cap * 5)
+        )
+    return free_cap
 
 
 def _within_daily_quota(user) -> bool:
@@ -67,7 +80,7 @@ def _within_daily_quota(user) -> bool:
         role=GriotMessage.Role.USER,
         error_code='',
     )
-    return within_daily_cap(answered, ai_asks_per_day())
+    return within_daily_cap(answered, ai_asks_per_day(user))
 
 
 def _resolve_artifact(key):

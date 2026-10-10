@@ -7,6 +7,7 @@ import '../models/audio_model.dart';
 import '../models/narration_job_model.dart';
 import '../services/audio_api_service.dart';
 import '../services/audio_player_service.dart';
+import 'tts_voice_provider.dart';
 
 /// Audio player state notifier.
 class AudioPlayerNotifier extends StateNotifier<AudioPlayerState> {
@@ -153,10 +154,18 @@ class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
   AudioNarrationNotifier({
     required this.onReady,
     AudioApiService? apiService,
+    String? Function()? resolveVoiceId,
   }) : _apiService = apiService ?? AudioApiService.instance,
+       _resolveVoiceId = resolveVoiceId,
        super(const AudioNarrationState());
 
   final AudioApiService _apiService;
+
+  /// Reads the reader's chosen voice at call time (not construction time),
+  /// so a change in Settings applies to the very next narration without
+  /// rebuilding the provider. `null` means Automatic — narrate in the
+  /// story's own language.
+  final String? Function()? _resolveVoiceId;
 
   /// Called with the generated job when narration completes successfully.
   final Future<void> Function(NarrationJobModel job) onReady;
@@ -173,6 +182,7 @@ class AudioNarrationNotifier extends StateNotifier<AudioNarrationState> {
         storyId: storyId,
         artifactId: artifactId,
         language: language,
+        voiceId: _resolveVoiceId?.call(),
       );
 
       // The backend answers 201 even when synthesis failed (it records the
@@ -237,6 +247,9 @@ final audioNarrationProvider =
       final apiClient = ref.watch(authenticatedApiClientProvider);
       return AudioNarrationNotifier(
         apiService: AudioApiService(dio: apiClient.dio),
+        // Read (not watch) so a voice change doesn't rebuild — and
+        // retrigger — an in-flight generation request.
+        resolveVoiceId: () => ref.read(ttsVoiceSettingsProvider),
         onReady: (job) async {
           await ref.read(audioPlayerProvider.notifier).play(job.toAudioModel());
         },

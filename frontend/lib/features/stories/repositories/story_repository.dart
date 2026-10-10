@@ -159,6 +159,7 @@ class StoryRepository {
     String? provenanceNotes,
     String? rightsHolder,
     String? licence,
+    String? status,
   }) async {
     if (_offline) {
       return _local.createStory(
@@ -179,6 +180,7 @@ class StoryRepository {
         provenanceNotes: provenanceNotes,
         rightsHolder: rightsHolder,
         licence: licence,
+        status: status ?? 'draft',
       );
     }
 
@@ -204,6 +206,10 @@ class StoryRepository {
     if (provenanceNotes != null) data['provenance_notes'] = provenanceNotes;
     if (rightsHolder != null) data['rights_holder'] = rightsHolder;
     if (licence != null) data['licence'] = licence;
+    // Omitted → server default (`draft`). Only ever `draft`/`pending` from the
+    // form; the server also refuses anything outside `CONTRIBUTOR_SETTABLE_STATUS`,
+    // so a contributor can never self-publish through this payload.
+    if (status != null) data['status'] = status;
 
     try {
       final response = await _api.dio.post('/api/stories/', data: data);
@@ -231,6 +237,7 @@ class StoryRepository {
         provenanceNotes: provenanceNotes,
         rightsHolder: rightsHolder,
         licence: licence,
+        status: status ?? 'draft',
       );
     }
   }

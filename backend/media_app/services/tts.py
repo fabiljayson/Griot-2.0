@@ -110,6 +110,34 @@ def resolve_language(language: str) -> str:
     return lang
 
 
+def resolve_speech(language: Optional[str], voice_id: Optional[str]) -> tuple:
+    """
+    Return the (lang, tld) pair gTTS will actually speak.
+
+    The voice wins over the bare language: picking ``en.co.uk`` must narrate
+    in English even when the story is tagged ``fr``, because the voice is the
+    explicit user choice and the language is only the story's tag. Callers use
+    this to store *what was really synthesised* on the job instead of the
+    requested preference — otherwise a job can claim language ``fr`` while
+    playing English audio.
+    """
+    return _normalise_language(language or 'en', voice_id)
+
+
+def canonical_voice(language: Optional[str], voice_id: Optional[str] = None) -> str:
+    """
+    Return the normalised voice id for storage and cache lookups.
+
+    ``''`` / ``None`` / ``'default'`` (the model's historical placeholder)
+    all mean "just use the language", and collapse to that language's own id
+    (``en``, ``fr``, …). Anything else is normalised the same way gTTS will
+    normalise it, so ``EN.co.uk`` in a request cannot become a second cache
+    entry that never matches anything.
+    """
+    lang, tld = resolve_speech(language, voice_id)
+    return f'{lang}.{tld}' if tld != 'com' else lang
+
+
 def build_artifact_script(artifact) -> str:
     """Build the narration text for an artifact (museum audio guide).
 

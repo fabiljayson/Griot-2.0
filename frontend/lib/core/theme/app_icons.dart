@@ -101,6 +101,9 @@ abstract final class AppIcons {
   static const IconData wifi = Icons.wifi_outlined;
   static const IconData wifi_off = Icons.wifi_off_outlined;
 
+  /// Link on a documented source's URL.
+  static const IconData link = Icons.link;
+
   /// Pending-sync indicator for the offline banner.
   static const IconData cloud_sync_rounded = Icons.cloud_sync_rounded;
 
@@ -118,6 +121,9 @@ abstract final class AppIcons {
   // --- State toggles (filled "on" state, outlined "off" state) ---
   static const IconData check = Icons.check;
   static const IconData check_circle = Icons.check_circle_outlined;
+
+  /// Empty evidence box on the verification checklist.
+  static const IconData radio_button_unchecked = Icons.radio_button_unchecked;
   static const IconData favorite = Icons.favorite;
   static const IconData favorite_border = Icons.favorite_border;
   static const IconData favorite_outline = Icons.favorite_border;

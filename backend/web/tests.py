@@ -236,6 +236,33 @@ class StoryMediaTests(WebSmokeTestCase):
         job.refresh_from_db()
         self.assertEqual(job.status, VideoGenerationJob.Status.PROCESSING)
 
+    def test_video_generation_requires_premium_for_a_free_owner(self):
+        """The server-rendered path enforces the same paywall as the API.
+
+        One rule, both surfaces (Constitution I): the owner is entitled to the
+        story but not to the paid feature, and the refusal happens before any
+        job row or provider call.
+        """
+        from django.core.exceptions import PermissionDenied
+
+        from subscriptions.factories import grant_premium
+        from web.services import generate_story_video
+
+        with self.assertRaises(PermissionDenied) as ctx:
+            generate_story_video(self.contributor, self.story, 'a mask')
+        self.assertIn('premium', str(ctx.exception).lower())
+        self.assertFalse(
+            VideoGenerationJob.objects.filter(user=self.contributor).exists()
+        )
+
+        # Entitlement is the only thing missing: the same call then works.
+        grant_premium(self.contributor)
+        message, kind = generate_story_video(
+            self.contributor, self.story, 'a mask',
+        )
+        self.assertEqual(kind, 'success')
+        self.assertIn('Video generation started', message)
+
     def test_video_generation_requires_ownership(self):
         User.objects.create_user(
             username='web_writer2', password='testpass123', role='contributor',

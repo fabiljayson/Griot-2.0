@@ -111,5 +111,23 @@ void main() {
       expect(request.data, containsPair('story_id', 5));
       expect(request.data, containsPair('language', 'fr'));
     });
+
+    test('should omit the voice so the backend falls back to the story '
+        'language', () async {
+      await buildService().generateNarration(storyId: 5);
+
+      // Automatic voice = no `voice_id` key at all, which keeps the server
+      // narrating each story in its own language.
+      expect(adapter.requests.single.data, isNot(contains('voice_id')));
+    });
+
+    test('should send the chosen voice id when one is set', () async {
+      await buildService().generateNarration(storyId: 5, voiceId: 'en.co.uk');
+
+      expect(
+        adapter.requests.single.data,
+        containsPair('voice_id', 'en.co.uk'),
+      );
+    });
   });
 }

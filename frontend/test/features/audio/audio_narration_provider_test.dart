@@ -35,6 +35,7 @@ void main() {
         storyId: any(named: 'storyId'),
         artifactId: any(named: 'artifactId'),
         language: any(named: 'language'),
+        voiceId: any(named: 'voiceId'),
       ),
     ).thenAnswer((_) async => job);
   }
@@ -111,6 +112,7 @@ void main() {
           storyId: any(named: 'storyId'),
           artifactId: any(named: 'artifactId'),
           language: any(named: 'language'),
+          voiceId: any(named: 'voiceId'),
         ),
       ).thenThrow(
         DioException.receiveTimeout(
@@ -134,6 +136,7 @@ void main() {
           storyId: any(named: 'storyId'),
           artifactId: any(named: 'artifactId'),
           language: any(named: 'language'),
+          voiceId: any(named: 'voiceId'),
         ),
       ).thenThrow(
         DioException(
@@ -150,6 +153,45 @@ void main() {
       await notifier.generateNarration(storyId: 1);
 
       expect(notifier.state.errorMessage, 'Please sign in to generate narrations.');
+    });
+  });
+
+  group('AudioNarrationNotifier voice selection', () {
+    test('should narrate in the story language when no voice is chosen', () async {
+      stubGenerate(completedJob);
+      final notifier = build();
+
+      await notifier.generateNarration(storyId: 1);
+
+      verify(
+        () => apiService.generateNarration(
+          storyId: 1,
+          artifactId: null,
+          language: 'en',
+          voiceId: null,
+        ),
+      ).called(1);
+      expect(notifier.state.isGenerating, isFalse);
+    });
+
+    test('should pass the chosen voice through to the API', () async {
+      stubGenerate(completedJob);
+      final notifier = AudioNarrationNotifier(
+        apiService: apiService,
+        resolveVoiceId: () => 'en.co.uk',
+        onReady: (job) async => played.add(job),
+      );
+
+      await notifier.generateNarration(storyId: 1);
+
+      verify(
+        () => apiService.generateNarration(
+          storyId: 1,
+          artifactId: null,
+          language: 'en',
+          voiceId: 'en.co.uk',
+        ),
+      ).called(1);
     });
   });
 }

@@ -1,17 +1,25 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import (
+    ModerationLog,
     ReadingProgress,
     Story,
     StoryBookmark,
     StoryCategory,
     StoryFlag,
     StoryLike,
+    StorySource,
+    StoryVerification,
+)
+from .trust import (
+    calculate_trust_score,
+    score_breakdown,
+    trust_level,
 )
 
 User = get_user_model()
@@ -1123,4 +1131,576 @@ class ConsentDecisionSetTests(APITestCase):
             'maybe_one_day', detail,
             'the error must name the value refused — an f-string that wrote '
             '"{status}!r" rendered a literal "!r" instead of a repr',
+        )
+
+
+class TrustScoreUnitTests(TestCase):
+    """The Cultural Trust Score is weighted evidence, not a truth claim."""
+
+    def test_all_criteria_confirmed_scores_the_full_hundred(self):
+        evidence = {
+            'source_verified': True,
+            'community_validated': True,
+            'expert_validated': True,
+            'references_confirmed': True,
+            'consistency_confirmed': True,
+        }
+        self.assertEqual(calculate_trust_score(evidence), 100)
+        self.assertEqual(trust_level(100), 'verified')
+
+    def test_partial_evidence_scores_partial_weight(self):
+        evidence = {
+            'source_verified': True,      # 25
+            'community_validated': True,  # 25
+            'references_confirmed': True, # 15
+        }
+        self.assertEqual(calculate_trust_score(evidence), 65)
+        self.assertEqual(trust_level(65), 'partial')
+
+    def test_no_evidence_scores_zero_and_reads_unverified(self):
+        self.assertEqual(calculate_trust_score({}), 0)
+        self.assertEqual(trust_level(0), 'unverified')
+
+    def test_weights_are_configurable_without_a_code_change(self):
+        evidence = {'source_verified': True, 'expert_validated': True}
+        with override_settings(TRUST_SCORE_WEIGHTS={
+            'source_verified': 50,
+            'community_validated': 25,
+            'expert_validated': 30,
+            'references_confirmed': 15,
+            'consistency_confirmed': 10,
+        }):
+            self.assertEqual(calculate_trust_score(evidence), 80)
+
+    def test_a_misconfigured_weight_falls_back_to_the_default(self):
+        evidence = {'consistency_confirmed': True}
+        with override_settings(TRUST_SCORE_WEIGHTS={'consistency_confirmed': 'lots'}):
+            self.assertEqual(calculate_trust_score(evidence), 10)
+
+    def test_score_is_clamped_to_a_hundred(self):
+        criteria = (
+            'source_verified', 'community_validated', 'expert_validated',
+            'references_confirmed', 'consistency_confirmed',
+        )
+        with override_settings(TRUST_SCORE_WEIGHTS={key: 80 for key in criteria}):
+            evidence = {key: True for key in evidence_keys()}
+            self.assertEqual(calculate_trust_score(evidence), 100)
+
+    def test_breakdown_lists_every_criterion_with_its_weight(self):
+        breakdown = score_breakdown({'source_verified': True})
+        self.assertEqual(len(breakdown), 5)
+        by_criterion = {row['criterion']: row for row in breakdown}
+        self.assertTrue(by_criterion['source_verified']['confirmed'])
+        self.assertFalse(by_criterion['expert_validated']['confirmed'])
+        self.assertEqual(
+            sum(row['weight'] for row in breakdown), 100,
+            'the weight table must total 100',
+        )
+
+
+def evidence_keys():
+    from .trust import CRITERIA
+    return CRITERIA
+
+
+class VerificationWorkflowTests(APITestCase):
+    """The reviewer workflow: queue → decision → published/rejected/revision."""
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'author1', email='author1@test.com', password='pass123',
+            role='contributor',
+        )
+        self.other_contributor = User.objects.create_user(
+            'contrib2', email='contrib2@test.com', password='pass123',
+            role='contributor',
+        )
+        self.visitor = User.objects.create_user(
+            'visitor1', email='visitor1@test.com', password='pass123',
+            role='visitor',
+        )
+        self.manager = User.objects.create_user(
+            'manager1', email='manager1@test.com', password='pass123',
+            role='institution_manager',
+        )
+        self.story = Story.objects.create(
+            title='A Tale Under Review',
+            content='A long enough story body for the validation rules.',
+            author=self.author,
+            status=Story.Status.PENDING,
+        )
+        self.full_evidence = {
+            'source_verified': True,
+            'community_validated': True,
+            'expert_validated': True,
+            'references_confirmed': True,
+            'consistency_confirmed': True,
+        }
+
+    def _verify(self, user, payload, slug=None):
+        self.client.force_authenticate(user)
+        return self.client.post(
+            reverse('stories:story-verify', kwargs={'slug': slug or self.story.slug}),
+            payload,
+            format='json',
+        )
+
+    def test_verification_queue_requires_moderator(self):
+        url = reverse('stories:story-verification-queue')
+        self.assertIn(
+            self.client.get(url).status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+        self.client.force_authenticate(self.visitor)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.author)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.manager)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_200_OK)
+
+    def test_queue_lists_review_states_and_their_evidence(self):
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(reverse('stories:story-verification-queue'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+        entry = resp.data[0]
+        self.assertEqual(entry['status'], 'pending')
+        self.assertEqual(entry['trust_score'], 0)
+        self.assertEqual(entry['trust_level'], 'unverified')
+        self.assertEqual(len(entry['breakdown']), 5)
+
+    def test_queue_excludes_published_and_draft(self):
+        Story.objects.filter(pk=self.story.pk).update(status=Story.Status.PUBLISHED)
+        Story.objects.create(
+            title='Untouched Draft', content='x' * 60, author=self.author,
+            status=Story.Status.DRAFT,
+        )
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(reverse('stories:story-verification-queue'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, [])
+
+    def test_contributor_cannot_record_a_verification_decision(self):
+        resp = self._verify(self.author, {'action': 'approve'})
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PENDING)
+
+    def test_start_review_moves_pending_to_under_review_and_logs(self):
+        resp = self._verify(self.manager, {'action': 'start_review', 'notes': 'Reading now.'})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'under_review')
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.UNDER_REVIEW)
+        log = ModerationLog.objects.get(story=self.story)
+        self.assertEqual(log.action, ModerationLog.Action.REVIEW_STARTED)
+        self.assertEqual(log.actor, self.manager)
+        self.assertEqual(log.from_status, 'pending')
+        self.assertEqual(log.to_status, 'under_review')
+
+    def test_approve_with_full_evidence_scores_one_hundred(self):
+        resp = self._verify(self.manager, {
+            'action': 'approve',
+            'notes': 'Sources checked against the archive.',
+            'evidence': self.full_evidence,
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'published')
+        self.assertEqual(resp.data['trust_score'], 100)
+        self.assertEqual(resp.data['trust_level'], 'verified')
+
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.PUBLISHED)
+        self.assertIsNotNone(self.story.published_at)
+        # The reviewer's note is attributed, not anonymous.
+        self.assertIn('manager1: Sources checked', self.story.reviewer_notes)
+
+        verification = StoryVerification.objects.get(story=self.story)
+        self.assertEqual(verification.trust_score, 100)
+        self.assertEqual(verification.reviewer, self.manager)
+        self.assertIsNotNone(verification.verified_at)
+
+    def test_partial_evidence_is_honoured_on_approval(self):
+        resp = self._verify(self.manager, {
+            'action': 'approve',
+            'evidence': {
+                'source_verified': True,
+                'community_validated': True,
+                'references_confirmed': True,
+            },
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['trust_score'], 65)
+        self.assertEqual(resp.data['trust_level'], 'partial')
+
+    def test_reject_marks_the_story_and_keeps_it_out_of_public(self):
+        resp = self._verify(self.manager, {
+            'action': 'reject',
+            'notes': 'Conflicts with three recorded accounts.',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'rejected')
+        self.story.refresh_from_db()
+        self.assertIn('Conflicts with three recorded accounts', self.story.reviewer_notes)
+        # A rejected story is not public content.
+        self.client.force_authenticate(self.other_contributor)
+        list_resp = self.client.get(reverse('stories:story-list'))
+        titles = [s['title'] for s in list_resp.data['results']]
+        self.assertNotIn('A Tale Under Review', titles)
+
+    def test_request_changes_lands_in_needs_revision(self):
+        resp = self._verify(self.manager, {
+            'action': 'request_changes',
+            'notes': 'Name the village the tale was recorded in.',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['status'], 'needs_revision')
+        self.story.refresh_from_db()
+        self.assertEqual(self.story.status, Story.Status.NEEDS_REVISION)
+
+    def test_unknown_action_is_refused_by_name(self):
+        resp = self._verify(self.manager, {'action': 'shred'})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('shred', str(resp.data))
+
+    def test_approving_a_withheld_consent_story_is_refused(self):
+        self.story.consent_status = Story.Consent.WITHHELD
+        self.story.save()
+        resp = self._verify(self.manager, {'action': 'approve', 'evidence': self.full_evidence})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.story.refresh_from_db()
+        self.assertNotEqual(self.story.status, Story.Status.PUBLISHED)
+
+    def test_evidence_update_is_recorded_with_actor_and_score(self):
+        resp = self._verify(self.manager, {
+            'action': 'request_changes',
+            'evidence': {'source_verified': True, 'community_validated': True},
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['trust_score'], 50)
+        log = ModerationLog.objects.filter(
+            story=self.story,
+            action=ModerationLog.Action.CHANGES_REQUESTED,
+        ).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.actor, self.manager)
+
+
+class StorySourceTests(APITestCase):
+    """Structured provenance: sources are documented, visible, and checked."""
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'author1', email='author1@test.com', password='pass123',
+            role='contributor',
+        )
+        self.other = User.objects.create_user(
+            'other1', email='other1@test.com', password='pass123',
+            role='contributor',
+        )
+        self.visitor = User.objects.create_user(
+            'visitor1', email='visitor1@test.com', password='pass123',
+            role='visitor',
+        )
+        self.manager = User.objects.create_user(
+            'manager1', email='manager1@test.com', password='pass123',
+            role='institution_manager',
+        )
+        self.published = Story.objects.create(
+            title='Published Tale',
+            content='x' * 60,
+            author=self.author,
+            status=Story.Status.PUBLISHED,
+        )
+        self.draft = Story.objects.create(
+            title='Secret Draft',
+            content='y' * 60,
+            author=self.author,
+            status=Story.Status.DRAFT,
+        )
+
+    def _url(self, slug):
+        return reverse('stories:story-sources', kwargs={'slug': slug})
+
+    def test_anonymous_reads_sources_of_a_published_story(self):
+        StorySource.objects.create(
+            story=self.published,
+            source_type=StorySource.SourceType.ORAL_TRADITION,
+            name='Foumban elders',
+        )
+        resp = self.client.get(self._url(self.published.slug))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]['source_type'], 'ORAL_TRADITION')
+
+    def test_a_draft_storys_sources_are_not_public(self):
+        StorySource.objects.create(
+            story=self.draft,
+            source_type=StorySource.SourceType.BOOK,
+            name='Unpublished manuscript',
+        )
+        resp = self.client.get(self._url(self.draft.slug))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_owner_can_document_their_own_story(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.post(self._url(self.draft.slug), {
+            'source_type': 'ACADEMIC_REFERENCE',
+            'name': 'Field notes 1998',
+            'institution': 'University of Yaoundé',
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data['is_verified'], False)
+        self.assertEqual(self.draft.sources.count(), 1)
+
+    def test_a_bystander_cannot_attach_sources(self):
+        self.client.force_authenticate(self.other)
+        resp = self.client.post(self._url(self.published.slug), {
+            'source_type': 'BOOK', 'name': 'My book',
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_visitor_cannot_attach_sources(self):
+        self.client.force_authenticate(self.visitor)
+        resp = self.client.post(self._url(self.published.slug), {
+            'source_type': 'BOOK', 'name': 'Anything',
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_an_unrecognised_source_type_is_refused_by_name(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.post(self._url(self.published.slug), {
+            'source_type': 'VIBES', 'name': 'A feeling',
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('VIBES', str(resp.data))
+
+    def test_an_unnamed_source_is_refused(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.post(self._url(self.published.slug), {
+            'source_type': 'BOOK', 'name': '   ',
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_moderator_verifying_a_source_moves_the_first_trust_criterion(self):
+        source = StorySource.objects.create(
+            story=self.published,
+            source_type=StorySource.SourceType.ARCHIVE,
+            name='National Archives record 44',
+        )
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            reverse('stories:story-verify-source', kwargs={'slug': self.published.slug}),
+            {'source_id': source.pk},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        source.refresh_from_db()
+        self.assertTrue(source.is_verified)
+        self.assertEqual(source.verified_by, self.manager)
+        self.assertEqual(resp.data['trust_score'], 25)
+        self.assertTrue(
+            ModerationLog.objects.filter(
+                story=self.published,
+                action=ModerationLog.Action.SOURCE_VERIFIED,
+                actor=self.manager,
+            ).exists(),
+        )
+
+    def test_verify_source_rejects_a_source_from_another_story(self):
+        foreign = StorySource.objects.create(
+            story=self.draft, source_type=StorySource.SourceType.BOOK, name='Elsewhere',
+        )
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            reverse('stories:story-verify-source', kwargs={'slug': self.published.slug}),
+            {'source_id': foreign.pk},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        foreign.refresh_from_db()
+        self.assertFalse(foreign.is_verified)
+
+    def test_contributor_cannot_mark_their_own_source_verified(self):
+        source = StorySource.objects.create(
+            story=self.published, source_type=StorySource.SourceType.BOOK, name='Self-declared',
+        )
+        self.client.force_authenticate(self.author)
+        resp = self.client.patch(
+            reverse('stories:story-source-detail', kwargs={'slug': self.published.slug, 'pk': source.pk}),
+            {'is_verified': True},
+            format='json',
+        )
+        # `is_verified` is read-only on the serializer: the field is not settable
+        # through the contributor surface at all.
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        source.refresh_from_db()
+        self.assertFalse(source.is_verified)
+
+    def test_owner_can_edit_a_source_but_not_someone_elses(self):
+        source = StorySource.objects.create(
+            story=self.published, source_type=StorySource.SourceType.BOOK, name='Original name',
+        )
+        url = reverse(
+            'stories:story-source-detail',
+            kwargs={'slug': self.published.slug, 'pk': source.pk},
+        )
+        self.client.force_authenticate(self.other)
+        resp = self.client.patch(url, {'name': 'Hijacked'}, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(self.author)
+        resp = self.client.patch(url, {'name': 'Corrected name'}, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        source.refresh_from_db()
+        self.assertEqual(source.name, 'Corrected name')
+
+    def test_story_detail_exposes_sources_and_trust_block(self):
+        StorySource.objects.create(
+            story=self.published,
+            source_type=StorySource.SourceType.COMMUNITY_TESTIMONY,
+            name='Elders council',
+        )
+        StoryVerification.objects.create(
+            story=self.published,
+            source_verified=True,
+            community_validated=True,
+        )
+        resp = self.client.get(
+            reverse('stories:story-detail', kwargs={'slug': self.published.slug}),
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data['sources']), 1)
+        self.assertEqual(resp.data['trust_score'], 50)
+        self.assertEqual(resp.data['trust_level'], 'partial')
+        self.assertIn('disclaimer', resp.data['verification'])
+        self.assertIn(
+            'does not guarantee', resp.data['verification']['disclaimer'],
+            'the score must never be presented as a probability of truth',
+        )
+
+
+class StoryReportTests(APITestCase):
+    """Reporting problematic content, and resolving the report."""
+
+    def setUp(self):
+        self.author = User.objects.create_user(
+            'author1', email='author1@test.com', password='pass123',
+            role='contributor',
+        )
+        self.reporter = User.objects.create_user(
+            'reporter1', email='reporter1@test.com', password='pass123',
+        )
+        self.admin = User.objects.create_user(
+            'admin1', email='admin1@test.com', password='pass123', role='admin',
+        )
+        self.story = Story.objects.create(
+            title='Reported Tale',
+            content='x' * 60,
+            author=self.author,
+            status=Story.Status.PUBLISHED,
+        )
+
+    def _flag(self, reason, details='Because.'):
+        self.client.force_authenticate(self.reporter)
+        return self.client.post(
+            reverse('stories:story-flag', kwargs={'slug': self.story.slug}),
+            {'reason': reason, 'details': details},
+            format='json',
+        )
+
+    def test_every_presentation_report_category_is_accepted(self):
+        categories = (
+            'incorrect_information',
+            'cultural_misrepresentation',
+            'offensive_content',
+            'wrong_attribution',
+            'copyright_violation',
+            'inappropriate_content',
+            'duplicate_content',
+            'other',
+        )
+        for reason in categories:
+            resp = self._flag(reason, details=f'reporting {reason}')
+            self.assertEqual(
+                resp.status_code, status.HTTP_201_CREATED,
+                f'{reason} is a required report category and must be accepted',
+            )
+            StoryFlag.objects.filter(reason=reason).delete()
+
+    def test_an_unrecognised_report_category_is_refused(self):
+        resp = self._flag('vibes')
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_resolving_a_report_records_how_and_by_whom(self):
+        StoryFlag.objects.create(
+            user=self.reporter, story=self.story,
+            reason='wrong_attribution', details='Wrong village named.',
+        )
+        self.client.force_authenticate(self.admin)
+        resp = self.client.post(
+            reverse('stories:story-moderate', kwargs={'slug': self.story.slug}),
+            {'action': 'dismiss', 'notes': 'Checked with the community.'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['resolution'], 'dismissed')
+
+        flag = StoryFlag.objects.get(story=self.story)
+        self.assertTrue(flag.resolved)
+        self.assertEqual(flag.resolution_action, StoryFlag.Resolution.DISMISSED)
+        self.assertEqual(flag.resolved_by, self.admin)
+        self.assertIsNotNone(flag.resolved_at)
+        self.assertTrue(
+            ModerationLog.objects.filter(
+                story=self.story,
+                action=ModerationLog.Action.FLAGS_RESOLVED,
+                actor=self.admin,
+            ).exists(),
+        )
+
+    def test_a_custom_resolution_action_is_recorded_verbatim(self):
+        StoryFlag.objects.create(
+            user=self.reporter, story=self.story, reason='incorrect_information',
+        )
+        self.client.force_authenticate(self.admin)
+        resp = self.client.post(
+            reverse('stories:story-moderate', kwargs={'slug': self.story.slug}),
+            {'action': 'dismiss', 'resolution': 'corrected'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        flag = StoryFlag.objects.get(story=self.story)
+        self.assertEqual(flag.resolution_action, StoryFlag.Resolution.CORRECTED)
+
+    def test_an_unknown_resolution_action_is_refused(self):
+        StoryFlag.objects.create(
+            user=self.reporter, story=self.story, reason='other',
+        )
+        self.client.force_authenticate(self.admin)
+        resp = self.client.post(
+            reverse('stories:story-moderate', kwargs={'slug': self.story.slug}),
+            {'action': 'dismiss', 'resolution': 'obliterated'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        flag = StoryFlag.objects.get(story=self.story)
+        self.assertFalse(flag.resolved)
+
+    def test_submitting_for_review_leaves_an_audit_trail(self):
+        self.client.force_authenticate(self.author)
+        resp = self.client.post(reverse('stories:story-list'), {
+            'title': 'Submitted Tale',
+            'content': 'z' * 60,
+            'status': 'pending',
+        }, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        story = Story.objects.get(title='Submitted Tale')
+        self.assertEqual(story.status, Story.Status.PENDING)
+        self.assertTrue(
+            ModerationLog.objects.filter(
+                story=story,
+                action=ModerationLog.Action.SUBMITTED,
+                actor=self.author,
+            ).exists(),
         )

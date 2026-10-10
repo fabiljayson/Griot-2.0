@@ -78,3 +78,6 @@ backend/media/artifacts/images/*
 /downloads/
 /plantuml.jar
 /Griot_2.0/
+
+# Local zip of the Unity project. 505 MB, and vr/ is already tracked.
+/vr.zip

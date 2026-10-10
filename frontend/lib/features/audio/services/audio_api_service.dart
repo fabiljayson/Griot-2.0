@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
 import '../models/narration_job_model.dart';
+import '../models/tts_voice_model.dart';
 
 /// API service for the backend TTS (gTTS) narration endpoints.
 ///
@@ -9,6 +10,7 @@ import '../models/narration_job_model.dart';
 ///   - Generating narration audio from a story or an artifact
 ///   - Listing the user's narration jobs
 ///   - Fetching a single job (status / audio URL)
+///   - Listing the voices the TTS engine can speak
 class AudioApiService {
   AudioApiService({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
 
@@ -23,6 +25,10 @@ class AudioApiService {
   /// Pass exactly one of [storyId] (narrate that story) or [artifactId]
   /// (narrate the artifact's story / audio guide).
   ///
+  /// [voiceId] is one of the ids from [fetchVoices] (`en`, `en.co.uk`, …).
+  /// Leave it `null` to let the backend narrate in [language] — the story's
+  /// own language — which is the "Automatic" voice choice.
+  ///
   /// Returns the completed job — [NarrationJobModel.audioUrl] holds the
   /// playable audio URL when [NarrationJobModel.isCompleted] is true.
   ///
@@ -36,6 +42,7 @@ class AudioApiService {
     int? artifactId,
     String language = 'en',
     double speed = 1.0,
+    String? voiceId,
   }) async {
     final response = await _dio.post(
       '$_mediaPath/audio/',
@@ -44,6 +51,7 @@ class AudioApiService {
         'artifact_id': ?artifactId,
         'language': language,
         'speed': speed,
+        'voice_id': ?voiceId,
       },
       options: Options(
         receiveTimeout: const Duration(seconds: 90),
@@ -51,6 +59,18 @@ class AudioApiService {
       ),
     );
     return NarrationJobModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// List the voices available for narration.
+  ///
+  /// Authenticated: the backend gates the endpoint like the other media
+  /// endpoints, so callers should pass the auth-aware Dio.
+  Future<List<TtsVoiceModel>> fetchVoices() async {
+    final response = await _dio.get('$_mediaPath/audio/available_voices/');
+    final data = response.data as List<dynamic>? ?? [];
+    return data
+        .map((voice) => TtsVoiceModel.fromJson(voice as Map<String, dynamic>))
+        .toList();
   }
 
   /// List narration jobs for the current user.

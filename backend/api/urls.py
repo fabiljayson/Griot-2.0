@@ -58,6 +58,10 @@ urlpatterns = [
     # server — clients never talk to the model directly.
     path('ai/', include('griot_ai.urls')),
 
+    # Premium entitlements: the paywall's source of truth, plus the RevenueCat
+    # webhook stores post lifecycle events to.
+    path('subscriptions/', include('subscriptions.urls')),
+
     # Phase 9: Admin analytics dashboard.
     path('analytics/dashboard/', DashboardSummaryView.as_view(), name='analytics-dashboard'),
     path('analytics/users/list/', AdminUsersListView.as_view(), name='analytics-users-list'),

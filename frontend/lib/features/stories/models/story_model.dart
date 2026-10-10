@@ -48,6 +48,12 @@ class StoryModel {
     this.readingProgress,
     this.createdAt = '',
     this.publishedAt,
+    // Cultural Trust Score: evidence strength, never a truth claim. The
+    // server computes it (`stories.trust`); the app only renders it.
+    this.trustScore = 0,
+    this.trustLevel = 'unverified',
+    this.sources = const [],
+    this.verification,
   });
 
   final int id;
@@ -99,6 +105,18 @@ class StoryModel {
   final String createdAt;
   final String? publishedAt;
 
+  /// 0-100 weighted evidence score, and the band it falls into
+  /// (`unverified` / `partial` / `verified`). Documentation strength, not
+  /// probability of truth — the UI must never word it as one.
+  final int trustScore;
+  final String trustLevel;
+
+  /// Structured provenance: who documented where this account came from.
+  final List<StorySourceModel> sources;
+
+  /// The evidence row behind [trustScore], when a reviewer recorded one.
+  final StoryVerificationModel? verification;
+
   factory StoryModel.fromJson(Map<String, dynamic> json) {
     return StoryModel(
       id: json['id'] as int? ?? 0,
@@ -144,6 +162,17 @@ class StoryModel {
           : null,
       createdAt: json['created_at'] as String? ?? '',
       publishedAt: json['published_at'] as String?,
+      trustScore: json['trust_score'] as int? ?? 0,
+      trustLevel: json['trust_level'] as String? ?? 'unverified',
+      sources: (json['sources'] as List<dynamic>?)
+              ?.map((s) => StorySourceModel.fromJson(
+                  s as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      verification: json['verification'] != null
+          ? StoryVerificationModel.fromJson(
+              json['verification'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -184,6 +213,10 @@ class StoryModel {
         'reading_progress': readingProgress?.toJson(),
         'created_at': createdAt,
         'published_at': publishedAt,
+        'trust_score': trustScore,
+        'trust_level': trustLevel,
+        'sources': sources.map((s) => s.toJson()).toList(),
+        'verification': verification?.toJson(),
       };
 
   /// List of tags parsed from comma-separated string.
@@ -286,6 +319,10 @@ class StoryModel {
     ReadingProgressData? readingProgress,
     String? createdAt,
     String? publishedAt,
+    int? trustScore,
+    String? trustLevel,
+    List<StorySourceModel>? sources,
+    StoryVerificationModel? verification,
   }) {
     return StoryModel(
       id: id ?? this.id,
@@ -324,6 +361,10 @@ class StoryModel {
       readingProgress: readingProgress ?? this.readingProgress,
       createdAt: createdAt ?? this.createdAt,
       publishedAt: publishedAt ?? this.publishedAt,
+      trustScore: trustScore ?? this.trustScore,
+      trustLevel: trustLevel ?? this.trustLevel,
+      sources: sources ?? this.sources,
+      verification: verification ?? this.verification,
     );
   }
 }
@@ -412,6 +453,8 @@ class ReadingProgressData {
 enum StoryStatus {
   draft('draft', 'Draft'),
   pending('pending', 'Pending Review'),
+  underReview('under_review', 'Under Review'),
+  needsRevision('needs_revision', 'Changes Requested'),
   published('published', 'Published'),
   rejected('rejected', 'Rejected'),
   archived('archived', 'Archived');
@@ -547,6 +590,203 @@ enum StoryLicence {
     return StoryLicence.values.firstWhere(
       (l) => l.value == value,
       orElse: () => StoryLicence.undetermined,
+    );
+  }
+}
+
+/// One documented source behind a story — the structured provenance.
+///
+/// Mirrors `StorySource` in the backend. `isVerified` is a moderator's
+/// attestation, so it is never writable from the app's own forms.
+class StorySourceModel {
+  const StorySourceModel({
+    required this.id,
+    required this.sourceType,
+    required this.name,
+    this.author = '',
+    this.institution = '',
+    this.url = '',
+    this.reference = '',
+    this.notes = '',
+    this.isVerified = false,
+    this.verifiedBy,
+    this.verifiedAt,
+  });
+
+  final int id;
+  final String sourceType;
+  final String name;
+  final String author;
+  final String institution;
+  final String url;
+  final String reference;
+  final String notes;
+  final bool isVerified;
+  final String? verifiedBy;
+  final String? verifiedAt;
+
+  factory StorySourceModel.fromJson(Map<String, dynamic> json) {
+    return StorySourceModel(
+      id: json['id'] as int? ?? 0,
+      sourceType: json['source_type'] as String? ?? 'other',
+      name: json['name'] as String? ?? '',
+      author: json['author'] as String? ?? '',
+      institution: json['institution'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+      reference: json['reference'] as String? ?? '',
+      notes: json['notes'] as String? ?? '',
+      isVerified: json['is_verified'] as bool? ?? false,
+      verifiedBy: json['verified_by'] as String?,
+      verifiedAt: json['verified_at'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'source_type': sourceType,
+        'name': name,
+        'author': author,
+        'institution': institution,
+        'url': url,
+        'reference': reference,
+        'notes': notes,
+        'is_verified': isVerified,
+        'verified_by': verifiedBy,
+        'verified_at': verifiedAt,
+      };
+
+  /// Display label for the source type, resolved locally so it works offline.
+  String get typeLabel => StorySourceType.fromString(sourceType).label;
+
+  /// The line under the name: who recorded/kept it, if the record says.
+  String get citation {
+    final parts = [if (author.isNotEmpty) author, if (institution.isNotEmpty) institution];
+    return parts.join(', ');
+  }
+}
+
+/// How a source was recorded, mirroring `StorySource.SourceType`.
+///
+/// Values are uppercase because that is what the API emits; lookup is
+/// case-insensitive so a legacy lowercase row still resolves its label
+/// instead of silently degrading to "Other".
+enum StorySourceType {
+  oralTradition('ORAL_TRADITION', 'Oral tradition'),
+  communityTestimony('COMMUNITY_TESTIMONY', 'Community testimony'),
+  book('BOOK', 'Book'),
+  academicReference('ACADEMIC_REFERENCE', 'Academic reference'),
+  museum('MUSEUM', 'Museum'),
+  culturalInstitution('CULTURAL_INSTITUTION', 'Cultural institution'),
+  archive('ARCHIVE', 'Archive'),
+  officialSource('OFFICIAL_SOURCE', 'Official source'),
+  other('OTHER', 'Other');
+
+  const StorySourceType(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  factory StorySourceType.fromString(String value) {
+    final needle = value.trim().toUpperCase();
+    return StorySourceType.values.firstWhere(
+      (t) => t.value == needle,
+      orElse: () => StorySourceType.other,
+    );
+  }
+}
+
+/// The evidence row behind the Cultural Trust Score.
+///
+/// Mirrors `StoryVerification`. The score is derived server-side from the
+/// criteria, so the app renders but never recomputes it.
+class StoryVerificationModel {
+  const StoryVerificationModel({
+    this.sourceVerified = false,
+    this.communityValidated = false,
+    this.expertValidated = false,
+    this.referencesConfirmed = false,
+    this.consistencyConfirmed = false,
+    this.trustScore = 0,
+    this.trustLevel = 'unverified',
+    this.breakdown = const [],
+    this.disclaimer = '',
+    this.reviewer,
+    this.notes = '',
+    this.verifiedAt,
+  });
+
+  final bool sourceVerified;
+  final bool communityValidated;
+  final bool expertValidated;
+  final bool referencesConfirmed;
+  final bool consistencyConfirmed;
+  final int trustScore;
+  final String trustLevel;
+
+  /// Per-criterion rows `{criterion, label, weight, confirmed}` in display
+  /// order — exactly what the reviewer saw when they recorded it.
+  final List<Map<String, dynamic>> breakdown;
+
+  /// Server-worded explanation that the score measures documentation
+  /// strength, not truth. Rendered verbatim; rewriting it locally is how
+  /// the two surfaces would start disagreeing about what the number means.
+  final String disclaimer;
+
+  final String? reviewer;
+  final String notes;
+  final String? verifiedAt;
+
+  factory StoryVerificationModel.fromJson(Map<String, dynamic> json) {
+    return StoryVerificationModel(
+      sourceVerified: json['source_verified'] as bool? ?? false,
+      communityValidated: json['community_validated'] as bool? ?? false,
+      expertValidated: json['expert_validated'] as bool? ?? false,
+      referencesConfirmed: json['references_confirmed'] as bool? ?? false,
+      consistencyConfirmed: json['consistency_confirmed'] as bool? ?? false,
+      trustScore: json['trust_score'] as int? ?? 0,
+      trustLevel: json['trust_level'] as String? ?? 'unverified',
+      breakdown: (json['breakdown'] as List<dynamic>?)
+              ?.map((row) => Map<String, dynamic>.from(row as Map))
+              .toList() ??
+          const [],
+      disclaimer: json['disclaimer'] as String? ?? '',
+      reviewer: json['reviewer'] as String?,
+      notes: json['notes'] as String? ?? '',
+      verifiedAt: json['verified_at'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'source_verified': sourceVerified,
+        'community_validated': communityValidated,
+        'expert_validated': expertValidated,
+        'references_confirmed': referencesConfirmed,
+        'consistency_confirmed': consistencyConfirmed,
+        'trust_score': trustScore,
+        'trust_level': trustLevel,
+        'breakdown': breakdown,
+        'disclaimer': disclaimer,
+        'reviewer': reviewer,
+        'notes': notes,
+        'verified_at': verifiedAt,
+      };
+}
+
+/// Reader-facing band for a trust score, mirroring `stories.trust`.
+enum TrustLevel {
+  unverified('unverified', 'Unverified'),
+  partial('partial', 'Partially verified'),
+  verified('verified', 'Verified');
+
+  const TrustLevel(this.value, this.label);
+
+  final String value;
+  final String label;
+
+  factory TrustLevel.fromString(String value) {
+    return TrustLevel.values.firstWhere(
+      (l) => l.value == value,
+      orElse: () => TrustLevel.unverified,
     );
   }
 }

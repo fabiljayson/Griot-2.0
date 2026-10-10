@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../../../features/auth/models/user_model.dart';
@@ -175,6 +177,7 @@ class LocalStoryRepository {
     String? rightsHolder,
     String? licence,
     int? authorId,
+    String status = 'draft',
   }) async {
     final db = await _db;
     final slug = _slugify(title);
@@ -201,9 +204,12 @@ class LocalStoryRepository {
       'rights_holder': rightsHolder ?? '',
       'licence': licence ?? 'undetermined',
       'estimated_read_time': _estimateReadTime(content),
-      'status': 'published',
+      // Never default to `published`: a locally created story is a
+      // contributor submission, and the public offline feed only ever reads
+      // `status = 'published'`. Publishing is the reviewer's decision.
+      'status': status,
       'author_id': authorId,
-      'published_at': DateTime.now().toIso8601String(),
+      'published_at': status == 'published' ? DateTime.now().toIso8601String() : null,
     });
 
     // Link categories.
@@ -471,8 +477,9 @@ class LocalStoryRepository {
             title, slug, content, summary, author_id, language, region, tags,
             cover_image, audio_url, video_url, cultural_context, moral_lesson,
             source, estimated_read_time, status, view_count, like_count,
-            bookmark_count, is_bookmarked, is_liked, created_at, published_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            bookmark_count, is_bookmarked, is_liked, created_at, published_at,
+            trust_score, trust_level, sources_json, verification_json
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(slug) DO UPDATE SET
             title = excluded.title,
             content = CASE WHEN excluded.content != '' THEN excluded.content ELSE local_stories.content END,
@@ -492,7 +499,11 @@ class LocalStoryRepository {
             like_count = excluded.like_count,
             bookmark_count = excluded.bookmark_count,
             created_at = excluded.created_at,
-            published_at = excluded.published_at
+            published_at = excluded.published_at,
+            trust_score = excluded.trust_score,
+            trust_level = excluded.trust_level,
+            sources_json = excluded.sources_json,
+            verification_json = excluded.verification_json
           ''',
           [
             s.title,
@@ -520,6 +531,14 @@ class LocalStoryRepository {
                 ? s.createdAt
                 : DateTime.now().toIso8601String(),
             s.publishedAt,
+            // Trust evidence rides along with the mirror so a story read
+            // offline still shows its review — and never fakes one.
+            s.trustScore,
+            s.trustLevel,
+            jsonEncode(s.sources.map((source) => source.toJson()).toList()),
+            s.verification == null
+                ? null
+                : jsonEncode(s.verification!.toJson()),
           ],
         );
       }
@@ -571,6 +590,14 @@ class LocalStoryRepository {
       'view_count': story.viewCount,
       'like_count': story.likeCount,
       'bookmark_count': story.bookmarkCount,
+      'trust_score': story.trustScore,
+      'trust_level': story.trustLevel,
+      'sources_json': jsonEncode(
+        story.sources.map((source) => source.toJson()).toList(),
+      ),
+      'verification_json': story.verification == null
+          ? null
+          : jsonEncode(story.verification!.toJson()),
       'created_at': story.createdAt.isNotEmpty
           ? story.createdAt
           : DateTime.now().toIso8601String(),
@@ -650,7 +677,47 @@ class LocalStoryRepository {
       isLiked: (row['is_liked'] as int?) == 1,
       createdAt: (row['created_at'] as String?) ?? '',
       publishedAt: row['published_at'] as String?,
+      trustScore: (row['trust_score'] as int?) ?? 0,
+      trustLevel: (row['trust_level'] as String?) ?? 'unverified',
+      sources: _decodeSources(row['sources_json'] as String?),
+      verification: _decodeVerification(
+        row['verification_json'] as String?,
+      ),
     );
+  }
+
+  /// Decode the mirrored sources blob; unreadable JSON yields no sources
+  /// rather than a crash — the story itself still renders.
+  List<StorySourceModel> _decodeSources(String? raw) {
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map<dynamic, dynamic>>()
+          .map(
+            (source) =>
+                StorySourceModel.fromJson(Map<String, dynamic>.from(source)),
+          )
+          .toList();
+    } on FormatException {
+      return const [];
+    }
+  }
+
+  /// Decode the mirrored verification blob; unreadable JSON means "no
+  /// review recorded", never a fabricated score.
+  StoryVerificationModel? _decodeVerification(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return StoryVerificationModel.fromJson(
+        Map<String, dynamic>.from(decoded),
+      );
+    } on FormatException {
+      return null;
+    }
   }
 
   StoryCategory _rowToCategory(Map<String, dynamic> row) {

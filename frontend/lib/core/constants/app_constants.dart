@@ -155,7 +155,7 @@ abstract final class AppConstants {
   /// v6 added the cover-image backfill for seeded stories.
   /// v7 repairs installs that were created without the `local_*` content
   /// schema and links seeded quizzes to their story.
-  static const int databaseVersion = 9;
+  static const int databaseVersion = 10;
 
   /// Developer shown in the WhatsApp feedback prefilled draft.
   static const String developerName = 'Fabil Jayson';

@@ -81,6 +81,12 @@ FAL_API_KEY = ''
 # back to False.
 GRIOT_AI_ALLOW_MOCK = True
 
+# The development checkout is how tests exercise the subscription purchase
+# path without a payment provider (it records `provider='dev'` and charges
+# nothing). Tests covering the *disabled* endpoint — the production default —
+# flip it back with override_settings.
+SUBSCRIPTION_DEV_CHECKOUT = True
+
 # Pinned to a local in-process cache regardless of the developer's
 # environment. base.py switches to Redis when REDIS_URL is set, and a suite
 # that silently ran against a developer's real Redis would both need a live

@@ -35,7 +35,13 @@
          does not require a manifest change and a re-review later. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <uses-feature android:name="android.hardware.vr.headtracking" android:required="true" />
+    <!-- Head tracking is a hardware feature of VR headsets, but the phone
+         build (SHINECON viewer) must stay installable on devices that do
+         not declare it — Play treats required="true" as a hard filter.
+         required="false" keeps Quest eligible and admits plain phones; the
+         app itself checks for a gyroscope at boot and explains when one is
+         missing (MobileVRCapabilityChecker). -->
+    <uses-feature android:name="android.hardware.vr.headtracking" android:required="false" />
 
     <application>
         <activity

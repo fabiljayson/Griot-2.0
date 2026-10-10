@@ -1,6 +1,8 @@
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, F, Q
 from django.db.models.functions import Greatest
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -10,6 +12,7 @@ from config.client_ip import get_client_ip
 
 from . import services as story_services
 from .models import (
+    ModerationLog,
     ReadingProgress,
     Story,
     StoryBookmark,
@@ -17,6 +20,8 @@ from .models import (
     StoryFlag,
     StoryLike,
     StoryShare,
+    StorySource,
+    StoryVerification,
 )
 from .serializers import (
     ReadingProgressSerializer,
@@ -25,7 +30,10 @@ from .serializers import (
     StoryDetailSerializer,
     StoryFlagSerializer,
     StoryListSerializer,
+    StorySourceSerializer,
+    StoryVerifySerializer,
 )
+from .trust import score_breakdown, trust_level
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +104,10 @@ class StoryViewSet(viewsets.ModelViewSet):
         GET    /api/stories/moderation_queue/ — flagged stories (admin only)
         POST   /api/stories/{slug}/moderate/  — resolve flags (admin only)
         GET    /api/stories/consent_queue/ — awaiting a consent decision (admin only)
+        GET    /api/stories/verification_queue/ — awaiting review (admin only)
+        POST   /api/stories/{slug}/verify/ — approve/reject/request changes (admin only)
+        POST   /api/stories/{slug}/verify_source/ — confirm a source (admin only)
+        GET/POST /api/stories/{slug}/sources/ — provenance sources
     """
 
     lookup_field = 'slug'
@@ -112,6 +124,9 @@ class StoryViewSet(viewsets.ModelViewSet):
             'moderate',
             'record_consent',
             'consent_queue',
+            'verify',
+            'verification_queue',
+            'verify_source',
         ):
             permission_classes = [IsAdminOrManager]
         elif self.action in ('request_consent',):
@@ -121,23 +136,9 @@ class StoryViewSet(viewsets.ModelViewSet):
         return [p() for p in permission_classes]
 
     def get_queryset(self):
-        queryset = Story.objects.select_related('author').prefetch_related('categories')
-
-        # Default: show published stories for anonymous users
-        user = self.request.user
-        if not user.is_authenticated:
-            queryset = queryset.filter(status=Story.Status.PUBLISHED)
-        elif user.role in ('institution_manager', 'admin'):
-            # Admins see everything
-            pass
-        elif user.role == 'contributor':
-            # Contributors see published + their own drafts/pending
-            queryset = queryset.filter(
-                Q(status=Story.Status.PUBLISHED) | Q(author=user)
-            )
-        else:
-            # Visitors see published only
-            queryset = queryset.filter(status=Story.Status.PUBLISHED)
+        # One visibility rule, shared with every other surface — see
+        # `stories.services.visible_stories`.
+        queryset = story_services.visible_stories(self.request.user)
 
         # Search
         search = self.request.query_params.get('search', '').strip()
@@ -349,6 +350,9 @@ class StoryViewSet(viewsets.ModelViewSet):
         Body:
             action: 'remove' (archive the story) | 'dismiss' (keep the story)
             notes:  optional resolution notes
+            resolution: optional StoryFlag.Resolution value recording *what
+                was done* — corrected, hidden, dismissed, restored. Defaults
+                from `action` when omitted, so existing clients keep working.
         """
         story = self.get_object()
         action = request.data.get('action', '')
@@ -360,25 +364,168 @@ class StoryViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Resolve every open flag on the story.
+        resolution = request.data.get('resolution') or (
+            StoryFlag.Resolution.HIDDEN if action == 'remove'
+            else StoryFlag.Resolution.DISMISSED
+        )
+        if resolution not in StoryFlag.Resolution.values:
+            return Response(
+                {'error': 'resolution must be one of: ' + ', '.join(StoryFlag.Resolution.values)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Resolve every open flag on the story, attributable to the moderator.
         StoryFlag.objects.filter(story=story, resolved=False).update(
             resolved=True,
             resolution_notes=notes,
+            resolution_action=resolution,
+            resolved_by=request.user,
+            resolved_at=timezone.now(),
         )
 
+        before = story.status
         if action == 'remove':
             story.status = Story.Status.ARCHIVED
             story.reviewer_notes = notes
             story.save(update_fields=['status', 'reviewer_notes', 'updated_at'])
+
+        story_services.log_moderation(
+            request.user, story, ModerationLog.Action.FLAGS_RESOLVED,
+            notes=notes, from_status=before, to_status=story.status,
+        )
 
         return Response({
             'story_id': story.id,
             'slug': story.slug,
             'status': story.status,
             'action': action,
+            'resolution': resolution,
             'resolved_flags': StoryFlag.objects.filter(
                 story=story, resolved=True,
             ).count(),
+        })
+
+    @action(detail=False, methods=['get'])
+    def verification_queue(self, request):
+        """GET /api/stories/verification_queue/ — stories awaiting review.
+
+        Every row carries what a reviewer needs to decide: the provenance
+        the contributor declared, the sources attached, and the evidence
+        checklist with the score it currently produces.
+        """
+        entries = []
+        for story in story_services.verification_queue():
+            verification = getattr(story, 'verification', None)
+            evidence = verification or {
+                'source_verified': False,
+                'community_validated': False,
+                'expert_validated': False,
+                'references_confirmed': False,
+                'consistency_confirmed': False,
+            }
+            score = verification.trust_score if verification else 0
+            entries.append({
+                'story_id': story.id,
+                'slug': story.slug,
+                'title': story.title,
+                'summary': story.summary,
+                'status': story.status,
+                'author_username': story.author.username,
+                'origin': story.origin,
+                'provenance_notes': story.provenance_notes,
+                'consent_status': story.consent_status,
+                'language': story.language,
+                'region': story.region,
+                'created_at': story.created_at.isoformat(),
+                'sources': StorySourceSerializer(
+                    story.sources.all(), many=True,
+                ).data,
+                'trust_score': score,
+                'trust_level': trust_level(score),
+                'breakdown': score_breakdown(evidence),
+                'reviewer': (
+                    verification.reviewer.username
+                    if verification and verification.reviewer else None
+                ),
+                'verified_at': (
+                    verification.verified_at.isoformat()
+                    if verification and verification.verified_at else None
+                ),
+            })
+        return Response(entries)
+
+    @action(detail=True, methods=['post'])
+    def verify(self, request, slug=None):
+        """POST /api/stories/{slug}/verify/ — record a verification decision.
+
+        Body:
+            action:   'start_review' | 'approve' | 'reject' | 'request_changes'
+            notes:    optional reviewer notes (appended to reviewer_notes)
+            evidence: optional dict of trust criteria —
+                source_verified, community_validated, expert_validated,
+                references_confirmed, consistency_confirmed
+
+        The trust score is recomputed from the evidence before the decision
+        lands, so the score shown beside "Approved" is the score the
+        approval was based on.
+        """
+        story = self.get_object()
+        serializer = StoryVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            story, verification = story_services.verify_story(
+                request.user,
+                story,
+                action=serializer.validated_data['action'],
+                notes=serializer.validated_data.get('notes', ''),
+                evidence=serializer.validated_data.get('evidence'),
+            )
+        except DjangoValidationError as exc:
+            return Response(
+                {'error': exc.message_dict},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({
+            'slug': story.slug,
+            'status': story.status,
+            'trust_score': verification.trust_score,
+            'trust_level': trust_level(verification.trust_score),
+            'breakdown': score_breakdown(verification),
+            'consent_status': story.consent_status,
+        })
+
+    @action(detail=True, methods=['post'])
+    def verify_source(self, request, slug=None):
+        """POST /api/stories/{slug}/verify_source/ — confirm a source.
+
+        Body:
+            source_id:   the StorySource to update
+            is_verified: bool (default true)
+
+        Confirms one checked source and moves the first trust criterion
+        with it: a story counts as source-verified the moment at least one
+        of its sources has been checked.
+        """
+        story = self.get_object()
+        source_id = request.data.get('source_id')
+        try:
+            source = story.sources.get(pk=source_id)
+        except (StorySource.DoesNotExist, TypeError, ValueError):
+            return Response(
+                {'error': 'source_id must reference a source of this story.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        is_verified = request.data.get('is_verified', True)
+        story_services.verify_source(
+            request.user, source, is_verified=bool(is_verified),
+        )
+        # Re-read rather than trusting `story`'s prefetch cache: the service
+        # may have just created or updated the evidence row.
+        verification = StoryVerification.objects.filter(story=story).first()
+        return Response({
+            'source': StorySourceSerializer(source).data,
+            'trust_score': verification.trust_score if verification else 0,
+            'trust_level': trust_level(verification.trust_score if verification else 0),
         })
 
     @action(detail=False, methods=['get'])
@@ -592,6 +739,94 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     def _get_client_ip(self, request):
         return get_client_ip(request)
+
+
+# ---------------------------------------------------------------------------
+# Story sources (provenance) — /api/stories/{slug}/sources/
+# ---------------------------------------------------------------------------
+class StorySourceListCreateView(generics.ListCreateAPIView):
+    """GET — the documented sources behind a visible story.
+    POST — attach a source (author or moderator).
+
+    Reading follows the same visibility rule as the story itself: a source
+    for a draft is not public just because its URL was guessed. Writing goes
+    through `stories.services.add_source`, which decides ownership.
+    """
+
+    serializer_class = StorySourceSerializer
+    pagination_class = None  # a story has a handful of sources, not a feed
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated(), IsContributorOrAbove()]
+
+    def _get_story(self):
+        return get_object_or_404(
+            story_services.visible_stories(self.request.user),
+            slug=self.kwargs['slug'],
+        )
+
+    def get_queryset(self):
+        return self._get_story().sources.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        story = self._get_story()
+        try:
+            source = story_services.add_source(
+                request.user, story, **serializer.validated_data,
+            )
+        except DjangoValidationError as exc:
+            return Response(
+                {'error': exc.message_dict},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            StorySourceSerializer(source).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class StorySourceDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """PATCH — the author or a moderator corrects a source record.
+    DELETE — the author or a moderator withdraws a source.
+
+    `is_verified` is deliberately not writable here: confirming a source is
+    a moderation act with an audit trail (`POST .../verify_source/`), not a
+    field the owner flips on their own evidence.
+    """
+
+    serializer_class = StorySourceSerializer
+    queryset = StorySource.objects.all()
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def get_object(self):
+        story = get_object_or_404(
+            story_services.visible_stories(self.request.user),
+            slug=self.kwargs['slug'],
+        )
+        obj = get_object_or_404(StorySource, pk=self.kwargs['pk'], story=story)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_update(self, serializer):
+        source = serializer.instance
+        user = self.request.user
+        if source.story.author_id != user.id and not story_services.is_moderator(user):
+            raise DjangoPermissionDenied('You can only edit your own story sources.')
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if instance.story.author_id != user.id and not story_services.is_moderator(user):
+            raise DjangoPermissionDenied('You can only remove your own story sources.')
+        instance.delete()
 
 
 # ---------------------------------------------------------------------------

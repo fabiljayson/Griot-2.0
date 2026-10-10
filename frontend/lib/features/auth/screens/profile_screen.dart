@@ -10,6 +10,7 @@ import '../../admin/admin_feature.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../gamification/providers/gamification_provider.dart';
 import '../../stories/screens/story_form_screen.dart';
+import '../../subscriptions/screens/premium_screen.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/profile/action_tile.dart';
@@ -190,6 +191,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                     // --- Settings ---
                     SectionTitle(title: 'Settings'),
+                    const SizedBox(height: AppSpacing.md),
+                    ActionTile(
+                      icon: AppIcons.medal,
+                      label: 'Griot Premium',
+                      color: AppColors.accentTextStrong,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PremiumScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     ActionTile(
                       icon: AppIcons.settings_outlined,

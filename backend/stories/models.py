@@ -49,11 +49,27 @@ class Story(models.Model):
     """
 
     class Status(models.TextChoices):
+        """The verification workflow a story travels through.
+
+        wire values: draft → pending → under_review → published | rejected |
+        needs_revision, with archived as the resting state. `pending` is
+        "PENDING_REVIEW" and `published` is "APPROVED" — the existing wire
+        values are kept because every client, template and test already
+        speaks them; `under_review` and `needs_revision` are the two states
+        the workflow was missing and are additions, not renames.
+        """
+
         DRAFT = 'draft', _('Draft')
         PENDING = 'pending', _('Pending Review')
+        UNDER_REVIEW = 'under_review', _('Under Review')
         PUBLISHED = 'published', _('Published')
         REJECTED = 'rejected', _('Rejected')
+        NEEDS_REVISION = 'needs_revision', _('Needs Revision')
         ARCHIVED = 'archived', _('Archived')
+
+    #: Statuses a public reader may see. Everything else is work in progress
+    #: or work refused, and must never leak into a public feed.
+    PUBLIC_STATUSES = ('published',)
 
     class Language(models.TextChoices):
         ENGLISH = 'en', 'English'
@@ -412,10 +428,23 @@ class StoryFlag(models.Model):
 
     class Reason(models.TextChoices):
         CULTURAL_INACCURACY = 'cultural_inaccuracy', _('Cultural Inaccuracy')
-        INAPPROPRIATE_CONTENT = 'inappropriate_content', _('Inappropriate Content')
+        INCORRECT_INFORMATION = 'incorrect_information', _('Incorrect Information')
+        CULTURAL_MISREPRESENTATION = 'cultural_misrepresentation', _('Cultural Misrepresentation')
+        OFFENSIVE_CONTENT = 'offensive_content', _('Offensive Content')
+        WRONG_ATTRIBUTION = 'wrong_attribution', _('Wrong Attribution')
         COPYRIGHT_VIOLATION = 'copyright_violation', _('Copyright Violation')
+        INAPPROPRIATE_CONTENT = 'inappropriate_content', _('Inappropriate Content')
+        DUPLICATE_CONTENT = 'duplicate_content', _('Duplicate Content')
         WRONG_CATEGORY = 'wrong_category', _('Wrong Category')
         OTHER = 'other', _('Other')
+
+    class Resolution(models.TextChoices):
+        """What the moderator did about the report, once resolved."""
+
+        CORRECTED = 'corrected', _('Content corrected')
+        HIDDEN = 'hidden', _('Content hidden')
+        DISMISSED = 'dismissed', _('Report dismissed')
+        RESTORED = 'restored', _('Content restored')
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -436,13 +465,243 @@ class StoryFlag(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
     resolution_notes = models.TextField(blank=True, default='')
+    resolution_action = models.CharField(
+        max_length=20,
+        choices=Resolution.choices,
+        blank=True,
+        default='',
+        help_text='What was done about the report, once resolved.',
+    )
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_story_flags',
+        help_text='Moderator who resolved the report.',
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('user', 'story')
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['resolved', '-created_at']),
+        ]
 
     def __str__(self):
         return f'Flag: {self.story.title} - {self.get_reason_display()}'
+
+
+class StorySource(models.Model):
+    """A documented source behind a story — its provenance, itemised.
+
+    `Story.source` is one free-text line naming the teller. This is the
+    structured form: every source a reviewer can check gets its own row, so
+    the trust score can count verified sources and a reader can see where
+    the account came from.
+    """
+
+    class SourceType(models.TextChoices):
+        ORAL_TRADITION = 'ORAL_TRADITION', _('Oral tradition')
+        COMMUNITY_TESTIMONY = 'COMMUNITY_TESTIMONY', _('Community testimony')
+        BOOK = 'BOOK', _('Book')
+        ACADEMIC_REFERENCE = 'ACADEMIC_REFERENCE', _('Academic reference')
+        MUSEUM = 'MUSEUM', _('Museum')
+        CULTURAL_INSTITUTION = 'CULTURAL_INSTITUTION', _('Cultural institution')
+        ARCHIVE = 'ARCHIVE', _('Archive')
+        OFFICIAL_SOURCE = 'OFFICIAL_SOURCE', _('Official source')
+        OTHER = 'OTHER', _('Other')
+
+    story = models.ForeignKey(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='sources',
+    )
+    source_type = models.CharField(
+        max_length=30,
+        choices=SourceType.choices,
+        default=SourceType.OTHER,
+    )
+    name = models.CharField(
+        max_length=200,
+        help_text='Title or description of the source (e.g. "Bamoun oral account, Foumban").',
+    )
+    author = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Author, teller, or custodian of the source.',
+    )
+    institution = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Publishing or holding institution, if any.',
+    )
+    url = models.URLField(
+        blank=True,
+        default='',
+        help_text='Link to the source, when it is available online.',
+    )
+    reference = models.CharField(
+        max_length=300,
+        blank=True,
+        default='',
+        help_text='Citation detail: page, archive number, date of interview.',
+    )
+    notes = models.TextField(
+        blank=True,
+        default='',
+        help_text='Why this source supports the story.',
+    )
+    is_verified = models.BooleanField(
+        default=False,
+        help_text='A reviewer checked this source against the story.',
+    )
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='verified_story_sources',
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_verified', 'created_at']
+        indexes = [
+            models.Index(fields=['story', '-created_at']),
+            models.Index(fields=['source_type']),
+        ]
+
+    def __str__(self):
+        return f'{self.get_source_type_display()}: {self.name}'
+
+
+class StoryVerification(models.Model):
+    """The verification evidence behind a story's Cultural Trust Score.
+
+    One row per story. The five booleans are the criteria a reviewer
+    confirms; the score is their configured-weight sum — strength of
+    *evidence*, never a probability that the story is true. Recomputed via
+    `stories.services.refresh_trust_score`, never hand-edited.
+    """
+
+    story = models.OneToOneField(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='verification',
+    )
+    # --- Evidence criteria (weights come from settings.TRUST_SCORE_WEIGHTS) ---
+    source_verified = models.BooleanField(
+        default=False,
+        help_text='A reliable/documented source was checked.',
+    )
+    community_validated = models.BooleanField(
+        default=False,
+        help_text='Members of the source community confirmed the account.',
+    )
+    expert_validated = models.BooleanField(
+        default=False,
+        help_text='A cultural expert or reviewer validated the content.',
+    )
+    references_confirmed = models.BooleanField(
+        default=False,
+        help_text='Historical/reference evidence was confirmed.',
+    )
+    consistency_confirmed = models.BooleanField(
+        default=False,
+        help_text='The account is internally consistent with related content.',
+    )
+    # --- Result ---
+    trust_score = models.PositiveIntegerField(
+        default=0,
+        help_text='Cached weighted evidence score (0-100). Recomputed on evidence change.',
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='story_verifications',
+        help_text='Reviewer who last updated the evidence.',
+    )
+    notes = models.TextField(
+        blank=True,
+        default='',
+        help_text='Reviewer notes on the verification evidence.',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When a reviewer last confirmed the evidence.',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.story.title} — {self.trust_score}%'
+
+    def save(self, *args, **kwargs):
+        # The score is derived, always. Recomputing here — not only in the
+        # API service — means an admin editing the checklist cannot leave a
+        # cached number that disagrees with the boxes below it.
+        from . import trust as trust_score
+        self.trust_score = trust_score.calculate_trust_score(self)
+        super().save(*args, **kwargs)
+
+
+class ModerationLog(models.Model):
+    """Audit trail: who changed a story's review state, when, and why.
+
+    Append-only by convention (no edit path exists anywhere in the API).
+    Moderation actions without a log entry are claims; with one they are
+    records.
+    """
+
+    class Action(models.TextChoices):
+        SUBMITTED = 'submitted', _('Submitted for review')
+        REVIEW_STARTED = 'review_started', _('Review started')
+        APPROVED = 'approved', _('Approved and published')
+        REJECTED = 'rejected', _('Rejected')
+        CHANGES_REQUESTED = 'changes_requested', _('Changes requested')
+        ARCHIVED = 'archived', _('Archived')
+        FLAGS_RESOLVED = 'flags_resolved', _('Reports resolved')
+        CONSENT_RECORDED = 'consent_recorded', _('Consent decision recorded')
+        EVIDENCE_UPDATED = 'evidence_updated', _('Verification evidence updated')
+        SOURCE_VERIFIED = 'source_verified', _('Source verified')
+
+    story = models.ForeignKey(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='moderation_logs',
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='moderation_log_entries',
+    )
+    action = models.CharField(max_length=30, choices=Action.choices)
+    from_status = models.CharField(max_length=20, blank=True, default='')
+    to_status = models.CharField(max_length=20, blank=True, default='')
+    notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['story', '-created_at']),
+            models.Index(fields=['action', '-created_at']),
+        ]
+
+    def __str__(self):
+        who = self.actor.username if self.actor else 'system'
+        return f'{who}: {self.get_action_display()} ({self.story.title})'
 
 
 class ReadingProgress(models.Model):
@@ -541,3 +800,7 @@ StoryStatusChoices = Story.Status
 StoryOriginChoices = Story.Origin
 StoryConsentChoices = Story.Consent
 StoryLicenceChoices = Story.Licence
+StorySourceTypeChoices = StorySource.SourceType
+StoryFlagReasonChoices = StoryFlag.Reason
+StoryFlagResolutionChoices = StoryFlag.Resolution
+ModerationActionChoices = ModerationLog.Action

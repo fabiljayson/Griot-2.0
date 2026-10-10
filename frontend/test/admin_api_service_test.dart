@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:griot_ai/features/admin/models/verification_models.dart';
 import 'package:griot_ai/features/admin/services/admin_api_service.dart';
 
 import 'support/admin_fixtures.dart';
@@ -199,6 +200,116 @@ void main() {
       expect(result['consent_status'], 'granted');
     });
 
+    test(
+      'getVerificationQueue hits /stories/verification_queue/ and parses',
+      () async {
+        final setup = _serviceWith({
+          '/api/stories/verification_queue/': adminVerificationQueueJson(),
+        });
+
+        final queue = await setup.service.getVerificationQueue();
+
+        expect(setup.adapter.requestedPaths, [
+          '/api/stories/verification_queue/',
+        ]);
+        expect(queue, hasLength(2));
+        expect(queue.first.title, 'The Baobab and the Drum');
+        expect(queue.first.trustScore, 50);
+        expect(queue.first.trustLevel, 'partial');
+        expect(queue.first.sources, hasLength(2));
+        expect(queue.first.sources.first.isVerified, isTrue);
+        expect(queue.first.breakdown, hasLength(5));
+        expect(queue.first.breakdown.first.criterion, 'source_verified');
+        expect(queue.first.breakdown.first.confirmed, isTrue);
+        expect(queue.last.trustScore, 0);
+        expect(queue.last.reviewer, isNull);
+      },
+    );
+
+    test('verifyStory posts the action, notes and changed evidence', () async {
+      final setup = _serviceWith({
+        '/api/stories/the-baobab-and-the-drum/verify/': {
+          'slug': 'the-baobab-and-the-drum',
+          'status': 'published',
+          'trust_score': 75,
+          'trust_level': 'partial',
+          'breakdown': [
+            {'criterion': 'source_verified', 'label': 'Reliable/documented source', 'weight': 25, 'confirmed': true},
+          ],
+          'consent_status': 'granted',
+        },
+      });
+
+      final result = await setup.service.verifyStory(
+        slug: 'the-baobab-and-the-drum',
+        action: VerifyAction.approve,
+        notes: 'Elder confirmed in person.',
+        evidence: {'expert_validated': true},
+      );
+
+      expect(setup.adapter.requestedPaths, [
+        '/api/stories/the-baobab-and-the-drum/verify/',
+      ]);
+      final request = setup.adapter.requests.single;
+      expect(request.method, 'POST');
+      // Only the criteria the reviewer changed travel with the decision —
+      // re-sending every box would bump `verified_at` on untouched rows.
+      expect(request.data, {
+        'action': 'approve',
+        'notes': 'Elder confirmed in person.',
+        'evidence': {'expert_validated': true},
+      });
+      expect(result.status, 'published');
+      expect(result.trustScore, 75);
+      expect(result.trustLevel, 'partial');
+      expect(result.breakdown.single.criterion, 'source_verified');
+    });
+
+    test('verifyStory omits evidence when nothing changed', () async {
+      final setup = _serviceWith({
+        '/api/stories/a-tale-without-a-source/verify/': {
+          'slug': 'a-tale-without-a-source',
+          'status': 'under_review',
+          'trust_score': 0,
+          'trust_level': 'unverified',
+          'breakdown': <Map<String, dynamic>>[],
+          'consent_status': 'not_requested',
+        },
+      });
+
+      await setup.service.verifyStory(
+        slug: 'a-tale-without-a-source',
+        action: VerifyAction.startReview,
+      );
+
+      final request = setup.adapter.requests.single;
+      expect(request.data, {'action': 'start_review', 'notes': ''});
+    });
+
+    test('verifyStorySource posts the source id and verified flag', () async {
+      final setup = _serviceWith({
+        '/api/stories/the-baobab-and-the-drum/verify_source/': {
+          'source': {'id': 2, 'is_verified': true},
+          'trust_score': 50,
+          'trust_level': 'partial',
+        },
+      });
+
+      final result = await setup.service.verifyStorySource(
+        slug: 'the-baobab-and-the-drum',
+        sourceId: 2,
+      );
+
+      expect(setup.adapter.requestedPaths, [
+        '/api/stories/the-baobab-and-the-drum/verify_source/',
+      ]);
+      expect(setup.adapter.requests.single.data, {
+        'source_id': 2,
+        'is_verified': true,
+      });
+      expect(result['trust_score'], 50);
+    });
+
     test('moderateStory posts the action and notes', () async {
       final setup = _serviceWith({
         '/api/stories/the-wrong-spider/moderate/': {
@@ -227,6 +338,32 @@ void main() {
       });
       expect(result['status'], 'archived');
       expect(result['resolved_flags'], 2);
+    });
+
+    test('moderateStory forwards an explicit resolution', () async {
+      final setup = _serviceWith({
+        '/api/stories/the-wrong-spider/moderate/': {
+          'story_id': 11,
+          'slug': 'the-wrong-spider',
+          'status': 'published',
+          'action': 'dismiss',
+          'resolution': 'corrected',
+          'resolved_flags': 1,
+        },
+      });
+
+      final result = await setup.service.moderateStory(
+        slug: 'the-wrong-spider',
+        action: 'dismiss',
+        resolution: 'corrected',
+      );
+
+      expect(setup.adapter.requests.single.data, {
+        'action': 'dismiss',
+        'notes': '',
+        'resolution': 'corrected',
+      });
+      expect(result['resolution'], 'corrected');
     });
 
     test(

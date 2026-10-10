@@ -329,7 +329,7 @@ class AudioNarrationJob(models.Model):
             models.Index(fields=['status']),
         ]
         constraints = [
-            # At most one completed job per target and language.
+            # At most one completed job per target, language and voice.
             #
             # The narration endpoints all ask "does a completed job already
             # exist for this story?" before generating, which is a
@@ -340,15 +340,18 @@ class AudioNarrationJob(models.Model):
             # duplicate row.
             #
             # Keyed on `target_key` rather than `(story, artifact)` — see the
-            # class docstring for why the nullable columns do not work.
+            # class docstring for why the nullable columns do not work. The
+            # voice is in the key because readers may choose one: the same
+            # story in English (US) and English (UK) are two different
+            # recordings, while a second copy of the same voice is waste.
             #
             # Partial (`status='completed'`) so a failed attempt can be retried
             # without deleting the failure first: pending/processing/failed
             # rows are attempts, and only a result is worth deduplicating.
             models.UniqueConstraint(
-                fields=['target_key', 'language'],
+                fields=['target_key', 'language', 'voice_id'],
                 condition=models.Q(status='completed'),
-                name='uniq_completed_narration_per_target_language',
+                name='uniq_completed_narration_per_target_language_voice',
             ),
         ]
     

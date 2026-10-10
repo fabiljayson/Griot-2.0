@@ -42,7 +42,9 @@ from media_app.services.luma_ai import LumaAIError, get_luma_service
 from media_app.services.tts import (
     TTSGenerationError,
     build_artifact_script,
+    canonical_voice,
     get_tts_service,
+    resolve_speech,
     strip_markdown,
 )
 from media_app.services.video_providers import result_field
@@ -59,6 +61,7 @@ from stories.models import (
     StoryShare,
 )
 from stories.services import CONSENT_DECISIONS, resolve_status
+from subscriptions.services import has_feature_access
 
 from .models import WebUserSettings
 
@@ -925,9 +928,17 @@ def generate_story_audio(user, story, language):
             'You can only generate audio for your own or published stories.'
         )
 
+    # Normalise to what gTTS will speak, exactly as the API does — the web
+    # and the app share one narration cache, and a voice mismatch between the
+    # two would either re-synthesise in secret or return someone else's
+    # accent for this story.
+    language, _tld = resolve_speech(language, None)
+    voice_id = canonical_voice(language)
+
     existing = AudioNarrationJob.objects.filter(
         story=story,
         language=language,
+        voice_id=voice_id,
         status=AudioNarrationJob.Status.COMPLETED,
     ).order_by('-created_at').first()
     if existing is not None:
@@ -954,6 +965,7 @@ def generate_story_audio(user, story, language):
         story=story,
         narration_text=narration_text,
         language=language,
+        voice_id=voice_id,
         speed=1.0,
         status=AudioNarrationJob.Status.PROCESSING,
         engine=normalise_engine(tts_service, 'narration'),
@@ -962,7 +974,7 @@ def generate_story_audio(user, story, language):
         result = tts_service.submit_narration(
             text=narration_text,
             language=job.language,
-            voice_id='default',
+            voice_id=job.voice_id,
             speed=job.speed,
             slug=story.slug or 'narration',
         )
@@ -990,9 +1002,15 @@ def generate_artifact_audio(user, artifact, language):
     ):
         raise PermissionDenied('You can only generate audio for published artifacts.')
 
+    # Same normalisation as generate_story_audio — one shared cache between
+    # web and app, keyed on the voice that will really be spoken.
+    language, _tld = resolve_speech(language, None)
+    voice_id = canonical_voice(language)
+
     existing = AudioNarrationJob.objects.filter(
         artifact=artifact,
         language=language,
+        voice_id=voice_id,
         status=AudioNarrationJob.Status.COMPLETED,
     ).order_by('-created_at').first()
     if existing is not None:
@@ -1023,6 +1041,7 @@ def generate_artifact_audio(user, artifact, language):
         artifact=artifact,
         narration_text=narration_text,
         language=language,
+        voice_id=voice_id,
         speed=1.0,
         status=AudioNarrationJob.Status.PROCESSING,
         engine=normalise_engine(tts_service, 'narration'),
@@ -1031,7 +1050,7 @@ def generate_artifact_audio(user, artifact, language):
         result = tts_service.submit_narration(
             text=narration_text,
             language=job.language,
-            voice_id='default',
+            voice_id=job.voice_id,
             speed=job.speed,
             slug=artifact.slug or 'artifact-guide',
         )
@@ -1057,6 +1076,15 @@ def generate_story_video(user, story, prompt):
         'admin', 'institution_manager',
     ):
         raise PermissionDenied('You can only generate videos for your own stories.')
+
+    # Same paywall the API enforces, on the server-rendered path: one rule,
+    # both surfaces (Constitution I). `ai_video_generation` is a configured
+    # premium feature; a free account is refused before anything is queued.
+    if not has_feature_access(user, 'ai_video_generation'):
+        raise PermissionDenied(
+            'AI video generation is a premium feature. '
+            'Upgrade to Griot Premium to generate videos.'
+        )
 
     if not prompt:
         prompt = (

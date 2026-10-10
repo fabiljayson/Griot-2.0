@@ -38,6 +38,7 @@ from gamification.models import QuizQuestion
 from media_app.models import AudioNarrationJob, VideoGenerationJob
 from qr_codes.models import Artifact
 from stories.models import Story
+from subscriptions.factories import grant_premium
 from users.models import User
 
 
@@ -55,6 +56,10 @@ class WebQuotaBypassRegression(TestCase):
             username='contributor', email='c@example.org',
             password='Correct-Horse-9', role='contributor',
         )
+        # The video action now sits behind the premium paywall; this class
+        # pins the quota control that runs *after* admission, so the author
+        # is entitled. Free refusal is pinned in `StoryMediaTests`.
+        grant_premium(self.author)
         self.stories = [
             Story.objects.create(
                 author=self.author, title=f'Story {i}', content=f'Body {i}',

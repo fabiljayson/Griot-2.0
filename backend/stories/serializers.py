@@ -4,14 +4,18 @@ from rest_framework import serializers
 from users.serializers import UserSerializer
 
 from .models import (
+    ModerationLog,
     ReadingProgress,
     Story,
     StoryBookmark,
     StoryCategory,
     StoryFlag,
     StoryLike,
+    StorySource,
+    StoryVerification,
 )
-from .services import MODERATOR_ROLES, resolve_status
+from .services import MODERATOR_ROLES, VERIFY_ACTIONS, log_status_change, resolve_status
+from .trust import score_breakdown, trust_level
 
 User = get_user_model()
 
@@ -29,6 +33,92 @@ class StoryCategorySerializer(serializers.ModelSerializer):
         return obj.stories.filter(status=Story.Status.PUBLISHED).count()
 
 
+class StorySourceSerializer(serializers.ModelSerializer):
+    """One documented source behind a story — the structured provenance."""
+
+    verified_by = serializers.CharField(
+        source='verified_by.username', read_only=True, default=None,
+    )
+
+    class Meta:
+        model = StorySource
+        fields = (
+            'id',
+            'story',
+            'source_type',
+            'name',
+            'author',
+            'institution',
+            'url',
+            'reference',
+            'notes',
+            'is_verified',
+            'verified_by',
+            'verified_at',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = (
+            'id',
+            'story',
+            'is_verified',
+            'verified_by',
+            'verified_at',
+            'created_at',
+            'updated_at',
+        )
+
+
+class StoryVerificationSerializer(serializers.ModelSerializer):
+    """The evidence row behind the Cultural Trust Score.
+
+    The score is read-only — it is derived from the criteria by
+    `stories.trust`, and a writable score would be the one number on the
+    page nobody could reproduce from the checklist beside it.
+    """
+
+    reviewer = serializers.CharField(
+        source='reviewer.username', read_only=True, default=None,
+    )
+    trust_score = serializers.IntegerField(read_only=True)
+    trust_level = serializers.SerializerMethodField()
+    breakdown = serializers.SerializerMethodField()
+    disclaimer = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StoryVerification
+        fields = (
+            'source_verified',
+            'community_validated',
+            'expert_validated',
+            'references_confirmed',
+            'consistency_confirmed',
+            'trust_score',
+            'trust_level',
+            'breakdown',
+            'disclaimer',
+            'reviewer',
+            'notes',
+            'verified_at',
+            'updated_at',
+        )
+        read_only_fields = fields
+
+    def get_trust_level(self, obj) -> str:
+        return trust_level(obj.trust_score)
+
+    def get_breakdown(self, obj) -> list:
+        return score_breakdown(obj)
+
+    def get_disclaimer(self, obj) -> str:
+        return (
+            'The Cultural Trust Score represents the strength of the '
+            'available sources and verification evidence. It does not '
+            'guarantee that every historical or cultural detail is '
+            'objectively true.'
+        )
+
+
 class StoryListSerializer(serializers.ModelSerializer):
     """Compact serializer for story listings and discovery."""
 
@@ -41,6 +131,10 @@ class StoryListSerializer(serializers.ModelSerializer):
     # opening it, so the origin travels with the listing.
     attribution = serializers.CharField(read_only=True)
     is_synthetic_origin = serializers.BooleanField(read_only=True)
+    # Evidence strength travels with the card so a reader can weigh two
+    # tales without opening both. Zero until a reviewer records evidence.
+    trust_score = serializers.SerializerMethodField()
+    trust_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -64,9 +158,18 @@ class StoryListSerializer(serializers.ModelSerializer):
             'origin',
             'attribution',
             'is_synthetic_origin',
+            'trust_score',
+            'trust_level',
             'created_at',
             'published_at',
         )
+
+    def get_trust_score(self, obj) -> int:
+        verification = getattr(obj, 'verification', None)
+        return verification.trust_score if verification else 0
+
+    def get_trust_level(self, obj) -> str:
+        return trust_level(self.get_trust_score(obj))
 
     def get_is_bookmarked(self, obj) -> bool:
         request = self.context.get('request')
@@ -120,6 +223,13 @@ class StoryDetailSerializer(serializers.ModelSerializer):
     # from `source`/`rights_holder`.
     attribution = serializers.CharField(read_only=True)
     is_synthetic_origin = serializers.BooleanField(read_only=True)
+    # The provenance block: itemised sources, the evidence row, and the
+    # score derived from it. `verification` is null until a reviewer has
+    # touched the story — "no evidence recorded" is itself information.
+    sources = StorySourceSerializer(many=True, read_only=True)
+    verification = serializers.SerializerMethodField()
+    trust_score = serializers.SerializerMethodField()
+    trust_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -153,6 +263,10 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'recorded_at',
             'attribution',
             'is_synthetic_origin',
+            'sources',
+            'verification',
+            'trust_score',
+            'trust_level',
             'reviewer_notes',
             'view_count',
             'like_count',
@@ -176,7 +290,22 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'published_at',
+            'trust_score',
+            'trust_level',
         )
+
+    def get_verification(self, obj) -> dict | None:
+        verification = getattr(obj, 'verification', None)
+        if verification is None:
+            return None
+        return StoryVerificationSerializer(verification).data
+
+    def get_trust_score(self, obj) -> int:
+        verification = getattr(obj, 'verification', None)
+        return verification.trust_score if verification else 0
+
+    def get_trust_level(self, obj) -> str:
+        return trust_level(self.get_trust_score(obj))
 
     def get_is_bookmarked(self, obj) -> bool:
         request = self.context.get('request')
@@ -275,16 +404,27 @@ class StoryCreateUpdateSerializer(serializers.ModelSerializer):
         story = Story.objects.create(**validated_data)
         if categories:
             story.categories.set(categories)
+        # A story born in `pending` was submitted for review; leave a row in
+        # the trail saying so, same as every later transition.
+        log_status_change(
+            self.context.get('request').user if self.context.get('request') else None,
+            story, '', story.status,
+        )
         return story
 
     def update(self, instance, validated_data):
         self._resolve_status(validated_data)
+        before_status = instance.status
         categories = validated_data.pop('categories', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         if categories is not None:
             instance.categories.set(categories)
+        log_status_change(
+            self.context.get('request').user if self.context.get('request') else None,
+            instance, before_status, instance.status,
+        )
         return instance
 
 
@@ -317,6 +457,12 @@ class StoryFlagSerializer(serializers.ModelSerializer):
     """Serializer for story flags/reports."""
 
     user = UserSerializer(read_only=True)
+    resolved_by = serializers.CharField(
+        source='resolved_by.username', read_only=True, default=None,
+    )
+    reason_display = serializers.CharField(
+        source='get_reason_display', read_only=True,
+    )
 
     class Meta:
         model = StoryFlag
@@ -325,12 +471,61 @@ class StoryFlagSerializer(serializers.ModelSerializer):
             'user',
             'story',
             'reason',
+            'reason_display',
             'details',
             'created_at',
             'resolved',
             'resolution_notes',
+            'resolution_action',
+            'resolved_by',
+            'resolved_at',
         )
-        read_only_fields = ('id', 'user', 'story', 'created_at', 'resolved', 'resolution_notes')
+        read_only_fields = (
+            'id',
+            'user',
+            'story',
+            'reason_display',
+            'created_at',
+            'resolved',
+            'resolution_notes',
+            'resolution_action',
+            'resolved_by',
+            'resolved_at',
+        )
+
+
+class StoryVerifySerializer(serializers.Serializer):
+    """Body of `POST /api/stories/{slug}/verify/`."""
+
+    ACTION_CHOICES = tuple(VERIFY_ACTIONS.keys())
+
+    action = serializers.ChoiceField(choices=ACTION_CHOICES)
+    notes = serializers.CharField(required=False, allow_blank=True, default='')
+    evidence = serializers.DictField(required=False, default=dict)
+
+
+class ModerationLogSerializer(serializers.ModelSerializer):
+    """One audit-trail row. Read-only: the trail is append-only."""
+
+    actor = serializers.CharField(source='actor.username', read_only=True, default=None)
+    action_display = serializers.CharField(
+        source='get_action_display', read_only=True,
+    )
+
+    class Meta:
+        model = ModerationLog
+        fields = (
+            'id',
+            'story',
+            'actor',
+            'action',
+            'action_display',
+            'from_status',
+            'to_status',
+            'notes',
+            'created_at',
+        )
+        read_only_fields = fields
 
 
 class ReadingProgressSerializer(serializers.ModelSerializer):

@@ -35,6 +35,9 @@ from .serializers import (
     VRExperienceSummarySerializer,
     VRLaunchRequestSerializer,
     VRLaunchResponseSerializer,
+    VRLocationSerializer,
+    VRProgressEntrySerializer,
+    VRProgressRequestSerializer,
     VRSessionCompleteRequestSerializer,
     VRSessionCompleteResponseSerializer,
     VRSessionSerializer,
@@ -42,6 +45,7 @@ from .serializers import (
 )
 from .services.experience_payload import (
     artifact_payload,
+    experience_locations,
     experience_payload,
     experience_summary,
 )
@@ -61,6 +65,12 @@ from .services.launch_tokens import (
     build_deep_link,
     consume_launch_token,
     issue_launch_token,
+)
+from .services.progress import (
+    SessionNotActive,
+    progress_entries,
+    record_progress,
+    session_for_token,
 )
 from .services.session_tokens import mint_session_token
 from .services.sessions import (
@@ -425,3 +435,117 @@ class VRSessionCompleteView(APIView):
                 'profile': profile,
             }).data,
         )
+
+
+# ---------------------------------------------------------------------------
+# Progress
+# ---------------------------------------------------------------------------
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='experience',
+            type=str,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description='Only this experience\'s progress (id or slug).',
+        ),
+    ],
+    responses=VRProgressEntrySerializer(many=True),
+    methods=['GET'],
+    description=(
+        'The reader\'s progress, one row per experience: percentage, completed '
+        'flag, session count and last visit. Includes experiences that are no '
+        'longer active, because progress earned should not disappear.'
+    ),
+)
+@extend_schema(
+    request=VRProgressRequestSerializer,
+    responses={
+        200: VRSessionSerializer,
+        400: _error_schema('VRProgressBadRequest'),
+        409: _error_schema('VRProgressConflict'),
+    },
+    methods=['POST', 'PATCH'],
+    description=(
+        'Record a partial progress update for the session bound to this token '
+        '(`sid` claim). `POST` and `PATCH` are aliases — both are upserts on '
+        'the open session; opening one is `POST /api/vr/sessions/`. Awards no '
+        'XP: only `sessions/<id>/complete/` pays out.'
+    ),
+)
+class VRProgressView(APIView):
+    """`GET|POST|PATCH /api/vr/progress/` — read and record progress.
+
+    Reads accept any valid token, like the other content endpoints. Writes
+    require the VR-scoped token for the same reason the session endpoints do:
+    a full-account JWT must not be able to drive a headset session.
+    """
+
+    def get_permissions(self):
+        if self.request.method in ('POST', 'PATCH'):
+            return [IsVRSessionToken()]
+        return [IsAuthenticatedForVR()]
+
+    def get(self, request):
+        entries = progress_entries(
+            user=request.user,
+            experience_key=request.query_params.get('experience'),
+        )
+        return Response(VRProgressEntrySerializer(entries, many=True).data)
+
+    def post(self, request):
+        return self._record(request)
+
+    def patch(self, request):
+        return self._record(request)
+
+    def _record(self, request):
+        serializer = VRProgressRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        getter = getattr(request.auth, 'get', None)
+        sid = getter('sid') if getter is not None else None
+        if sid is None:
+            # Unreachable for tokens this app mints, but a hand-built token
+            # with `scope: vr` and no `sid` must not progress an arbitrary row.
+            return _error(
+                'missing_session',
+                'This token is not bound to a session. Relaunch from the app.',
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        session = session_for_token(request.user, sid)
+
+        try:
+            session = record_progress(
+                session=session,
+                progress=data.get('progress'),
+                artifact_ids=data.get('artifacts_viewed'),
+            )
+        except SessionNotActive as exc:
+            return _error(exc.code, str(exc), status.HTTP_409_CONFLICT)
+        except InvalidSessionArtifacts as exc:
+            return _error(exc.code, str(exc), status.HTTP_400_BAD_REQUEST)
+
+        return Response(VRSessionSerializer(session).data)
+
+
+# ---------------------------------------------------------------------------
+# Locations
+# ---------------------------------------------------------------------------
+@extend_schema(
+    responses=VRLocationSerializer(many=True),
+    description=(
+        'Distinct places active experiences live in (museum, region, culture), '
+        'each with the experiences it holds. Discovery data, so it is public '
+        'like the experience list.'
+    ),
+)
+class VRLocationListView(APIView):
+    """`GET /api/vr/locations/` — where the museums are."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(VRLocationSerializer(experience_locations(), many=True).data)

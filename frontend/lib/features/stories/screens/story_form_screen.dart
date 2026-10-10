@@ -596,6 +596,7 @@ class _StoryFormScreenState extends ConsumerState<StoryFormScreen> {
               ? _rightsHolderController.text.trim()
               : null,
           licence: _selectedLicence,
+          status: draft ? 'draft' : 'pending',
         );
       }
 

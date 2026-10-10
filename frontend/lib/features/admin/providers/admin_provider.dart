@@ -4,6 +4,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';
 import '../models/qr_worklist_models.dart';
+import '../models/verification_models.dart';
 import '../services/admin_api_service.dart';
 
 /// Admin API service wired to the authenticated client.
@@ -58,10 +59,16 @@ class ModerationNotifier extends StateNotifier<ModerationState> {
     required FlaggedStory story,
     required String action,
     String notes = '',
+    String? resolution,
   }) async {
     state = ModerationState(busyStoryId: story.storyId, busyAction: action);
     try {
-      await _api.moderateStory(slug: story.slug, action: action, notes: notes);
+      await _api.moderateStory(
+        slug: story.slug,
+        action: action,
+        notes: notes,
+        resolution: resolution,
+      );
       state = const ModerationState();
       return true;
     } catch (e) {
@@ -160,6 +167,102 @@ final consentQueueProvider = FutureProvider.autoDispose<List<ConsentReviewStory>
 final consentActionProvider =
     StateNotifierProvider<ConsentActionNotifier, ConsentActionState>(
       (ref) => ConsentActionNotifier(ref.watch(adminApiServiceProvider)),
+    );
+
+/// The stories still awaiting a verification decision (admin only).
+///
+/// Membership is a server-side rule (`stories.services.verification_queue`);
+/// this screen renders the list and never filters it itself.
+final verificationQueueProvider =
+    FutureProvider.autoDispose<List<VerificationQueueEntry>>((
+      ref,
+    ) async {
+      return ref.watch(adminApiServiceProvider).getVerificationQueue();
+    });
+
+/// State of an in-flight verification decision.
+class VerificationActionState {
+  const VerificationActionState({this.busySlug, this.errorMessage});
+
+  /// The story whose decision is being recorded, if any.
+  final String? busySlug;
+  final String? errorMessage;
+
+  bool isBusy(String slug) => busySlug == slug;
+  bool get isSubmitting => busySlug != null;
+}
+
+/// Notifier recording a reviewer's verification decision, and confirming
+/// individual sources.
+///
+/// Kept separate from [ConsentActionNotifier]: consent records what a
+/// community answered about publishing, verification records how well the
+/// text is documented. One notifier answering both would let a reviewer lose
+/// track of which record they were writing.
+class VerificationActionNotifier extends StateNotifier<VerificationActionState> {
+  VerificationActionNotifier(AdminApiService api)
+      : _api = api,
+        super(const VerificationActionState());
+
+  final AdminApiService _api;
+
+  /// Record a decision. Returns true on success.
+  ///
+  /// On success the caller refreshes [verificationQueueProvider]: a decided
+  /// story leaves the queue, and reading that from the response rather than
+  /// from the list is how the two would drift.
+  Future<bool> decide({
+    required String slug,
+    required VerifyAction action,
+    String notes = '',
+    Map<String, dynamic>? evidence,
+  }) async {
+    state = VerificationActionState(busySlug: slug);
+    try {
+      await _api.verifyStory(
+        slug: slug,
+        action: action,
+        notes: notes,
+        evidence: evidence,
+      );
+      state = const VerificationActionState();
+      return true;
+    } catch (e) {
+      state = VerificationActionState(
+        errorMessage: 'Could not record the decision: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Confirm or withdraw a check on one source. Returns true on success.
+  Future<bool> confirmSource({
+    required String slug,
+    required int sourceId,
+    bool isVerified = true,
+  }) async {
+    state = VerificationActionState(busySlug: slug);
+    try {
+      await _api.verifyStorySource(
+        slug: slug,
+        sourceId: sourceId,
+        isVerified: isVerified,
+      );
+      state = const VerificationActionState();
+      return true;
+    } catch (e) {
+      state = VerificationActionState(
+        errorMessage: 'Could not update the source: $e',
+      );
+      return false;
+    }
+  }
+}
+
+/// Verification decision state provider.
+final verificationActionProvider =
+    StateNotifierProvider<VerificationActionNotifier, VerificationActionState>(
+      (ref) => VerificationActionNotifier(ref.watch(adminApiServiceProvider)),
     );
 
 /// The artifacts still missing a printable QR code (manager/admin only).

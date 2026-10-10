@@ -2,13 +2,17 @@ from django.contrib import admin
 from django.utils import timezone
 
 from .models import (
+    ModerationLog,
     ReadingProgress,
     Story,
     StoryBookmark,
     StoryCategory,
     StoryFlag,
     StoryLike,
+    StorySource,
+    StoryVerification,
 )
+from .trust import trust_level
 
 
 @admin.register(StoryCategory)
@@ -18,12 +22,57 @@ class StoryCategoryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+class StorySourceInline(admin.TabularInline):
+    """The itemised provenance — every source a reviewer can check."""
+
+    model = StorySource
+    extra = 1
+    fields = (
+        'source_type', 'name', 'author', 'institution', 'url',
+        'reference', 'is_verified', 'verified_by', 'verified_at',
+    )
+    readonly_fields = ('verified_by', 'verified_at')
+
+
+class StoryVerificationInline(admin.StackedInline):
+    """The evidence checklist behind the Cultural Trust Score.
+
+    The five boxes are the review; `trust_score` is read-only because it is
+    their weighted sum, recomputed on save. `score_breakdown` (read-only
+    below) shows the reviewer exactly which boxes are paying for which
+    points.
+    """
+
+    model = StoryVerification
+    fields = (
+        'source_verified', 'community_validated', 'expert_validated',
+        'references_confirmed', 'consistency_confirmed',
+        'trust_score', 'reviewer', 'verified_at', 'notes',
+    )
+    readonly_fields = ('trust_score', 'reviewer', 'verified_at')
+    can_delete = False
+
+
+class ModerationLogInline(admin.TabularInline):
+    """Append-only audit trail. No add form, no editable rows."""
+
+    model = ModerationLog
+    extra = 0
+    fields = ('created_at', 'actor', 'action', 'from_status', 'to_status', 'notes')
+    readonly_fields = fields
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Story)
 class StoryAdmin(admin.ModelAdmin):
     list_display = (
         'title',
         'author',
         'status',
+        'trust',
         'language',
         'region',
         'view_count',
@@ -35,6 +84,7 @@ class StoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     raw_id_fields = ('author',)
     filter_horizontal = ('categories', 'co_authors')
+    inlines = [StorySourceInline, StoryVerificationInline, ModerationLogInline]
     readonly_fields = (
         'view_count',
         'like_count',
@@ -92,6 +142,13 @@ class StoryAdmin(admin.ModelAdmin):
 
     actions = ['publish_stories', 'archive_stories']
 
+    @admin.display(description='Trust')
+    def trust(self, obj):
+        """"92% · Verified" in the changelist — evidence strength, not truth."""
+        verification = getattr(obj, 'verification', None)
+        score = verification.trust_score if verification else 0
+        return f'{score}% · {trust_level(score).title()}'
+
     def publish_stories(self, request, queryset):
         # Per-row save(), never queryset.update(): the model refuses to publish
         # a story whose community withheld consent, and a bulk UPDATE would step
@@ -134,10 +191,53 @@ class StoryLikeAdmin(admin.ModelAdmin):
 
 @admin.register(StoryFlag)
 class StoryFlagAdmin(admin.ModelAdmin):
-    list_display = ('story', 'user', 'reason', 'resolved', 'created_at')
-    list_filter = ('reason', 'resolved')
-    raw_id_fields = ('user', 'story')
+    list_display = ('story', 'user', 'reason', 'resolved', 'resolution_action', 'resolved_by', 'created_at')
+    list_filter = ('reason', 'resolved', 'resolution_action')
+    raw_id_fields = ('user', 'story', 'resolved_by')
     search_fields = ('story__title', 'user__username')
+    readonly_fields = ('resolved_by', 'resolved_at')
+
+
+@admin.register(StorySource)
+class StorySourceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'story', 'source_type', 'is_verified', 'verified_by', 'created_at')
+    list_filter = ('source_type', 'is_verified')
+    search_fields = ('name', 'institution', 'story__title')
+    raw_id_fields = ('story', 'verified_by')
+    readonly_fields = ('verified_by', 'verified_at', 'created_at', 'updated_at')
+
+
+@admin.register(StoryVerification)
+class StoryVerificationAdmin(admin.ModelAdmin):
+    """Evidence checklist with its breakdown spelled out."""
+
+    list_display = ('story', 'trust_score', 'trust_level_display', 'reviewer', 'verified_at')
+    list_filter = ('source_verified', 'community_validated', 'expert_validated')
+    raw_id_fields = ('story', 'reviewer')
+    readonly_fields = ('trust_score', 'created_at', 'updated_at')
+
+    @admin.display(description='Level')
+    def trust_level_display(self, obj):
+        return trust_level(obj.trust_score).title()
+
+
+@admin.register(ModerationLog)
+class ModerationLogAdmin(admin.ModelAdmin):
+    """Read-only audit trail: the log exists to be read, never edited."""
+
+    list_display = ('created_at', 'story', 'actor', 'action', 'from_status', 'to_status')
+    list_filter = ('action',)
+    search_fields = ('story__title', 'actor__username', 'notes')
+    raw_id_fields = ('story', 'actor')
+    readonly_fields = (
+        'story', 'actor', 'action', 'from_status', 'to_status', 'notes', 'created_at',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(ReadingProgress)

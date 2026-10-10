@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../subscriptions/widgets/paywall_sheet.dart';
+import '../../subscriptions/widgets/premium_gate.dart';
 import '../providers/video_provider.dart';
 import '../../../core/theme/app_icons.dart';
 
@@ -100,10 +102,23 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
         ),
       );
     } else if (mounted) {
-      final error = ref.read(videoGenerationProvider).errorMessage;
+      final state = ref.read(videoGenerationProvider);
+      if (state.premiumRequired) {
+        // The backend said 402 — explain with the paywall, not an error.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              state.errorMessage ?? 'AI video generation is premium.',
+            ),
+            backgroundColor: AppColors.bronzeDark,
+          ),
+        );
+        await PaywallSheet.show(context);
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error ?? 'Failed to start video generation'),
+          content: Text(state.errorMessage ?? 'Failed to start video generation'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -128,25 +143,31 @@ class _VideoGenerationSheetState extends ConsumerState<VideoGenerationSheet> {
           child: Column(
             children: [
               _buildDragHandle(),
+              _buildHeader(),
+              // The gate fails closed while status loads, so a free reader
+              // never reaches the form — the backend would answer 402 anyway.
               Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: EdgeInsets.only(
-                    left: 24,
-                    right: 24,
-                    bottom: bottomPadding + 24,
+                child: PremiumGate(
+                  featureKey: 'ai_video_generation',
+                  featureLabel: 'AI video generation',
+                  child: ListView(
+                    controller: scrollController,
+                    padding: EdgeInsets.only(
+                      left: 24,
+                      right: 24,
+                      bottom: bottomPadding + 24,
+                    ),
+                    children: [
+                      const SizedBox(height: 24),
+                      _buildPromptSection(),
+                      const SizedBox(height: 24),
+                      _buildDurationSection(),
+                      const SizedBox(height: 24),
+                      _buildAspectRatioSection(),
+                      const SizedBox(height: 32),
+                      _buildSubmitButton(isCreating),
+                    ],
                   ),
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 24),
-                    _buildPromptSection(),
-                    const SizedBox(height: 24),
-                    _buildDurationSection(),
-                    const SizedBox(height: 24),
-                    _buildAspectRatioSection(),
-                    const SizedBox(height: 32),
-                    _buildSubmitButton(isCreating),
-                  ],
                 ),
               ),
             ],

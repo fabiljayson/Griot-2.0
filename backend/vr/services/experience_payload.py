@@ -21,7 +21,7 @@ from django.conf import settings
 from media_app.models import AudioNarrationJob
 from stories.models import Story
 
-from .experiences import published_placements
+from .experiences import active_experiences, published_placements
 
 
 def absolute_media_url(reference) -> str | None:
@@ -117,6 +117,11 @@ def artifact_payload(artifact, *, placement=None) -> dict:
         'museum_name': artifact.museum_name,
         'floor': artifact.floor,
         'display_case': artifact.display_case,
+        # The headset's "Learn More" text. Sent even when blank so the
+        # serializer's shape never depends on which curator fields were
+        # filled in; Unity falls back to its local copy on an empty string.
+        'historical_significance': artifact.historical_significance or '',
+        'source_url': artifact.source_url or '',
         'stories': published_story_references(artifact),
     }
 
@@ -163,3 +168,32 @@ def experience_payload(experience) -> dict:
             for placement in placements
         ],
     }
+
+
+def experience_locations() -> list[dict]:
+    """Distinct places active experiences can be visited in.
+
+    Grouped by `(museum_name, region, culture)` — the same three fields
+    `qr_codes.Artifact` carries — rather than from a `Location` table this
+    project does not have. Inactive experiences are excluded because a place
+    with nothing to visit is not a destination.
+    """
+    groups: dict[tuple[str, str, str], dict] = {}
+
+    experiences = active_experiences().order_by('museum_name', 'region', 'culture', 'id')
+    for experience in experiences:
+        key = (experience.museum_name, experience.region, experience.culture)
+        entry = groups.get(key)
+        if entry is None:
+            entry = {
+                'museum_name': experience.museum_name,
+                'region': experience.region,
+                'culture': experience.culture,
+                'experience_count': 0,
+                'experiences': [],
+            }
+            groups[key] = entry
+        entry['experience_count'] += 1
+        entry['experiences'].append(experience_summary(experience))
+
+    return list(groups.values())

@@ -77,3 +77,10 @@ if DATABASE_URL:
         conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '60')),
         conn_health_checks=True,
     )
+
+# Local servers may grant premium through the development checkout so the
+# paywall and gates can be exercised without a store account. Still overridable
+# to `0` for a local run that must behave like production.
+SUBSCRIPTION_DEV_CHECKOUT = os.environ.get(
+    'SUBSCRIPTION_DEV_CHECKOUT', '1',
+).lower() in ('1', 'true', 'yes')

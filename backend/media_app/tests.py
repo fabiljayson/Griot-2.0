@@ -13,6 +13,8 @@ from rest_framework.test import APITestCase
 
 from qr_codes.models import Artifact
 from stories.models import Story
+from subscriptions.factories import grant_premium
+from subscriptions.models import PremiumFeature
 
 from .models import (
     AudioNarrationJob,
@@ -40,7 +42,79 @@ class VideoGenerationTests(APITestCase):
             status=Story.Status.PUBLISHED,
         )
         self.client.force_authenticate(self.contributor)
-    
+        # These tests exercise what happens *after* the paywall — ownership,
+        # quota, provider behaviour — so the actor holds an entitlement. The
+        # gate itself is pinned by the `...requires_premium` tests below.
+        grant_premium(self.contributor)
+
+    def test_free_user_is_told_video_requires_premium(self):
+        """A signed-in free account is refused before anything is queued."""
+        free_user = User.objects.create_user(
+            'free_reader',
+            email='free-reader@example.com',
+            password='hunter2secure',
+        )
+        self.client.force_authenticate(free_user)
+        url = reverse('media:video-generation-list')
+        resp = self.client.post(url, {
+            'story_id': self.story.id,
+            'prompt': 'A beautiful African sunset over the savanna',
+        })
+
+        self.assertEqual(resp.status_code, status.HTTP_402_PAYMENT_REQUIRED)
+        self.assertEqual(resp.data['code'], 'premium_required')
+        self.assertEqual(resp.data['feature'], 'ai_video_generation')
+        # No job row: a refused request must leave nothing to poll, and no
+        # provider was paid.
+        self.assertFalse(
+            VideoGenerationJob.objects.filter(user=free_user).exists()
+        )
+
+    def test_granting_premium_opens_the_paywall_without_a_deploy(self):
+        """The same account starts working the moment it is entitled."""
+        free_user = User.objects.create_user(
+            'later_premium',
+            email='later-premium@example.com',
+            password='hunter2secure',
+        )
+        self.client.force_authenticate(free_user)
+        url = reverse('media:video-generation-list')
+        payload = {
+            'story_id': self.story.id,
+            'prompt': 'A beautiful African sunset over the savanna',
+        }
+
+        before = self.client.post(url, payload)
+        self.assertEqual(before.status_code, status.HTTP_402_PAYMENT_REQUIRED)
+
+        grant_premium(free_user)
+        after = self.client.post(url, payload)
+        self.assertEqual(after.status_code, status.HTTP_201_CREATED, after.data)
+
+    def test_kill_switched_premium_feature_denies_even_staff(self):
+        """An operator disabling the feature takes it from everyone."""
+        PremiumFeature.objects.create(
+            key='ai_video_generation',
+            label='AI video generation',
+            enabled=False,
+        )
+        staff = User.objects.create_user(
+            'video_admin',
+            email='video-admin@example.com',
+            password='hunter2secure',
+            role='admin',
+            is_staff=True,
+        )
+        self.client.force_authenticate(staff)
+        url = reverse('media:video-generation-list')
+        resp = self.client.post(url, {
+            'story_id': self.story.id,
+            'prompt': 'A beautiful African sunset over the savanna',
+        })
+
+        self.assertEqual(resp.status_code, status.HTTP_402_PAYMENT_REQUIRED)
+        self.assertFalse(VideoGenerationJob.objects.filter(user=staff).exists())
+
     def test_create_video_generation_job(self):
         url = reverse('media:video-generation-list')
         resp = self.client.post(url, {
@@ -471,8 +545,9 @@ class AudioNarrationTests(APITestCase):
         """A distinct published story.
 
         A completed narration is reused across readers keyed on
-        (story, language), so a quota test has to vary the story to make each
-        request reach the generator instead of being served from cache.
+        (story, language, voice), so a quota test has to vary the story to
+        make each request reach the generator instead of being served from
+        cache.
         """
         return Story.objects.create(
             title=f'Test Story {n}',
@@ -531,6 +606,51 @@ class AudioNarrationTests(APITestCase):
         resp = self.client.post(url, {'language': 'en'})
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_available_voices_lists_the_choice_set(self):
+        """The app's voice picker is only as good as this endpoint."""
+        url = reverse('media:audio-narration-available-voices')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        ids = [voice['id'] for voice in resp.data]
+        self.assertIn('en', ids)
+        self.assertIn('fr', ids)
+        self.assertIn('en.co.uk', ids)
+        for voice in resp.data:
+            self.assertIn('name', voice)
+            self.assertIn('language', voice)
+
+    def test_voice_outranks_the_story_language(self):
+        """Choosing an accent must narrate in that accent, not the story tag.
+
+        Otherwise the job row claims `fr` (the story's language) while the
+        audio comes back English — every cache lookup and attribution line
+        downstream would then be wrong about what the reader heard.
+        """
+        url = reverse('media:audio-narration-list')
+        with self._mock_tts_service():
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'language': 'fr',
+                'voice_id': 'en.co.uk',
+            })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        job = AudioNarrationJob.objects.get(id=resp.data['id'])
+        self.assertEqual(job.language, 'en')
+        self.assertEqual(job.voice_id, 'en.co.uk')
+
+    def test_placeholder_voice_collapses_to_the_language(self):
+        """`default` is not a voice — it must store what was really spoken."""
+        url = reverse('media:audio-narration-list')
+        with self._mock_tts_service():
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'language': 'en',
+                'voice_id': 'default',
+            })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        job = AudioNarrationJob.objects.get(id=resp.data['id'])
+        self.assertEqual(job.voice_id, 'en')
+
     def test_list_audio_jobs(self):
         AudioNarrationJob.objects.create(
             user=self.contributor,
@@ -549,8 +669,8 @@ class AudioNarrationTests(APITestCase):
         endpoint and writes an MP3, so the general API throttle is too loose a
         only bound."""
         # Completed narrations are reused across readers keyed on
-        # (story, language), so each request needs its own story to reach the
-        # generator rather than being served from cache.
+        # (story, language, voice), so each request needs its own story to
+        # reach the generator rather than being served from cache.
         others = [self._other_story(n) for n in range(3)]
         url = reverse('media:audio-narration-list')
         with self._mock_tts_service():
@@ -714,6 +834,25 @@ class ServiceTests(APITestCase):
         self.assertEqual(resolve_language('en'), 'en')
         self.assertEqual(resolve_language('fr'), 'fr')
         self.assertEqual(resolve_language('ful'), 'en')  # unsupported -> en
+
+    def test_resolve_speech_voice_outranks_the_story_language(self):
+        from .services.tts import resolve_speech
+
+        self.assertEqual(resolve_speech('fr', 'en.co.uk'), ('en', 'co.uk'))
+        self.assertEqual(resolve_speech('fr', None), ('fr', 'com'))
+        self.assertEqual(resolve_speech('ful', 'sw'), ('sw', 'com'))
+
+    def test_canonical_voice_collapses_placeholders(self):
+        from .services.tts import canonical_voice
+
+        # The historical model placeholder must land on the same id the
+        # endpoints store for a fresh request, or the cache never matches.
+        self.assertEqual(canonical_voice('en', 'default'), 'en')
+        self.assertEqual(canonical_voice('fr', None), 'fr')
+        self.assertEqual(canonical_voice('en', ''), 'en')
+        # Case and unknown accents normalise exactly as gTTS will.
+        self.assertEqual(canonical_voice('en', 'EN.CO.UK'), 'en.co.uk')
+        self.assertEqual(canonical_voice('en', 'sw'), 'sw')
 
 
 class TTSSocketTimeoutTests(SimpleTestCase):
@@ -1001,6 +1140,53 @@ class AudioNarrationCachingTests(APITestCase):
         self.assertEqual(resp.data['status'], 'completed')
         service.submit_narration.assert_called_once()
 
+    def test_changing_voice_synthesises_instead_of_reusing(self):
+        """The cached English (US) narration must not answer for English (UK).
+
+        Before the voice joined the cache key, switching voices silently kept
+        serving the previously synthesised audio — the picker did nothing.
+        """
+        seeded = self._seed_job(story=self.story, artifact=None)
+
+        url = reverse('media:audio-narration-list')
+        service = mock.Mock()
+        service.submit_narration.return_value = {
+            'status': 'completed',
+            'audio_bytes': b'ID3-fake-mp3-uk',
+            'filename': 'fresh-uk-abc123.mp3',
+            'duration': 9,
+            'file_size': 19,
+            'language': 'en',
+            'voice_id': 'en.co.uk',
+        }
+        with mock.patch('media_app.views.get_tts_service', return_value=service):
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'language': 'en',
+                'voice_id': 'en.co.uk',
+            })
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertNotEqual(resp.data['id'], seeded.id)
+        self.assertEqual(resp.data['voice_id'], 'en.co.uk')
+        service.submit_narration.assert_called_once()
+
+    def test_same_voice_still_reuses_the_cached_narration(self):
+        """Naming the cached voice explicitly must not force a new synthesis."""
+        seeded = self._seed_job(story=self.story, artifact=None)
+
+        url = reverse('media:audio-narration-list')
+        with mock.patch('media_app.views.get_tts_service') as tts_mock:
+            resp = self.client.post(url, {
+                'story_id': self.story.id,
+                'language': 'en',
+                'voice_id': 'en',
+            })
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['id'], seeded.id)
+        tts_mock.return_value.submit_narration.assert_not_called()
+
 class VideoProgressTests(APITestCase):
     """Render progress must actually reach the client.
 
@@ -1133,6 +1319,9 @@ class MediaProvenanceTests(APITestCase):
             status=Story.Status.PUBLISHED,
         )
         self.client.force_authenticate(self.user)
+        # Video creation passes through the paywall; these tests are about
+        # engine credit, so the actor holds an entitlement.
+        grant_premium(self.user)
 
     def test_video_job_credits_the_engine_that_ran(self):
         service = mock.Mock()
@@ -1294,6 +1483,26 @@ class NarrationUniquenessTests(APITestCase):
         self._completed(story=self.story, language='en')
         job = self._completed(story=self.story, language='fr')
         self.assertEqual(job.language, 'fr')
+
+    def test_a_different_voice_is_allowed(self):
+        """A second accent of the same story is a different recording.
+
+        The pre-voice constraint covered only (target, language), so the
+        moment a reader picked another voice the insert of that second
+        completed row was rejected — the request 500'd and the picker looked
+        broken. Same target + language, different voice, must coexist.
+        """
+        self._completed(story=self.story, language='en', voice_id='en')
+        job = self._completed(
+            story=self.story, language='en', voice_id='en.co.uk',
+        )
+        self.assertEqual(job.voice_id, 'en.co.uk')
+
+    def test_the_same_voice_is_still_rejected(self):
+        """…but a second copy of the very same recording remains waste."""
+        self._completed(story=self.story, language='en', voice_id='en')
+        with self.assertRaises(IntegrityError):
+            self._completed(story=self.story, language='en', voice_id='en')
 
     def test_artifact_only_jobs_are_also_protected(self):
         """The NULL-FK case a naive unique index gets wrong.

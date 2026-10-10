@@ -462,6 +462,39 @@ class AppDatabase {
       // they cannot check, and the page looks identical to a verified one.
       await _addStoryProvenanceColumns(db);
     }
+
+    if (oldVersion < 10) {
+      // v10 — carry the Cultural Trust Score and documented sources into the
+      // offline cache. Same argument as v9: offline, a reviewed story and an
+      // unchecked one must not render identically, and the reader has no way
+      // to refresh the difference. Existing rows default to 0 / unverified —
+      // honest for a story cached before review was tracked.
+      await _addColumnsIfMissing(db, 'local_stories', const {
+        'trust_score': 'INTEGER DEFAULT 0',
+        'trust_level': "TEXT DEFAULT 'unverified'",
+        'sources_json': "TEXT DEFAULT '[]'",
+        'verification_json': 'TEXT',
+      });
+    }
+  }
+
+  /// Add [columns] (name → SQLite type/defaults) to [table], skipping any
+  /// that already exist so re-running a migration cannot fail.
+  Future<void> _addColumnsIfMissing(
+    Database db,
+    String table,
+    Map<String, String> columns,
+  ) async {
+    if (!await _hasTable(db, table)) return;
+
+    final existing = await db.rawQuery('PRAGMA table_info($table)');
+    final present = existing.map((row) => row['name'] as String).toSet();
+    for (final entry in columns.entries) {
+      if (present.contains(entry.key)) continue;
+      await db.execute(
+        'ALTER TABLE $table ADD COLUMN ${entry.key} ${entry.value}',
+      );
+    }
   }
 
   /// Add the provenance and rights columns to `local_stories`.
@@ -469,11 +502,9 @@ class AppDatabase {
   /// `ALTER TABLE ... ADD COLUMN` is used rather than a table rebuild because
   /// these are all additive with defaults, and the older SQLite shipped in the
   /// web wasm build is fine with it. Existing rows take the defaults, which
-  // say "unknown" — an honest answer for a story cached before we tracked it.
+  /// say "unknown" — an honest answer for a story cached before we tracked it.
   Future<void> _addStoryProvenanceColumns(Database db) async {
-    if (!await _hasTable(db, 'local_stories')) return;
-
-    const columns = <String, String>{
+    await _addColumnsIfMissing(db, 'local_stories', const {
       'origin': "TEXT DEFAULT 'unknown'",
       'provenance_notes': "TEXT DEFAULT ''",
       'consent_status': "TEXT DEFAULT 'not_requested'",
@@ -482,17 +513,7 @@ class AppDatabase {
       'recorded_at': 'TEXT',
       'attribution': "TEXT DEFAULT ''",
       'is_synthetic_origin': 'INTEGER DEFAULT 0',
-    };
-
-    final existing = await db.rawQuery('PRAGMA table_info(local_stories)');
-    final present = existing.map((row) => row['name'] as String).toSet();
-    for (final entry in columns.entries) {
-      // Re-running the migration must not fail on a column it already added.
-      if (present.contains(entry.key)) continue;
-      await db.execute(
-        'ALTER TABLE local_stories ADD COLUMN ${entry.key} ${entry.value}',
-      );
-    }
+    });
   }
 
   /// Rebuild `local_users` without `password`, adding `password_hash`.

@@ -8,6 +8,7 @@
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
 /[Rr]ecordings/
+/.utmp/
 
 # Never commit the local API config: it is per-developer and may hold a host
 # that is not public. The ScriptableObject itself is created from the README.

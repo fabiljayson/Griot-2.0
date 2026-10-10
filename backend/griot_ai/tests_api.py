@@ -8,6 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from subscriptions.factories import grant_premium
 from vr.factories import make_artifact, make_experience, make_story, make_user, place
 
 from .models import GriotConversation, GriotMessage
@@ -230,6 +231,31 @@ class AskGriotFailureTests(APITestCase):
         self.assertFalse(
             GriotMessage.objects.filter(role=GriotMessage.Role.ASSISTANT).exists()
         )
+
+    @override_settings(
+        AI_ASKS_PER_USER_PER_DAY=1,
+        AI_ASKS_PER_PREMIUM_USER_PER_DAY=3,
+    )
+    def test_an_entitled_account_draws_from_the_extended_allowance(self):
+        """The freemium split for `advanced_ai`: the free cap stops a free
+        account, while an entitled one keeps going on the premium cap.
+
+        The check runs on the server against the stored subscription — a
+        client claiming entitlement changes nothing here.
+        """
+        grant_premium(self.user)
+        self.client.force_authenticate(self.user)
+        stub = StubService()
+
+        with patch('griot_ai.views.get_griot_ai_service', return_value=stub):
+            first = self.client.post(ASK_URL, {'question': 'One?'}, format='json')
+            second = self.client.post(ASK_URL, {'question': 'Two?'}, format='json')
+
+        # A free account with AI_ASKS_PER_USER_PER_DAY=1 is blocked at the
+        # second ask (pinned by test_the_daily_allowance_is_enforced).
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.status_code, status.HTTP_200_OK, second.data)
+        self.assertEqual(len(stub.calls), 2)
 
     @override_settings(AI_ASKS_PER_USER_PER_DAY=1)
     def test_the_daily_allowance_is_enforced(self):

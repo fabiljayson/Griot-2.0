@@ -14,6 +14,7 @@ class VideoGenerationState {
     this.isLoading = false,
     this.isCreating = false,
     this.errorMessage,
+    this.premiumRequired = false,
   });
 
   final List<VideoModel> jobs;
@@ -21,11 +22,17 @@ class VideoGenerationState {
   final bool isCreating;
   final String? errorMessage;
 
+  /// The backend answered 402 (`premium_required`): the story is fine, the
+  /// account is simply not entitled. Surfaced separately so the sheet can
+  /// offer the paywall instead of a generic failure.
+  final bool premiumRequired;
+
   VideoGenerationState copyWith({
     List<VideoModel>? jobs,
     bool? isLoading,
     bool? isCreating,
     String? errorMessage,
+    bool? premiumRequired,
     bool clearError = false,
   }) {
     return VideoGenerationState(
@@ -33,6 +40,10 @@ class VideoGenerationState {
       isLoading: isLoading ?? this.isLoading,
       isCreating: isCreating ?? this.isCreating,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      // A fresh attempt starts from "not a paywall problem"; an explicit
+      // argument (the 402 handler) wins over the reset.
+      premiumRequired:
+          premiumRequired ?? (clearError ? false : this.premiumRequired),
     );
   }
 
@@ -107,9 +118,21 @@ class VideoGenerationNotifier extends StateNotifier<VideoGenerationState> {
 
       return job;
     } catch (e) {
+      // 402 is the server's paywall: `code: premium_required` in the body.
+      // The backend is the authority — this only decides how the sheet
+      // explains the refusal.
+      final isPremiumRefusal =
+          e is DioException && e.response?.statusCode == 402;
+      final detail = isPremiumRefusal
+          ? ((e.response?.data as Map<String, dynamic>?)?['detail']
+                as String?)
+          : null;
       state = state.copyWith(
         isCreating: false,
-        errorMessage: 'Failed to create video: ${_describe(e)}',
+        premiumRequired: isPremiumRefusal,
+        errorMessage: isPremiumRefusal
+            ? (detail ?? 'AI video generation is a premium feature.')
+            : 'Failed to create video: ${_describe(e)}',
       );
       return null;
     }

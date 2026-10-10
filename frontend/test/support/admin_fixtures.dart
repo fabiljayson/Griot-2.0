@@ -165,6 +165,97 @@ Map<String, dynamic> adminDashboardJson() => {
   'engagement': adminEngagementJson(),
 };
 
+/// `/api/stories/verification_queue/` payload: two stories awaiting a
+/// verification decision — one partly documented, one with nothing on record.
+List<Map<String, dynamic>> adminVerificationQueueJson() => [
+  {
+    'story_id': 31,
+    'slug': 'the-baobab-and-the-drum',
+    'title': 'The Baobab and the Drum',
+    'summary': 'A tale about rhythm and patience.',
+    'status': 'under_review',
+    'author_username': 'moussa',
+    'origin': 'oral_transcription',
+    'provenance_notes':
+        'Recorded in Foumban in 2019 with the elder\'s permission.',
+    'consent_status': 'granted',
+    'language': 'en',
+    'region': 'Northwest',
+    'created_at': '2026-07-01T10:00:00Z',
+    'sources': [
+      {
+        'id': 1,
+        'story': 31,
+        'source_type': 'COMMUNITY_TESTIMONY',
+        'name': 'Elder Njoya testimony',
+        'author': '',
+        'institution': 'Bamoun council of elders',
+        'url': '',
+        'reference': 'Told at the Foumban cultural festival',
+        'notes': '',
+        'is_verified': true,
+        'verified_by': 'amina',
+        'verified_at': '2026-07-03T09:00:00Z',
+        'created_at': '2026-07-01T11:00:00Z',
+        'updated_at': '2026-07-03T09:00:00Z',
+      },
+      {
+        'id': 2,
+        'story': 31,
+        'source_type': 'BOOK',
+        'name': 'Tamara vol. II',
+        'author': 'Tardits',
+        'institution': '',
+        'url': '',
+        'reference': 'p. 142',
+        'notes': '',
+        'is_verified': false,
+        'verified_by': null,
+        'verified_at': null,
+        'created_at': '2026-07-01T11:05:00Z',
+        'updated_at': '2026-07-01T11:05:00Z',
+      },
+    ],
+    'trust_score': 50,
+    'trust_level': 'partial',
+    'breakdown': [
+      {'criterion': 'source_verified', 'label': 'Reliable/documented source', 'weight': 25, 'confirmed': true},
+      {'criterion': 'community_validated', 'label': 'Community validation', 'weight': 25, 'confirmed': true},
+      {'criterion': 'expert_validated', 'label': 'Cultural expert/reviewer validation', 'weight': 25, 'confirmed': false},
+      {'criterion': 'references_confirmed', 'label': 'Historical/reference evidence', 'weight': 15, 'confirmed': false},
+      {'criterion': 'consistency_confirmed', 'label': 'Content consistency', 'weight': 10, 'confirmed': false},
+    ],
+    'reviewer': 'amina',
+    'verified_at': '2026-07-03T09:00:00Z',
+  },
+  {
+    'story_id': 32,
+    'slug': 'a-tale-without-a-source',
+    'title': 'A Tale Without a Source',
+    'summary': '',
+    'status': 'pending',
+    'author_username': 'kemi',
+    'origin': 'seeded',
+    'provenance_notes': 'Seeded demonstration content.',
+    'consent_status': 'not_requested',
+    'language': 'en',
+    'region': '',
+    'created_at': '2026-07-02T10:00:00Z',
+    'sources': [],
+    'trust_score': 0,
+    'trust_level': 'unverified',
+    'breakdown': [
+      {'criterion': 'source_verified', 'label': 'Reliable/documented source', 'weight': 25, 'confirmed': false},
+      {'criterion': 'community_validated', 'label': 'Community validation', 'weight': 25, 'confirmed': false},
+      {'criterion': 'expert_validated', 'label': 'Cultural expert/reviewer validation', 'weight': 25, 'confirmed': false},
+      {'criterion': 'references_confirmed', 'label': 'Historical/reference evidence', 'weight': 15, 'confirmed': false},
+      {'criterion': 'consistency_confirmed', 'label': 'Content consistency', 'weight': 10, 'confirmed': false},
+    ],
+    'reviewer': null,
+    'verified_at': null,
+  },
+];
+
 /// `/api/stories/consent_queue/` payload: two stories still awaiting a
 /// moderator's decision, one of them live and published.
 List<Map<String, dynamic>> adminConsentQueueJson() => [

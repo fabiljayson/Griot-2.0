@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../models/analytics_models.dart';
 import '../models/moderation_models.dart';
 import '../models/qr_worklist_models.dart';
+import '../models/verification_models.dart';
 
 /// API service for the admin analytics endpoints.
 ///
@@ -121,6 +122,57 @@ class AdminApiService {
     return response.data as Map<String, dynamic>;
   }
 
+  /// Fetch stories awaiting a verification decision (admin only).
+  ///
+  /// Each row carries the provenance the contributor declared, the attached
+  /// sources, and the evidence checklist with the score it currently
+  /// produces — everything the decision is about travels with the row.
+  Future<List<VerificationQueueEntry>> getVerificationQueue() async {
+    final response = await _dio.get('$_storiesBasePath/verification_queue/');
+    return (response.data as List<dynamic>)
+        .map((e) => VerificationQueueEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Record a verification decision on a story (moderator only).
+  ///
+  /// [evidence] is applied before the decision lands, so the trust score the
+  /// response reports is the score the decision was based on. Approving a
+  /// story whose community withheld consent comes back as a 400.
+  Future<VerificationDecision> verifyStory({
+    required String slug,
+    required VerifyAction action,
+    String notes = '',
+    Map<String, dynamic>? evidence,
+  }) async {
+    final data = <String, dynamic>{'action': action.value, 'notes': notes};
+    if (evidence != null && evidence.isNotEmpty) data['evidence'] = evidence;
+
+    final response = await _dio.post(
+      '$_storiesBasePath/$slug/verify/',
+      data: data,
+    );
+    return VerificationDecision.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  }
+
+  /// Confirm (or withdraw the check on) one source of a story.
+  ///
+  /// A story counts as source-verified the moment at least one of its
+  /// sources has been checked; the score follows the evidence.
+  Future<Map<String, dynamic>> verifyStorySource({
+    required String slug,
+    required int sourceId,
+    bool isVerified = true,
+  }) async {
+    final response = await _dio.post(
+      '$_storiesBasePath/$slug/verify_source/',
+      data: {'source_id': sourceId, 'is_verified': isVerified},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   /// Fetch the QR code worklist: artifacts still missing a printable code,
   /// already ordered "no code yet first" by the server (manager/admin only).
   ///
@@ -151,14 +203,19 @@ class AdminApiService {
   /// Resolve flags on a story.
   ///
   /// [action] is either `remove` (archives the story) or `dismiss` (keeps it).
+  /// [resolution] records *what was done* (`corrected`, `hidden`, `dismissed`,
+  /// `restored`); the server derives it from `action` when omitted.
   Future<Map<String, dynamic>> moderateStory({
     required String slug,
     required String action,
     String notes = '',
+    String? resolution,
   }) async {
+    final data = <String, dynamic>{'action': action, 'notes': notes};
+    if (resolution != null) data['resolution'] = resolution;
     final response = await _dio.post(
       '$_storiesBasePath/$slug/moderate/',
-      data: {'action': action, 'notes': notes},
+      data: data,
     );
     return response.data as Map<String, dynamic>;
   }

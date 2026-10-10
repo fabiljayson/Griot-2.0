@@ -6,6 +6,7 @@ import '../../../core/widgets/griot_skeleton.dart';
 import '../../../core/theme/app_icons.dart';
 import '../providers/admin_provider.dart';
 import 'consent_review_screen.dart';
+import 'verification_queue_screen.dart';
 import '../widgets/count_pills.dart';
 import '../widgets/dashboard_error.dart';
 import '../widgets/dashboard_section.dart';
@@ -43,6 +44,19 @@ class AdminDashboardScreen extends ConsumerWidget {
           // Consent is a different queue from flags: a complaint about a story
           // is not the same record as the community's agreement to publish it,
           // so it gets its own screen rather than another block here.
+          // Verification is a third queue again: consent asks whether the
+          // community agreed to publish, flags ask whether someone objects,
+          // and verification asks how well documented the text is. Three
+          // different records, three different screens.
+          IconButton(
+            tooltip: 'Verification review',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const VerificationQueueScreen(),
+              ),
+            ),
+            icon: const Icon(AppIcons.shield_outlined),
+          ),
           IconButton(
             tooltip: 'Consent review',
             onPressed: () => Navigator.of(context).push(

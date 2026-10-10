@@ -81,6 +81,9 @@ LOCAL_APPS = [
     # Griot AI: grounded question answering for the app, the web UI and VR.
     'griot_ai',
     'heritage_crawl',
+    # Premium gating: which features are paid and which accounts hold the
+    # entitlement (subscriptions/premium features).
+    'subscriptions',
     'api',
     'web',
     # 'artifacts' retired (feature 001): was consolidated into qr_codes.
@@ -309,6 +312,11 @@ SPECTACULAR_SETTINGS = {
         # collision warning. The names are unstable by construction, so the
         # fix is to stop deriving them.
         'UserRoleEnum': 'users.models.UserRole.choices',
+        'SubscriptionStatusEnum': 'subscriptions.models.SubscriptionStatusChoices.choices',
+        'SubscriptionProviderEnum': 'subscriptions.models.SubscriptionProviderChoices.choices',
+        'PaymentStatusEnum': 'subscriptions.models.PaymentStatusChoices.choices',
+        'PaymentProviderEnum': 'subscriptions.models.PaymentProviderChoices.choices',
+        'SubscriptionPlanIntervalEnum': 'subscriptions.models.SubscriptionPlanIntervalChoices.choices',
     },
 }
 
@@ -562,6 +570,13 @@ AI_ASKS_PER_USER_PER_DAY = int(
     os.environ.get('AI_ASKS_PER_USER_PER_DAY', '40')
 )
 
+# The premium half of the freemium split for `advanced_ai`: entitled accounts
+# draw from this ceiling instead of the free one above. Free access is never
+# removed — the spec's "limited AI features" — it is extended for subscribers.
+AI_ASKS_PER_PREMIUM_USER_PER_DAY = int(
+    os.environ.get('AI_ASKS_PER_PREMIUM_USER_PER_DAY', '200')
+)
+
 # ---------------------------------------------------------------------------
 # VR (Unity) handoff
 # ---------------------------------------------------------------------------
@@ -593,3 +608,89 @@ VR_SESSION_XP_COMPLETE = int(os.environ.get('VR_SESSION_XP_COMPLETE', '25'))
 # cannot pin a worker forever.
 TTS_MAX_CHARS = int(os.environ.get('TTS_MAX_CHARS', '3000'))
 TTS_SOCKET_TIMEOUT = float(os.environ.get('TTS_SOCKET_TIMEOUT', '20'))
+
+# ---------------------------------------------------------------------------
+# Cultural Trust Score
+# ---------------------------------------------------------------------------
+# Weights of the five verification-evidence criteria, summing to 100. Kept
+# here — not in the model or the view — so retuning the methodology is a
+# config change. `stories.trust` falls back to these same values per-key if
+# an override omits one, so a typo can never zero out a criterion.
+TRUST_SCORE_WEIGHTS = {
+    'source_verified': 25,       # reliable/documented source
+    'community_validated': 25,   # community validation
+    'expert_validated': 25,      # cultural expert/reviewer validation
+    'references_confirmed': 15,  # historical/reference evidence
+    'consistency_confirmed': 10, # content consistency
+}
+
+# Score bands for the reader-facing label. These describe evidence strength,
+# not a probability that the story is true.
+TRUST_LEVEL_THRESHOLDS = {
+    'verified': 70,
+    'partial': 30,
+}
+
+# ---------------------------------------------------------------------------
+# Subscriptions & premium features
+# ---------------------------------------------------------------------------
+# The set of paid features. A key lives here *and nowhere else* to be paid:
+# `subscriptions.services.has_feature_access` treats anything not listed as
+# free, and a missing `PremiumFeature` row can never silently un-gate a paid
+# feature (it defaults to enabled). The per-key `enabled` flag in the Django
+# admin is the operational kill switch. Everything else — stories, QR,
+# quizzes, audio, offline — is deliberately absent and therefore free.
+PREMIUM_FEATURES = {
+    'ai_video_generation': {
+        'label': 'AI video generation',
+        'description': 'Turn chosen stories into narrated AI-generated video.',
+    },
+    'advanced_ai': {
+        'label': 'Advanced AI assistant',
+        'description': (
+            'Extended daily limits on in-depth cultural Q&A with sources '
+            'on every answer.'
+        ),
+    },
+}
+
+# Shared secret RevenueCat signs its webhook posts with (`Authorization:
+# Bearer …` or `X-RevenueCat-Token`). Empty means the webhook endpoint refuses
+# every request — store sync has to be explicitly switched on, never silently
+# open.
+REVENUECAT_WEBHOOK_AUTH_TOKEN = os.environ.get('REVENUECAT_WEBHOOK_AUTH_TOKEN', '')
+
+# The purchasable plans, seeded into `subscriptions.SubscriptionPlan` by
+# `seed_subscription_plans`. Prices live here (config, not code) so an
+# operator changes them without a migration; the row in the database is what
+# `Subscription.plan` and `Payment.plan` point at.
+SUBSCRIPTION_PLANS = [
+    {
+        'key': 'premium_monthly',
+        'name': 'Premium Monthly',
+        'description': 'Full premium access, billed monthly.',
+        'price': '4.99',
+        'currency': 'USD',
+        'interval': 'month',
+        'duration_days': 30,
+        'display_order': 0,
+    },
+    {
+        'key': 'premium_yearly',
+        'name': 'Premium Yearly',
+        'description': 'Full premium access for a year, one payment.',
+        'price': '39.99',
+        'currency': 'USD',
+        'interval': 'year',
+        'duration_days': 365,
+        'display_order': 1,
+    },
+]
+
+# Whether `POST /api/subscriptions/checkout/` may grant a period without a
+# payment provider. OFF by default — the endpoint performs no real charge, so
+# production must never enable it (config.settings.dev and .test opt in).
+# `SUBSCRIPTION_DEV_CHECKOUT=0` also turns it off locally.
+SUBSCRIPTION_DEV_CHECKOUT = os.environ.get(
+    'SUBSCRIPTION_DEV_CHECKOUT', '',
+).lower() in ('1', 'true', 'yes')

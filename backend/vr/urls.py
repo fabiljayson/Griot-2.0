@@ -25,6 +25,8 @@ urlpatterns = [
         views.VRArtifactDetailView.as_view(),
         name='artifact-detail',
     ),
+    path('locations/', views.VRLocationListView.as_view(), name='location-list'),
+    path('progress/', views.VRProgressView.as_view(), name='progress'),
     path('sessions/', views.VRSessionStartView.as_view(), name='session-start'),
     path(
         'sessions/<int:pk>/complete/',
