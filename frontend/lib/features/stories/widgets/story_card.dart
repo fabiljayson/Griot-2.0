@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_components.dart';
@@ -128,7 +127,7 @@ class StoryCard extends StatelessWidget {
                             ? story.author.username[0].toUpperCase()
                             : '?',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppTheme.accentText(theme.colorScheme),
+                          color: AppColors.bronzeDark,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -191,9 +190,7 @@ class StoryCard extends StatelessWidget {
                       icon: story.isBookmarked
                           ? AppIcons.bookmark
                           : AppIcons.bookmark_border,
-                      color: story.isBookmarked
-                ? AppTheme.accentText(theme.colorScheme)
-                : null,
+                      color: story.isBookmarked ? AppColors.bronzeDark : null,
                       tooltip: story.isBookmarked
                           ? 'Remove bookmark'
                           : 'Bookmark',
