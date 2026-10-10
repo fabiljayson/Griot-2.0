@@ -69,6 +69,28 @@ class SubscriptionPlansView(APIView):
         )
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary='Development checkout',
+        description=(
+            'Grants one paid period without a payment provider. Disabled '
+            'unless `SUBSCRIPTION_DEV_CHECKOUT` is on (off in production). '
+            'The 201 body is the standard subscription status payload plus '
+            '`payment_reference` and a `notice` stating that no real charge '
+            'was processed.'
+        ),
+        request=inline_serializer(
+            'DevCheckoutRequest',
+            {'plan': serializers.CharField()},
+        ),
+        responses={
+            201: SubscriptionStatusSerializer,
+            400: OpenApiResponse(description='No `plan` key supplied.'),
+            403: OpenApiResponse(description='Dev checkout is disabled.'),
+            404: OpenApiResponse(description='No such active plan.'),
+        },
+    ),
+)
 class DevCheckoutView(APIView):
     """`POST /api/subscriptions/checkout/` — development checkout.
 

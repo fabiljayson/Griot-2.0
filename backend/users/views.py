@@ -1,6 +1,11 @@
 from django.contrib.auth import get_user_model
-from drf_spectacular.utils import extend_schema
-from rest_framework import generics, permissions, status
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
@@ -50,6 +55,24 @@ class AuthTokenRefreshView(TokenRefreshView):
     throttle_classes = [AuthRateThrottle]
 
 
+@extend_schema_view(
+    post=extend_schema(
+        summary='Blacklist a refresh token',
+        description=(
+            'Revokes the supplied refresh token server-side. Idempotent: a '
+            'missing, malformed, expired or already-blacklisted token all '
+            'resolve to the same 204.'
+        ),
+        request=inline_serializer(
+            'LogoutRequest',
+            {'refresh': serializers.CharField()},
+        ),
+        responses={
+            204: None,
+            400: OpenApiResponse(description='Malformed body.'),
+        },
+    ),
+)
 class LogoutView(APIView):
     """POST /api/auth/logout/ — blacklist the reader's refresh token.
 
