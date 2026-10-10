@@ -14,21 +14,30 @@
 *.cmd text eol=crlf
 
 # Binary assets: never touched.
-*.jpg text=false
-*.jpeg text=false
-*.png text=false
-*.gif text=false
-*.ico text=false
-*.webp text=false
-*.pdf text=false
-*.ttf text=false
-*.otf text=false
-*.woff text=false
-*.woff2 text=false
-*.mp3 text=false
-*.mp4 text=false
-*.wav text=false
-*.zip text=false
-*.jar text=false
-*.keystore text=false
-*.jks text=false
+#
+# `-text` alone is not enough here. The `* text=auto eol=lf` rule above also
+# sets `eol` on these paths, and per gitattributes(5) `eol` "enables
+# end-of-line conversion without any further checks" — it does not defer to
+# `text`. Leaving `eol` set made git run the CRLF clean filter over JPEG,
+# PNG, TTF and WOFF2 bytes on every status check, so 300+ binaries reported
+# as modified on a clean checkout (the files were byte-identical to their
+# blobs; only the comparison disagreed). Unsetting both keeps the `*` rule
+# from reaching them.
+*.jpg -text -eol
+*.jpeg -text -eol
+*.png -text -eol
+*.gif -text -eol
+*.ico -text -eol
+*.webp -text -eol
+*.pdf -text -eol
+*.ttf -text -eol
+*.otf -text -eol
+*.woff -text -eol
+*.woff2 -text -eol
+*.mp3 -text -eol
+*.mp4 -text -eol
+*.wav -text -eol
+*.zip -text -eol
+*.jar -text -eol
+*.keystore -text -eol
+*.jks -text -eol
